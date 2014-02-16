@@ -1,0 +1,2 @@
+init:
+	nasm init.s

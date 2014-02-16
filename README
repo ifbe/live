@@ -1,0 +1,35 @@
+电脑像单片机那样用
+
+编译：
+1:	改load/Makefile自行选择
+
+2:	改init/init.s自行选择
+
+3:	Makefile内,把3的内容改成如下:
+		make -C kernel/assembly
+		make -C kernel/c
+		make -C kernel/jarvis
+		make -C kernel/multitask
+		make -C kernel/yourdirectory
+
+使用:
+1.g4d文件夹里面有工具
+2.bootice选fat32的U盘
+3.主引导改成usb-hdd+分区引导改成grub4dos
+4.grldr和menu.lst扔进U盘根目录
+5.out/live扔进U盘根目录
+6.从u盘启动然后选择live确定
+
+
+内存组织：(单位：0x)
+[0,7ff]:没动
+[800,fff]:keyboard buffer
+[1000,1fff]:idt
+[2000,2fff]:pml4
+[3000,3fff]:pdpt
+[4000,7fff]:pt
+[8000,bfff]:acpi,pcie,vesa,word
+[c000,ffff]:free
+[10000,80000]:initer
+[80000,9ffff]:table
+[100000,200000]:program

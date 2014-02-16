@@ -1,0 +1,13 @@
+timeout 5
+
+title live
+map --mem /live (hd0)
+map --hook
+chainloader (hd0)+1
+rootnoverify (hd0)
+
+title reboot
+reboot
+
+title halt
+halt
