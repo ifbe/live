@@ -5,12 +5,9 @@
 
 2:	改init/init.s自行选择
 
-3:	Makefile内,把3的内容改成如下:
-		make -C kernel/assembly
-		make -C kernel/c
-		make -C kernel/jarvis
-		make -C kernel/multitask
-		make -C kernel/yourdirectory
+3:	make a
+	make c
+	make ........
 
 使用:
 1.g4d文件夹里面有工具
