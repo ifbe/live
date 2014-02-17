@@ -56,7 +56,7 @@ flatend:
 ;    call loadsector
 
 loadinit:
-    mov cl,7            ;5:[10000,7ffff]
+    mov cx,8            ;5:[10000,7ffff]
     mov eax,128
     mov bx,0x1000
 continue:

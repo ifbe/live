@@ -1,31 +1,31 @@
 j:
-	make clean
-	make -C load
-	make -C init
-	make -C kernel/jarvis
-	make image
-	make test
+	make -s clean
+	make -s -C load
+	make -s -C init
+	make -s -C kernel/jarvis
+	make -s image
+	make -s test
 m:
-	make clean
-	make -C load
-	make -C init
-	make -C kernel/multitask
-	make image
-	make test
+	make -s clean
+	make -s -C load
+	make -s -C init
+	make -s -C kernel/multitask
+	make -s image
+	make -s test
 a:
-	make clean
-	make -C load
-	make -C init
-	make -C kernel/assembly
-	make image
-	make test
+	make -s clean
+	make -s -C load
+	make -s -C init
+	make -s -C kernel/assembly
+	make -s image
+	make -s test
 c:
-	make clean
-	make -C load
-	make -C init
-	make -C kernel/c
-	make image
-	make test
+	make -s clean
+	make -s -C load
+	make -s -C init
+	make -s -C kernel/c
+	make -s image
+	make -s test
 image:
 	touch load/load
 	touch init/init

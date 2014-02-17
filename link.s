@@ -20,4 +20,5 @@ times 262144-($-$$)db 0
 
 ;[0x40000,0x7ffff]=[512,1023]
 incbin "else/jarvis.jpg"
-times 524288-($-$$)db 0
+;times 524288-($-$$)db 0
+times 589824-($-$$)db 0

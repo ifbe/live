@@ -66,17 +66,15 @@ u64 start()
 {
     offset=0x200000;
     char *buf;
-    buf=(char*)0x30000;
+    buf=(char*)0x40000;
     int i=0x12345678;
 
-	//asm("cli");
     njInit();
-//    *(u64*)0x7e0=offset;
-    i=njDecode(buf,281076);
-    if(i){print32(0,0,i);return -1;}
+    i=njDecode(buf,278605);
+    if(i){print32(0,0,i);return i;}
     else{
+    print32(20,0,offset);
         picture();
-//        *(u64*)0x7e8=offset;
         return offset;
     }
 }
@@ -84,7 +82,7 @@ u64 start()
 
 void picture()
 {
-    unsigned char* video=(unsigned char*)offset;
+    unsigned char* video=(unsigned char*)(u64)(*(unsigned int*)0xa028);
     unsigned char* p=nj.rgb;
     char bpp=(*(char*)0xa019)/8;
     int i;

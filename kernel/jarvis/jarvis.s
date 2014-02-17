@@ -13,7 +13,7 @@ jpegdecode:                   ;位置无关
     mov rdx,0x100000            ;eax 传参
     call rdx
     mov [jpegbase],rax        ;return value
-mov [0x7ff0],rax
+mov [0xc000],rax
     sti
 
 ;______________________________________________

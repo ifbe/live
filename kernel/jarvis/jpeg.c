@@ -70,8 +70,8 @@ u64 start()
     int i=0x12345678;
 
     njInit();
-    i=njDecode(buf,245964);
-    if(i){print32(0,0,i);return -1;}
+    i=njDecode(buf,278605);
+    if(i){print32(0,0,i);return i;}
     else{
         picture();
         return offset;

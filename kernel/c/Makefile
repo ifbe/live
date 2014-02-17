@@ -1,6 +1,6 @@
 c:
-	nasm wrap.s -o ../kernel
-	gcc -O2 -c ball.c -o ../temp.elf
-	echo -n "change link.s:"
+	nasm caller.s -o ../kernel
+	gcc -O2 -c jpeg.c -o ../temp.elf
+	echo -n "change caller.s use this:"
 	objdump -d ../temp.elf | grep -m 1 start
-	ld -T link.ld ../temp.elf -o ../temp
+	ld -T 100000.ld ../temp.elf -o ../temp

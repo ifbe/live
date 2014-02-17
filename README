@@ -27,6 +27,9 @@
 [4000,7fff]:pt
 [8000,bfff]:acpi,pcie,vesa,word
 [c000,ffff]:free
-[10000,80000]:initer
+
+[10000,1ffff]:initer
+[20000,2ffff]:kernel
+[30000,3ffff]:code
+[40000,7ffff]:jpeg
 [80000,9ffff]:table
-[100000,200000]:program
