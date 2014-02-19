@@ -45,6 +45,7 @@ push:
 	git push
 test:
 	qemu-kvm \
+	-smp 2 \
 	-m 512 \
 	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
