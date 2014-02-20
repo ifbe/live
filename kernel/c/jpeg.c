@@ -82,9 +82,9 @@ u64 start()
 
 void picture()
 {
-    unsigned char* video=(unsigned char*)(u64)(*(unsigned int*)0xa028);
+    unsigned char* video=(unsigned char*)(u64)(*(unsigned int*)0x3028);
     unsigned char* p=nj.rgb;
-    char bpp=(*(char*)0xa019)/8;
+    char bpp=(*(char*)0x3019)/8;
     int i;
 
     for(i=0;i<nj.width*nj.height;i++)
@@ -109,9 +109,9 @@ void* mymalloc(int i)
 
 void point(int x,int y,int z)
 {
-    u64* video=(u64*)0xa028;
+    u64* video=(u64*)0x3028;
     u64 base=*video;
-    char* p=(char*)0xa019;
+    char* p=(char*)0x3019;
     char bpp=*p/8;
 
     int* address;

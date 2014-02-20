@@ -2,7 +2,7 @@ startofdisk:
 [BITS 64]
 ;________________________________
 disk:
-    mov esi,0x9008
+    mov esi,0x5008
 searchdisk:
     mov eax,[esi]
     mov al,0
@@ -16,7 +16,7 @@ searchdisk:
     stosq
 .next:
     add esi,0x10
-    cmp esi,0xa000
+    cmp esi,0x6000
     jb searchdisk
     jmp endofdisk
 ;________________________________________
@@ -24,7 +24,7 @@ searchdisk:
 
 ;_______________________________________
 finddisk:
-    cmp byte [0x9003],0x80
+    cmp byte [0x5003],0x80
     jne disknew
 
 diskold:

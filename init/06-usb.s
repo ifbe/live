@@ -2,7 +2,7 @@ startofusb:
 [BITS 64]
 ;________________________________
 usb:
-    mov esi,0x900a
+    mov esi,0x500a
 .searchusb:
     mov ax,[esi]
     cmp ax,0x0c03
@@ -22,7 +22,7 @@ usb:
     stosq
 .next:
     add esi,0x10
-    cmp esi,0xa000
+    cmp esi,0x6000
     jb .searchusb
     jmp usbfinish
 ;________________________________________
@@ -30,7 +30,7 @@ usb:
 
 ;_______________________________________
 findusb:
-    cmp byte [0x9003],0x80
+    cmp byte [0x5003],0x80
     jne usbnew
 
 usbold:

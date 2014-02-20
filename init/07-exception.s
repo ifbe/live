@@ -303,7 +303,7 @@ mov [killer],rax
 
 
 ;________________varities____________________
-mov al,[0xa019]
+mov al,[0x3019]
 movzx eax,al
 shr eax,3
 mov [onepoint],eax
@@ -326,7 +326,7 @@ sixteenline:dq 0
 ;________________the end,print to screen______________
 theend:
 mov esi,buffer
-mov edi,[0xa028]
+mov edi,[0x3028]
 
 	.continue:
 	push rsi

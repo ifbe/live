@@ -1,17 +1,3 @@
-j:
-	make -s clean
-	make -s -C load
-	make -s -C init
-	make -s -C kernel/jarvis
-	make -s image
-	make -s test
-m:
-	make -s clean
-	make -s -C load
-	make -s -C init
-	make -s -C kernel/multitask
-	make -s image
-	make -s test
 a:
 	make -s clean
 	make -s -C load
@@ -24,6 +10,20 @@ c:
 	make -s -C load
 	make -s -C init
 	make -s -C kernel/c
+	make -s image
+	make -s test
+j:
+	make -s clean
+	make -s -C load
+	make -s -C init
+	make -s -C kernel/jarvis
+	make -s image
+	make -s test
+m:
+	make -s clean
+	make -s -C load
+	make -s -C init
+	make -s -C kernel/multitask
 	make -s image
 	make -s test
 image:
@@ -40,6 +40,7 @@ clean:
 	rm -f kernel/temp*
 	rm -f live
 push:
+	make clean
 	git add --all .
 	git commit -a
 	git push

@@ -22,14 +22,23 @@
 [0,7ff]:没动
 [800,fff]:keyboard buffer
 [1000,1fff]:idt
-[2000,2fff]:pml4
-[3000,3fff]:pdpt
-[4000,7fff]:pt
-[8000,bfff]:acpi,pcie,vesa,word
-[c000,ffff]:free
+[2000,2fff]:mem info
+[3000,3fff]:vesa mode
+[4000,4fff]:acpi
+[5000,5fff]:pci
 
-[10000,1ffff]:initer
-[20000,2ffff]:kernel
-[30000,3ffff]:code
-[40000,7ffff]:jpeg
-[80000,9ffff]:table
+[8000,ffff]:initer
+
+[10000,1ffff]:kernel
+
+[20000,2ffff]:temp
+[30000,3ffff]:temp1
+
+[40000,8ffff]:jpeg
+
+[90000,90fff]:pml4
+[91000,91fff]:pdpt
+[92000,92fff]:pd1
+[93000,93fff]:pd2
+[94000,94fff]:pd3
+[95000,95fff]:pd4

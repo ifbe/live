@@ -1,23 +1,23 @@
-ORG 0x10000
+ORG 0x8000
 BITS 16
 ;_________________环境设置__________________
     cli
     xor ax,ax    ; Set up segment registers.
-    mov ss,ax    ; Set up stack so that it starts below Main.
-    mov sp,0x7c00
     mov ds,ax
     mov es,ax
+    mov ss,ax    ; Set up stack so that it starts below Main.
+    mov sp,0x7c00
     cld
 
     xor eax,eax
-    mov di,0x8000
-    mov cx,0x1000
+    mov di,0x2000
+    mov cx,0x1800
     rep stosd
 ;__________________________________________
 
 
 ;____________int15 e820 memory detect___________
-    mov di,0x8800
+    mov di,0x2000
     xor ebx,ebx
 e820:
     mov eax,0xe820
@@ -27,9 +27,9 @@ e820:
     jc e820finish
     cmp eax,0x534d4150
     jne e820finish
-    cmp di,0x9000
-    ja e820finish
     add di,0x20
+    cmp di,0x3000
+    jae e820finish
     cmp ebx,0
     jne e820
 
@@ -51,7 +51,7 @@ cmos:
 
 ;______________列出vesa模式________________
     mov cx,0x101
-    mov di,0xa020
+    mov di,0x3020
 
 listresolution:
     mov ax,0x4f01
@@ -64,11 +64,11 @@ listresolution:
 
 
 ;_________________________________
-    mov si,0xa000
+    mov si,0x3000
 searchresolution:
     add si,0x20
-    cmp si,0xafff
-    ja noresolution
+    cmp si,0x3fff
+    ja endofscreen
     mov eax,[si+0x12]
     cmp eax,0x03000400
     jne searchresolution
@@ -79,13 +79,13 @@ searchresolution:
 
 ;__________________________________
 setresolution:
-    sub si,0xa000
+    sub si,0x3000
     shr si,5
     push si
 
     mov cx,si
     mov ch,1
-    mov di,0xa000
+    mov di,0x3000
     mov ax,0x4f01
     int 0x10
 
@@ -94,4 +94,5 @@ setresolution:
     mov ax,0x4f02
     int 0x10
 ;__________________________________
-noresolution:
+
+endofscreen:

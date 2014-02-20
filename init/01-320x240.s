@@ -1,4 +1,4 @@
-ORG 0x10000
+ORG 0x8000
 BITS 16
 ;_________________环境设置__________________
     cli
@@ -10,14 +10,14 @@ BITS 16
     cld
 
     xor eax,eax
-    mov di,0x8000
-    mov cx,0x1000
+    mov di,0x2000
+    mov cx,0x1800
     rep stosd
 ;__________________________________________
 
 
 ;____________int15 e820 memory detect___________
-    mov di,0x8800
+    mov di,0x2000
     xor ebx,ebx
 e820:
     mov eax,0xe820
@@ -27,9 +27,9 @@ e820:
     jc e820finish
     cmp eax,0x534d4150
     jne e820finish
-    cmp di,0x9000
-    ja e820finish
     add di,0x20
+    cmp di,0x3000
+    jae e820finish
     cmp ebx,0
     jne e820
 
@@ -51,7 +51,7 @@ cmos:
 
 ;______________列出vesa模式________________
     mov cx,0x101
-    mov di,0xa020
+    mov di,0x3020
 
 listresolution:
     mov ax,0x4f01

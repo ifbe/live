@@ -1,20 +1,20 @@
-;[0x0,0xffff]=[0,127]
+;[0x0,0x7fff]=[0,63]
 incbin "load/load"
+times 32768-($-$$)db 0
+
+;[0x8000,0xffff]=[64,127]
+incbin "init/init"
 times 65536-($-$$)db 0
 
 ;[0x10000,0x1ffff]=[128,255]
-incbin "init/init"
+incbin "kernel/kernel"
 times 131072-($-$$)db 0
 
 ;[0x20000,0x2ffff]=[256,383]
-incbin "kernel/kernel"
+incbin "kernel/temp"
 times 196608-($-$$)db 0
 
-;[0x30000,0x37fff]=[384,447]
-incbin "kernel/temp"
-times 229376-($-$$)db 0
-
-;[0x38000,0x3ffff]=[448,511]
+;[0x30000,0x3ffff]=[384,511]
 incbin "kernel/temp1"
 times 262144-($-$$)db 0
 

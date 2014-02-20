@@ -358,9 +358,9 @@ void turnoff()
 
 void init()
 {
-    u64* video=(u64*)0xa028;
+    u64* video=(u64*)0x3028;
     u64 base=*video;
-    char* p=(char*)0xa019;
+    char* p=(char*)0x3019;
     char bpp=*p/8;
     int i;
 
@@ -375,9 +375,9 @@ void init()
 
 void point(int x,int y,int z)
 {
-    u64* video=(u64*)0xa028;
+    u64* video=(u64*)0x3028;
     u64 base=*video;
-    char* p=(char*)0xa019;
+    char* p=(char*)0x3019;
     char bpp=*p/8;
 
     int* address;

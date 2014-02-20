@@ -2,7 +2,7 @@
 [BITS 64]
 ;____________________________________
 start:
-mov esi,0x30000
+mov esi,0x20000
 mov edi,0x100000
 mov ecx,0x2000
 rep movsq
@@ -19,7 +19,7 @@ mov [0xc000],rax
 ;______________________________________________
 varity:
     xor rax,rax
-    mov al,[0xa019]        ;bit/点
+    mov al,[0x3019]        ;bit/点
     mov [bitpp],eax
 
     shr al,3               ;byte/点
@@ -116,8 +116,8 @@ screen:
     writescreen:
     call mouse
     mov esi,0x100000
-    mov edi,[0xa028]
-    mov cl,[0xa019]
+    mov edi,[0x3028]
+    mov cl,[0x3019]
     movzx ecx,cl
     shl ecx,12                      ;*1024*256/8/8
     lea ecx,[2*ecx+ecx]
@@ -382,7 +382,7 @@ out dx,ax
 mouse:
 mov esi,0xb8b0                 ;kuang
 mov edi,0x100000
-;mov edi,[0xa028]
+;mov edi,[0x3028]
 mov eax,r15d
 mov bl,0x40
 div bl
@@ -404,8 +404,8 @@ ret
 picture:
 mov rsi,[jpegbase]
 mov edi,0x100000
-;mov edi,[0xa028]
-mov cl,[0xa019]
+;mov edi,[0x3028]
+mov cl,[0x3019]
 movzx ecx,cl
 shl ecx,12                      ;*1024*256/8/8
 lea ecx,[2*ecx+ecx]
@@ -710,7 +710,7 @@ char:
 
     mov eax,edi
     mov ebx,0x100000        ;ebx=vesabase
-    ;mov ebx,[0xa028]        ;ebx=vesabase
+    ;mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
     cmp byte [bytepp],4
@@ -772,7 +772,7 @@ utf8:
 
     mov eax,edi
     mov ebx,0x100000        ;ebx=vesabase
-    ;mov ebx,[0xa028]        ;ebx=vesabase
+    ;mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
     cmp byte [bytepp],4

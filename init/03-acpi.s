@@ -3,10 +3,10 @@ startofacpi:
 ;进:
 ;出:rbp
 ;用:
-;变:rax,rbp,cx,*0x8008=RSD PTR 
+;变:rax,rbp,cx,*0x4008=RSD PTR 
 ;_________look for rsd ptr from e0000~ffff0__________
     mov rax,"RSD PTR "
-    mov [0x8008],rax
+    mov [0x4008],rax
     mov rbp,0xe0000
     mov cx,0x2000
 rsdptr:
@@ -23,10 +23,10 @@ rsdptr:
 ;进:rbp
 ;出:
 ;用:
-;变:*0x8000=&rsdp
+;变:*0x4000=&rsdp
 ;____________________________________
 findrsdptr:
-    mov [0x8000],rbp       ;rsdptr
+    mov [0x4000],rbp       ;rsdptr
     cmp byte [rbp+0xf],0x00 ;不是0就是xsdt
     jne xsdt
 
@@ -34,17 +34,17 @@ findrsdptr:
 ;进:rbp
 ;出:
 ;用:
-;变:eax,rbp,cx,*0x8018="RSDT",*0x8010=&rsdt
+;变:eax,rbp,cx,*0x4018="RSDT",*0x4010=&rsdt
 ;_______________________________
 rsdt:
     mov eax,"RSDT"
-    mov [0x8018],eax
+    mov [0x4018],eax
     mov eax,[rbp+0x10]
-    mov [0x8010],eax        ;rsdt
+    mov [0x4010],eax        ;rsdt
     mov cl,[eax+4]
     sub cl,0x24
     add eax,0x24
-    mov edi,0x8020
+    mov edi,0x4020
 .rsdttable:
     mov esi,[eax]
     mov [edi],esi
@@ -63,17 +63,17 @@ rsdt:
 ;进:rbp
 ;出:
 ;用:
-;变:rax,rbp,cx,*0x8018="RSDT",*0x8010=&rsdt
+;变:rax,rbp,cx,*0x4018="RSDT",*0x4010=&rsdt
 ;____________________________________
 xsdt:
     mov eax,"XSDT"
-    mov [0x8018],eax
+    mov [0x4018],eax
     mov rax,[rbp+0x18]
-    mov [0x8010],rax        ;xsdt
+    mov [0x4010],rax        ;xsdt
     mov cl,[rax+4]
     sub cl,0x24
     add eax,0x24
-    mov edi,0x8020
+    mov edi,0x4020
 .xsdttable:
     mov esi,[eax]
     mov [edi],esi
@@ -92,12 +92,12 @@ xsdt:
 ;变:rax,edi,ecx，*0xb8000~*0xbffff
 acpi:
 ;_______________search in facp for port________________________________
-    mov esi,0x8028            ;8008和8018分别是rsdp和xsdt
+    mov esi,0x4028            ;8008和8018分别是rsdp和xsdt
 .search:
     cmp dword [esi],"FACP"
     je facp
     add si,0x10
-    cmp esi,0x8400
+    cmp esi,0x4400
     jb .search
 facp:
     mov esi,[esi-0x8]           ;[esi-0x8]=facp

@@ -1,6 +1,6 @@
 ;init/[1,7]
 [BITS 64]
-    mov r8b,[0xa019]        ;r8=bit/点
+    mov r8b,[0x3019]        ;r8=bit/点
     mov cl,3
     shr r8b,cl               ;r8=byte/点
 
@@ -16,7 +16,7 @@
     mov cl,14
     shl r11d,cl              ;r10=16*r8
 
-    mov edi,[0xa028]        ;vesabase
+    mov edi,[0x3028]        ;vesabase
     mov eax,0xffff00
     mov ecx,1024*768
 yellow:
@@ -24,7 +24,7 @@ yellow:
     add edi,r8d
     loop yellow
 
-    mov edi,[0xa028]   ;开头
+    mov edi,[0x3028]   ;开头
 
     xor rcx,rcx
     mov cx,600
@@ -72,7 +72,7 @@ utf8:
     sub edi,r11d            ;上16行;现在edi=下个字开头
 
     mov eax,edi
-    mov ebx,[0xa028]        ;ebx=vesabase
+    mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
     cmp r8,4

@@ -12,7 +12,7 @@ shr al,5
 ;mov [0x7c4],ax
 
 mov edi,0x100000     ;all position need base address
-;mov edi,[0xa028]     ;all position need base address
+;mov edi,[0x3028]     ;all position need base address
 ;cmp ax,0            ;upperleft
 cmp ax,0x0101
 je .start

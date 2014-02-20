@@ -1,7 +1,7 @@
 %include "../init/init768.s"
 [BITS 64]
 ;_________________________________________
-    mov r8b,[0xa019]        ;r8=bit/点
+    mov r8b,[0x3019]        ;r8=bit/点
     shr r8b,3               ;r8=byte/点
 
     mov r9,r8
@@ -255,7 +255,7 @@ cb: mov qword [0x1000+rcx],0
 ;变:
 ;______________________________
 displaymemory:
-    mov edi,[0xa028]        ;vesabase
+    mov edi,[0x3028]        ;vesabase
     mov eax,0xffff00
     mov ecx,1024*16
 yellow:
@@ -263,7 +263,7 @@ yellow:
     add edi,r8d
     loop yellow
 
-    mov edi,[0xa028]
+    mov edi,[0x3028]
     mov cl,6
 fivetimes:
     add edi,r10d
@@ -278,7 +278,7 @@ sixtimes:
     add dl,8
     loop sixtimes
 
-    mov edi,[0xa028]
+    mov edi,[0x3028]
     add edi,r11d
 
     mov cl,45
@@ -360,7 +360,7 @@ number:
 ;变:cl
 ;_______________________________
 pointer:
-    mov edi,[0xa028]
+    mov edi,[0x3028]
     add edi,r11d
 
     mov eax,r8d
@@ -548,7 +548,7 @@ char:
     sub edi,r11d            ;上16行;现在edi=下个字开头
 
     mov eax,edi
-    mov ebx,[0xa028]        ;ebx=vesabase
+    mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
     cmp r8,4
@@ -608,7 +608,7 @@ utf8:
     sub edi,r11d            ;上16行;现在edi=下个字开头
 
     mov eax,edi
-    mov ebx,[0xa028]        ;ebx=vesabase
+    mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
     cmp r8,4

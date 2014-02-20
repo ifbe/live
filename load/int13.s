@@ -7,46 +7,7 @@
    mov ss,ax             ; stack starts at seg 0
    mov sp, 0x7c00         ; 2000h past code start, 
 
-   in al,0x92
-   or al,0x2
-   out 0x92,al
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-unrealmode:
-   push ds 
-   push es
-   lgdt [fakegdt]         ; load gdt register
- 
-   mov  eax, cr0          ; switch to pmode by
-   or al,1                ; set pmode bit
-   mov  cr0, eax
- 
-   mov bx,0x10
-   mov ds,bx
-   mov es,bx
- 
-   and al,0xFE            ; back to realmode
-   mov  cr0, eax          ; by toggling bit again
-
-   pop es
-   pop ds 
-
-   jmp loadinit
-;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-;<<<<<<<<<<<<<<<<<<<<<fake gdt<<<<<<<<<<<<<<<<<<<<<<
-fakegdt:
-   dw flatend - flatgdt - 1   ;last byte in table
-   dd flatgdt                 ;start of table
- 
-flatgdt         dd 0,0        ; entry 0 is always unused
-flatcode    db 0xff, 0xff, 0, 0, 0, 0x9a, 0x8f, 0
-flatdata    db 0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0
-flatend:
-;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -61,7 +22,6 @@ loadinit:
     mov bx,0
 continue:
     mov word [dap.buffersegment],bx
-
     mov dword [dap.blocknumber],eax
     mov byte [dap.blockcount],64
     mov word [dap.bufferoffset],0x8000
@@ -70,6 +30,7 @@ continue:
 
     add bx,0x1000
 
+    mov word [dap.buffersegment],bx
     mov dword [dap.blocknumber],eax
     mov byte [dap.blockcount],64
     mov word [dap.bufferoffset],0x0000

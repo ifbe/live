@@ -6,12 +6,12 @@ startofpci:
 ;变:
 ;__________old or new_____________
 pcie:
-    mov esi,0x8028            ;si不对
+    mov esi,0x4028            ;si不对
 .search:
     cmp dword [esi],"MCFG"
     je pcienew
     add si,0x10
-    cmp si,0x8400
+    cmp si,0x4400
     jb .search
 
     death:hlt
@@ -27,8 +27,7 @@ pcie:
 pcienew:
     mov esi,[esi-0x8]           ;["MCFG"-0x8]=mcfg address
     mov esi,[esi+0x2c]          ;[mcfg+0x2c]=pcie base
-    mov [0x8ff8],esi            ;save pcie base address
-    mov edi,0x9000
+    mov edi,0x5000
     mov ecx,0xffff
 
 .newenumeration:
@@ -44,7 +43,7 @@ pcienew:
 
 .next:
     add esi,0x1000
-    cmp edi,0x97ff
+    cmp edi,0x5fff
     ja endofpci
     loop .newenumeration
 ;________________________________

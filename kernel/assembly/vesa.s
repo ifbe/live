@@ -1,7 +1,7 @@
 ;init/[1,7]
 [BITS 64]
 
-    mov rdi,[0xa028]
+    mov rdi,[0x3028]
     xor eax,eax
 
     mov ecx,0x10000

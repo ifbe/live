@@ -1,4 +1,4 @@
-%define address 0x100000
+%define address 0x10000
 ;init/[1,6]
 [BITS 64]      
 ;______________环境设置____________________

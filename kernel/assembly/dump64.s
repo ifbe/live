@@ -1,9 +1,10 @@
 ;init/[1,7]
+org 0x10000
 [BITS 64]
 ;____________before main_________________
 start:
     xor rax,rax
-    mov al,[0xa019]        ;bit/点
+    mov al,[0x3019]        ;bit/点
     mov [bitpp],eax
 
     shr al,3               ;byte/点
@@ -207,7 +208,7 @@ cb: mov qword [ebx],0
 ;变:
 ;______________________________
 ramdump:
-    mov edi,[0xa028]        ;vesabase
+    mov edi,[0x3028]        ;vesabase
     xor eax,eax
     mov ecx,1024*16
 yellow:
@@ -215,7 +216,7 @@ yellow:
     add edi,[bytepp]
     loop yellow
 
-    mov edi,[0xa028]
+    mov edi,[0x3028]
     mov cl,6
 fivetimes:
     add edi,[bitpp]
@@ -231,7 +232,7 @@ sixtimes:
     add dl,8
     loop sixtimes
 
-    mov edi,[0xa028]
+    mov edi,[0x3028]
     add edi,[sixteenline]
 
     mov cl,45
@@ -313,7 +314,7 @@ number:
 ;变:cl
 ;_______________________________
 pointer:
-    mov edi,[0xa028]
+    mov edi,[0x3028]
     add edi,[sixteenline]
 
     mov eax,[bytepp]
@@ -493,7 +494,7 @@ char:
     sub edi,[sixteenline]            ;上16行;现在edi=下个字开头
 
     mov eax,edi
-    mov ebx,[0xa028]        ;ebx=vesabase
+    mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
     cmp byte [bytepp],4
@@ -550,7 +551,7 @@ utf8:
     sub edi,[sixteenline]            ;上16行;现在edi=下个字开头
 
     mov eax,edi
-    mov ebx,[0xa028]        ;ebx=vesabase
+    mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
     cmp byte [bytepp],4

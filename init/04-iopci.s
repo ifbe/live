@@ -6,7 +6,7 @@ startofpci:
 ;变:
 ;___________pcie(0xcf8/0xcfc)______________
 pcieold:
-    mov edi,0x9000
+    mov edi,0x5000
     mov ebx,0x80000000
     mov ecx,0xffff
 .enumeration:

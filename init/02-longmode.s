@@ -74,51 +74,58 @@ die:hlt
 
 
 SwitchToLongMode:
+    mov ax,0x9000
+    mov ds,ax
+    mov es,ax
+
+
 ;__________________________________________
     ;清空0x1000~0x6fff
-    mov di,0x2000
-    mov cx, 0x1800
+    mov di,0
+    mov cx,0x1800
     xor eax, eax
     cld
     rep stosd
 ;____________________________________________
 
 
-;___________&pdpt放入pml4__________________ 
-    mov di,0x2000
-    mov eax,0x3000       ;pdpt地址
-    or eax, 0x3          ;存在&&可写
-
-    mov [di],eax     ;放入pml4
+;___________&pdpt放入pml4(0x90000)(9000:0000)__________________ 
+    mov di,0
+    mov eax,0x91003     ;存在&&可写
+    mov [es:di],eax     ;放入pml4
 ;_______________________________________
 
 
-;_______________&pd放入pdpt________________
-
-    mov di,0x3000
-    mov ax,0x4003
+;_______________&pd放入pdpt(0x91000)(9000:1000)________________
+    mov di,0x1000
+    mov eax,0x92003
     mov cx,4           ;共4GB
 .pdpt:
-    mov [di],ax
-    add ax,0x1000
+    mov [es:di],eax
+    add eax,0x1000
     add di,8
     loop .pdpt
 ;_____________________________________
 
 
-;____________真实地址放入pd______________
-    mov di,0x4000
-    mov eax, 0x83               ; Move the flags into EAX and point it to 0x0000
+;____________真实地址放入pd([92000,95fff])______________
+    mov di,0x2000
+    mov eax,0x83
 
 pagedirectory:
-    mov [di],eax
+    mov [es:di],eax
     add eax,0x200000
     add di,8
     cmp eax,0xffe00000
     jb pagedirectory
-    mov [di],eax        ;the last one
+    mov [es:di],eax        ;the last one
 ;________________________________________
- 
+
+
+    xor eax,eax
+    mov ds,ax
+    mov es,ax 
+
  
 ;____________________关闭中断___________________
     mov al, 0xFF
@@ -143,7 +150,7 @@ IDT:
 preparation:
     mov eax, 10100000b                ; Set the PAE and PGE bit.
     mov cr4, eax
-    mov edx,0x2000                      ; Point CR3 at the PML4.
+    mov edx,0x90000                      ; Point CR3 at the PML4.
     mov cr3, edx
     mov ecx, 0xC0000080               ; Read from the EFER MSR. 
     rdmsr    

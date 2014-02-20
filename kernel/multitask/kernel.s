@@ -1,12 +1,12 @@
 %include "interrupt.s"
 [BITS 64]
 cli
-mov esi,0x38000
+mov esi,0x30000
 mov edi,0x100000
 mov ecx,0x1000
 rep movsq
 
-mov esi,0x30000
+mov esi,0x20000
 mov edi,0x200000
 mov ecx,0x1000
 rep movsq
@@ -54,7 +54,7 @@ sti
 
 xor rax,rax
 death:
-mov edi,[0xa028]
+mov edi,[0x3028]
 mov ecx,4096
 rep stosq
 inc rax
