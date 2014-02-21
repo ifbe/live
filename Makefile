@@ -1,3 +1,5 @@
+default:
+	cat README
 a:
 	make -s clean
 	make -s -C load

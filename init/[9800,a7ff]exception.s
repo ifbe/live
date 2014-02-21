@@ -84,11 +84,11 @@ call idtinstall
 mov rax,exception1f
 call idtinstall
 
-;mov ecx,0xe0
-;external:
-;mov rax,lastwords
-;call idtinstall
-;loop external
+mov ecx,0xe0
+external:
+mov rax,unknown
+call idtinstall
+loop external
 
 jmp endofexception
 ;_______________________________________
@@ -221,6 +221,11 @@ jmp lastwords
 
 exception1f:
 mov byte [killer],0x1f
+jmp lastwords
+
+unknown:
+mov dword [killer+4],0x01234567
+mov dword [killer],0x89abcdef
 jmp lastwords
 ;________________________________________
 

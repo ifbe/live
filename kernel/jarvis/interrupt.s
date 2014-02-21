@@ -19,6 +19,7 @@ breakpointdone:
 ;_____________int9h>>int21h__________________
 keyboard:
 mov rax,keyboardisr
+;mov edi,0x1090
 mov edi,0x1210
 call idtinstaller
 
@@ -81,6 +82,7 @@ mov al,ah
 out 0x71,al
 
 mov rax,rtcisr
+;mov edi,0x1700
 mov edi,0x1280
 call idtinstaller
 
