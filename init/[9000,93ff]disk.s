@@ -44,4 +44,8 @@ disknew:
 ;_____________________________________
 
 
+paddingofdisk:
+times 0x400-(paddingofdisk-startofdisk) db 0
+
+
 endofdisk:

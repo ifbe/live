@@ -1,12 +1,14 @@
 ORG 0x8000
 BITS 16
+startofscreen:
+
 ;_________________环境设置__________________
     cli
     xor ax,ax    ; Set up segment registers.
-    mov ds,ax
-    mov es,ax
     mov ss,ax    ; Set up stack so that it starts below Main.
     mov sp,0x7c00
+    mov ds,ax
+    mov es,ax
     cld
 
     xor eax,eax
@@ -63,36 +65,13 @@ listresolution:
 ;_____________________________________________
 
 
-;_________________________________
-    mov si,0x3000
-searchresolution:
-    add si,0x20
-    cmp si,0x3fff
-    ja endofscreen
-    mov eax,[si+0x12]
-    cmp eax,0x03000400
-    jne searchresolution
-    cmp byte [si+0x19],0x18
-    jb searchresolution
-;__________________________________
-
-
-;__________________________________
-setresolution:
-    sub si,0x3000
-    shr si,5
-    push si
-
-    mov cx,si
-    mov ch,1
-    mov di,0x3000
-    mov ax,0x4f01
+    mov ax,0x13
     int 0x10
+    jmp endofscreen
 
-    pop bx
-    mov bh,0x41
-    mov ax,0x4f02
-    int 0x10
-;__________________________________
+
+paddingofscreen:
+times 0x400-(paddingofscreen-startofscreen) db 0
+
 
 endofscreen:

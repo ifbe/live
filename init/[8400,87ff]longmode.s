@@ -1,4 +1,6 @@
 ;enter long mode directly
+startoflongmode:
+
 BITS 16
 ;___________A20地址线______________
     in al, 92h  
@@ -208,5 +210,9 @@ alldone:
     mov fs,ax
     mov gs,ax
     mov rsp,0x1000000          ;16m
+    jmp endoflongmode
 
-environment64:
+paddingoflongmode:
+times 0x400-(paddingoflongmode-startoflongmode) db 0
+
+endoflongmode:

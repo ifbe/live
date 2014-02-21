@@ -1,4 +1,6 @@
 [bits 64]
+startofpic:
+
 ;___________________8259_____________________
 pic:
 cli
@@ -29,3 +31,11 @@ mov al,0xff
 out 0x21,al
 out 0xa1,al
 ;____________________________________
+
+jmp endofpic
+
+paddingofpic:
+times 0x400-(paddingofpic-startofpic) db 0
+
+
+endofpic:

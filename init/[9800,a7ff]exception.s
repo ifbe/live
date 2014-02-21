@@ -1,4 +1,6 @@
 [bits 64]
+startofexception:
+
 ;__________________idt____________________
 cli
 mov word [idtptr.length],0xfff
@@ -82,143 +84,143 @@ call idtinstall
 mov rax,exception1f
 call idtinstall
 
-mov ecx,0xe0
-external:
-mov rax,lastwords
-call idtinstall
-loop external
+;mov ecx,0xe0
+;external:
+;mov rax,lastwords
+;call idtinstall
+;loop external
 
-jmp exceptiondone
+jmp endofexception
 ;_______________________________________
 
 
 ;_____________________________________
 exception0:
-push 0
+mov byte [killer],0
 jmp lastwords
 
 exception1:
-push 1
+mov byte [killer],0x1
 jmp lastwords
 
 exception2:
-push 2
+mov byte [killer],0x2
 jmp lastwords
 
 exception3:
-push 3
+mov byte [killer],0x3
 jmp lastwords
 
 exception4:
-push 4
+mov byte [killer],0x4
 jmp lastwords
 
 exception5:
-push 5
+mov byte [killer],0x5
 jmp lastwords
 
 exception6:
-push 6
+mov byte [killer],0x6
 jmp lastwords
 
 exception7:
-push 7
+mov byte [killer],0x7
 jmp lastwords
 
 exception8:
-push 8
+mov byte [killer],0x8
 jmp lastwords
 
 exception9:
-push 9
+mov byte [killer],0x9
 jmp lastwords
 
 exceptiona:
-push 0xa
+mov byte [killer],0xa
 jmp lastwords
 
 exceptionb:
-push 0xb
+mov byte [killer],0xb
 jmp lastwords
 
 exceptionc:
-push 0xc
+mov byte [killer],0xc
 jmp lastwords
 
 exceptiond:
-push 0xd
+mov byte [killer],0xd
 jmp lastwords
 
 exceptione:
-push 0xe
+mov byte [killer],0xe
 jmp lastwords
 
 exceptionf:
-push 0xf
+mov byte [killer],0xf
 jmp lastwords
 
 exception10:
-push 0x10
+mov byte [killer],0x10
 jmp lastwords
 
 exception11:
-push 0x11
+mov byte [killer],0x11
 jmp lastwords
 
 exception12:
-push 0x12
+mov byte [killer],0x12
 jmp lastwords
 
 exception13:
-push 0x13
+mov byte [killer],0x13
 jmp lastwords
 
 exception14:
-push 0x14
+mov byte [killer],0x14
 jmp lastwords
 
 exception15:
-push 0x15
+mov byte [killer],0x15
 jmp lastwords
 
 exception16:
-push 0x16
+mov byte [killer],0x16
 jmp lastwords
 
 exception17:
-push 0x17
+mov byte [killer],0x17
 jmp lastwords
 
 exception18:
-push 0x18
+mov byte [killer],0x18
 jmp lastwords
 
 exception19:
-push 0x19
+mov byte [killer],0x19
 jmp lastwords
 
 exception1a:
-push 0x1a
+mov byte [killer],0x1a
 jmp lastwords
 
 exception1b:
-push 0x1b
+mov byte [killer],0x1b
 jmp lastwords
 
 exception1c:
-push 0x1c
+mov byte [killer],0x1c
 jmp lastwords
 
 exception1d:
-push 0x1d
+mov byte [killer],0x1d
 jmp lastwords
 
 exception1e:
-push 0x1e
+mov byte [killer],0x1e
 jmp lastwords
 
 exception1f:
-push 0x1f
+mov byte [killer],0x1f
 jmp lastwords
 ;________________________________________
 
@@ -241,7 +243,6 @@ ret
 ;________________________________________________
 lastwords:
 
-;____________________fill buffer____________________
 mov [buffer],rax
 mov [buffer+0x10],rcx
 mov [buffer+0x20],rdx
@@ -285,21 +286,21 @@ mov rax,dr7
 mov [buffer+0x1f0],rax
 
 mov rax,[rsp]
-mov [buffer+0x1f0],rax
+mov [buffer+0x200],rax
 mov rax,[rsp+8]
-mov [buffer+0x1f0],rax
+mov [buffer+0x210],rax
 mov rax,[rsp+16]
-mov [buffer+0x1f0],rax
+mov [buffer+0x220],rax
 mov rax,[rsp+24]
-mov [buffer+0x1f0],rax
+mov [buffer+0x230],rax
 mov rax,[rsp+32]
-mov [buffer+0x1f0],rax
+mov [buffer+0x240],rax
 mov rax,[rsp+40]
-mov [buffer+0x1f0],rax
-
-pop rax
-mov [killer],rax
-;_______________________________________
+mov [buffer+0x250],rax
+mov rax,[rsp+48]
+mov [buffer+0x260],rax
+mov rax,[rsp+56]
+mov [buffer+0x270],rax
 
 
 ;________________varities____________________
@@ -343,7 +344,7 @@ mov edi,[0x3028]
 	add esi,0x10
 	add edi,[sixteenline]
 
-cmp esi,exceptiondone
+cmp esi,endofbuffer
 jb .continue
 
 hlt              ;i am dead
@@ -479,14 +480,19 @@ dq 0,"stack+40"
 dq 0,"stack+48"
 dq 0,"stack+56"
 
-killer:
-dq 0,"inherent"
-dq 0,"in"
-dq 0,"a"
-dq 0,"death"
-dq 0,"but....."
-dq 0,"the....."
-dq 0,"killer.."
-dq 0,"is......"
+dq 0,0
+dq 0,0
+killer:dq 0,"killer:"
+dq 0,"came"
+dq 0,0
+dq 0,0
+address:dq 0,"there:"
+dq 0,"suddenly"
+endofbuffer:
 
-exceptiondone:
+
+
+padding:
+times 0x1000-(padding-startofexception) db 0
+
+endofexception:

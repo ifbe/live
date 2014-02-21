@@ -1,4 +1,6 @@
 [bits 64]
+startofapic:
+
 localapicinitialization:
 ;______________________________
 detectlocalapic:
@@ -198,6 +200,8 @@ putioapic:
 ioapicinit:
 ;____________________________________
 
+paddingofapic:
+times 0x400-(paddingofapic-startofapic) db 0
 
 
 endofapic:

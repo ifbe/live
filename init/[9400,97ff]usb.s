@@ -24,7 +24,7 @@ usb:
     add esi,0x10
     cmp esi,0x6000
     jb .searchusb
-    jmp usbfinish
+    jmp endofusb
 ;________________________________________
 
 
@@ -49,5 +49,7 @@ usbnew:
     ret
 ;_____________________________________
 
+paddingofusb:
+times 0x400-(paddingofusb-startofusb) db 0
 
-usbfinish:
+endofusb:

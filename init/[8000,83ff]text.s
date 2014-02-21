@@ -1,5 +1,7 @@
 ORG 0x8000
 BITS 16
+startofscreen:
+
 ;_________________环境设置__________________
     cli
     xor ax,ax    ; Set up segment registers.
@@ -61,3 +63,11 @@ listresolution:
     cmp cx,0x180
     jb listresolution
 ;_____________________________________________
+
+    jmp endofscreen
+
+
+paddingofscreen:
+times 0x400-(paddingofscreen-startofscreen) db 0
+
+endofscreen:

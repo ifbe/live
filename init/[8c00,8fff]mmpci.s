@@ -48,5 +48,9 @@ pcienew:
     loop .newenumeration
 ;________________________________
 
+    jmp endofpci
+
+paddingofpci:
+times 0x400-(paddingofpci-startofpci) db 0
 
 endofpci:

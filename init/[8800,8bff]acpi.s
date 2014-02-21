@@ -130,11 +130,15 @@ find_S5_:
     mov cl,10
     shl ax,cl
     mov [0x4fe],ax
-                           ;mov dx,[0x4fc]
-    ;its how    -->        ;mov ax,[0x4fe]
-    ;to shutdown           ;or ax,0x2000
-                           ;out dx,ax
+
+    ;below is how to shutdown
+    ;mov dx,[0x4fc]    mov ax,[0x4fe]    or ax,0x2000    out dx,ax
 ;_________________________________________
+
+    jmp endofacpi
+
+paddingofacpi:
+times 0x400-(paddingofacpi-startofacpi) db 0
 
 
 endofacpi:
