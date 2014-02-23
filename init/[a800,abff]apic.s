@@ -45,14 +45,6 @@ putlapic:
 ;___________________________
 
 
-;_______________________________________
-disable8259:
-    mov al, 0xff
-    out 0xa1, al
-    out 0x21, al
-;_________________________________________
-
-
 ;_____________________________________
 disablecache1:
 ;_______________________________________
@@ -109,26 +101,18 @@ localapicaddress:dq 0
 
 
 
-
-
-
-
-
-
-
-
 ioapicinitialization:
 
 ;_______________________________________
 searchioapic:
-    mov edi,0x8008
+    mov edi,0x4008
     search:
     cmp dword [edi],"MADT"
     je findioapic
     cmp dword [edi],"APIC"
     je findioapic
     add edi,0x10
-    cmp edi,0x9000
+    cmp edi,0x5000
     jb search
 ;_______________________________________-
 
@@ -137,6 +121,8 @@ searchioapic:
 
 ;_________________________________
 findioapic:
+
+getinformation:
     mov edi,[edi-8]
     mov [madtstart],edi
     mov eax,[edi+4]
@@ -198,7 +184,31 @@ putioapic:
 
 ;____________________________________
 ioapicinit:
+
+disable8259:
+    mov al, 0xff
+    out 0xa1, al
+    out 0x21, al
+
+mov edi,[ioapicaddress]
+mov ecx,24
+mov eax,0x10
+
+maskall:
+    mov [edi],eax
+    inc eax
+    mov dword [edi],0x10000
+
+    mov [edi],eax
+    inc eax
+    mov dword [edi+0x10],0
+
+loop maskall
 ;____________________________________
+
+
+jmp endofapic
+
 
 paddingofapic:
 times 0x400-(paddingofapic-startofapic) db 0

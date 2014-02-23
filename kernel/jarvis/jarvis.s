@@ -1,4 +1,4 @@
-%include "interrupt.s"
+%include "apic.s"
 [BITS 64]
 ;____________________________________
 start:
