@@ -1,7 +1,5 @@
 [bits 64]
 startofapic:
-
-localapicinitialization:
 ;______________________________
 detectlocalapic:
     mov eax,1
@@ -17,40 +15,36 @@ findlocalapic:
     rdmsr
     ;bts eax,11            ;enable lapic
     ;wrmsr
-    and eax,0xfffff000    ;save lapic base
-    mov [localapicaddress],eax
+    and eax,0xfffff000
+    mov [localapicaddress],eax    ;save lapic base
+
+    cmp eax,0xfee00000
+    jb endofapic
 ;_____________________________________
 
 
 ;___________________________________
 savelapic:
-    mov edi,0x8000
+    mov edi,0x4000
 .continue:
     cmp dword [edi],0
-    je putlapic
+    jne .addandagain
+	mov eax,[localapicaddress]
+	stosq
+	mov rax,"lapic"
+	stosq
+	jmp .endofthis
+.addandagain:
     add edi,0x10
-    cmp edi,0x9000
+    cmp edi,0x5000
     jb .continue
-
-    jmp disable8259
 ;___________________________________
-
-
-;____________________________
-putlapic:
-    mov eax,[localapicaddress]
-    stosq
-    mov rax,"lapic"
-    stosq
-;___________________________
-
-
-;_____________________________________
-disablecache1:
-;_______________________________________
+.endofthis:
 
 
 ;________________________________________
+localapicinitialization:
+
     mov edi,[localapicaddress]
 
     ;[+80]=0              (task priority=0)
@@ -78,18 +72,19 @@ disablecache1:
     mov [edi+0x370],eax
 
     ;[+f0]=10f            (disable spurious vector+enable apic)
-    mov eax,0x10f
+    mov eax,0x170
     mov [edi+0xf0],eax
 
 ;_________________________________________
 
-    jmp ioapicinitialization
+    jmp endoflocalapic
 
 
 ;___________________________
 localapicaddress:dq 0
 ;_____________________________
 
+endoflocalapic:
 
 
 
@@ -98,22 +93,18 @@ localapicaddress:dq 0
 
 
 
-
-
-
-ioapicinitialization:
 
 ;_______________________________________
 searchioapic:
     mov edi,0x4008
-    search:
+.search:
     cmp dword [edi],"MADT"
     je findioapic
     cmp dword [edi],"APIC"
     je findioapic
     add edi,0x10
     cmp edi,0x5000
-    jb search
+    jb .search
 ;_______________________________________-
 
     jmp endofapic
@@ -130,17 +121,16 @@ getinformation:
     mov [madtend],eax
     add edi,0x2c
     mov [tablestart],edi
-;_______________________________________
 
-
-;______________________________
 analyse:
     cmp byte [edi],1
     jne .continue
 
-    mov eax,[edi+4]
-    mov [ioapicaddress],eax
-    jmp saveioapic            ;find it,lets go
+	mov eax,[edi+4]
+	mov [ioapicaddress],eax
+	cmp eax,0xfec00000
+	jne endofapic
+	jmp saveioapic            ;find it,lets go
 
 .continue:
     mov al,[edi+1]
@@ -152,6 +142,7 @@ analyse:
 
     jmp endofapic             ;cannot find
 
+
 ;________________________________________
 madtstart:dq 0
 madtend:dq 0
@@ -162,28 +153,27 @@ ioapicaddress:dq 0
 
 ;___________________________________
 saveioapic:
-    mov edi,0x8000
+    mov edi,0x4000
 .continue:
     cmp dword [edi],0
-    je putioapic
+    jne .addandagain
+
+	mov eax,[ioapicaddress]
+	stosq
+	mov rax,"ioapic"
+	stosq
+	jmp .endofthis
+
+.addandagain:
     add edi,0x10
-    cmp edi,0x9000
+    cmp edi,0x5000
     jb .continue
 ;___________________________________
-    jmp ioapicinit
-
-
-;____________________________
-putioapic:
-    mov eax,[ioapicaddress]
-    stosq
-    mov rax,"ioapic"
-    stosq
-;___________________________
+.endofthis:
 
 
 ;____________________________________
-ioapicinit:
+ioapicinitialization:
 
 disable8259:
     mov al, 0xff

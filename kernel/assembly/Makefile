@@ -1,2 +1,2 @@
 kernel:
-	nasm dump64.s -o ../kernel
+	nasm apictimer.s -o ../kernel

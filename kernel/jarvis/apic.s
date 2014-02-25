@@ -1,7 +1,7 @@
 org 0x10000
 [bits 64]
 
-;_____________int9h>>int21h__________________
+;_____________irq 9h>>int 21h__________________
 keyboard:
 mov rax,keyboardisr
 mov edi,0x1210
@@ -14,7 +14,8 @@ mov dword [edi+0x10],0x21
 mov dword [edi],0x10+2*0x1+1
 mov dword [edi+0x10],0
 
-jmp keyboarddone
+jmp endofkeyboard
+
 
 keyboardisr:
 push rax
@@ -40,11 +41,11 @@ pop rbx
 pop rax
 iretq
 
-keyboarddone:
+endofkeyboard:
 ;________________________________________
 
 
-jmp interruptdone
+jmp endofinterrupt
 
 ;___________________________________
 idtinstaller:
@@ -61,5 +62,5 @@ ret
 ;____________________________________
 
 
-interruptdone:
+endofinterrupt:
 sti
