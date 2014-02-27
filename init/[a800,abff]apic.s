@@ -49,7 +49,7 @@ localapicinitialization:
 
     ;[+80]=0              (task priority=0)
     xor eax,eax
-    mov [edi+0x80],eax    ;(cr3=0<<4)
+    mov [edi+0x80],eax    ;(cr8=0<<4)
 
     ;[+320]=10000         (disable timer interrupt)
     mov eax,0x10000

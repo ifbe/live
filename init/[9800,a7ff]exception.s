@@ -83,8 +83,72 @@ mov rax,exception1e
 call idtinstall
 mov rax,exception1f
 call idtinstall
+mov rax,exception20
+call idtinstall
+mov rax,exception21
+call idtinstall
+mov rax,exception22
+call idtinstall
+mov rax,exception23
+call idtinstall
+mov rax,exception24
+call idtinstall
+mov rax,exception25
+call idtinstall
+mov rax,exception26
+call idtinstall
+mov rax,exception27
+call idtinstall
+mov rax,exception28
+call idtinstall
+mov rax,exception29
+call idtinstall
+mov rax,exception2a
+call idtinstall
+mov rax,exception2b
+call idtinstall
+mov rax,exception2c
+call idtinstall
+mov rax,exception2d
+call idtinstall
+mov rax,exception2e
+call idtinstall
+mov rax,exception2f
+call idtinstall
+mov rax,exception30
+call idtinstall
+mov rax,exception31
+call idtinstall
+mov rax,exception32
+call idtinstall
+mov rax,exception33
+call idtinstall
+mov rax,exception34
+call idtinstall
+mov rax,exception35
+call idtinstall
+mov rax,exception36
+call idtinstall
+mov rax,exception37
+call idtinstall
+mov rax,exception38
+call idtinstall
+mov rax,exception39
+call idtinstall
+mov rax,exception3a
+call idtinstall
+mov rax,exception3b
+call idtinstall
+mov rax,exception3c
+call idtinstall
+mov rax,exception3d
+call idtinstall
+mov rax,exception3e
+call idtinstall
+mov rax,exception3f
+call idtinstall
 
-mov ecx,0xe0
+mov ecx,0xc0
 external:
 mov rax,unknown
 call idtinstall
@@ -221,6 +285,134 @@ jmp lastwords
 
 exception1f:
 mov byte [killer],0x1f
+jmp lastwords
+
+exception20:
+mov byte [killer],0x20
+jmp lastwords
+
+exception21:
+mov byte [killer],0x21
+jmp lastwords
+
+exception22:
+mov byte [killer],0x22
+jmp lastwords
+
+exception23:
+mov byte [killer],0x23
+jmp lastwords
+
+exception24:
+mov byte [killer],0x24
+jmp lastwords
+
+exception25:
+mov byte [killer],0x25
+jmp lastwords
+
+exception26:
+mov byte [killer],0x26
+jmp lastwords
+
+exception27:
+mov byte [killer],0x27
+jmp lastwords
+
+exception28:
+mov byte [killer],0x28
+jmp lastwords
+
+exception29:
+mov byte [killer],0x29
+jmp lastwords
+
+exception2a:
+mov byte [killer],0x2a
+jmp lastwords
+
+exception2b:
+mov byte [killer],0x2b
+jmp lastwords
+
+exception2c:
+mov byte [killer],0x2c
+jmp lastwords
+
+exception2d:
+mov byte [killer],0x2d
+jmp lastwords
+
+exception2e:
+mov byte [killer],0x2e
+jmp lastwords
+
+exception2f:
+mov byte [killer],0x2f
+jmp lastwords
+
+exception30:
+mov byte [killer],0x30
+jmp lastwords
+
+exception31:
+mov byte [killer],0x31
+jmp lastwords
+
+exception32:
+mov byte [killer],0x32
+jmp lastwords
+
+exception33:
+mov byte [killer],0x33
+jmp lastwords
+
+exception34:
+mov byte [killer],0x34
+jmp lastwords
+
+exception35:
+mov byte [killer],0x35
+jmp lastwords
+
+exception36:
+mov byte [killer],0x36
+jmp lastwords
+
+exception37:
+mov byte [killer],0x37
+jmp lastwords
+
+exception38:
+mov byte [killer],0x38
+jmp lastwords
+
+exception39:
+mov byte [killer],0x39
+jmp lastwords
+
+exception3a:
+mov byte [killer],0x3a
+jmp lastwords
+
+exception3b:
+mov byte [killer],0x3b
+jmp lastwords
+
+exception3c:
+mov byte [killer],0x3c
+jmp lastwords
+
+exception3d:
+mov byte [killer],0x3d
+jmp lastwords
+
+exception3e:
+mov byte [killer],0x3e
+jmp lastwords
+
+exception3f:
+mov byte [killer],0x3f
 jmp lastwords
 
 unknown:
@@ -488,11 +680,11 @@ dq 0,"stack+56"
 dq 0,0
 dq 0,0
 killer:dq 0,"killer:"
-dq 0,"came"
+address:dq 0,"address:"
 dq 0,0
 dq 0,0
-address:dq 0,"there:"
-dq 0,"suddenly"
+dq 0,"i am"
+dq 0,"dead"
 endofbuffer:
 
 

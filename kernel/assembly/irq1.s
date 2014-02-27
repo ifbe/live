@@ -1,50 +1,70 @@
 org 0x10000
 [bits 64]
 
-;_____________int9h>>int21h__________________
+;_____________int21h__________________
 keyboard:
-mov rax,keyboardisr
-;mov edi,0x1090
+mov rax,serverofkeyboard
 mov edi,0x1210
 call idtinstaller
 
-xor rax,rax
-mov [0xfe0],rax
-mov [0xfe8],rax
-mov [0xff0],rax
-mov [0xff8],rax
+;enable
+mov edi,0xfec00000
+mov dword [edi],0x10+        2*1
+mov dword [edi+0x10],0x21
+mov dword [edi],0x10+1+      2*1
+mov dword [edi+0x10],0
+;_____________________________________
 
-in al,0x21
-and al,0xfd     ;enable
-out 0x21,al
 
-jmp keyboarddone
-
-keyboardisr:
-push rax
-push rbx
-in al,0x60
-cmp al,0x80
-ja .leave
-
-mov byte [0xff0],0xff           ;标志
-mov ebx,[0xff8]         ;信息
-mov [ebx],al
-inc ebx
-cmp bx,0xfe0
-jb .putback
-mov ebx,0x800
-.putback:
-mov [0xff8],ebx
-.leave:
-mov al,0x20
-out 0x20,al
-pop rbx
-pop rax
-iretq
-
-keyboarddone:
-;________________________________________
-
+sti
 death:hlt
 jmp death
+
+
+;______________________________________
+serverofkeyboard:
+in al,0x60                    ;this must be done
+call changecolor
+
+mov edi,0xfee000b0
+mov dword [edi],0
+
+iretq
+;__________________________________
+
+
+;___________________________________
+changecolor:
+rol dword [color],1
+mov eax,[color]
+mov bl,[0x3019]
+shr bl,3
+movzx ebx,bl
+mov ecx,0x80000
+mov edi,[0x3028]
+
+.next:
+mov [edi],eax
+add edi,ebx
+loop .next
+
+ret
+;________________________________________
+color:dd 0xff
+
+
+;___________________________________
+idtinstaller:
+stosw
+mov dword [edi],0x8e000008
+add edi,4
+shr rax,16
+stosw
+shr rax,16
+stosd
+xor eax,eax
+stosd
+ret
+;____________________________________
+
+

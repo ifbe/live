@@ -1,7 +1,14 @@
 org 0x10000
 [bits 64]
+;_____________apic timer_____________________
+;mov edi,0xfee00000
+;mov dword [edi+0x320],0x20           ;timer vector
+;mov dword [edi+0x3e0],3                ;devide value
+;mov dword [edi+0x380],0xffffff          ;init value
+;____________________________________
 
-;_____________irq 9h>>int 21h__________________
+
+;_____________int 21h__________________
 keyboard:
 mov rax,keyboardisr
 mov edi,0x1210

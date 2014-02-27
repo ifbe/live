@@ -17,46 +17,24 @@ mov [0xc000],rax
     sti
 
 ;______________________________________________
-varity:
-    xor rax,rax
-    mov al,[0x3019]        ;bit/点
-    mov [bitpp],eax
-
-    shr al,3               ;byte/点
-    mov [bytepp],eax
-
-    shl eax,10             ;bytes/line
-    mov [oneline],eax
-
-    shl eax,4              ;bytes/16line
-    mov [sixteenline],eax
-
+prepare:
     xor rax,rax
     mov [0xff0],rax         ;keyboard buffer end
     mov ah,8
     mov [0xff8],rax
     mov r14,rax             ;r14 memory pointer
     xor r15,r15             ;r15 offset pointer
-    call clearbuffer
 
-    jmp screen
-;_______________________________________
-
-
-bytepp:dd 0
-oneline:dd 0
-bitpp:dd 0
-sixteenline:dd 0
-
-;__________________________________
-clearbuffer:
     mov edi,0x800
     mov [0xff8],edi
     xor rax,rax
     mov ecx,0xfe
     rep stosq
-    ret
-;_________________________________
+
+    jmp screen
+;_______________________________________
+
+
 
 
 ;_________________main____________________
@@ -109,21 +87,15 @@ jmp other
 
 ;part4:display........
 screen:
-    background:
-    call ramdump
-    foreground:
-    call console
-    writescreen:
-    call mouse
-    mov esi,0x100000
-    mov edi,[0x3028]
-    mov cl,[0x3019]
-    movzx ecx,cl
-    shl ecx,12                      ;*1024*256/8/8
-    lea ecx,[2*ecx+ecx]
-    cld
-    rep movsq
 
+background:
+    call ramdump
+foreground:
+    call console
+somethingelse:
+    call mouse
+writetoscreen:
+    call composite
 jmp forever
 ;_________________________________
 
@@ -272,22 +244,6 @@ poweroff:db "poweroff "
 
 ;______________________
 ismov:
-;cmp dword [esi+4],"rax,"    ;48b8
-;cmp dword [esi+4],"rcx,"    ;48b9
-;cmp dword [esi+4],"rdx,"    ;48ba
-;cmp dword [esi+4],"rbx,"    ;48bb
-;cmp dword [esi+4],"rsp,"    ;48bc
-;cmp dword [esi+4],"rbp,"    ;48bd
-;cmp dword [esi+4],"rsi,"    ;48be
-;cmp dword [esi+4],"rdi,"    ;48bf
-;cmp dword [esi+4],"r8,"    ;49b8
-;cmp dword [esi+4],"r9,"    ;49b9
-;cmp dword [esi+4],"r10,"    ;49ba
-;cmp dword [esi+4],"r11,"    ;49bb
-;cmp dword [esi+4],"r12,"    ;49bc
-;cmp dword [esi+4],"r13,"    ;49bd
-;cmp dword [esi+4],"r14,"    ;49be
-;cmp dword [esi+4],"r15,"    ;49bf
 cmp dword [esi+4],"r14,"    ;49be
 jne .maybef
 mov byte [.tobemoved+1],0xbe
@@ -388,12 +344,12 @@ mov bl,0x40
 div bl
 
 movzx ebx,ah           ;余数
-imul ebx,[bitpp]
+imul ebx,32
 shl ebx,1
 add edi,ebx
 
 movzx eax,al           ;商
-imul eax,[sixteenline]
+imul eax,4*1024*16
 add edi,eax
 call utf8
 ret
@@ -404,15 +360,10 @@ ret
 picture:
 mov rsi,[jpegbase]
 mov edi,0x100000
-;mov edi,[0x3028]
-mov cl,[0x3019]
-movzx ecx,cl
-shl ecx,12                      ;*1024*256/8/8
-lea ecx,[2*ecx+ecx]
-cld
-rep movsq
+mov ecx,1024*768
 
-call mouse
+cld
+rep movsd
 
 ret
 
@@ -497,7 +448,7 @@ mov dword [linecount],0
 dumpline:
     mov edi,0x100000        ;locate destination
     mov eax,[linecount]
-    imul eax,[sixteenline]
+    imul eax,4*1024*16
     add edi,eax
     call dumphex
 dumpwhat:
@@ -519,32 +470,50 @@ ret
 ;_____________________________________
 
 
+;______________________________________
+composite:
+    mov esi,0x100000
+    mov edi,[0x3028]
+    mov bl,[0x3019]
+    shr bl,3
+    movzx ebx,bl
+    mov ecx,1024*768
+
+.continue:
+    lodsd
+    mov [edi],eax
+    add edi,ebx
+    loop .continue
+
+ret
+;________________________________________
+
+
 ;___________________________________________
 console:
 mov edi,0x100000
-;add edi,[sixteenline]
-;add edi,[sixteenline]
 
-;mov eax,[bytepp]
-;shl eax,5
-;add edi,eax
+mov eax,1024*4
+shl eax,6
+add edi,eax
+
 mov [edibackground],edi
 mov [ediforeground],edi
 
-mov edx,768
+mov edx,640
 .second:
 mov edi,[edibackground]
 mov ecx,1024
 .first:
-    shr byte [edi],2        ;blue
+    shr byte [edi],1        ;blue
     add byte [edi],0x20
-    shr byte [edi+1],2        ;green
+    shr byte [edi+1],1        ;green
 ;    add byte [edi+1],0x1
-    shr byte [edi+2],2        ;red
+    shr byte [edi+2],1        ;red
 ;    add byte [edi+2],0x1
-    add edi,[bytepp]
+    add edi,4
 loop .first
-mov eax,[oneline]
+mov eax,1024*4
 add [edibackground],eax
 dec edx
 jnz .second
@@ -565,7 +534,7 @@ mov dword [backcolor],0xffffffff
 mov dword [looptimes],0
 .tmd:
     mov edi,[ediforeground]
-    mov eax,[sixteenline]
+    mov eax,4*1024*16
     ;add edi,eax
     imul eax,[looptimes]
     add edi,eax
@@ -698,27 +667,20 @@ char:
         je .pointdone
         mov dword [edi],edx
       .pointdone:
-        add edi,[bytepp]
+        add edi,4
         loop .yidian
-    sub edi,[bitpp]           ;每个字的行头
-    add edi,[oneline]            ;下1行
+    sub edi,32           ;每个字的行头
+    add edi,1024*4            ;下1行
     pop rcx
     loop .yihang
 
-    add edi,[bitpp]            ;下个字的行头
-    sub edi,[sixteenline]            ;上16行;现在edi=下个字开头
+    add edi,32            ;下个字的行头
+    sub edi,4*1024*16            ;上16行;现在edi=下个字开头
 
     mov eax,edi
     mov ebx,0x100000        ;ebx=vesabase
     ;mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
-
-    cmp byte [bytepp],4
-    je .modfour                  ;bpp==4
-    and eax,0x000003ff          ;bpp==3则mod 1024
-    cmp eax,0
-    jne .nochange
-    jmp .change
 
 .modfour:
     and eax,0x00000fff           ;mod4096
@@ -726,8 +688,8 @@ char:
     jne .nochange
 
 .change:
-    add edi,[sixteenline]
-    sub edi,[oneline]
+    add edi,4*1024*16
+    sub edi,1024*4
 
 .nochange:
     pop rcx
@@ -758,36 +720,27 @@ utf8:
         jnc .transparent
         mov dword [edi],0xffffffff
       .transparent:
-        add edi,[bytepp]
+        add edi,4
         loop .yidian
-    sub edi,[bitpp]           ;每个字的行头
-    sub edi,[bitpp]           ;每个字的行头
-    add edi,[oneline]            ;下1行
+    sub edi,64           ;每个字的行头
+    add edi,1024*4            ;下1行
     pop rcx
     loop .yihang
 
-    add edi,[bitpp]            ;下个字的行头
-    add edi,[bitpp]            ;下个字的行头
-    sub edi,[sixteenline]            ;上16行;现在edi=下个字开头
+    add edi,64            ;下个字的行头
+    sub edi,4*1024*16            ;上16行;现在edi=下个字开头
 
     mov eax,edi
     mov ebx,0x100000        ;ebx=vesabase
     ;mov ebx,[0x3028]        ;ebx=vesabase
     sub eax,ebx             ;eax=相对距离
 
-    cmp byte [bytepp],4
-    je .modfour                  ;bpp==4
-    and eax,0x000003ff          ;bpp==3则mod 1024
-    cmp eax,0
-    jne .nochange
-    jmp .change
-
 .modfour:
     and eax,0x00000fff           ;mod4096
     cmp eax,0
 .change:
-    add edi,[sixteenline]
-    sub edi,[oneline]
+    add edi,4*1024*16
+    sub edi,1024*4
 .nochange:
     pop rcx
     ret              ;edi指向下一个字

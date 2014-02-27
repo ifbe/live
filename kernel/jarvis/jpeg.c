@@ -81,17 +81,16 @@ u64 start()
 
 void picture()
 {
-    unsigned char* video=(unsigned char*)offset;
+    unsigned char* edi=(unsigned char*)offset;
     unsigned char* p=nj.rgb;
-    char bpp=(*(char*)0x3019)/8;
     int i;
 
     for(i=0;i<nj.width*nj.height;i++)
     {
-        *video=*(p+2);
-        *(video+1)=*(p+1);
-        *(video+2)=*p;
-        video+=(u64)bpp;
+        *edi=*(p+2);
+        *(edi+1)=*(p+1);
+        *(edi+2)=*p;
+        edi+=4;
         p+=3;
     }
 }

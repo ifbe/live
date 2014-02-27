@@ -108,7 +108,8 @@ rtcisr:
 push rax
 inc qword [0x7f8]       ;信息
 mov byte [0x7f0],0xff   ;标志
-mov al,0x8c             ;read or no more interrupt
+
+mov al,0x8c             ;these must be done
 out 0x70,al
 in al,0x71
 

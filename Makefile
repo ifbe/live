@@ -6,28 +6,28 @@ a:
 	make -s -C init
 	make -s -C kernel/assembly
 	make -s image
-	make -s test
+	make -s qemu
 c:
 	make -s clean
 	make -s -C load
 	make -s -C init
 	make -s -C kernel/c
 	make -s image
-	make -s test
+	make -s qemu
 j:
 	make -s clean
 	make -s -C load
 	make -s -C init
 	make -s -C kernel/jarvis
 	make -s image
-	make -s test
+	make -s qemu
 m:
 	make -s clean
 	make -s -C load
 	make -s -C init
 	make -s -C kernel/multitask
 	make -s image
-	make -s test
+	make -s qemu
 image:
 	touch load/load
 	touch init/init
@@ -46,7 +46,7 @@ push:
 	git add --all .
 	git commit -a
 	git push
-test:
+qemu:
 	qemu-kvm \
 	-smp 2 \
 	-m 512 \
