@@ -201,7 +201,7 @@ jmp endofapic
 
 
 paddingofapic:
-times 0x400-(paddingofapic-startofapic) db 0
+times 0x800-(paddingofapic-startofapic) db 0
 
 
 endofapic:

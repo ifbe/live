@@ -35,7 +35,7 @@ out 0xa1,al
 jmp endofpic
 
 paddingofpic:
-times 0x400-(paddingofpic-startofpic) db 0
+times 0x800-(paddingofpic-startofpic) db 0
 
 
 endofpic:
