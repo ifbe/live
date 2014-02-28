@@ -1,6 +1,20 @@
 startofdisk:
 [BITS 64]
 ;________________________________
+emptyfordisk:
+mov edi,0x5000
+
+.continue:
+	cmp dword [edi+8],0
+	je disk
+	cmp dword [edi+8],"ahci"
+	je disk
+
+add edi,0x10
+cmp edi,0x6000
+jb .continue
+jmp endofdisk
+
 disk:
     mov esi,0x5008
 searchdisk:
@@ -45,7 +59,8 @@ disknew:
 
 
 paddingofdisk:
-times 0x400-(paddingofdisk-startofdisk) db 0
+times 0x7ff-(paddingofdisk-startofdisk) db 0
 
 
 endofdisk:
+ret

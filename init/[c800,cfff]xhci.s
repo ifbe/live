@@ -1,6 +1,25 @@
 startofusb:
 [BITS 64]
 ;________________________________
+emptyforusb:
+mov edi,0x5000
+
+.continue:
+	cmp dword [edi+8],0
+	je usb
+	cmp dword [edi+8],"xhci"
+	je usb
+	cmp dword [edi+8],"ehci"
+	je usb
+	cmp dword [edi+8],"?hci"
+	je usb
+
+add edi,0x10
+cmp edi,0x6000
+jb .continue
+jmp endofusb
+
+
 usb:
     mov esi,0x500a
 .searchusb:
@@ -50,6 +69,7 @@ usbnew:
 ;_____________________________________
 
 paddingofusb:
-times 0x400-(paddingofusb-startofusb) db 0
+times 0x7ff-(paddingofusb-startofusb) db 0
 
 endofusb:
+ret

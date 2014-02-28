@@ -2,12 +2,11 @@
 [BITS 64]
 ;____________________________________
 start:
-mov esi,0x20000
-mov edi,0x100000
-mov ecx,0x2000
-rep movsq
+    mov esi,0x20000
+    mov edi,0x100000
+    mov ecx,0x2000
+    rep movsq
 
-;________________________________________
 jpegdecode:                   ;位置无关
     cli
     mov rdx,0x100000            ;eax 传参
@@ -16,7 +15,6 @@ jpegdecode:                   ;位置无关
 mov [0xc000],rax
     sti
 
-;______________________________________________
 prepare:
     xor rax,rax
     mov [0xff0],rax         ;keyboard buffer end
@@ -179,6 +177,7 @@ f3:
 f4:
     jmp screen
 
+;_______________________________________
 esckey db 0
 commandkey db 0
 tabkey db 0
@@ -187,7 +186,6 @@ shiftkey db 0
 ctrlkey db 0
 altkey db 0
 superkey db 0
-;_______________________________________
 
 
 ;_____________________________________
@@ -195,8 +193,8 @@ scroll:
 cmp byte [linenumber],0x1f
 jb .easy
 
-    mov esi,line2
-    mov edi,line1
+    mov esi,line1
+    mov edi,line0
     mov ecx,64*0x1f
     rep movsb
     mov byte [length],0
@@ -206,7 +204,7 @@ jb .easy
     inc byte [linenumber]
     mov eax,[linenumber]
     shl eax,6
-    mov edi,message
+    mov edi,line0
     add edi,eax
     mov [changebackspace+1],edi
     mov [changeother+1],edi
@@ -219,7 +217,7 @@ jb .easy
 understand:
 mov esi,[linenumber]
 shl esi,6
-add esi,message
+add esi,line0
 mov [command],esi
 
 mov edi,poweroff
@@ -317,7 +315,7 @@ jae screen
 
 call translate
 changeother:
-mov ebx,line1
+mov ebx,line0
 add ebx,[length]
 mov [ebx],al
 inc byte [length]
@@ -351,7 +349,18 @@ add edi,ebx
 movzx eax,al           ;商
 imul eax,4*1024*16
 add edi,eax
-call utf8
+
+mov ecx,16
+.first:
+	xor edx,edx
+	.second:
+		not dword [edi+edx]
+		add edx,4
+		cmp edx,64
+		jb .second
+	add edi,4*1024
+	loop .first
+
 ret
 ;____________________________________
 
@@ -366,9 +375,8 @@ cld
 rep movsd
 
 ret
-
-jpegbase:dq 0
 ;_________________________________________
+jpegbase:dq 0
 
 
 ;_______________________________
@@ -379,7 +387,7 @@ dumpanscii:
 mov ecx,0x40
 .dump:
     mov dword [frontcolor],0xff00
-    mov esi,0xb200
+    mov al,0x20
     call char
 
     mov al,[r14]
@@ -389,12 +397,9 @@ mov ecx,0x40
     jb .visiable
 
     .blank:
-    mov esi,0xb200
-    jmp .normal
+    mov al,0x20
 
     .visiable:
-    call number
-    .normal:
     call char
     inc r14
 
@@ -419,11 +424,9 @@ add r14,4
   .dump:
   mov al,[save32]
   shr al,4
-  call number
   call char
   mov al,[save32]
   and al,0xf
-  call number
   call char
   shr dword [save32],8
   dec ch
@@ -434,9 +437,8 @@ dec cl
 jnz .dump4
 
 ret
-
-save32:dd 0
 ;_______________________________
+save32:dd 0
 
 
 ;______________________________
@@ -458,10 +460,48 @@ cmp byte [linecount],0x30
 jb dumpline
 
 pop r14
-ret
 
-linecount:dd 0
+call displayaddress
+
+ret
 ;___________________________________
+linecount:dd 0
+
+
+;________________________________
+displayaddress:
+mov dword [frontcolor],0xffffffff
+
+lea rbx,[r14]
+mov edi,0x100000+4*1024*728+4*888
+call dumprbx
+
+lea rbx,[r14+r15]
+mov edi,0x100000+4*1024*744+4*888
+call dumprbx
+
+ret
+;__________________________________
+
+
+;________________________________
+dumprbx:
+mov ecx,16
+.getaddress:
+	rol rbx,4
+	mov al,bl
+	and al,0x0f
+
+	push rbx
+	push rcx
+	call char
+	pop rcx
+	pop rbx
+
+
+	dec cl
+	jnz .getaddress
+;____________________________________
 
 
 ;___________________________________
@@ -505,11 +545,11 @@ mov edx,640
 mov edi,[edibackground]
 mov ecx,1024
 .first:
-    shr byte [edi],1        ;blue
+    shr byte [edi],2        ;blue
     add byte [edi],0x20
-    shr byte [edi+1],1        ;green
+    shr byte [edi+1],2        ;green
 ;    add byte [edi+1],0x1
-    shr byte [edi+2],1        ;red
+    shr byte [edi+2],2        ;red
 ;    add byte [edi+2],0x1
     add edi,4
 loop .first
@@ -517,17 +557,6 @@ mov eax,1024*4
 add [edibackground],eax
 dec edx
 jnz .second
-
-lea rbx,[r14+r15]
-mov edi,line0+12
-mov cl,16
-.getaddress:
-rol rbx,4
-mov al,bl
-and al,0x0f
-stosb
-dec cl
-jnz .getaddress
 
 mov dword [frontcolor],0xff0000
 mov dword [backcolor],0xffffffff
@@ -538,7 +567,7 @@ mov dword [looptimes],0
     ;add edi,eax
     imul eax,[looptimes]
     add edi,eax
-    mov ebx,message
+    mov ebx,line0
     mov eax,[looptimes]
     shl eax,6
     add ebx,eax
@@ -549,10 +578,10 @@ jb .tmd
 mov dword [backcolor],0
 
 ret
+;________________________________________
 edibackground:dd 0
 ediforeground:dd 0
 looptimes:dd 0
-;________________________________________
 
 
 ;_________________________________
@@ -560,62 +589,18 @@ talk:
 mov cl,64
 .continue:
 mov al,[ebx]
-call number
 call char
 inc ebx
 dec cl
 jnz .continue
 ret
-
-linenumber:dd 0x01
-length:dd 0
-message:
-line0:db "location=>                      time    =>     unknown          "
-;line1:db "              at your service          (.o0.0o.)                "
-line1:times 64 db ' '
-line2:times 64 db ' '
-line3:times 64 db ' '
-line4:times 64 db ' '
-line5:times 64 db ' '
-line6:times 64 db ' '
-line7:times 64 db ' '
-line8:times 64 db ' '
-line9:times 64 db ' '
-linea:times 64 db ' '
-lineb:times 64 db ' '
-linec:times 64 db ' '
-lined:times 64 db ' '
-linee:times 64 db ' '
-linef:times 64 db ' '
-line10:times 64 db ' '
-line11:times 64 db ' '
-line12:times 64 db ' '
-line13:times 64 db ' '
-line14:times 64 db ' '
-line15:times 64 db ' '
-line16:times 64 db ' '
-line17:times 64 db ' '
-line18:times 64 db ' '
-line19:times 64 db ' '
-line1a:times 64 db ' '
-line1b:times 64 db ' '
-line1c:times 64 db ' '
-line1d:times 64 db ' '
-line1e:times 64 db ' '
-line1f:times 64 db ' '
-linenull:times 64 db ' '
 ;__________________________________
-
-
-;_______________________________
-;changed:ax,esi
-number:
-    xor ah,ah
-    shl ax,4
-    mov esi,0xb000                     ;zero
-    add si,ax
-    ret
-;______________________________
+linenumber:dd 0x00
+length:dd 0
+line0:times 64 db ' '
+line1:times 64 db ' '
+lines:times 64*30 db ' '
+linenull:times 64 db ' '
 
 
 ;____________________________________________
@@ -648,6 +633,10 @@ translate:
 char:
     push rbx
     push rcx
+
+    movzx eax,al
+    shl ax,4
+    lea esi,[eax+0xb000]
 
     mov ecx,16           ;16行
 .yihang:
@@ -694,54 +683,8 @@ char:
 .nochange:
     pop rcx
     pop rbx
-    ret              ;edi指向下一个字
 
+    ret              ;edi指向下一个字
+;______________________________________
 backcolor:dd 0
 frontcolor:dd 0xffffffff
-;______________________________________
-
-
-;进:esi,edi
-;出:edi
-;用:
-;变:
-utf8:
-;_______________________________
-    push rcx
-    xor rcx,rcx
-    mov cl,16
-.yihang:
-    xor rax,rax
-    lodsw
-    push rcx
-        mov cl,16
-      .yidian:
-        shr ax,1
-        jnc .transparent
-        mov dword [edi],0xffffffff
-      .transparent:
-        add edi,4
-        loop .yidian
-    sub edi,64           ;每个字的行头
-    add edi,1024*4            ;下1行
-    pop rcx
-    loop .yihang
-
-    add edi,64            ;下个字的行头
-    sub edi,4*1024*16            ;上16行;现在edi=下个字开头
-
-    mov eax,edi
-    mov ebx,0x100000        ;ebx=vesabase
-    ;mov ebx,[0x3028]        ;ebx=vesabase
-    sub eax,ebx             ;eax=相对距离
-
-.modfour:
-    and eax,0x00000fff           ;mod4096
-    cmp eax,0
-.change:
-    add edi,4*1024*16
-    sub edi,1024*4
-.nochange:
-    pop rcx
-    ret              ;edi指向下一个字
-;__________________________________

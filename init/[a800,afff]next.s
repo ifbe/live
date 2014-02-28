@@ -1,5 +1,11 @@
 startofbinary:
 
+mov rdx,0xc000
+call rdx
+
+mov rdx,0xc800
+call rdx
+
 mov rdx,0x10000
 call rdx
 
