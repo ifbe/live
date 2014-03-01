@@ -333,6 +333,11 @@ int find_cmdslot(HBA_PORT *port)
 	return -1;
 } 
 
+void start()
+{
+	read((HBA_PORT*)0xfebf6000,128,0,4,(WORD*)0x100000);
+}
+
 int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 {
 	port->is = (DWORD)-1;		// Clear pending interrupt bits

@@ -28,10 +28,10 @@
 2:
 修改init/init.s([9800,a7ff]exception.s表示内存[9800,a7ff]处为exception.bin)
 3:
-若要kernel/assembly中某个demo:	修改kernel/assembly/Makefile,make a,结束
-若要kernel/c中某个demo       :	修改kernel/c/Makefile和caller.s,make c,结束
-若要小程序jarvis             :	make j,结束
-若要小程序multitask          :	make m,结束
+若要kernel/assembly中某个demo:	修改kernel/assembly/Makefile,make a
+若要kernel/c中某个demo       :	修改kernel/c/Makefile,make c
+若要小程序jarvis             :	make j
+若要小程序multitask          :	make m
 
 使用:
 1:去windows下打开else/bootice

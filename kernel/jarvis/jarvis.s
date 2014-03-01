@@ -12,20 +12,18 @@ jpegdecode:                   ;位置无关
     mov rdx,0x100000            ;eax 传参
     call rdx
     mov [jpegbase],rax        ;return value
-mov [0xc000],rax
     sti
 
 prepare:
-    xor rax,rax
-    mov [0xff0],rax         ;keyboard buffer end
-    mov ah,8
-    mov [0xff8],rax
-    mov r14,rax             ;r14 memory pointer
+    mov r14,0x100000             ;r14 memory pointer
     xor r15,r15             ;r15 offset pointer
 
-    mov edi,0x800
-    mov [0xff8],edi
+    mov rdi,0x800
+    mov [0xff8],rdi
+
     xor rax,rax
+    mov [0xff0],rax         ;keyboard buffer end
+
     mov ecx,0xfe
     rep stosq
 
@@ -98,6 +96,8 @@ jmp forever
 ;_________________________________
 
 
+
+
 ;_____________________________
 left:
 mov rax,r15
@@ -108,6 +108,8 @@ je .left
 dec r15
 jmp screen
     .left:
+    cmp r14,0x800
+    jb screen
     sub r14,0x800
     jmp screen
 
@@ -124,11 +126,13 @@ jmp screen
     jmp screen
 
 up:
-cmp r15,48
+cmp r15,0x40
 jb .up
 sub r15,0x40
 jmp screen
     .up:
+    cmp r14,0x40
+    jb screen
     sub r14,0x40
     jmp screen
 
@@ -141,6 +145,41 @@ jmp screen
     add r14,0x40
     jmp screen
 ;___________________________________
+
+
+
+
+;____________________________________
+enter:
+call understand
+call scroll
+jmp screen
+
+backspace:
+cmp byte [length],0
+jna screen
+
+dec byte [length]
+changebackspace:
+mov eax,line0
+add eax,[length]
+mov byte [eax],' '
+jmp screen
+
+other:
+cmp byte [length],64
+jae screen
+
+call translate
+changeother:
+mov ebx,line0
+add ebx,[length]
+mov [ebx],al
+inc byte [length]
+jmp screen
+;___________________________________
+
+
 
 
 ;___________________________________
@@ -188,6 +227,19 @@ altkey db 0
 superkey db 0
 
 
+
+
+;____________________________
+turnoff:
+mov dx,[0x4fc]
+mov ax,[0x4fe]
+or ax,0x2000
+out dx,ax
+;__________________________
+
+
+
+
 ;_____________________________________
 scroll:
 cmp byte [linenumber],0x1f
@@ -213,74 +265,73 @@ jb .easy
 ;___________________________________
 
 
+
+
 ;___________________________________
 understand:
 mov esi,[linenumber]
 shl esi,6
 add esi,line0
-mov [command],esi
+mov [.saveesi],esi
 
-mov edi,poweroff
+mov edi,.poweroff
 mov ecx,9
 repe cmpsb
 je turnoff
 
-mov esi,[command]
-cmp dword [esi],"mov "
-je ismov
+mov esi,[.saveesi]
+cmp dword [esi],"r14="
+je changer14
 
 
 .notfound:
-mov edi,[command]
+mov edi,[.saveesi]
 mov dword [edi+32],"notf"
 mov dword [edi+36],"ound"
 ret
 ;_________________________________
-command:dd 0
-poweroff:db "poweroff "
+.saveesi:dd 0
+.poweroff:db "poweroff "
+
+
 
 
 ;______________________
-ismov:
-cmp dword [esi+4],"r14,"    ;49be
-jne .maybef
+changer14:
 mov byte [.tobemoved+1],0xbe
-jmp .changeaddress
-
-.maybef:
-cmp dword [esi+4],"r15,"    ;49bf
-jne understand.notfound
-mov byte [.tobemoved+1],0xbf
 
 .changeaddress:
-add esi,8
+add esi,4
 cmp byte [esi],0x20
 je understand.notfound
+
 xor rbx,rbx
 mov ecx,16
+
 .part:
-lodsb                ;get one char
+	lodsb                ;get one char
 
-cmp al,0x30          ;<0x30,error
-jb understand.notfound
-cmp al,0x39          ;>0x39,maybe a~f
-ja .atof
-sub al,0x30          ;now its certainly 0~9
-jmp .generate
+	cmp al,0x30          ;<0x30,error
+	jb understand.notfound
+	cmp al,0x39          ;>0x39,maybe a~f
+	ja .atof
+	sub al,0x30          ;now its certainly 0~9
+	jmp .generate
 
-.atof:
-cmp al,0x61          ;[0x40,0x60],error
-jb understand.notfound
-cmp al,0x66          ;>0x66,error
-ja understand.notfound
-sub al,0x57          ;now its certainly a~f
+	.atof:
+	cmp al,0x61          ;[0x40,0x60],error
+	jb understand.notfound
+	cmp al,0x66          ;>0x66,error
+	ja understand.notfound
+	sub al,0x57          ;now its certainly a~f
 
-.generate:
-add bl,al
-cmp byte [esi],0x20
-je .finish
-shl rbx,4
-loop .part
+	.generate:
+	add bl,al
+	cmp byte [esi],0x20
+	je .finish
+	shl rbx,4
+
+	loop .part
 
 .finish:
 mov [.tobemoved+2],rbx
@@ -292,44 +343,6 @@ ret
 ;_________________________
 
 
-;____________________________________
-enter:
-call understand
-call scroll
-jmp screen
-
-backspace:
-cmp byte [length],0
-jna screen
-
-dec byte [length]
-changebackspace:
-mov eax,line1
-add eax,[length]
-mov byte [eax],' '
-jmp screen
-
-other:
-cmp byte [length],64
-jae screen
-
-call translate
-changeother:
-mov ebx,line0
-add ebx,[length]
-mov [ebx],al
-inc byte [length]
-jmp screen
-;___________________________________
-
-
-;____________________________
-turnoff:
-mov dx,[0x4fc]
-mov ax,[0x4fe]
-or ax,0x2000
-out dx,ax
-;__________________________
 
 
 ;_____________________________________
@@ -365,6 +378,8 @@ ret
 ;____________________________________
 
 
+
+
 ;____________________________________________
 picture:
 mov rsi,[jpegbase]
@@ -377,6 +392,8 @@ rep movsd
 ret
 ;_________________________________________
 jpegbase:dq 0
+
+
 
 
 ;_______________________________
@@ -407,6 +424,8 @@ dec cl
 jnz .dump
 ret
 ;_______________________________
+
+
 
 
 ;_______________________________
@@ -441,6 +460,8 @@ ret
 save32:dd 0
 
 
+
+
 ;______________________________
 ramdump:
 push r14
@@ -468,6 +489,8 @@ ret
 linecount:dd 0
 
 
+
+
 ;________________________________
 displayaddress:
 mov dword [frontcolor],0xffffffff
@@ -482,6 +505,8 @@ call dumprbx
 
 ret
 ;__________________________________
+
+
 
 
 ;________________________________
@@ -504,10 +529,14 @@ mov ecx,16
 ;____________________________________
 
 
+
+
 ;___________________________________
 donothing:
 ret
 ;_____________________________________
+
+
 
 
 ;______________________________________
@@ -527,6 +556,8 @@ composite:
 
 ret
 ;________________________________________
+
+
 
 
 ;___________________________________________
@@ -571,7 +602,7 @@ mov dword [looptimes],0
     mov eax,[looptimes]
     shl eax,6
     add ebx,eax
-    call talk
+    call message
 inc byte [looptimes]
 cmp byte [looptimes],0x20
 jb .tmd
@@ -584,8 +615,10 @@ ediforeground:dd 0
 looptimes:dd 0
 
 
+
+
 ;_________________________________
-talk:
+message:
 mov cl,64
 .continue:
 mov al,[ebx]
@@ -593,6 +626,7 @@ call char
 inc ebx
 dec cl
 jnz .continue
+
 ret
 ;__________________________________
 linenumber:dd 0x00
@@ -601,6 +635,8 @@ line0:times 64 db ' '
 line1:times 64 db ' '
 lines:times 64*30 db ' '
 linenull:times 64 db ' '
+
+
 
 
 ;____________________________________________
@@ -623,6 +659,8 @@ translate:
 .finish:
     ret
 ;__________________________________________
+
+
 
 
 ;进:esi,edi
