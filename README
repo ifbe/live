@@ -13,25 +13,23 @@
 [10000,1ffff]:kernel
 [20000,2ffff]:temp
 [30000,3ffff]:temp1
+
 [40000,8ffff]:jpeg
 
 [90000,90fff]:page map level4
 [91000,91fff]:page directory pointer
-[92000,92fff]:page directory 1
-[93000,93fff]:page directory 2
-[94000,94fff]:page directory 3
-[95000,95fff]:page directory 4
+[92000,92fff]:page directory 1,2,3,4
 
 编译：
 1:
-修改load/Makefile(默认int13.s(读取磁盘[8000,87fff]到内存相同位置))
+改load/Makefile(默认int13.s(读取磁盘[8000,87fff]到内存相同位置))
 2:
-修改init/init.s([9800,a7ff]exception.s表示内存[9800,a7ff]处为exception.bin)
+改init/init.s([9800,a7ff]exception.s表示内存[9800,a7ff]处为exception.bin)
 3:
-若要kernel/assembly中某个demo:	修改kernel/assembly/Makefile,make a
-若要kernel/c中某个demo       :	修改kernel/c/Makefile,make c
-若要小程序jarvis             :	make j
-若要小程序multitask          :	make m
+要kernel/assembly中某个demo:	改kernel/assembly/Makefile,make a
+要kernel/c中某个demo       :	改kernel/c/Makefile,make c
+要小程序jarvis             :	make j
+要小程序multitask          :	make m
 
 使用:
 1:去windows下打开else/bootice
