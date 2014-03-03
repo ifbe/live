@@ -2,7 +2,7 @@ org 0x10000
 [bits 64]
 
 ;_____________int9h>>int21h__________________
-keyboard:
+;keyboard:
 mov rax,keyboardisr
 ;mov edi,0x1090
 mov edi,0x1210

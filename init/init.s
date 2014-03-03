@@ -6,5 +6,3 @@
 %include "[a000,a7ff]apic.s"
 %include "[a800,afff]next.s"
 %include "[b000,bfff]anscii.s"
-%include "[c000,c7ff]ahci.s"
-%include "[c800,cfff]xhci.s"

@@ -9,7 +9,7 @@ org 0x10000
 
 
 ;_____________int 21h__________________
-keyboard:
+;keyboard:
 mov rax,keyboardisr
 mov edi,0x1210
 call idtinstaller

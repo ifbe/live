@@ -35,168 +35,95 @@ prepare:
 
 ;_________________main____________________
 forever:
-hlt                     ;wait for keyboard interrupt
-cmp byte [0xff0],0
-je forever              ;its not keyboard interrupt
-mov byte [0xff0],0      ;clear keyboard flag
+hlt			;	sleep
+cmp byte [0xff0],0	;	(keyboard interrupt)?
+je forever		;	no{sleep again}
 
-mov eax,[0xff8]
-cmp ax,0x800
-je forever
-dec eax
-mov al,[eax]
+			;	yes{
+mov byte [0xff0],0	;		clear signal
+mov eax,[0xff8]		;		pointer=[0xff8]
+cmp ax,0x800		;		(pointer=0x800(buffer head))?
+je forever		;		yes{sleep again}
+			;		no{
+dec eax			;			pointer-1
+mov al,[eax]		;			getdata
 
-switchkey:
+keyboard:
+jmp switchkey		;			switchkey
 
-;part1:arrowkey........
-cmp al,0x4b
-je left
-cmp al,0x4d
-je right
-cmp al,0x48
-je up
-cmp al,0x50
-je down
-
-;part2:specialkey........
-;cmp al,0x01
-;je esc
-cmp al,0x1d
-je ctrl
-cmp al,0x3b
-je f1
-cmp al,0x3c
-je f2
-cmp al,0x3d
-je f3
-cmp al,0x3e
-je f4
-cmp al,0x0f
-je tab
-
-;part3:content........
-cmp al,0x1c
-je enter
-cmp al,0x0e
-je backspace
-jmp other
-
-;part4:display........
 screen:
+call composite		;			print
 
-background:
-    call ramdump
-foreground:
-    call console
-somethingelse:
-    call mouse
-writetoscreen:
-    call composite
 jmp forever
+			;		}
+			;	}
 ;_________________________________
 
 
 
+;_______________________________________________________________________________
+switchkey:
 
-;_____________________________
-left:
-mov rax,r15
-mov bl,0x40
-div bl
-cmp ah,0
-je .left
-dec r15
-jmp screen
-    .left:
-    cmp r14,0x800
-    jb screen
-    sub r14,0x800
+;specialkey........	;	(al)?
+cmp al,0x3b
+je f1			;	0x3b:f1
+cmp al,0x3c
+je f2			;	0x3c:f2
+cmp al,0x3d
+je f3			;	0x3d:f3
+cmp al,0x3e
+je f4			;	0x3e:f4
+cmp al,0x01
+je esc			;	0x01:esc
+cmp al,0x1d
+je ctrl			;	0x1d:ctrl
+cmp al,0x38
+je alt			;	0x38:alt
+;cmp al,0x3a
+;je capslock		;	0x38:capslock
+;cmp al,0x2a
+;je shift		;	0x38:shift
+;cmp al,0x0f
+;je tab			;	0x0f:tab
+;cmp al,0x5b
+;je super		;	0x0f:super
+
+nextswitch:
+jmp consoleswitch
+jmp f1switch
+
+
+f1:
+    mov dword [background+1],ramdump-(background+5)              ;selfmodify
+    ;mov dword [nextswitch+1],f1switch-(nextswitch+5)              ;selfmodify
+    jmp screen
+f2:
+    mov dword [background+1],picture-(background+5)              ;selfmodify
+    ;mov dword [nextswitch+1],f2switch-(nextswitch+5)              ;selfmodify
+    jmp screen
+f3:
+    jmp screen
+f4:
     jmp screen
 
-right:
-mov rax,r15
-mov bl,0x40
-div bl
-cmp ah,0x3f
-je .right
-inc r15
-jmp screen
-    .right:
-    add r14,0x800
-    jmp screen
 
-up:
-cmp r15,0x40
-jb .up
-sub r15,0x40
-jmp screen
-    .up:
-    cmp r14,0x40
-    jb screen
-    sub r14,0x40
-    jmp screen
-
-down:
-cmp r15,0xbbf
-ja .down
-add r15,0x40
-jmp screen
-    .down:
-    add r14,0x40
-    jmp screen
-;___________________________________
-
-
-
-
-;____________________________________
-enter:
-call understand
-call scroll
-jmp screen
-
-backspace:
-cmp byte [length],0
-jna screen
-
-dec byte [length]
-changebackspace:
-mov eax,line0
-add eax,[length]
-mov byte [eax],' '
-jmp screen
-
-other:
-cmp byte [length],64
-jae screen
-
-call translate
-changeother:
-mov ebx,line0
-add ebx,[length]
-mov [ebx],al
-inc byte [length]
-jmp screen
-;___________________________________
-
-
-
-
-;___________________________________
 ctrl:
 inc byte [ctrlkey]
 test byte [ctrlkey],1
 jnz .off
     .on:
     mov dword [foreground+1],console-(foreground+5)              ;selfmodify
+    mov dword [nextswitch+1],consoleswitch-(nextswitch+5)        ;selfmodify
     jmp screen
     .off:
     mov dword [foreground+1],donothing-(foreground+5)            ;selfmodify
+    mov dword [nextswitch+1],f1switch-(nextswitch+5)              ;selfmodify
     jmp screen
 
-tab:
-inc byte [tabkey]
-test byte [tabkey],1
+
+alt:
+inc byte [altkey]
+test byte [altkey],1
 jnz .anscii
     .hex:
     mov dword [dumpwhat-4],dumphex-dumpwhat                      ;selfmodify
@@ -205,18 +132,15 @@ jnz .anscii
     mov dword [dumpwhat-4],dumpanscii-dumpwhat                   ;selfmodify
     jmp screen
 
-f1:
-    mov dword [background+1],ramdump-(background+5)              ;selfmodify
-    jmp screen
-f2:
-    mov dword [background+1],picture-(background+5)              ;selfmodify
-    jmp screen
-f3:
-    jmp screen
-f4:
-    jmp screen
 
-;_______________________________________
+esc:
+turnoff:
+mov dx,[0x4fc]
+mov ax,[0x4fe]
+or ax,0x2000
+out dx,ax
+
+;_______________________________________________________________________________
 esckey db 0
 commandkey db 0
 tabkey db 0
@@ -228,19 +152,150 @@ superkey db 0
 
 
 
+;_______________________________________________________________________________
+f1switch:
+cmp al,0x4b
+je f1left
+cmp al,0x4d
+je f1right
+cmp al,0x48
+je f1up
+cmp al,0x50
+je f1down
 
-;____________________________
-turnoff:
-mov dx,[0x4fc]
-mov ax,[0x4fe]
-or ax,0x2000
-out dx,ax
-;__________________________
+jmp screen
+
+
+f1left:
+mov rax,r15
+mov bl,0x40
+div bl
+cmp ah,0
+je .equal
+dec r15
+jmp screen
+    .equal:
+    cmp r14,0x800
+    jb screen
+    sub r14,0x800
+    jmp screen
+
+f1right:
+mov rax,r15
+mov bl,0x40
+div bl
+cmp ah,0x3f
+je .equal
+inc r15
+jmp screen
+    .equal:
+    add r14,0x800
+    jmp screen
+
+f1up:
+cmp r15,0x40
+jb .below
+sub r15,0x40
+jmp screen
+    .below:
+    cmp r14,0x40
+    jb screen
+    sub r14,0x40
+    jmp screen
+
+f1down:
+cmp r15,0xbbf
+ja .above
+add r15,0x40
+jmp screen
+    .above:
+    add r14,0x40
+    jmp screen
+;___________________________________________________________________
 
 
 
 
-;_____________________________________
+;_______________________________________________
+consoleswitch:
+
+cmp al,0x1c
+je consoleenter
+cmp al,0x0e
+je consolebackspace
+jmp consoleother
+
+
+consoleenter:
+call understand
+jmp screen
+
+consolebackspace:
+cmp byte [length],0
+jna screen
+
+dec byte [length]
+delete1:
+mov eax,line0
+add eax,[length]
+mov byte [eax],' '
+jmp screen
+
+
+consoleother:
+
+cmp byte [length],64
+jae screen
+
+translate:
+    mov esi,0xb800                 ;table
+.search:
+    cmp [esi],al            ;先把al里的扫描码转换成anscii给al
+    je .convert
+    add esi,2
+    cmp esi,0xb880
+    jb .search
+    mov esi,0xb200           ;no,blank
+    jmp .finish
+.convert:
+    inc esi
+    lodsb
+.finish:
+
+record:
+mov ebx,line0
+add ebx,[length]
+mov [ebx],al
+inc byte [length]
+jmp screen
+;_______________________________________________________________________________
+
+
+
+
+;___________________________________
+understand:
+mov esi,[linenumber]
+shl esi,6
+add esi,line0
+mov [saveesi],esi
+
+mov edi,poweroff
+mov ecx,9
+repe cmpsb
+je turnoff
+
+mov esi,[saveesi]
+cmp dword [esi],"r14="
+je changer14
+
+
+.notfound:
+mov edi,[saveesi]
+mov dword [edi+32],"notf"
+mov dword [edi+36],"ound"
+
+
 scroll:
 cmp byte [linenumber],0x1f
 jb .easy
@@ -258,40 +313,14 @@ jb .easy
     shl eax,6
     mov edi,line0
     add edi,eax
-    mov [changebackspace+1],edi
-    mov [changeother+1],edi
+    mov [delete1+1],edi
+    mov [record+1],edi
     mov byte [length],0
-    ret
-;___________________________________
 
-
-
-
-;___________________________________
-understand:
-mov esi,[linenumber]
-shl esi,6
-add esi,line0
-mov [.saveesi],esi
-
-mov edi,.poweroff
-mov ecx,9
-repe cmpsb
-je turnoff
-
-mov esi,[.saveesi]
-cmp dword [esi],"r14="
-je changer14
-
-
-.notfound:
-mov edi,[.saveesi]
-mov dword [edi+32],"notf"
-mov dword [edi+36],"ound"
 ret
 ;_________________________________
-.saveesi:dd 0
-.poweroff:db "poweroff "
+saveesi:dd 0
+poweroff:db "poweroff "
 
 
 
@@ -345,7 +374,43 @@ ret
 
 
 
-;_____________________________________
+;______________________________
+ramdump:
+push r14
+mov dword [frontcolor],0xff00
+mov dword [linecount],0
+
+dumpline:
+    mov edi,0x100000        ;locate destination
+    mov eax,[linecount]
+    imul eax,4*1024*16
+    add edi,eax
+    call dumphex
+dumpwhat:
+
+inc byte [linecount]
+cmp byte [linecount],0x30
+jb dumpline
+
+pop r14
+
+
+
+
+displayaddress:
+mov dword [frontcolor],0xffffffff
+
+lea rbx,[r14]
+mov edi,0x100000+4*1024*728+4*888
+call dumprbx
+
+lea rbx,[r14+r15]
+mov edi,0x100000+4*1024*744+4*888
+call dumprbx
+
+
+
+
 mouse:
 mov esi,0xb8b0                 ;kuang
 mov edi,0x100000
@@ -365,33 +430,18 @@ add edi,eax
 
 mov ecx,16
 .first:
-	xor edx,edx
+xor edx,edx
 	.second:
-		not dword [edi+edx]
-		add edx,4
-		cmp edx,64
-		jb .second
-	add edi,4*1024
-	loop .first
+	not dword [edi+edx]
+	add edx,4
+	cmp edx,64
+	jb .second
+add edi,4*1024
+loop .first
 
 ret
-;____________________________________
-
-
-
-
-;____________________________________________
-picture:
-mov rsi,[jpegbase]
-mov edi,0x100000
-mov ecx,1024*768
-
-cld
-rep movsd
-
-ret
-;_________________________________________
-jpegbase:dq 0
+;___________________________________
+linecount:dd 0
 
 
 
@@ -462,53 +512,6 @@ save32:dd 0
 
 
 
-;______________________________
-ramdump:
-push r14
-mov dword [frontcolor],0xff00
-mov dword [linecount],0
-
-dumpline:
-    mov edi,0x100000        ;locate destination
-    mov eax,[linecount]
-    imul eax,4*1024*16
-    add edi,eax
-    call dumphex
-dumpwhat:
-
-inc byte [linecount]
-cmp byte [linecount],0x30
-jb dumpline
-
-pop r14
-
-call displayaddress
-
-ret
-;___________________________________
-linecount:dd 0
-
-
-
-
-;________________________________
-displayaddress:
-mov dword [frontcolor],0xffffffff
-
-lea rbx,[r14]
-mov edi,0x100000+4*1024*728+4*888
-call dumprbx
-
-lea rbx,[r14+r15]
-mov edi,0x100000+4*1024*744+4*888
-call dumprbx
-
-ret
-;__________________________________
-
-
-
-
 ;________________________________
 dumprbx:
 mov ecx,16
@@ -541,6 +544,13 @@ ret
 
 ;______________________________________
 composite:
+
+background:
+    call ramdump
+foreground:
+    call console
+
+writetoscreen:
     mov esi,0x100000
     mov edi,[0x3028]
     mov bl,[0x3019]
@@ -556,6 +566,29 @@ composite:
 
 ret
 ;________________________________________
+
+
+
+
+;_________________________________________
+f2switch:
+;________________________________________
+
+
+
+
+;____________________________________________
+picture:
+mov rsi,[jpegbase]
+mov edi,0x100000
+mov ecx,1024*768
+
+cld
+rep movsd
+
+ret
+;_________________________________________
+jpegbase:dq 0
 
 
 
@@ -635,30 +668,6 @@ line0:times 64 db ' '
 line1:times 64 db ' '
 lines:times 64*30 db ' '
 linenull:times 64 db ' '
-
-
-
-
-;____________________________________________
-;in:al
-;change:esi,al
-translate:
-    mov esi,0xb800                 ;table
-.search:
-    cmp [esi],al            ;先把al里的扫描码转换成anscii给al
-    je .convert
-    add esi,2
-    cmp esi,0xb880
-    jb .search
-    mov esi,0xb200           ;no,blank
-    jmp .finish
-.convert:
-    inc esi
-    lodsb
-
-.finish:
-    ret
-;__________________________________________
 
 
 
