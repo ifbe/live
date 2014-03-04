@@ -1,7 +1,7 @@
 %include "apic.s"
 [BITS 64]
 ;____________________________________
-start:
+jpegprogram:
     mov esi,0x20000
     mov edi,0x100000
     mov ecx,0x2000
@@ -33,9 +33,10 @@ prepare:
 
 
 
-;_________________main____________________
+;_________________main.part0(who wake me up)____________________
 forever:
 hlt			;	sleep
+
 cmp byte [0xff0],0	;	(keyboard interrupt)?
 je forever		;	no{sleep again}
 
@@ -46,53 +47,81 @@ cmp ax,0x800		;		(pointer=0x800(buffer head))?
 je forever		;		yes{sleep again}
 			;		no{
 dec eax			;			pointer-1
-mov al,[eax]		;			getdata
+mov al,[eax]		;			al=[pointer]
 
-keyboard:
-jmp switchkey		;			switchkey
 
-screen:
-call composite		;			print
-
-jmp forever
-			;		}
-			;	}
 ;_________________________________
 
 
 
-;_______________________________________________________________________________
+;______________main.part2(what do you want)____________________
 switchkey:
 
-;specialkey........	;	(al)?
+;specialkey........	;			(al)?
+			;			{
 cmp al,0x3b
-je f1			;	0x3b:f1
+je f1			;			0x3b:f1
 cmp al,0x3c
-je f2			;	0x3c:f2
+je f2			;			0x3c:f2
 cmp al,0x3d
-je f3			;	0x3d:f3
+je f3			;			0x3d:f3
 cmp al,0x3e
-je f4			;	0x3e:f4
+je f4			;			0x3e:f4
 cmp al,0x01
-je esc			;	0x01:esc
+je esc			;			0x01:esc
 cmp al,0x1d
-je ctrl			;	0x1d:ctrl
+je ctrl			;			0x1d:ctrl
 cmp al,0x38
-je alt			;	0x38:alt
+je alt			;			0x38:alt
 ;cmp al,0x3a
-;je capslock		;	0x38:capslock
+;je capslock		;			0x38:capslock
 ;cmp al,0x2a
-;je shift		;	0x38:shift
+;je shift		;			0x38:shift
 ;cmp al,0x0f
-;je tab			;	0x0f:tab
+;je tab			;			0x0f:tab
 ;cmp al,0x5b
-;je super		;	0x0f:super
+;je super		;			0x0f:super
 
 nextswitch:
-jmp consoleswitch
-jmp f1switch
+jmp consoleswitch	;			default:throw it to others
+;jmp f1switch
+			;			}
+;____________________________________________________________
 
 
+
+
+;_______________main.part3(print to screen)_______________________
+screen:
+
+background:
+    call ramdump	;		bottom layer
+foreground:
+    call console	;		top layer
+
+writetoscreen:
+    mov esi,0x100000
+    mov edi,[0x3028]
+    mov bl,[0x3019]
+    shr bl,3
+    movzx ebx,bl
+    mov ecx,1024*768
+
+.continue:
+    lodsd
+    mov [edi],eax
+    add edi,ebx
+    loop .continue
+
+jmp forever
+			;		}
+			;	}
+;________________________________________
+
+
+
+
+;______________________________________________________________________
 f1:
     mov dword [background+1],ramdump-(background+5)              ;selfmodify
     ;mov dword [nextswitch+1],f1switch-(nextswitch+5)              ;selfmodify
@@ -112,12 +141,12 @@ inc byte [ctrlkey]
 test byte [ctrlkey],1
 jnz .off
     .on:
-    mov dword [foreground+1],console-(foreground+5)              ;selfmodify
     mov dword [nextswitch+1],consoleswitch-(nextswitch+5)        ;selfmodify
+    mov dword [foreground+1],console-(foreground+5)              ;selfmodify
     jmp screen
     .off:
-    mov dword [foreground+1],donothing-(foreground+5)            ;selfmodify
     mov dword [nextswitch+1],f1switch-(nextswitch+5)              ;selfmodify
+    mov dword [foreground+1],donothing-(foreground+5)            ;selfmodify
     jmp screen
 
 
@@ -162,6 +191,8 @@ cmp al,0x48
 je f1up
 cmp al,0x50
 je f1down
+cmp al,0x39
+je f1space
 
 jmp screen
 
@@ -211,7 +242,43 @@ jmp screen
     .above:
     add r14,0x40
     jmp screen
+
+f1space:
+    mov r14,0x800
+    mov r15,0
+    jmp screen
 ;___________________________________________________________________
+
+
+
+
+;_________________________________________
+f2switch:
+;________________________________________
+
+
+
+
+;____________________________________________
+picture:
+mov rsi,[jpegbase]
+mov edi,0x100000
+mov ecx,1024*768
+
+cld
+rep movsd
+
+ret
+;_________________________________________
+jpegbase:dq 0
+
+
+
+
+;___________________________________
+donothing:
+ret
+;_____________________________________
 
 
 
@@ -269,6 +336,63 @@ mov [ebx],al
 inc byte [length]
 jmp screen
 ;_______________________________________________________________________________
+
+
+
+
+;___________________________________________
+console:
+mov edi,0x100000
+
+mov eax,1024*4
+shl eax,6
+add edi,eax
+
+mov [edibackground],edi
+mov [ediforeground],edi
+
+mov edx,640
+.second:
+mov edi,[edibackground]
+mov ecx,1024
+.first:
+    shr byte [edi],2        ;blue
+    add byte [edi],0x20
+    shr byte [edi+1],2        ;green
+;    add byte [edi+1],0x1
+    shr byte [edi+2],2        ;red
+;    add byte [edi+2],0x1
+    add edi,4
+loop .first
+mov eax,1024*4
+add [edibackground],eax
+dec edx
+jnz .second
+
+mov dword [frontcolor],0xff0000
+mov dword [backcolor],0xffffffff
+mov dword [looptimes],0
+.tmd:
+    mov edi,[ediforeground]
+    mov eax,4*1024*16
+    ;add edi,eax
+    imul eax,[looptimes]
+    add edi,eax
+    mov ebx,line0
+    mov eax,[looptimes]
+    shl eax,6
+    add ebx,eax
+    call message
+inc byte [looptimes]
+cmp byte [looptimes],0x20
+jb .tmd
+mov dword [backcolor],0
+
+ret
+;________________________________________
+edibackground:dd 0
+ediforeground:dd 0
+looptimes:dd 0
 
 
 
@@ -530,122 +654,6 @@ mov ecx,16
 	dec cl
 	jnz .getaddress
 ;____________________________________
-
-
-
-
-;___________________________________
-donothing:
-ret
-;_____________________________________
-
-
-
-
-;______________________________________
-composite:
-
-background:
-    call ramdump
-foreground:
-    call console
-
-writetoscreen:
-    mov esi,0x100000
-    mov edi,[0x3028]
-    mov bl,[0x3019]
-    shr bl,3
-    movzx ebx,bl
-    mov ecx,1024*768
-
-.continue:
-    lodsd
-    mov [edi],eax
-    add edi,ebx
-    loop .continue
-
-ret
-;________________________________________
-
-
-
-
-;_________________________________________
-f2switch:
-;________________________________________
-
-
-
-
-;____________________________________________
-picture:
-mov rsi,[jpegbase]
-mov edi,0x100000
-mov ecx,1024*768
-
-cld
-rep movsd
-
-ret
-;_________________________________________
-jpegbase:dq 0
-
-
-
-
-;___________________________________________
-console:
-mov edi,0x100000
-
-mov eax,1024*4
-shl eax,6
-add edi,eax
-
-mov [edibackground],edi
-mov [ediforeground],edi
-
-mov edx,640
-.second:
-mov edi,[edibackground]
-mov ecx,1024
-.first:
-    shr byte [edi],2        ;blue
-    add byte [edi],0x20
-    shr byte [edi+1],2        ;green
-;    add byte [edi+1],0x1
-    shr byte [edi+2],2        ;red
-;    add byte [edi+2],0x1
-    add edi,4
-loop .first
-mov eax,1024*4
-add [edibackground],eax
-dec edx
-jnz .second
-
-mov dword [frontcolor],0xff0000
-mov dword [backcolor],0xffffffff
-mov dword [looptimes],0
-.tmd:
-    mov edi,[ediforeground]
-    mov eax,4*1024*16
-    ;add edi,eax
-    imul eax,[looptimes]
-    add edi,eax
-    mov ebx,line0
-    mov eax,[looptimes]
-    shl eax,6
-    add ebx,eax
-    call message
-inc byte [looptimes]
-cmp byte [looptimes],0x20
-jb .tmd
-mov dword [backcolor],0
-
-ret
-;________________________________________
-edibackground:dd 0
-ediforeground:dd 0
-looptimes:dd 0
 
 
 
