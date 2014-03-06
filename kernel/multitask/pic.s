@@ -1,70 +1,5 @@
 org 0x10000
 [bits 64]
-;__________________int3h______________________
-breakpoint:
-mov rax,breakpointisr
-mov edi,0x1030
-call idtinstaller
-
-jmp breakpointdone
-
-breakpointisr:
-inc qword [0xff20]
-iretq
-
-breakpointdone:
-;_____________________________________
-
-
-;_____________int9h>>int21h__________________
-keyboard:
-mov rax,keyboardisr
-mov edi,0x1210
-call idtinstaller
-
-xor rax,rax
-mov [0xfe0],rax
-mov [0xfe8],rax
-mov [0xff0],rax
-mov [0xff8],rax
-
-in al,0x21
-and al,0xfd	;enable
-out 0x21,al
-
-jmp keyboarddone
-
-;first
-keyboardisr:
-push rax
-push rbx
-in al,0x60
-cmp al,0x80
-ja .leave
-
-mov byte [0xff0],0xff           ;标志
-mov ebx,[0xff8]
-mov [ebx],al
-inc ebx
-cmp bx,0xf00
-jb .putback
-mov ebx,0x800
-.putback:
-mov [0xff8],ebx
-.leave:
-mov al,0x20
-out 0x20,al
-pop rbx
-pop rax
-
-;jmp taskswitch
-iretq
-
-
-keyboarddone:
-;________________________________________
-
-
 ;___________int70h>>int28h_________________
 rtc:
 mov al,0x8a
@@ -129,35 +64,9 @@ jmp interruptdone
 
 ;____________________________________
 taskswitch:
-;inc byte [0xfffc]
+
+.saverunning:
 mov [save],rsp
-cmp byte [0x800f8],0xff
-jne task1
-
-task0:
-mov dword [running],0x80000
-mov dword [next],0x80100
-mov byte [0x800f8],0
-mov byte [0x801f8],0xff
-jmp switch
-
-task1:
-cmp byte [0x801f8],0xff
-jne task2
-
-mov dword [running],0x80100
-mov dword [next],0x80200
-mov byte [0x801f8],0
-mov byte [0x802f8],0xff
-jmp switch
-
-task2:
-mov dword [running],0x80200
-mov dword [next],0x80000
-mov byte [0x802f8],0
-mov byte [0x800f8],0xff
-
-switch:
 mov rsp,[running]
 add rsp,0xf8
 push rbp              ;+0xff0
@@ -185,7 +94,14 @@ movsq
 movsq
 movsq
 
-mov rsp,[next]
+.changepointer:
+add dword [running],0x100
+cmp dword [running],0x80200
+jb .releasethis
+mov dword [running],0x80000
+
+.releasethis:
+mov rsp,[running]
 add rsp,0x80
 pop r15              ;+0xf80
 pop r14
@@ -203,13 +119,12 @@ pop rdi              ;+0xfe0
 pop rsi
 pop rbp              ;+0xff0
 
-mov rsp,[next]
+mov rsp,[running]
 .return:
 iretq
 ;____________________________________
 save:dq 0
-running:dq 0
-next:dq 0
+running:dq 0x80000
 
 
 ;___________________________________

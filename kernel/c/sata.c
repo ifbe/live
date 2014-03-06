@@ -7,6 +7,9 @@
 #define DWORD int
 #define QWORD long long
 #define cmdslots 32
+#define s64 long long
+#define u64 unsigned long long
+
 
 typedef enum
 {
@@ -194,21 +197,23 @@ typedef struct tagFIS_DMA_SETUP
 
 typedef volatile struct tagHBA_PORT
 {
-	QWORD	clb;		// 0x00, command list base address, 1K-byte aligned
-	QWORD	fb;		// 0x08, FIS base address, 256-byte aligned
-	DWORD	is;		// 0x10, interrupt status
-	DWORD	ie;		// 0x14, interrupt enable
-	DWORD	cmd;		// 0x18, command and status
-	DWORD	rsv0;		// 0x1C, Reserved
-	DWORD	tfd;		// 0x20, task file data
-	DWORD	sig;		// 0x24, signature
-	DWORD	ssts;		// 0x28, SATA status (SCR0:SStatus)
-	DWORD	sctl;		// 0x2C, SATA control (SCR2:SControl)
-	DWORD	serr;		// 0x30, SATA error (SCR1:SError)
-	DWORD	sact;		// 0x34, SATA active (SCR3:SActive)
-	DWORD	ci;		// 0x38, command issue
-	DWORD	sntf;		// 0x3C, SATA notification (SCR4:SNotification)
-	DWORD	fbs;		// 0x40, FIS-based switch control
+	DWORD	clb;	// 0x00, command list base address, 1K-byte aligned
+	DWORD	clbu;	// 0x04, command list base address upper 32 bits
+	DWORD	fb;	// 0x08, FIS base address, 256-byte aligned
+	DWORD	fbu;	// 0x0C, FIS base address upper 32 bits
+	DWORD	is;	// 0x10, interrupt status
+	DWORD	ie;	// 0x14, interrupt enable
+	DWORD	cmd;	// 0x18, command and status
+	DWORD	rsv0;	// 0x1C, Reserved
+	DWORD	tfd;	// 0x20, task file data
+	DWORD	sig;	// 0x24, signature
+	DWORD	ssts;	// 0x28, SATA status (SCR0:SStatus)
+	DWORD	sctl;	// 0x2C, SATA control (SCR2:SControl)
+	DWORD	serr;	// 0x30, SATA error (SCR1:SError)
+	DWORD	sact;	// 0x34, SATA active (SCR3:SActive)
+	DWORD	ci;	// 0x38, command issue
+	DWORD	sntf;	// 0x3C, SATA notification (SCR4:SNotification)
+	DWORD	fbs;	// 0x40, FIS-based switch control
 	DWORD	rsv1[11];	// 0x44 ~ 0x6F, Reserved
 	DWORD	vendor[4];	// 0x70 ~ 0x7F, vendor specific
 } HBA_PORT;
@@ -266,25 +271,26 @@ typedef volatile struct tagHBA_FIS
 typedef struct tagHBA_CMD_HEADER
 {
 	// DW0
-	BYTE	cfl:5;		// Command FIS length in DWORDS, 2 ~ 16
-	BYTE	a:1;		// ATAPI
-	BYTE	w:1;		// Write, 1: H2D, 0: D2H
-	BYTE	p:1;		// Prefetchable
+	BYTE	cfl:5;	// Command FIS length in DWORDS, 2 ~ 16
+	BYTE	a:1;	// ATAPI
+	BYTE	w:1;	// Write, 1: H2D, 0: D2H
+	BYTE	p:1;	// Prefetchable
+
+	BYTE	r:1;	// Reset
+	BYTE	b:1;	// BIST
+	BYTE	c:1;	// Clear busy upon R_OK
+	BYTE	rsv0:1;	// Reserved
+	BYTE	pmp:4;	// Port multiplier port
  
-	BYTE	r:1;		// Reset
-	BYTE	b:1;		// BIST
-	BYTE	c:1;		// Clear busy upon R_OK
-	BYTE	rsv0:1;		// Reserved
-	BYTE	pmp:4;		// Port multiplier port
- 
-	WORD	prdtl;		// Physical region descriptor table length in entries
+	WORD	prdtl;	// Physical region descriptor table length in entries
  
 	// DW1
 	volatile
-	DWORD	prdbc;		// Physical region descriptor byte count transferred
+	DWORD	prdbc;	// Physical region descriptor byte count transferred
  
 	// DW2, 3
-	QWORD	ctba;		// Command table descriptor base address
+	DWORD	ctba;	// Command table descriptor base address
+	DWORD	ctbau;	// Command table descriptor base address upper 32 bits
  
 	// DW4 - 7
 	DWORD	rsv1[4];	// Reserved
@@ -292,7 +298,8 @@ typedef struct tagHBA_CMD_HEADER
 
 typedef struct tagHBA_PRDT_ENTRY
 {
-	QWORD	dba;		// Data base address
+	DWORD	dba;		// Data base address
+	DWORD	dbau;		// Data base address upper 32 bits
 	DWORD	rsv0;		// Reserved
  
 	// DW3
@@ -315,27 +322,130 @@ typedef struct tagHBA_CMD_TBL
 	// 0x80
 	HBA_PRDT_ENTRY	prdt_entry[1];	// Physical region descriptor table entries, 0 ~ 65535
 } HBA_CMD_TBL;
- 
-// Find a free command list slot
-int find_cmdslot(HBA_PORT *port)
-{
-	// If not set in SACT and CI, the slot is free
-	int i;
-	DWORD slots = (port->sact | port->ci);
-	for (i=0; i<cmdslots; i++)
-	{
-		if ((slots&1) == 0)
-			return i;
-		slots >>= 1;
-	}
-	//trace_ahci("Cannot find free command list entry\n");
-	*(QWORD*)0xe000=1;
-	return -1;
-} 
 
-void start()
+void point(int x,int y,int color)
 {
-	read((HBA_PORT*)0xfebf6000,128,0,4,(WORD*)0x100000);
+    s64* video=(s64*)0x3028;
+    s64 base=*video;
+    char* p=(char*)0x3019;
+    char bpp=*p/8;
+
+    int* address;
+
+    address=(int*)(base+(y*1024+x)*bpp);
+    *address=color;
+}
+
+
+void anscii(int x,int y,char ch)
+{
+    int i,j;
+    s64 points=0xb000;
+    char temp;
+    char* p;
+
+    points+=ch<<4;
+    x=8*x;
+    y=16*y;
+
+    for(i=0;i<16;i++)
+    {
+        p=(char*)points;
+        for(j=0;j<8;j++)
+        {
+            temp=*p;
+            temp=temp<<j;
+            temp&=0x80;
+            if(temp!=0){point(j+x,i+y,0xffffffff);}
+            else{point(j+x,i+y,0);}
+
+        }
+    points++;
+    }
+}
+void string(int x,int y,char* p)
+{
+    while(*p!='\0')
+    {
+    anscii(x,y,*p);
+    p++;
+    x++;
+    }
+}
+
+void hexadecimal(int x,int y,u64 z)
+{
+        char ch;
+        int i=0;
+
+        for(i=15;i>=0;i--)
+        {
+        ch=(char)(z&0x0000000f);
+        z=z>>4;
+        anscii(x+i,y,ch);
+        }
+}
+void decimal(int x,int y,s64 z)
+{
+        char ch;
+        int i=0;
+        s64 temp;
+
+        if(z<0){
+        anscii(x,y,'-');
+        x++;
+        z=-z;
+        }
+
+        temp=z;
+        while(temp>10){
+        temp=temp/10;
+        i++;
+        }
+
+        for(;i>=0;i--)
+        {
+        ch=(char)(z%10);
+        z=z/10;
+        anscii(x+i,y,ch);
+        }
+}
+
+static inline void out32( unsigned short port, unsigned int val )
+{
+    asm volatile( "outl %0, %1"
+                  : : "a"(val), "Nd"(port) );
+}
+
+static inline unsigned int in32( unsigned short port )
+{
+    unsigned int ret;
+    asm volatile( "inl %1, %0"
+                  : "=a"(ret) : "Nd"(port) );
+    return ret;
+}
+
+// Find a free command list slot
+unsigned int ahcihba()
+{
+	QWORD addr=0x5008;
+	unsigned int temp;
+	for(;addr<0x6000;addr+=0x10)
+	{
+		temp=*(unsigned int*)addr;
+		temp&=0xffffff00;
+		if(temp==0x01060100)
+		{
+			addr-=0x8;
+			temp=*(unsigned int*)addr;
+			hexadecimal(40,0,(QWORD)temp);
+			out32(0xcf8,temp+0x24);
+			temp=in32(0xcfc);
+			hexadecimal(40,1,(QWORD)temp);
+			return temp;
+		}
+	}
+return 0;
 }
 
 int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
@@ -343,20 +453,31 @@ int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
 	int spin = 0; // Spin lock timeout counter
 	int i;
+	//asm("int3");
 	int slot = find_cmdslot(port);
+	//asm("int3");
 	if (slot == -1)return FALSE;
+	//asm("int3");
  
-	HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER*)(port->clb);
+	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(QWORD)(port->clb);
+	//asm("int3");
 	cmdheader += slot;
+	//asm("int3");
 	cmdheader->cfl = sizeof(FIS_REG_H2D)/sizeof(DWORD);	// Command FIS size
+	//asm("int3");
 	cmdheader->w = 0;		// Read from device
+	//asm("int3");
 	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
+	//asm("int3");
  
-	HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL*)(cmdheader->ctba);
+	HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)(QWORD)(cmdheader->ctba);
 	//memset(cmdtbl,0,sizeof(HBA_CMD_TBL)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY));
 	char* p=(char*)cmdtbl;
-	for(i=0;i<sizeof(HBA_CMD_TBL)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);i++){*p=0;p++;}
+	i=sizeof(HBA_CMD_TBL)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
+	//asm("int3");
+	for(;i>0;i--){*p=0;p++;}
  
+	asm("int3");
 	// 8K bytes (16 sectors) per PRDT
 	for (i=0; i<cmdheader->prdtl-1; i++)
 	{
@@ -432,3 +553,27 @@ int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
  
 	return TRUE;
 }
+
+int find_cmdslot(HBA_PORT *port)
+{
+	// If not set in SACT and CI, the slot is free
+	int i;
+	DWORD slots = (port->sact | port->ci);
+	for (i=0; i<cmdslots; i++)
+	{
+		if ((slots&1) == 0)
+			return i;
+		slots >>= 1;
+	}
+	//trace_ahci("Cannot find free command list entry\n");
+	//*(QWORD*)0xe000=1;
+	return -1;
+} 
+
+void start()
+{
+	unsigned int addr;
+	addr=ahcihba();
+	read((HBA_PORT*)(QWORD)addr,128,0,4,(WORD*)0x100000);
+}
+
