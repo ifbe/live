@@ -438,10 +438,10 @@ unsigned int ahcihba()
 		{
 			addr-=0x8;
 			temp=*(unsigned int*)addr;
-			hexadecimal(40,0,(QWORD)temp);
+			hexadecimal(0,0,(QWORD)temp);
 			out32(0xcf8,temp+0x24);
 			temp=in32(0xcfc);
-			hexadecimal(40,1,(QWORD)temp);
+			hexadecimal(0,1,(QWORD)temp);
 			return temp;
 		}
 	}

@@ -523,18 +523,24 @@ sixteenline:dq 0
 
 ;________________the end,print to screen______________
 theend:
+
 mov esi,buffer
 mov edi,[0x3028]
+mov eax,[onepoint]
+shl eax,8
+lea eax,[eax*2+eax]
+add edi,eax
 
 	.continue:
 	push rsi
 	push rdi
-	call anscii
+	call hex
 	pop rdi
 	pop rsi
+
 	push rsi
 	push rdi
-	call hex
+	call anscii
 	pop rdi
 	pop rsi
 
@@ -543,13 +549,60 @@ mov edi,[0x3028]
 
 cmp esi,endofbuffer
 jb .continue
-
-hlt              ;i am dead
 ;________________________________________________
+
+
+;_______________________________________
+liveordie:
+
+;hlt              ;i am dead
+
+in al,0x64
+test al,1
+jz liveordie
+
+in al,0x60
+cmp al,0x1c
+je leavemealone
+cmp al,0x01
+je turnoff
+jmp liveordie
+
+turnoff:
+mov dx,[0x4fc]
+mov ax,[0x4fe]
+or ax,0x2000
+out dx,ax
+
+leavemealone:
+mov rax,[buffer]
+mov rcx,[buffer+0x10]
+mov rdx,[buffer+0x20]
+mov rbx,[buffer+0x30]
+mov rsp,[buffer+0x40]
+mov rbp,[buffer+0x50]
+mov rsi,[buffer+0x60]
+mov rdi,[buffer+0x70]
+
+mov r8,[buffer+0x80]
+mov r9,[buffer+0x90]
+mov r10,[buffer+0xa0]
+mov r11,[buffer+0xb0]
+mov r12,[buffer+0xc0]
+mov r13,[buffer+0xd0]
+mov r14,[buffer+0xe0]
+mov r15,[buffer+0xf0]
+
+iretq
+;__________________________________
 
 
 ;__________________________________________-
 anscii:
+    mov eax,[onechar]
+    shl eax,3
+    lea eax,[eax*2+eax]
+    add edi,eax
     mov ecx,8
 .print:
     push rsi
@@ -575,9 +628,6 @@ anscii:
 
 ;____________________________________
 hex:
-    mov eax,[onechar]
-    shl eax,4
-    add edi,eax
     lodsq
     mov ecx,16
 .print:
@@ -632,64 +682,58 @@ ret
 
 ALIGN 16
 buffer:
-dq 0,"rax="
-dq 0,"rcx="
-dq 0,"rdx="
-dq 0,"rbx="
-dq 0,"rsp="
-dq 0,"rbp="
-dq 0,"rsi="
-dq 0,"rdi="
+dq 0,"rax"
+dq 0,"rcx"
+dq 0,"rdx"
+dq 0,"rbx"
+dq 0,"rsp"
+dq 0,"rbp"
+dq 0,"rsi"
+dq 0,"rdi"
 
-dq 0,"r8 ="
-dq 0,"r9 ="
-dq 0,"r10="
-dq 0,"r11="
-dq 0,"r12="
-dq 0,"r13="
-dq 0,"r14="
-dq 0,"r15="
+dq 0,"r8"
+dq 0,"r9"
+dq 0,"r10"
+dq 0,"r11"
+dq 0,"r12"
+dq 0,"r13"
+dq 0,"r14"
+dq 0,"r15"
 
-dq 0,"cr0="
-dq 0,0
-dq 0,"cr2="
-dq 0,"cr3="
-dq 0,"cr4="
-dq 0,"cr8="
-dq 0,0
-dq 0,0
+dq 0,"cr0"
+killer:
+dq 0,"killer"
+dq 0,"cr2"
+dq 0,"cr3"
+dq 0,"cr4"
+dq 0,"cr8"
+dq 0,"i'm dead"
+dq 0,"i'm dead"
 
-dq 0,"dr0="
-dq 0,"dr1="
-dq 0,"dr2="
-dq 0,"dr3="
-dq 0,0
-dq 0,0
-dq 0,"dr6="
-dq 0,"dr7="
+dq 0,"dr0"
+dq 0,"dr1"
+dq 0,"dr2"
+dq 0,"dr3"
+dq 0,"i'm dead"
+dq 0,"i'm dead"
+dq 0,"dr6"
+dq 0,"dr7"
 
-dq 0,"stack+0"
-dq 0,"stack+8"
-dq 0,"stack+16"
-dq 0,"stack+24"
-dq 0,"stack+32"
-dq 0,"stack+40"
-dq 0,"stack+48"
-dq 0,"stack+56"
+dq 0,"[rsp]"
+dq 0,"[rsp+8]"
+dq 0,"[rsp+16]"
+dq 0,"[rsp+24]"
+dq 0,"[rsp+32]"
+dq 0,"[rsp+40]"
+dq 0,"[rsp+48]"
+dq 0,"[rsp+56]"
 
-dq 0,0
-dq 0,0
-killer:dq 0,"killer:"
-address:dq 0,"address:"
-dq 0,0
-dq 0,0
-dq 0,"i am"
-dq 0,"dead"
 endofbuffer:
 
 
 
 padding:
-times 0x1000-(padding-startofexception) db 0
+times 0xfff-(padding-startofexception) db 0
 
 endofexception:
+ret
