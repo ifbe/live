@@ -553,20 +553,21 @@ jb .continue
 
 
 ;_______________________________________
-liveordie:
+tobeornottobe:
 
 ;hlt              ;i am dead
 
 in al,0x64
 test al,1
-jz liveordie
+jz tobeornottobe
 
 in al,0x60
-cmp al,0x1c
-je leavemealone
-cmp al,0x01
+cmp al,0x9c		;enter
+je leaveexception
+cmp al,0x81		;esc
 je turnoff
-jmp liveordie
+
+jmp tobeornottobe
 
 turnoff:
 mov dx,[0x4fc]
@@ -574,7 +575,7 @@ mov ax,[0x4fe]
 or ax,0x2000
 out dx,ax
 
-leavemealone:
+leaveexception:
 mov rax,[buffer]
 mov rcx,[buffer+0x10]
 mov rdx,[buffer+0x20]
@@ -593,6 +594,26 @@ mov r13,[buffer+0xd0]
 mov r14,[buffer+0xe0]
 mov r15,[buffer+0xf0]
 
+cmp byte [killer],8
+je .beforeleave
+cmp byte [killer],0xa
+je .beforeleave
+cmp byte [killer],0xb
+je .beforeleave
+cmp byte [killer],0xc
+je .beforeleave
+cmp byte [killer],0xd
+je .beforeleave
+cmp byte [killer],0xe
+je .beforeleave
+cmp byte [killer],0x11
+je .beforeleave
+
+jmp .leave
+
+.beforeleave:
+sub rsp,8
+.leave:
 iretq
 ;__________________________________
 

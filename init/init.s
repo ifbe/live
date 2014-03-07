@@ -24,6 +24,6 @@ times 0x1000-(endoffakekernel-startoffakekernel) db 0
 
 %include "[b000,bfff]anscii.s"
 
-%include "[c000,cfff]apic.s"
+%include "[c000,cfff]exception.s"
 
-%include "[d000,dfff]exception.s"
+%include "[d000,dfff]apic.s"

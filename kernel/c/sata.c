@@ -10,6 +10,7 @@
 #define s64 long long
 #define u64 unsigned long long
 
+int where=0;
 
 typedef enum
 {
@@ -411,6 +412,13 @@ void decimal(int x,int y,s64 z)
         }
 }
 
+void say(u64 z)
+{
+	hexadecimal(0,where,z);
+	where++;
+	if(where==10)where=0;
+}
+
 static inline void out32( unsigned short port, unsigned int val )
 {
     asm volatile( "outl %0, %1"
@@ -438,46 +446,64 @@ unsigned int ahcihba()
 		{
 			addr-=0x8;
 			temp=*(unsigned int*)addr;
-			hexadecimal(0,0,(QWORD)temp);
+		say((QWORD)temp);
 			out32(0xcf8,temp+0x24);
 			temp=in32(0xcfc);
-			hexadecimal(0,1,(QWORD)temp);
+		say((QWORD)temp);
 			return temp;
 		}
 	}
 return 0;
 }
 
+int find_cmdslot(HBA_PORT *port)
+{
+	// If not set in SACT and CI, the slot is free
+	int i;
+	DWORD slots = (port->sact | port->ci);
+	for (i=0; i<cmdslots; i++)
+	{
+		if ((slots&1) == 0)
+			return i;
+		slots >>= 1;
+	}
+	//trace_ahci("Cannot find free command list entry\n");
+	//*(QWORD*)0xe000=1;
+	return -1;
+} 
+
 int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 {
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
 	int spin = 0; // Spin lock timeout counter
 	int i;
-	//asm("int3");
+	
 	int slot = find_cmdslot(port);
-	//asm("int3");
-	if (slot == -1)return FALSE;
-	//asm("int3");
- 
+
+	if (slot == -1){
+		return FALSE;
+	}
+	else{
+		say((QWORD)slot);
+	}
+
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(QWORD)(port->clb);
-	//asm("int3");
+	say((QWORD)cmdheader);
+
 	cmdheader += slot;
-	//asm("int3");
-	cmdheader->cfl = sizeof(FIS_REG_H2D)/sizeof(DWORD);	// Command FIS size
-	//asm("int3");
+	say((QWORD)cmdheader);
+
+	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
-	//asm("int3");
 	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
-	//asm("int3");
  
 	HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)(QWORD)(cmdheader->ctba);
-	//memset(cmdtbl,0,sizeof(HBA_CMD_TBL)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY));
+	say((QWORD)cmdtbl);
+
 	char* p=(char*)cmdtbl;
 	i=sizeof(HBA_CMD_TBL)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
-	//asm("int3");
 	for(;i>0;i--){*p=0;p++;}
  
-	asm("int3");
 	// 8K bytes (16 sectors) per PRDT
 	for (i=0; i<cmdheader->prdtl-1; i++)
 	{
@@ -520,7 +546,6 @@ int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 	if (spin == 1000000)
 	{
 		//trace_ahci("Port is hung\n");
-		*(QWORD*)0xe000=2;
 		return FALSE;
 	}
  
@@ -536,8 +561,7 @@ int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 		//if (port->is & HBA_PxIS_TFES)	// Task file error
 		if (port->is & 0x40000000)	// Task file error
 		{
-			//trace_ahci("Read disk error\n");
-			*(QWORD*)0xe000=3;
+			say(0xffffffff);
 			return FALSE;
 		}
 	}
@@ -546,34 +570,17 @@ int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 	//if (port->is & HBA_PxIS_TFES)
 	if (port->is & 0x40000000)
 	{
-		//trace_ahci("Read disk error\n");
-		*(QWORD*)0xe000=333;
+		say(0xfffffffffff);
 		return FALSE;
 	}
  
 	return TRUE;
 }
 
-int find_cmdslot(HBA_PORT *port)
-{
-	// If not set in SACT and CI, the slot is free
-	int i;
-	DWORD slots = (port->sact | port->ci);
-	for (i=0; i<cmdslots; i++)
-	{
-		if ((slots&1) == 0)
-			return i;
-		slots >>= 1;
-	}
-	//trace_ahci("Cannot find free command list entry\n");
-	//*(QWORD*)0xe000=1;
-	return -1;
-} 
-
 void start()
 {
 	unsigned int addr;
 	addr=ahcihba();
-	read((HBA_PORT*)(QWORD)addr,128,0,4,(WORD*)0x100000);
+	read((HBA_PORT*)(QWORD)(addr+0x100),128,0,4,(WORD*)0x100000);
 }
 

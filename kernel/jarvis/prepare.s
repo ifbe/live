@@ -49,7 +49,6 @@ je forever		;		yes{sleep again}
 dec eax			;			pointer-1
 mov al,[eax]		;			al=[pointer]
 
-
 switchkey:
 			;			(al)?
 cmp al,0x3b		;			{
