@@ -6,7 +6,6 @@
 #define WORD short
 #define DWORD int
 #define QWORD long long
-#define cmdslots 32
 #define s64 long long
 #define u64 unsigned long long
 
@@ -324,6 +323,13 @@ typedef struct tagHBA_CMD_TBL
 	HBA_PRDT_ENTRY	prdt_entry[1];	// Physical region descriptor table entries, 0 ~ 65535
 } HBA_CMD_TBL;
 
+
+
+
+
+
+
+
 void point(int x,int y,int color)
 {
     s64* video=(s64*)0x3028;
@@ -336,8 +342,6 @@ void point(int x,int y,int color)
     address=(int*)(base+(y*1024+x)*bpp);
     *address=color;
 }
-
-
 void anscii(int x,int y,char ch)
 {
     int i,j;
@@ -373,7 +377,6 @@ void string(int x,int y,char* p)
     x++;
     }
 }
-
 void hexadecimal(int x,int y,u64 z)
 {
         char ch;
@@ -411,30 +414,88 @@ void decimal(int x,int y,s64 z)
         anscii(x+i,y,ch);
         }
 }
-
-void say(u64 z)
+void say(char* p,u64 z)
 {
-	hexadecimal(0,where,z);
+	string(0,where,p);
+	hexadecimal(16,where,z);
 	where++;
-	if(where==10)where=0;
+	if(where==40)where=0;
 }
 
-static inline void out32( unsigned short port, unsigned int val )
+
+
+
+
+ 
+
+void cmdenable(HBA_PORT *port)
 {
-    asm volatile( "outl %0, %1"
-                  : : "a"(val), "Nd"(port) );
+	say("enableing",(QWORD)(port->cmd));
+	while (port->cmd & (1<<15));	//bit15
+	say("enable status",(QWORD)(port->cmd));
+ 
+	port->cmd |= 1<<4;	//bit4,receive enable
+	port->cmd |= 1; 	//bit0,start
+	say("enabled",0);
 }
-
-static inline unsigned int in32( unsigned short port )
+void cmddisable(HBA_PORT *port)
 {
-    unsigned int ret;
-    asm volatile( "inl %1, %0"
-                  : "=a"(ret) : "Nd"(port) );
-    return ret;
+	say("disableing",(QWORD)(port->cmd));
+	port->cmd &= 0xfffffffe;	//bit0
+	say("disable status",(QWORD)(port->cmd));
+ 
+	while(1)
+	{
+		if (port->cmd & (1<<14))	//bit14,receive running
+			continue;
+		if (port->cmd & (1<<15))	//bit15,commandlist running
+			continue;
+		break;
+	}
+ 
+	// Clear FRE (bit4)
+	port->cmd &=0xffffffef;	//bit4,receive enable
+	say("disabled",0);
+}
+void probeport(unsigned int addr)
+{
+	HBA_PORT* port=(HBA_PORT*)(QWORD)addr;
+	cmddisable(port);	// Stop command engine
+	unsigned char* p=(unsigned char*)0x100000;
+	for(;p<(unsigned char*)0x200000;p++)	*p=0;
+
+	//32*32 = 1K per port
+	port->clb =0x100000;
+	port->clbu = 0;
+ 
+	//256 bytes per port
+	port->fb = 0x100000 + (32<<10);
+	port->fbu = 0;
+ 
+	// Command table offset: 40K + 8K*portno
+	// Command table size = 256*32 = 8K per port
+	HBA_CMD_HEADER *cmdheader=(HBA_CMD_HEADER*)(QWORD)(port->clb);
+	int i;
+	for (i=0; i<32; i++)
+	{
+		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
+
+		// Command table offset: 40K + 8K*portno + cmdheader_index*256
+		cmdheader[i].ctba=0x100000+(40<<10)+(1<<13)+(i<<8);
+		cmdheader[i].ctbau = 0;
+	}
+ 
+	cmdenable(port);	// Start command engine
 }
 
-// Find a free command list slot
-unsigned int ahcihba()
+
+
+
+
+
+
+
+unsigned int information()
 {
 	QWORD addr=0x5008;
 	unsigned int temp;
@@ -446,59 +507,134 @@ unsigned int ahcihba()
 		{
 			addr-=0x8;
 			temp=*(unsigned int*)addr;
-		say((QWORD)temp);
-			out32(0xcf8,temp+0x24);
-			temp=in32(0xcfc);
-		say((QWORD)temp);
+
 			return temp;
 		}
 	}
 return 0;
 }
 
+
+
+
+
+
+
+
+static inline void out32( unsigned short port, unsigned int val )
+{
+    asm volatile( "outl %0, %1"
+                  : : "a"(val), "Nd"(port) );
+}
+static inline unsigned int in32( unsigned short port )
+{
+    unsigned int ret;
+    asm volatile( "inl %1, %0"
+                  : "=a"(ret) : "Nd"(port) );
+    return ret;
+}
+unsigned int probepci(unsigned int addr)
+{
+	out32(0xcf8,addr+0x24);
+	addr=in32(0xcfc);
+	return addr;
+}
+
+
+
+
+
+
+
+
+QWORD check_type(HBA_PORT *port)
+{
+	DWORD ssts = port->ssts;
+ 
+	BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
+	if (ipm == 0)	return 0;	//not exist
+	BYTE det = ssts & 0x0F;			//[0,3]
+	if (det == 0)	return 0;	//not exist
+	return (QWORD)(port->sig);
+}
+unsigned int probeahci(unsigned int addr)
+{
+	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
+	DWORD pi = abar->pi;
+	int i = 0;
+	while (i<32)
+	{
+		if (pi & 1)
+		{
+			QWORD what=check_type(&abar->ports[i]);
+			if(what!=0)
+			{
+			switch(what)
+			{
+				case 0x00000101:
+				say("sata",(QWORD)(0x100+i*0x80));
+				return addr+0x100+0x80*i;
+
+				case 0xeb140101:
+				say("atapi",(QWORD)(0x100+i*0x80));
+
+				case 0xc33c0101:
+				say("enclosure????",(QWORD)(0x100+i*0x80));
+
+				case 0x96690101:
+				say("portmultiplier",(QWORD)(0x100+i*0x80));
+			}
+			}
+		}
+		pi >>= 1;
+		i ++;
+	}
+}
+
+
+
+
+
+
+
+
 int find_cmdslot(HBA_PORT *port)
 {
 	// If not set in SACT and CI, the slot is free
 	int i;
-	DWORD slots = (port->sact | port->ci);
-	for (i=0; i<cmdslots; i++)
+	DWORD cmdslot = (port->sact | port->ci);
+	for (i=0; i<32; i++)	//cmdslots=32
 	{
-		if ((slots&1) == 0)
+		if ((cmdslot&1) == 0)
 			return i;
-		slots >>= 1;
+		cmdslot >>= 1;
 	}
-	//trace_ahci("Cannot find free command list entry\n");
-	//*(QWORD*)0xe000=1;
 	return -1;
 } 
-
 int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 {
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
 	int spin = 0; // Spin lock timeout counter
 	int i;
 	
-	int slot = find_cmdslot(port);
+	int cmdslot = find_cmdslot(port);
 
-	if (slot == -1){
+	if (cmdslot == -1){
+		say("error:cmdslot",(QWORD)cmdslot);
 		return FALSE;
 	}
-	else{
-		say((QWORD)slot);
-	}
+	say("cmdslot",(QWORD)cmdslot);
 
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(QWORD)(port->clb);
-	say((QWORD)cmdheader);
-
-	cmdheader += slot;
-	say((QWORD)cmdheader);
+	cmdheader += cmdslot;
+	say("cmdheader",(QWORD)cmdheader);
 
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
 	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
  
 	HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)(QWORD)(cmdheader->ctba);
-	say((QWORD)cmdtbl);
+	say("cmdtbl",(QWORD)cmdtbl);
 
 	char* p=(char*)cmdtbl;
 	i=sizeof(HBA_CMD_TBL)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
@@ -538,30 +674,30 @@ int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 	cmdfis->countl = (char)count;
 	cmdfis->counth = (char)(count>>8);
  
-	// The below loop waits until the port is no longer busy before issuing a new command
+	//loop until port is no longer busy before issuing a new command
 	while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000)
 	{
 		spin++;
 	}
 	if (spin == 1000000)
 	{
-		//trace_ahci("Port is hung\n");
 		return FALSE;
 	}
  
-	port->ci = 1<<slot;	// Issue command
+	port->ci = 1<<cmdslot;	// Issue command
+asm("int3");
  
 	// Wait for completion
 	while (1)
 	{
 		// In some longer duration reads, it may be helpful to spin on the DPS bit 
 		// in the PxIS port field as well (1 << 5)
-		if ((port->ci & (1<<slot)) == 0) 
+		if ((port->ci & (1<<cmdslot)) == 0) 
 			break;
 		//if (port->is & HBA_PxIS_TFES)	// Task file error
 		if (port->is & 0x40000000)	// Task file error
 		{
-			say(0xffffffff);
+			say("porterror1",0xffffffff);
 			return FALSE;
 		}
 	}
@@ -570,17 +706,34 @@ int read(HBA_PORT *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 	//if (port->is & HBA_PxIS_TFES)
 	if (port->is & 0x40000000)
 	{
-		say(0xfffffffffff);
+		say("porterror2",0xfffffffffff);
 		return FALSE;
 	}
  
 	return TRUE;
 }
 
+
+
+
+
+
+
+
 void start()
 {
 	unsigned int addr;
-	addr=ahcihba();
-	read((HBA_PORT*)(QWORD)(addr+0x100),128,0,4,(WORD*)0x100000);
-}
 
+	addr=information();
+	say("pciaddr",(QWORD)addr);
+
+	addr=probepci(addr);
+	say("ahciaddr",(QWORD)addr);
+
+	addr=probeahci(addr);
+	say("portaddr",(QWORD)addr);
+
+	probeport(addr);
+
+	read((HBA_PORT*)(QWORD)addr,128,0,4,(WORD*)0x100000);
+}

@@ -192,6 +192,7 @@ mov byte [killer],0x7
 jmp lastwords
 
 exception8:
+pop qword [reason]
 mov byte [killer],0x8
 jmp lastwords
 
@@ -200,22 +201,27 @@ mov byte [killer],0x9
 jmp lastwords
 
 exceptiona:
+pop qword [reason]
 mov byte [killer],0xa
 jmp lastwords
 
 exceptionb:
+pop qword [reason]
 mov byte [killer],0xb
 jmp lastwords
 
 exceptionc:
+pop qword [reason]
 mov byte [killer],0xc
 jmp lastwords
 
 exceptiond:
+pop qword [reason]
 mov byte [killer],0xd
 jmp lastwords
 
 exceptione:
+pop qword [reason]
 mov byte [killer],0xe
 jmp lastwords
 
@@ -228,6 +234,7 @@ mov byte [killer],0x10
 jmp lastwords
 
 exception11:
+pop qword [reason]
 mov byte [killer],0x11
 jmp lastwords
 
@@ -534,13 +541,13 @@ add edi,eax
 	.continue:
 	push rsi
 	push rdi
-	call hex
+	call anscii
 	pop rdi
 	pop rsi
 
 	push rsi
 	push rdi
-	call anscii
+	call hex
 	pop rdi
 	pop rsi
 
@@ -594,36 +601,12 @@ mov r13,[buffer+0xd0]
 mov r14,[buffer+0xe0]
 mov r15,[buffer+0xf0]
 
-cmp byte [killer],8
-je .beforeleave
-cmp byte [killer],0xa
-je .beforeleave
-cmp byte [killer],0xb
-je .beforeleave
-cmp byte [killer],0xc
-je .beforeleave
-cmp byte [killer],0xd
-je .beforeleave
-cmp byte [killer],0xe
-je .beforeleave
-cmp byte [killer],0x11
-je .beforeleave
-
-jmp .leave
-
-.beforeleave:
-sub rsp,8
-.leave:
 iretq
 ;__________________________________
 
 
 ;__________________________________________-
 anscii:
-    mov eax,[onechar]
-    shl eax,3
-    lea eax,[eax*2+eax]
-    add edi,eax
     mov ecx,8
 .print:
     push rsi
@@ -649,6 +632,9 @@ anscii:
 
 ;____________________________________
 hex:
+    mov eax,[onechar]
+    shl eax,4
+    add edi,eax
     lodsq
     mov ecx,16
 .print:
@@ -722,8 +708,7 @@ dq 0,"r14"
 dq 0,"r15"
 
 dq 0,"cr0"
-killer:
-dq 0,"killer"
+dq 0,"i'm dead"
 dq 0,"cr2"
 dq 0,"cr3"
 dq 0,"cr4"
@@ -735,8 +720,10 @@ dq 0,"dr0"
 dq 0,"dr1"
 dq 0,"dr2"
 dq 0,"dr3"
-dq 0,"i'm dead"
-dq 0,"i'm dead"
+killer:
+dq 0,"killer"
+reason:
+dq 0,"reason"
 dq 0,"dr6"
 dq 0,"dr7"
 
