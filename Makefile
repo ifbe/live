@@ -4,42 +4,42 @@ a:
 	make -s clean
 	make -s -C load
 	make -s -C init
-	make -s -C kernel/assembly
+	make -s -C demo/assembly
 	make -s image
 	make -s qemu
 c:
 	make -s clean
 	make -s -C load
 	make -s -C init
-	make -s -C kernel/c
+	make -s -C demo/c
 	make -s image
 	make -s qemu
 j:
 	make -s clean
 	make -s -C load
 	make -s -C init
-	make -s -C kernel/jarvis
+	make -s -C demo/jarvis
 	make -s image
 	make -s qemu
 m:
 	make -s clean
 	make -s -C load
 	make -s -C init
-	make -s -C kernel/multitask
+	make -s -C demo/multitask
 	make -s image
 	make -s qemu
 image:
 	touch load/load
 	touch init/init
-	touch kernel/kernel
-	touch kernel/temp
-	touch kernel/temp1
+	touch demo/kernel
+	touch demo/temp
+	touch demo/temp1
 	nasm link.s -o live
 clean:
 	rm -f load/load
 	rm -f init/init
-	rm -f kernel/kernel
-	rm -f kernel/temp*
+	rm -f demo/kernel
+	rm -f demo/temp*
 	rm -f live
 push:
 	make clean
