@@ -1,102 +1,17 @@
 [BITS 64]
-;____________________________________
-jpegprogram:
-    mov esi,0x20000
-    mov edi,0x100000
-    mov ecx,0x2000
-    rep movsq
-
-jpegdecode:                   ;位置无关
-    cli
-    mov rdx,0x100000            ;eax 传参
-    call rdx
-    mov [jpegbase],rax        ;return value
-    sti
-
-prepare:
-    mov r14,0xa000             ;r14 memory pointer
-    xor r15,r15             ;r15 offset pointer
-
-    mov rdi,0x800
-    mov [0xff8],rdi
-
-    xor rax,rax
-    mov [0xff0],rax         ;keyboard buffer end
-
-    mov ecx,0xfe
-    rep stosq
-
-    call ramdump
-;_______________________________________
-
-
-
-
-;_____________________________________
-forever:
-
-hlt			;	sleep
-
-cmp byte [0xff0],0	;	(keyboard interrupt)?
-je forever		;	no{sleep again}
-
-			;	yes{
-mov byte [0xff0],0	;		clear signal
-mov eax,[0xff8]		;		pointer=[0xff8]
-cmp ax,0x800		;		(pointer=0x800(buffer head))?
-je forever		;		yes{sleep again}
-			;		no{
-dec eax			;			pointer-1
-mov al,[eax]		;			al=[pointer]
-
-switchkey:
-			;			(al)?
-cmp al,0x3b		;			{
-je f1			;			0x3b:f1
-cmp al,0x3c
-je f2			;			0x3c:f2
-cmp al,0x3d
-je f3			;			0x3d:f3
-cmp al,0x3e
-je f4			;			0x3e:f4
-cmp al,0x01
-je esc			;			0x01:esc
-;cmp al,0x1d
-;je ctrl			;			0x1d:ctrl
-;cmp al,0x38
-;je alt			;			0x38:alt
-;cmp al,0x3a
-;je capslock		;			0x38:capslock
-;cmp al,0x2a
-;je shift		;			0x38:shift
-;cmp al,0x0f
-;je tab			;			0x0f:tab
-;cmp al,0x5b
-;je super		;			0x0f:super
-
-decide:
-jmp function1
-			;			}
-			;		}
-			;	}
-;_______________________________
-
-
-
-
 ;_________________________
 f1:
     mov dword [decide+1],function1-(decide+5)		;selfmodify
-    jmp function1
+    jmp ramdump
 f2:
     mov dword [decide+1],function2-(decide+5)		;selfmodify
-    jmp function2
+    jmp picture
 f3:
     mov dword [decide+1],function3-(decide+5)		;selfmodify
-    jmp function3
+    jmp cyberspace
 f4:
     mov dword [decide+1],function4-(decide+5)		;selfmodify
-    jmp function4
+    jmp console
 
 
 esc:

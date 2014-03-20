@@ -2,6 +2,29 @@
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F1-----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;___________________________
 function1:
+cmp al,0x3b
+je f1
+cmp al,0x3c
+je f2
+cmp al,0x3d
+je f3
+cmp al,0x3e
+je f4
+cmp al,0x01
+je esc
+;cmp al,0x1d
+;je ctrl
+;cmp al,0x38
+;je alt
+;cmp al,0x3a
+;je capslock
+;cmp al,0x2a
+;je shift
+;cmp al,0x0f
+;je tab
+;cmp al,0x5b
+;je super
+
 cmp al,0x39
 je f1space
 cmp al,0x4b
@@ -81,7 +104,7 @@ jnz .anscii
     jmp ramdump
 
 ;_______________________________________
-altkey db 0
+altkey db 1
 
 
 
