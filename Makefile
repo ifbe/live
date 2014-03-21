@@ -42,7 +42,7 @@ clean:
 	rm -f init/init
 	rm -f init/\[e000\,efff\]/temp*
 	rm -f init/\[f000\,ffff\]/temp*
-	rm -f demo/kernel
+	rm -f demo/demo
 	rm -f demo/temp*
 	rm -f live
 	rm -rf purecode
