@@ -40,6 +40,8 @@ image:
 clean:
 	rm -f load/load
 	rm -f init/init
+	rm -f init/\[e000\,efff\]/temp*
+	rm -f init/\[f000\,ffff\]/temp*
 	rm -f demo/kernel
 	rm -f demo/temp*
 	rm -f live
