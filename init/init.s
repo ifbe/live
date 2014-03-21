@@ -1,29 +1,20 @@
-%include "[8000,83ff]1024x768.s"
-%include "[8400,87ff]longmode.s"
-%include "[8800,8bff]acpi.s"
-%include "[8c00,8fff]iopci.s"
+;[8000,8fff]
+%include "[8000,83ff]/1024x768.s"
+%include "[8400,87ff]/longmode.s"
+%include "[8800,8bff]/acpi.s"
+%include "[8c00,8fff]/iopci.s"		;or mmpci.s
 
-;___________[9000,9fff]_____________
-[bits 64]
-startoffakekernel:
+;[9000,9fff]
+%include "[9000,9fff]/call.s"
 
-mov rdx,0xc000
-call rdx
-mov rdx,0xd000
-call rdx
-mov rdx,0x10000
-call rdx
-sleep:hlt
-jmp sleep
+;[a000,afff]
+%include "[a000,afff]/temp.s"
 
-endoffakekernel:
-times 0x1000-(endoffakekernel-startoffakekernel) db 0
-;___________________________________
+;[b000,bfff]
+%include "[b000,bfff]/anscii.s"
 
-%include "temp.s"
+;[c000,cfff]
+%include "[c000,cfff]/exception.s"
 
-%include "[b000,bfff]anscii.s"
-
-%include "[c000,cfff]exception.s"
-
-%include "[d000,dfff]apic.s"
+;[d000,dfff]
+%include "[d000,dfff]/apic.s"		;or pic.s

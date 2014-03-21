@@ -30,6 +30,7 @@
 要kernel/c中某个demo       :	改kernel/c/Makefile,make c
 要小程序jarvis             :	make j
 要小程序multitask          :	make m
+要干净的代码 	      	   :	make purecode
 
 使用:
 1:去windows下打开else/bootice

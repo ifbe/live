@@ -1,2 +1,2 @@
 kernel:
-	nasm apictimer.s -o ../kernel
+	nasm apictimer.s -o ../demo

@@ -1,5 +1,5 @@
 multi:
-	nasm kernel.s -o ../kernel
+	nasm kernel.s -o ../demo
 	gcc -Wall -c -O2 taiji.c -o ../temp.elf
 	objdump -d ../temp.elf | grep -m 1 start
 	ld -T 200000.ld ../temp.elf -o ../temp

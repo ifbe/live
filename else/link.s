@@ -4,7 +4,7 @@ times 0x8000-($-$$)db 0
 incbin "init/init"		;[0x8000,0xffff]=[64,127]
 times 0x10000-($-$$)db 0
 
-incbin "demo/kernel"		;[0x10000,0x1ffff]=[128,255]
+incbin "demo/demo"		;[0x10000,0x1ffff]=[128,255]
 times 0x20000-($-$$)db 0
 
 incbin "demo/temp"		;[0x20000,0x2ffff]=[256,383]

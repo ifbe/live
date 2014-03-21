@@ -339,17 +339,18 @@ void point(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    QWORD points=0xb000;
+    QWORD source=0xb000;
     char temp;
     char* p;
 
-    points+=ch<<4;
+    ch&=0x7f;
+    source+=ch<<4;
     x=8*x;
     y=16*y;
 
     for(i=0;i<16;i++)
     {
-        p=(char*)points;
+        p=(char*)source;
         for(j=0;j<8;j++)
         {
             temp=*p;
@@ -359,7 +360,7 @@ void anscii(int x,int y,char ch)
             else{point(j+x,i+y,0);}
 
         }
-    points++;
+    source++;
     }
 }
 void say(char* p,QWORD z)
@@ -617,7 +618,7 @@ int identify(HBA_PORT *port)
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1){
 		say("error:no cmdslot",(QWORD)cmdslot);
-		return 0;
+		return -1;
 	}
 	say("cmdslot:",(QWORD)cmdslot);
 
@@ -694,22 +695,12 @@ void start()
 	probeport(addr);
 
 	identify((HBA_PORT*)(QWORD)addr);
-	//read((HBA_PORT*)(QWORD)addr,0,8,0x400000);
 
-	say("0x400000:",*(QWORD*)0x400000);
-	say("0x400008:",*(QWORD*)0x400008);
-	say("0x400010:",*(QWORD*)0x400010);
-	say("0x400018:",*(QWORD*)0x400018);
-	say("0x400020:",*(QWORD*)0x400020);
-	say("0x400028:",*(QWORD*)0x400028);
-	say("0x400030:",*(QWORD*)0x400030);
-	say("0x400038:",*(QWORD*)0x400038);
-	say("0x400040:",*(QWORD*)0x400040);
-	say("0x400048:",*(QWORD*)0x400048);
-	say("0x400050:",*(QWORD*)0x400050);
-	say("0x400058:",*(QWORD*)0x400058);
-	say("0x400060:",*(QWORD*)0x400060);
-	say("0x400068:",*(QWORD*)0x400068);
-	say("0x400070:",*(QWORD*)0x400070);
-	say("0x400078:",*(QWORD*)0x400078);
+	char* p=(char*)0x400000;
+	int count=0;
+
+	for(;count<0x80;count+=2){
+	anscii(count,where,p[count+1]);
+	anscii(count+1,where,p[count]);
+	}
 }

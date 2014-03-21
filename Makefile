@@ -28,19 +28,22 @@ m:
 	make -s -C demo/multitask
 	make -s image
 	make -s qemu
+purecode:
+	sh else/makecode
 image:
 	touch load/load
 	touch init/init
 	touch demo/kernel
 	touch demo/temp
 	touch demo/temp1
-	nasm link.s -o live
+	nasm else/link.s -o live
 clean:
 	rm -f load/load
 	rm -f init/init
 	rm -f demo/kernel
 	rm -f demo/temp*
 	rm -f live
+	rm -rf purecode
 push:
 	make clean
 	git add --all .
