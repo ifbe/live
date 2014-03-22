@@ -33,15 +33,13 @@ purecode:
 image:
 	touch load/load
 	touch init/init
-	touch demo/kernel
 	touch demo/temp
 	touch demo/temp1
 	nasm else/link.s -o live
 clean:
 	rm -f load/load
 	rm -f init/init
-	rm -f init/\[e000\,efff\]/temp*
-	rm -f init/\[f000\,ffff\]/temp*
+	rm -f init/\[c000\,ffff\]/temp*
 	rm -f demo/demo
 	rm -f demo/temp*
 	rm -f live
