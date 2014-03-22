@@ -1,39 +1,14 @@
 电脑像单片机那样用
 
-内存组织：(单位：0x)
-[0,7ff]:没动
-[800,fff]:keyboard buffer
-[1000,1fff]:idt
-[2000,2fff]:mem info
-[3000,3fff]:vesa mode
-[4000,4fff]:acpi
-[5000,5fff]:pci
-
-[8000,ffff]:initer
-[10000,1ffff]:kernel
-[20000,2ffff]:temp
-[30000,3ffff]:temp1
-
-[40000,8ffff]:jpeg
-
-[90000,90fff]:page map level4
-[91000,91fff]:page directory pointer
-[92000,92fff]:page directory 1,2,3,4
-
 编译：
-1:
-改load/Makefile(应该不用改)
-2:
-改init/init.s(应该不用改)
-3:
-要kernel/assembly中某个demo:	改kernel/assembly/Makefile,make a
-要kernel/c中某个demo       :	改kernel/c/Makefile,make c
-要小程序jarvis             :	make j
-要小程序multitask          :	make m
-要干净的代码 	      	   :	make purecode
+1:改load/Makefile(应该不用改)
+2:改init/init.s(应该不用改)
+3:改demo/Makefile(把make -C 后面名字改成diskgenius,easiest等)
+	3.5:选assembly和c,改里面的Makefile选某个单文件裸程序,选其他,无视这条往下
+4:make(自动弹出qemu,可以用它测试)
 
-使用:
-1:去windows下打开else/bootice
+真机使用:
+1:去windows下用神器bootice(else里面有)
 2:选fat32的U盘
 3:主引导改成usb-hdd+分区引导改成grub4dos
 4:else/grldr和else/menu.lst复制到U盘根目录

@@ -1,0 +1,8 @@
+[0,7ff]:free
+[800,fff]:keyboard buffer
+[1000,1fff]:idt
+[2000,2fff]:mem info
+[3000,3fff]:vesa info
+[4000,4fff]:acpi info
+[5000,5fff]:pci	info
+[6000,6fff]:disk info
