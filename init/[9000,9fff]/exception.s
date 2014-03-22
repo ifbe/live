@@ -738,10 +738,15 @@ dq 0,"[rsp+56]"
 
 endofbuffer:
 
+endofexception:
+mov rax,0xc000
+call rax
+int3
+mov rax,0x10000
+call rax
 
+sleep:hlt
+jmp sleep
 
 padding:
-times 0xfff-(padding-startofexception) db 0
-
-endofexception:
-ret
+times 0x1000-(padding-startofexception) db 0

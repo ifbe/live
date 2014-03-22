@@ -1,6 +1,6 @@
 OUTPUT_FORMAT("binary")
 ENTRY(start)
-phys = 0xf000;
+phys = 0xc000;
 SECTIONS
 {
   .text phys : AT(phys) {

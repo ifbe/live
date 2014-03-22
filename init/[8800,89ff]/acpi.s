@@ -138,7 +138,7 @@ find_S5_:
     jmp endofacpi
 
 paddingofacpi:
-times 0x400-(paddingofacpi-startofacpi) db 0
+times 0x200-(paddingofacpi-startofacpi) db 0
 
 
 endofacpi:

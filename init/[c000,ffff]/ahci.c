@@ -1,4 +1,4 @@
-#include "readdisk.h"
+#include "ahci.h"
 
 void start()
 {
@@ -9,7 +9,15 @@ void start()
 	addr=probeahci(addr);
 	probeport(addr);
 
-	read((HBA_PORT*)(QWORD)addr,0,8,0x400000);
+	identify((HBA_PORT*)(QWORD)addr);
+
+	char* p=(char*)0x400000;
+	int count=0;
+
+	for(;count<0x80;count+=2){
+	anscii(count,where,p[count+1]);
+	anscii(count+1,where,p[count]);
+	}
 }
 
 
@@ -34,17 +42,18 @@ void point(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    QWORD points=0xb000;
+    QWORD source=0xb000;
     char temp;
     char* p;
 
-    points+=ch<<4;
+    ch&=0x7f;
+    source+=ch<<4;
     x=8*x;
     y=16*y;
 
     for(i=0;i<16;i++)
     {
-        p=(char*)points;
+        p=(char*)source;
         for(j=0;j<8;j++)
         {
             temp=*p;
@@ -54,7 +63,7 @@ void anscii(int x,int y,char ch)
             else{point(j+x,i+y,0);}
 
         }
-    points++;
+    source++;
     }
 }
 void say(char* p,QWORD z)
@@ -240,34 +249,31 @@ void probeport(unsigned int addr)
 	disable(port);	// Stop command engine
 
 	unsigned char* p=(unsigned char*)0x200000;
-	for(;p<(unsigned char*)0x300000;p++)	*p=0;
+	for(;p<(unsigned char*)0x200000+0x2800;p++)	*p=0;
 
-	//32*32 = 1K per port
+	//32*32=0x400
 	port->clb =0x200000;
 	port->clbu = 0;
  
-	//256 bytes per port
-	port->fb = 0x200000 + (32<<10);
+	//0x100
+	port->fb = 0x200000 + 0x400;
 	port->fbu = 0;
  
-	// Command table offset: 40K + 8K*portno
-	// Command table size = 256*32 = 8K per port
+	//0x100*32=0x2000=8k
 	HBA_CMD_HEADER *cmdheader=(HBA_CMD_HEADER*)(QWORD)(port->clb);
 	int i;
 	for (i=0; i<32; i++)
 	{
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-
-		// Command table offset: 40K + 8K*portno + cmdheader_index*256
-		cmdheader[i].ctba=0x200000+(40<<10)+(1<<13)+(i<<8);
+		cmdheader[i].ctba=0x200800+(i<<8);
 		cmdheader[i].ctbau = 0;
 	}
-	enable(port);	// Start command engine
 	say("port->clb:",(QWORD)port->clb);
 	say("port->fb:",(QWORD)port->fb);
+	enable(port);	// Start command engine
+/*
 	say("port->is:",(QWORD)port->is);
 	say("port->ie:",(QWORD)port->ie);
-/*
 	say("port->clb:",(QWORD)port->clb);
 	say("port->fb:",(QWORD)port->fb);
 	say("port->is:",(QWORD)port->is);
@@ -305,69 +311,38 @@ int find_cmdslot(HBA_PORT *port)
 	}
 	return -1;
 } 
-void maketable(HBA_CMD_HEADER* cmdheader,QWORD start,DWORD count,QWORD buf)
-{
-	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
-	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
-
-	char* p=(char*)cmdtable;
-	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
-	say("i:",(QWORD)i);
-	for(;i>0;i--){*p=0;p++;}
- 
-	// 8K bytes (16 sectors) per PRDT
-	for (i=0; i<cmdheader->prdtl-1; i++)
-	{
-		cmdtable->prdt_entry[i].dba = (DWORD)buf;
-		cmdtable->prdt_entry[i].dbc = 8*1024;	// 8K bytes
-		cmdtable->prdt_entry[i].i = 1;
-		buf += 8192;	// 4K words
-		count -= 16;	// 16 sectors
-	}
-	// Last entry
-	cmdtable->prdt_entry[i].dba = (DWORD)buf;
-	cmdtable->prdt_entry[i].dbc = count<<9;	// 512 bytes per sector
-	//cmdtable->prdt_entry[i].i = 1;
- 
-	// Setup command
-	FIS_REG_H2D *fis = (FIS_REG_H2D*)(&cmdtable->cfis);
- 
-	fis->fis_type = FIS_TYPE_REG_H2D;
-	fis->c = 1;	// Command
-	fis->command = 0x25;
-	//fis->command = ATA_CMD_READ_DMA_EX;
- 
-	fis->lba0 = (BYTE)start;
-	fis->lba1 = (BYTE)(start>>8);
-	fis->lba2 = (BYTE)(start>>16);
-	fis->device = 0x40;	// LBA mode
- 
-	fis->lba3 = (BYTE)(start>>24);
-	fis->lba4 = (BYTE)(start>>32);
-	fis->lba5 = (BYTE)(start>>40);
- 
-	fis->countl = count&0xff;
-	fis->counth = (count>>8)&0xff;
-}
-int read(HBA_PORT *port,QWORD start,DWORD count,QWORD buf)
+int identify(HBA_PORT *port)
 {
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
 	
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1){
 		say("error:no cmdslot",(QWORD)cmdslot);
-		return 0;
+		return -1;
 	}
 	say("cmdslot:",(QWORD)cmdslot);
 
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(QWORD)(port->clb);
 	cmdheader += cmdslot;
 	say("cmdheader:",(QWORD)cmdheader);
-
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
-	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
-	maketable(cmdheader,start,count,buf);
+
+	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
+	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
+	char* p=(char*)cmdtable;
+	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
+	say("i:",(QWORD)i);
+	for(;i>0;i--){*p=0;p++;}
+	cmdtable->prdt_entry[0].dba =0x400000;
+	cmdtable->prdt_entry[0].dbc = 512;	// 512 bytes per sector
+	//cmdtable->prdt_entry[0].i = 1;
+ 
+	FIS_REG_H2D *fis = (FIS_REG_H2D*)(&cmdtable->cfis);
+	fis->fis_type = FIS_TYPE_REG_H2D;
+	fis->command = 0xec;
+	fis->device=0;
+	fis->c = 1;	// Command
 
 	int spin = 0;
 	//0x88=interface busy|data transfer requested
@@ -382,11 +357,6 @@ int read(HBA_PORT *port,QWORD start,DWORD count,QWORD buf)
 
 	say("is:",(QWORD)port->is);
 	unsigned int* pointer=(unsigned int*)(QWORD)(port->fb);
-/*
-	say("fb(dma setup fis):",(QWORD)*(pointer));
-	say("fb+4:",(QWORD)*(pointer+1));
-	say("fb+8:",(QWORD)*(pointer+2));
-	say("fb+c:",(QWORD)*(pointer+3));
 	say("fb+20(pio setup fis):",(QWORD)*(pointer+8));
 	say("fb+24:",(QWORD)*(pointer+9));
 	say("fb+28:",(QWORD)*(pointer+10));
@@ -395,13 +365,6 @@ int read(HBA_PORT *port,QWORD start,DWORD count,QWORD buf)
 	say("fb+44:",(QWORD)*(pointer+0x11));
 	say("fb+48:",(QWORD)*(pointer+0x12));
 	say("fb+4c:",(QWORD)*(pointer+0x13));
-	say("fb+58(set device bit fis):",(QWORD)*(pointer+0x16));
-	say("fb+5c:",(QWORD)*(pointer+0x17));
-	say("fb+60(unknown fis):",(QWORD)*(pointer+0x18));
-	say("fb+64:",(QWORD)*(pointer+0x19));
-	say("fb+68:",(QWORD)*(pointer+0x1a));
-	say("fb+6c:",(QWORD)*(pointer+0x1b));
-*/
 
 	while (1){
 		// in the PxIS port field as well (1 << 5)

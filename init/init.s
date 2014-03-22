@@ -12,12 +12,15 @@
 
 %include "[8400,87ff]/longmode.s"	;64bit mode,virtual mem=physical mem
 
-%include "[8800,8bff]/acpi.s"		;[4000,4fff]:acpi table address info
+%include "[8800,89ff]/acpi.s"		;[4000,4fff]:acpi table address info
 
-%include "[8c00,8fff]/iopci.s"		;[5000,5fff]:pci address info
+%include "[8a00,8bff]/iopci.s"		;[5000,5fff]:pci address info
 ;%include "[8c00,8fff]/mmpci.s"
 
-%include "[9000,9fff]/call.s"		;call 0xa000
+%include "[8c00,8dff]/localapic.s"
+%include "[8e00,8fff]/ioapic.s"
+
+%include "[9000,9fff]/exception.s"	;call 0xa000
 					;call 0xb000
 					;......
 
@@ -32,14 +35,4 @@
 
 %include "[b000,bfff]/anscii.s"		;anscii pixel table
 
-%include "[c000,cfff]/exception.s"	;[1000,1fff]:idt
-					;default exception service routines
-
-%include "[d000,dfff]/apic.s"		;init localapic and ioapic
-;%include "[d000,dfff]/pic.s"		;init 8259
-
-incbin "[e000,efff]/temp"
-times 0x7000-($-$$)db 0
-
-incbin "[f000,ffff]/temp"
-times 0x8000-($-$$)db 0
+incbin "[c000,ffff]/temp"
