@@ -429,7 +429,7 @@ int find_cmdslot(HBA_PORT *port)
 	}
 	return -1;
 } 
-void maketable(QWORD buf,QWORD start,HBA_CMD_HEADER* cmdheader,DWORD count)
+void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 {
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
 	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
@@ -461,19 +461,19 @@ void maketable(QWORD buf,QWORD start,HBA_CMD_HEADER* cmdheader,DWORD count)
 	fis->command = 0x25;
 	//fis->command = ATA_CMD_READ_DMA_EX;
  
-	fis->lba0 = (BYTE)start;
-	fis->lba1 = (BYTE)(start>>8);
-	fis->lba2 = (BYTE)(start>>16);
+	fis->lba0 = (BYTE)from;
+	fis->lba1 = (BYTE)(from>>8);
+	fis->lba2 = (BYTE)(from>>16);
 	fis->device = 0x40;	// LBA mode
  
-	fis->lba3 = (BYTE)(start>>24);
-	fis->lba4 = (BYTE)(start>>32);
-	fis->lba5 = (BYTE)(start>>40);
+	fis->lba3 = (BYTE)(from>>24);
+	fis->lba4 = (BYTE)(from>>32);
+	fis->lba5 = (BYTE)(from>>40);
  
 	fis->countl = count&0xff;
 	fis->counth = (count>>8)&0xff;
 }
-int read(QWORD buf,QWORD start,QWORD addr,DWORD count)
+int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 {
 	HBA_PORT* port =(HBA_PORT*)addr;
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
@@ -490,9 +490,9 @@ int read(QWORD buf,QWORD start,QWORD addr,DWORD count)
 	say("cmdheader:",(QWORD)cmdheader);
 
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
-	cmdheader->w = 0;		// Read from device
+	cmdheader->w = 0;		// Read device
 	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
-	maketable(buf,start,cmdheader,count);
+	maketable(buf,from,cmdheader,count);
 
 	int spin = 0;
 	//0x88=interface busy|data transfer requested
@@ -528,7 +528,7 @@ int read(QWORD buf,QWORD start,QWORD addr,DWORD count)
 
 
 
-void start()
+void main()
 {
 	QWORD addr;
 

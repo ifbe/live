@@ -17,7 +17,7 @@ double cosine(double x);
 double sine(double x);
 
 
-void start()                //位置固定在第一个函数
+void main()                //位置固定在第一个函数
 {
     init();               //清屏
     circle();               //太极

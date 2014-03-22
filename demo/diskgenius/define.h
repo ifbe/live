@@ -318,4 +318,4 @@ typedef struct tagHBA_CMD_TBL
 void anscii(int x,int y,char ch);
 void say(char* p,QWORD z);
 QWORD finddisk();
-int read(QWORD buf,QWORD start,QWORD addr,DWORD count);
+int read(QWORD buf,QWORD from,QWORD addr,DWORD count);

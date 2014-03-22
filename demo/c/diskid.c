@@ -506,7 +506,7 @@ int identify(DWORD edi,QWORD addr)
 
 
 
-void start()
+void main()
 {
 	QWORD addr;
 

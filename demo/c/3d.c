@@ -147,7 +147,7 @@ void display()
 	}
 }
 
-void start()
+void main()
 {
 	char in=0;
 

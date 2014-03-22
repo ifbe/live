@@ -15,7 +15,7 @@ double sine(double x);
 //320*240
 
 
-void start()                //位置固定在第一个函数
+void main()                //位置固定在第一个函数
 {
     clear();               //清屏
     taiji();               //太极

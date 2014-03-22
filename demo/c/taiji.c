@@ -5,7 +5,7 @@ double cosine(double x);
 double sine(double x);
 void taiji(double* base);
 
-void start()
+void main()
 {
     double base=0.0;
     while(1)

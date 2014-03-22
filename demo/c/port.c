@@ -28,7 +28,7 @@ static inline unsigned int in32( unsigned short port )
     return ret;
 }
 
-void start()
+void main()
 {
     char in;
     char* rdi=(char*)0xa0000;

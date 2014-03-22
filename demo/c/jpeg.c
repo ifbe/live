@@ -62,7 +62,7 @@ void picture();
 #define u64 long long
 u64 offset;
 
-u64 start()
+u64 main()
 {
     offset=0x200000;
     char *buf;

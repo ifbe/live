@@ -4,7 +4,7 @@ void draw(int x,int y,int z);
 void move();
 int x=-250,y=0,xx,yy;
 
-void start()
+void main()
 {
     int i;
     xx=(int)(*((char*)0x500)>>4)+8;

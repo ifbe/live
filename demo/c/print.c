@@ -92,7 +92,7 @@ void decimal(int x,int y,s64 z)
 }
 
 
-void start()
+void main()
 {
 	anscii(0,0,'$');
 	string(0,1,"live is evil");

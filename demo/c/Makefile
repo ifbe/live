@@ -1,13 +1,6 @@
 c:
-	#1
-	nasm call.s -o ../demo
-	#2
-	gcc -c -O2 readdisk.c -o temp.elf
-	ld -T link.ld temp.elf -o temp
-	#black magic
-	objdump -d temp.elf | grep -m 1 start
-	objdump -d temp.elf | grep -m 1 start>>../demo
-	#1+2
-	nasm link.s
+	gcc -c start.c -o temp.o
+	gcc -c -O2 readdisk.c -o temp1.o
+	ld -T link.ld temp.o temp1.o -o ../demo
 clean:
 	rm -f temp*
