@@ -1,41 +1,32 @@
 default:
 	cat README
+purecode:
+	make -s clean
+	sh else/makecode
 a:
 	make -s clean
-	make -s -C load
-	make -s -C init
 	make -s -C demo/assembly
 	make -s image
-	make -s qemu
 c:
 	make -s clean
-	make -s -C load
-	make -s -C init
 	make -s -C demo/c
 	make -s image
-	make -s qemu
+d:
+	make -s clean
+	make -s -C demo/diskgenius
+	make -s image
+e:
+	make -s clean
+	make -s -C demo/easiest
+	make -s image
 j:
 	make -s clean
-	make -s -C load
-	make -s -C init
 	make -s -C demo/jarvis
 	make -s image
-	make -s qemu
 m:
 	make -s clean
-	make -s -C load
-	make -s -C init
 	make -s -C demo/multitask
 	make -s image
-	make -s qemu
-purecode:
-	sh else/makecode
-image:
-	touch load/load
-	touch init/init
-	touch demo/temp
-	touch demo/temp1
-	nasm else/link.s -o live
 clean:
 	rm -f load/load
 	rm -f init/init
@@ -44,11 +35,6 @@ clean:
 	rm -f demo/temp*
 	rm -f live
 	rm -rf purecode
-push:
-	make clean
-	git add --all .
-	git commit -a
-	git push
 qemu:
 	qemu-kvm \
 	-smp 2 \
@@ -58,3 +44,17 @@ qemu:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live
+image:
+	make -s -C load
+	make -s -C init
+	touch load/load
+	touch init/init
+	touch demo/temp
+	touch demo/temp1
+	nasm else/link.s -o live
+	make qemu
+push:
+	make clean
+	git add --all .
+	git commit -a
+	git push
