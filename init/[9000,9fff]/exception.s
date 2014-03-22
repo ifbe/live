@@ -741,7 +741,6 @@ endofbuffer:
 endofexception:
 mov rax,0xc000
 call rax
-int3
 mov rax,0x10000
 call rax
 

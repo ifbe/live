@@ -391,23 +391,22 @@ void say(char* p,QWORD z)
 
  
 
-unsigned int information()
+QWORD finddisk()
 {
-	QWORD addr=0x5008;
-	unsigned int temp;
-	for(;addr<0x6000;addr+=0x10)
-	{
-		temp=*(unsigned int*)addr;
-		temp&=0xffffff00;
-		if(temp==0x01060100)
-		{
-			addr-=0x8;
-			temp=*(unsigned int*)addr;
-			say("pci address:",(QWORD)temp);
-			return temp;
-		}
-	}
-return 0;
+        QWORD addr=0x6008;
+        unsigned int temp;
+        for(;addr<0x6200;addr+=0x10)
+        {
+                temp=*(unsigned int*)addr;
+                if(temp==0x61746173)
+                {
+                        addr-=0x8;
+                        temp=*(unsigned int*)addr;
+                        say("sata address:",(QWORD)temp);
+                        return (QWORD)temp;
+                }
+        }
+	return 0;
 }
 
 
@@ -610,7 +609,7 @@ int find_cmdslot(HBA_PORT *port)
 	}
 	return -1;
 } 
-void maketable(HBA_CMD_HEADER* cmdheader,QWORD start,DWORD count,QWORD buf)
+void maketable(QWORD buf,QWORD start,HBA_CMD_HEADER* cmdheader,DWORD count)
 {
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
 	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
@@ -654,8 +653,9 @@ void maketable(HBA_CMD_HEADER* cmdheader,QWORD start,DWORD count,QWORD buf)
 	fis->countl = count&0xff;
 	fis->counth = (count>>8)&0xff;
 }
-int read(HBA_PORT *port,QWORD start,DWORD count,QWORD buf)
+int read(QWORD buf,QWORD start,QWORD addr,DWORD count)
 {
+	HBA_PORT* port =(HBA_PORT*)addr;
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
 	
 	int cmdslot = find_cmdslot(port);
@@ -672,7 +672,7 @@ int read(HBA_PORT *port,QWORD start,DWORD count,QWORD buf)
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
 	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
-	maketable(cmdheader,start,count,buf);
+	maketable(buf,start,cmdheader,count);
 
 	int spin = 0;
 	//0x88=interface busy|data transfer requested
@@ -728,14 +728,10 @@ int read(HBA_PORT *port,QWORD start,DWORD count,QWORD buf)
 
 void start()
 {
-	unsigned int addr;
+	QWORD addr;
 
-	addr=information();
-	addr=probepci(addr);
-	addr=probeahci(addr);
-	probeport(addr);
-
-	read((HBA_PORT*)(QWORD)addr,0,8,0x400000);
+	addr=finddisk();
+	if(addr!=0)read(0x400000,0,addr,8);
 
 	say("0x400000:",*(QWORD*)0x400000);
 	say("0x400008:",*(QWORD*)0x400008);
