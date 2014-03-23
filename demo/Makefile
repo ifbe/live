@@ -1,6 +1,6 @@
 pleasechoose:
 	make clean
-	make -C c
+	make -C diskgenius
 clean:
 	rm -f demo
 	rm -f assembly/temp*

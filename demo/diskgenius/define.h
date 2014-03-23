@@ -312,7 +312,9 @@ typedef struct tagHBA_CMD_TBL
 	BYTE	rsv[48];	// Reserved
  
 	// 0x80
-	HBA_PRDT_ENTRY	prdt_entry[1];	// Physical region descriptor table entries, 0 ~ 65535
+	HBA_PRDT_ENTRY	prdt_entry[1];
+	// Physical region descriptor table entries, 0 ~ 65535
+	// 0xffff个，每个0x18,总共0x180000=1.5M
 }CMD_TABLE;
 
 void anscii(int x,int y,char ch);

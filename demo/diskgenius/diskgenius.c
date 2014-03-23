@@ -2,43 +2,6 @@
 
 int where=0;
 
-void start()
-{
-	QWORD addr;
-	char* p;
-	int count;
-
-	addr=finddisk();
-	if(addr==0)return;
-
-	identify(0x100000,addr);
-        p=(char*)0x100000;
-        count=0;
-        for(;count<0x80;count+=2){
-        anscii(2*(count%0x20),where+count/0x20,(p[count]>>4)&0xf);
-        anscii(2*(count%0x20)+1,where+count/0x20,p[count]&0xf);
-        anscii(2*(count%0x20)+2,where+count/0x20,(p[count+1]>>4)&0xf);
-        anscii(2*(count%0x20)+3,where+count/0x20,p[count+1]&0xf);
-
-        anscii(0x42+2*count%0x40,where+count/0x20,p[count+1]);
-        anscii(0x43+2*count%0x40,where+count/0x20,p[count]);
-        }
-	where+=6;
-
-
-	read(0x100000,0,addr,8);
-        p=(char*)0x100000;
-        count=0;
-        for(;count<0x200;count++){
-        anscii(2*(count%0x20),where+count/0x20,(p[count]>>4)&0xf);
-        anscii(2*(count%0x20)+1,where+count/0x20,p[count]&0xf);
-        anscii(0x40+2*count%0x40+1,where+count/0x20,p[count]);
-        }
-	where+=18;
-}
-
-
-
 
 void point(int x,int y,int color)
 {
@@ -129,3 +92,51 @@ QWORD finddisk()
 
 
 
+
+void main()
+{
+	BYTE* memory=(BYTE*)0;
+	QWORD addr;
+	int x,y,rsi;
+
+	addr=finddisk();
+	if(addr==0)return;
+
+	identify(0x100000,addr);
+/*
+        for(rsi=0x100000;rsi<0x100080;rsi+=2){
+		y=where+(rsi-0x100000)/0x20;
+		x=2*((rsi-0x100000)%0x20);
+
+	        anscii(  x,y,(memory[rsi]>>4)&0xf);
+	        anscii(x+1,y,memory[rsi]&0xf);
+	        anscii(x+2,y,(memory[rsi+1]>>4)&0xf);
+	        anscii(x+3,y,memory[rsi+1]&0xf);
+
+		x=0x42+2*rsi%0x40;
+
+	        anscii(  x,y,memory[rsi+1]);
+	        anscii(x+1,y,memory[rsi]);
+        }
+	where+=4;
+*/
+
+	read(0x100000,0,addr,8);
+
+/*
+        for(rsi=0x100000;rsi<0x100200;rsi++){
+		y=where+(rsi-0x100000)/0x20;
+		x=2*((rsi-0x100000)%0x20);
+
+		anscii(  x,y,(memory[rsi]>>4)&0xf);
+		anscii(x+1,y,memory[rsi]&0xf);
+
+		x=0x41+2*rsi%0x40;
+
+		anscii(x,y,memory[rsi]);
+        }
+	where+=16;
+*/
+
+	if(*(WORD*)0x1001fe==0xAA55)say("normal disk",0);
+}

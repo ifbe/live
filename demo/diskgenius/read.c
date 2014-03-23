@@ -15,13 +15,17 @@ int find_cmdslot(HBA_PORT *port)
 } 
 void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 {
-	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
+	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
+	cmdheader->w = 0;		// Read from device
+	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
+	say("ptdtl",(QWORD)cmdheader->prdtl);
+
+	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;//e000左右
 	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
 
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
-	say("i:",(QWORD)i);
-	for(;i>0;i--){*p=0;p++;}
+	for(;i>0;i--){p[i]=0;}
  
 	// 8K bytes (16 sectors) per PRDT
 	for (i=0; i<cmdheader->prdtl-1; i++)
@@ -73,9 +77,6 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	cmdheader += cmdslot;
 	say("cmdheader:",(QWORD)cmdheader);
 
-	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
-	cmdheader->w = 0;		// Read from device
-	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
 	maketable(buf,from,cmdheader,count);
 
 	int spin = 0;

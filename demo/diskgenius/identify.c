@@ -24,13 +24,15 @@ int identify(DWORD edi,QWORD addr)
 	say("cmdheader:",(QWORD)cmdheader);
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
+	cmdheader->prdtl=1;
 
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
 	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
+
 	char* p=(char*)cmdtable;
-	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
-	say("i:",(QWORD)i);
-	for(;i>0;i--){*p=0;p++;}
+	int i=sizeof(CMD_TABLE);
+	for(;i>0;i--){p[i]=0;}
+
 	cmdtable->prdt_entry[0].dba = edi;
 	cmdtable->prdt_entry[0].dbc = 512;	// 512 bytes per sector
 	//cmdtable->prdt_entry[0].i = 1;
