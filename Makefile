@@ -4,7 +4,7 @@ image:
 	make -s -C init
 	make -s -C demo
 	nasm else/link.s -o live
-	make qemu
+	make -s qemu
 purecode:
 	make -s clean
 	sh else/makecode

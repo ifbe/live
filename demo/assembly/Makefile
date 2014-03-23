@@ -1,2 +1,2 @@
 kernel:
-	nasm apictimer.s -o ../demo
+	nasm 1024x768/apictimer.s -o ../demo
