@@ -362,8 +362,15 @@ void anscii(int x,int y,char ch)
     source++;
     }
 }
-void say(char* p,QWORD z)
+void say(char* p,...)
 {
+        register unsigned long long rsi asm("rsi");
+        register unsigned long long rdx asm("rdx");
+        register unsigned long long rcx asm("rcx");
+        register unsigned long long r8 asm("r8");
+        register unsigned long long r9 asm("r9");
+        unsigned long long first=rsi;
+
 	int x=0;
 	while(*p!='\0')
 	{
@@ -376,8 +383,8 @@ void say(char* p,QWORD z)
 	char ch;
         for(i=15;i>=0;i--)
         {
-        ch=(char)(z&0x0000000f);
-        z=z>>4;
+        ch=(char)(first&0x0000000f);
+        first=first>>4;
         anscii(32+i,where,ch);
         }
 
