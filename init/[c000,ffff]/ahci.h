@@ -85,6 +85,3 @@ unsigned int information();
 unsigned int probepci(unsigned int addr);
 unsigned int probeahci(unsigned int addr);
 void probeport(unsigned int addr);
-
-int where=0;
-char buffer[0x3000]={0};

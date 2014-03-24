@@ -26,7 +26,7 @@ unsigned int information()
 		{
 			addr-=0x8;
 			temp=*(unsigned int*)addr;
-			//say("pci address:",(QWORD)temp);
+			say("pci address:",(QWORD)temp);
 			return temp;
 		}
 	}
@@ -60,11 +60,11 @@ unsigned int probepci(unsigned int addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	//say("pci status and command:",(QWORD)in32(0xcfc));
+	say("pci status and command:",(QWORD)in32(0xcfc));
 
 	out32(0xcf8,addr+0x24);
 	addr=in32(0xcfc)&0xfffffff0;
-	//say("ahci address:",(QWORD)addr);
+	say("ahci address:",(QWORD)addr);
 	return addr;
 }
 
@@ -89,7 +89,7 @@ unsigned int probeahci(unsigned int addr)
 {
 	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
 	abar->ghc|=0x2;
-	//say("ahci cap and ghc:",((QWORD)(abar->cap)<<32)+(QWORD)(abar->ghc));
+	say("ahci cap and ghc:",((QWORD)(abar->cap)<<32)+(QWORD)(abar->ghc));
 
 	int i = 0;
 	DWORD pi = abar->pi;
@@ -135,16 +135,16 @@ unsigned int probeahci(unsigned int addr)
 
 void enable(HBA_PORT *port)
 {
-	//say("port->cmd before enable:",(QWORD)(port->cmd));
+	say("port->cmd before enable:",(QWORD)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
  
 	port->cmd |= 1<<4;	//bit4,receive enable
 	port->cmd |= 1; 	//bit0,start
-	//say("port->cmd after enable:",(QWORD)(port->cmd));
+	say("port->cmd after enable:",(QWORD)(port->cmd));
 }
 void disable(HBA_PORT *port)
 {
-	//say("port->cmd before disable:",(QWORD)(port->cmd));
+	say("port->cmd before disable:",(QWORD)(port->cmd));
 	port->cmd &= 0xfffffffe;	//bit0
 	port->cmd &= 0xffffffef;	//bit4,FRE
  
@@ -160,25 +160,24 @@ void disable(HBA_PORT *port)
 	}
  
 	if(i==0){
-	//say("error:can't disable:",(QWORD)(port->cmd));
+	say("error:can't disable:",(QWORD)(port->cmd));
 	return;
 	}
 
-	//say("port->cmd after disable:",(QWORD)(port->cmd));
+	say("port->cmd after disable:",(QWORD)(port->cmd));
 }
 void probeport(unsigned int addr)
 {
 	HBA_PORT* port=(HBA_PORT*)(QWORD)addr;
-	DWORD buf=(QWORD)(buffer+0x400)&0xfffffc00;
 	disable(port);	// Stop command engine
 
 	//32*32=0x400
-	port->clb =buf;
+	port->clb =0x88000;
 	//*(DWORD*)0x7000=port->clb;
 	port->clbu = 0;
  
 	//0x100
-	port->fb = buf+0x400;
+	port->fb = 0x88400;
 	//*(DWORD*)0x7008=port->fb;
 	port->fbu = 0;
  
@@ -188,11 +187,11 @@ void probeport(unsigned int addr)
 	for (i=0; i<32; i++)
 	{
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-		cmdheader[i].ctba=buf+0x800+(i<<8);
+		cmdheader[i].ctba=0x89000+(i<<8);
 		cmdheader[i].ctbau = 0;
 	}
 	//*(DWORD*)0x7010=cmdheader[0].ctba;
-	//say("port->clb:",(QWORD)port->clb);
-	//say("port->fb:",(QWORD)port->fb);
+	say("port->clb:",(QWORD)port->clb);
+	say("port->fb:",(QWORD)port->fb);
 	enable(port);	// Start command engine
 }
