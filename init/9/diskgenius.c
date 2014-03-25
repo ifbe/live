@@ -1,4 +1,4 @@
-#include "define.h"
+#include "struct.h"
 
 QWORD finddisk()
 {
@@ -67,5 +67,9 @@ void main()
 	where+=16;
 */
 
-	if(*(WORD*)0x1001fe==0xAA55)say("normal disk",0);
+	if(*(WORD*)0x1001fe==0xAA55)say("good disk");
+	else{say("bad disk");return;}
+
+	if(*(QWORD*)0x100200==0x5452415020494645)say("gpt part");
+	else{say("mbr disk");}
 }

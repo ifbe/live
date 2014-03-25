@@ -1,18 +1,5 @@
 #include "ahci.h"
 
-void start()
-{
-	unsigned int addr;
-	addr=information();
-	addr=probepci(addr);
-	addr=probeahci(addr);
-	probeport(addr);
-}
-
-
-
-
- 
 
 unsigned int information()
 {
@@ -194,4 +181,16 @@ void probeport(unsigned int addr)
 	say("port->clb:",(QWORD)port->clb);
 	say("port->fb:",(QWORD)port->fb);
 	enable(port);	// Start command engine
+}
+
+
+
+
+void initahci()
+{
+	unsigned int addr;
+	addr=information();
+	addr=probepci(addr);
+	addr=probeahci(addr);
+	probeport(addr);
 }

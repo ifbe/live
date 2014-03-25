@@ -1,6 +1,6 @@
 init:
-	make -C [c000,ffff]
+	make -C 9
 	nasm init.s
 clean:
 	rm -f init
-	rm -f \[c000\,ffff\]/temp*
+	rm -f 9/temp*

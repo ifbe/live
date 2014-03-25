@@ -1,4 +1,4 @@
-#include "define.h"
+#include "struct.h"
 
 int identify(DWORD edi,QWORD addr)
 {

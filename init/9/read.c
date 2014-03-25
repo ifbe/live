@@ -1,4 +1,4 @@
-#include "define.h"
+#include "struct.h"
 
 int find_cmdslot(HBA_PORT *port)
 {

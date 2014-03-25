@@ -16,7 +16,7 @@ findlocalapic:
     ;bts eax,11            ;enable lapic
     ;wrmsr
     and eax,0xfffff000
-    mov [localapicaddress],eax    ;save lapic base
+    mov [rel localapicaddress],eax    ;save lapic base
 
     cmp eax,0xfee00000
     jb endoflocalapic
@@ -29,7 +29,7 @@ savelapic:
 .continue:
     cmp dword [edi],0
     jne .addandagain
-	mov eax,[localapicaddress]
+	mov eax,[rel localapicaddress]
 	stosq
 	mov rax,"lapic"
 	stosq
@@ -45,7 +45,7 @@ savelapic:
 ;________________________________________
 localapicinitialization:
 
-    mov edi,[localapicaddress]
+    mov edi,[rel localapicaddress]
 
     ;[+80]=0              (task priority=0)
     xor eax,eax

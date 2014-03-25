@@ -1,4 +1,5 @@
 void start()
 {
+	initahci();
 	main();
 }

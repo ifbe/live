@@ -22,19 +22,19 @@ findioapic:
 
 getinformation:
     mov edi,[edi-8]
-    mov [madtstart],edi
+    mov [rel madtstart],edi
     mov eax,[edi+4]
     add eax,edi
-    mov [madtend],eax
+    mov [rel madtend],eax
     add edi,0x2c
-    mov [tablestart],edi
+    mov [rel tablestart],edi
 
 analyse:
     cmp byte [edi],1
     jne .continue
 
 	mov eax,[edi+4]
-	mov [ioapicaddress],eax
+	mov [rel ioapicaddress],eax
 	cmp eax,0xfec00000
 	jne endofioapic
 	jmp saveioapic            ;find it,lets go
@@ -43,7 +43,7 @@ analyse:
     mov al,[edi+1]
     movzx eax,al
     add edi,eax
-    cmp edi,[madtend]
+    cmp edi,[rel madtend]
     jb analyse
 ;_____________________________
 
@@ -65,7 +65,7 @@ saveioapic:
     cmp dword [edi],0
     jne .addandagain
 
-	mov eax,[ioapicaddress]
+	mov eax,[rel ioapicaddress]
 	stosq
 	mov rax,"ioapic"
 	stosq
@@ -87,7 +87,7 @@ disable8259:
     out 0xa1, al
     out 0x21, al
 
-mov edi,[ioapicaddress]
+mov edi,[rel ioapicaddress]
 mov ecx,24
 mov eax,0x10
 

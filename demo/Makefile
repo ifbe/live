@@ -1,6 +1,6 @@
 pleasechoose:
 	make clean
-	make -C diskgenius
+	make -C jarvis
 clean:
 	rm -f demo
 	rm -f assembly/temp*

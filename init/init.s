@@ -3,36 +3,38 @@
 ;you can choose one
 ;or use yours (but be careful of length and deal with call.s)
 
-
-					;hope below notes will help
-
-%include "[8000,83ff]/1024x768.s"	;[2000,2fff]:memory info
-					;[3000,3fff]:vesa info
+;org 0x8000  ;position independent	;below explain what it do
+;[0,0x3ff]:
+%include "0/1024x768.s"			;put memory info in [2000,2fff]
+					;put vesa info in [3000,3fff]
 					;set screen mode with bios
 
-%include "[8400,87ff]/longmode.s"	;64bit mode,virtual mem=physical mem
+;[400,7ff]:
+%include "1/longmode.s"			;switch from 16bit to 64bit
+					;enable float point
+					;virtual mem=physical mem
 
-%include "[8800,89ff]/acpi.s"		;[4000,4fff]:acpi table address info
+;[800,9ff]:
+%include "2/acpi.s"			;put acpi info in [4000,4fff]
 
-%include "[8a00,8bff]/iopci.s"		;[5000,5fff]:pci address info
-;%include "[8c00,8fff]/mmpci.s"
+;[a00,bff]:
+%include "3/iopci.s"	;or mmpci	;put pci info in [5000,5fff]
 
-%include "[8c00,8dff]/localapic.s"
-%include "[8e00,8fff]/ioapic.s"
+;[c00,dff]:
+%include "4/localapic.s"		;init localapic to all off
 
-%include "[9000,9fff]/exception.s"	;call 0xa000
-					;call 0xb000
-					;......
+;[e00,fff]:
+%include "5/ioapic.s"	;or pic		;init ioapic to all off
 
+;[1000,1fff]:
+%include "6/exception.s"		;set 32 default exception handler
+					;call read disk
 
+;[2000,2fff]:
+%include "7/temp.s"			;E=mc^2......
 
+;[3000,3fff]:
+%include "8/anscii.s"			;anscii pixel table
 
-
-
-
-
-%include "[a000,afff]/temp.s"		;rubbish
-
-%include "[b000,bfff]/anscii.s"		;anscii pixel table
-
-incbin "[c000,ffff]/temp"
+;[4000,7fff]:
+incbin "9/temp"				;read disk and ......
