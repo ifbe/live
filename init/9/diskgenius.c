@@ -2,9 +2,9 @@
 
 QWORD finddisk()
 {
-        QWORD addr=0x6008;
+        QWORD addr=0x2808;
         unsigned int temp;
-        for(;addr<0x6200;addr+=0x10)
+        for(;addr<0x3000;addr+=0x10)
         {
                 temp=*(unsigned int*)addr;
                 if(temp==0x61746173)
@@ -50,7 +50,7 @@ void main()
 	where+=4;
 */
 
-	read(0x100000,0,addr,8);
+	read(0x100000,0,addr,2);
 
 /*
         for(rsi=0x100000;rsi<0x100200;rsi++){
@@ -70,6 +70,19 @@ void main()
 	if(*(WORD*)0x1001fe==0xAA55)say("good disk");
 	else{say("bad disk");return;}
 
-	if(*(QWORD*)0x100200==0x5452415020494645)say("gpt part");
-	else{say("mbr disk");}
+	QWORD partition;
+	if(*(QWORD*)0x100200==0x5452415020494645){
+		say("gpt part");
+		read(0x100000,2,addr,32);
+		//find fat32 partition
+		partition=0;
+	}
+	else{
+		say("mbr disk");
+		//find esp partition
+		partition=0;
+	}
+
+	//read(0x100000,2,addr,32);
+
 }

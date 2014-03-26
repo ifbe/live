@@ -1,7 +1,7 @@
 #include "ahci.h"
 
 
-unsigned int information()
+unsigned int findahci()
 {
 	QWORD addr=0x5008;
 	unsigned int temp;
@@ -47,7 +47,7 @@ unsigned int probepci(unsigned int addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	say("pci status and command:",(QWORD)in32(0xcfc));
+	//say("pci status and command:",(QWORD)in32(0xcfc));
 
 	out32(0xcf8,addr+0x24);
 	addr=in32(0xcfc)&0xfffffff0;
@@ -76,7 +76,7 @@ unsigned int probeahci(unsigned int addr)
 {
 	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
 	abar->ghc|=0x2;
-	say("ahci cap and ghc:",((QWORD)(abar->cap)<<32)+(QWORD)(abar->ghc));
+	//say("ahci cap and ghc:",((QWORD)(abar->cap)<<32)+(QWORD)(abar->ghc));
 
 	int i = 0;
 	DWORD pi = abar->pi;
@@ -90,21 +90,21 @@ unsigned int probeahci(unsigned int addr)
 			switch(what)
 			{
 			case 0x00000101:
-			*(QWORD*)(QWORD)(0x6000+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x6008+i*0x10)=*(QWORD*)"sata\0\0\0\0";
+			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)"sata\0\0\0\0";
 			return addr+0x100+0x80*i;
 
 			case 0xeb140101:
-			*(QWORD*)(QWORD)(0x6000+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x6008+i*0x10)=*(QWORD*)"atapi\0\0\0";
+			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)"atapi\0\0\0";
 
 			case 0xc33c0101:
-			*(QWORD*)(QWORD)(0x6000+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x6008+i*0x10)=*(QWORD*)("enclo...");
+			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)("enclo...");
 
 			case 0x96690101:
-			*(QWORD*)(QWORD)(0x6000+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x6008+i*0x10)=*(QWORD*)("multi...");
+			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)("multi...");
 			}
 			}
 		}
@@ -122,16 +122,16 @@ unsigned int probeahci(unsigned int addr)
 
 void enable(HBA_PORT *port)
 {
-	say("port->cmd before enable:",(QWORD)(port->cmd));
+	//say("port->cmd before enable:",(QWORD)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
  
 	port->cmd |= 1<<4;	//bit4,receive enable
 	port->cmd |= 1; 	//bit0,start
-	say("port->cmd after enable:",(QWORD)(port->cmd));
+	//say("port->cmd after enable:",(QWORD)(port->cmd));
 }
 void disable(HBA_PORT *port)
 {
-	say("port->cmd before disable:",(QWORD)(port->cmd));
+	//say("port->cmd before disable:",(QWORD)(port->cmd));
 	port->cmd &= 0xfffffffe;	//bit0
 	port->cmd &= 0xffffffef;	//bit4,FRE
  
@@ -151,7 +151,7 @@ void disable(HBA_PORT *port)
 	return;
 	}
 
-	say("port->cmd after disable:",(QWORD)(port->cmd));
+	//say("port->cmd after disable:",(QWORD)(port->cmd));
 }
 void probeport(unsigned int addr)
 {
@@ -178,8 +178,8 @@ void probeport(unsigned int addr)
 		cmdheader[i].ctbau = 0;
 	}
 	//*(DWORD*)0x7010=cmdheader[0].ctba;
-	say("port->clb:",(QWORD)port->clb);
-	say("port->fb:",(QWORD)port->fb);
+	//say("port->clb:",(QWORD)port->clb);
+	//say("port->fb:",(QWORD)port->fb);
 	enable(port);	// Start command engine
 }
 
@@ -189,7 +189,7 @@ void probeport(unsigned int addr)
 void initahci()
 {
 	unsigned int addr;
-	addr=information();
+	addr=findahci();
 	addr=probepci(addr);
 	addr=probeahci(addr);
 	probeport(addr);

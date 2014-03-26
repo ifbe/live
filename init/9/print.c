@@ -16,7 +16,7 @@ void point(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    unsigned long long source=0xb000;
+    unsigned long long source=0x7000;
     char temp;
     char* p;
 
@@ -42,6 +42,7 @@ void anscii(int x,int y,char ch)
 }
 void say(char* p,...)
 {
+        register unsigned long long rdi asm("rdi");
         register unsigned long long rsi asm("rsi");
         register unsigned long long rdx asm("rdx");
         register unsigned long long rcx asm("rcx");
@@ -57,14 +58,16 @@ void say(char* p,...)
 		x++;
 	}
 
-        int i=0;
-	char ch;
-        for(i=15;i>=0;i--)
-        {
-        ch=(char)(first&0x0000000f);
-        first=first>>4;
-        anscii(x+64+i,where,ch);
-        }
+	{
+	        int i=0;
+		char ch;
+	        for(i=15;i>=0;i--)
+	        {
+	        ch=(char)(first&0x0000000f);
+	        first=first>>4;
+	        anscii(x+64+i,where,ch);
+	        }
+	}
 
 	where++;
 	if(where==50)where=0;

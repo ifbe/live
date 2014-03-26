@@ -1,6 +1,5 @@
 ;old 8259.........not used
-org 0x10000
-[bits 64]
+bits 64
 
 ;_____________int9h>>int21h__________________
 ;keyboard:

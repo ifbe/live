@@ -13,146 +13,116 @@ lidt [0x600]
 exceptioninstall:
 mov edi,0x1000
 
-call whereami	;push rip
-whereami:
-pop rbx
-add rbx,exception0-whereami
+lea rax,[rel exception0]
+call idtinstall
 
-mov rax,rbx		;now rax=exception0 handler
-call idtinstall		;exception0
-add rbx,12		;now rbx=exception1 handler
-
-mov rax,rbx
+lea rax,[rel exception1]
 call idtinstall		;exception1
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception2]
 call idtinstall		;exception2
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception3]
 call idtinstall		;exception3
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception4]
 call idtinstall		;exception4
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception5]
 call idtinstall		;exception5
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception6]
 call idtinstall		;exception6
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception7]
 call idtinstall		;exception7
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception8]
 call idtinstall		;exception8
-add rbx,18		;!!!!
 
-mov rax,rbx
+lea rax,[rel exception9]
 call idtinstall		;exception9
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exceptiona]
 call idtinstall		;exceptiona
-add rbx,18		;!!!!
 
-mov rax,rbx
+lea rax,[rel exceptionb]
 call idtinstall		;exceptionb
-add rbx,18		;!!!!
 
-mov rax,rbx
+lea rax,[rel exceptionc]
 call idtinstall		;exceptionc
-add rbx,18		;!!!!
 
-mov rax,rbx
+lea rax,[rel exceptiond]
 call idtinstall		;exceptiond
-add rbx,18		;!!!!
 
-mov rax,rbx
+lea rax,[rel exceptione]
 call idtinstall		;exceptione
-add rbx,18		;!!!!
 
-mov rax,rbx
+lea rax,[rel exceptionf]
 call idtinstall		;exceptionf
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception10]
 call idtinstall		;exception10
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception11]
 call idtinstall		;exception11
-add rbx,18		;!!!!
 
-mov rax,rbx
+lea rax,[rel exception12]
 call idtinstall		;exception12
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception13]
 call idtinstall		;exception13
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception14]
 call idtinstall		;exception14
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception15]
 call idtinstall		;exception15
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception16]
 call idtinstall		;exception16
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception17]
 call idtinstall		;exception17
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception18]
 call idtinstall		;exception18
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception19]
 call idtinstall		;exception19
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception1a]
 call idtinstall		;exception1a
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception1b]
 call idtinstall		;exception1b
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception1c]
 call idtinstall		;exception1c
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception1d]
 call idtinstall		;exception1d
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception1e]
 call idtinstall		;exception1e
-add rbx,12
 
-mov rax,rbx
+lea rax,[rel exception1f]
 call idtinstall		;exception1f
-add rbx,12
 
 mov ecx,0xe0
 .external:
-mov rax,rbx
+lea rax,[rel unknown]
 call idtinstall
 loop .external
 
-jmp endofexception
+lea rsi,[rel endofexception]
+mov edi,0x6000
+mov ecx,0x2000
+rep movsb
+
+call endofexception+0x2000
+sleep:hlt
+jmp sleep
 ;_______________________________________
 
 
@@ -407,11 +377,7 @@ shl eax,8
 lea eax,[eax*2+eax]
 add edi,eax
 
-call whereami2
-whereami2:
-pop rsi
-add rsi,buffer-whereami2
-
+lea rsi,[rel buffer]
 mov byte [rel howmany],0
 
 	.continue:
@@ -495,7 +461,7 @@ anscii:
     jae .next
     movzx esi,al
     shl esi,4
-    add esi,0xb000
+    add esi,0x7000
     push rcx
     call char
     pop rcx
@@ -523,7 +489,7 @@ hex:
     push rcx
     push rsi
     movzx esi,dl
-    add esi,0xb000
+    add esi,0x7000
     call char
     pop rsi
     pop rcx
@@ -614,15 +580,7 @@ dq 0,"[rsp+40]"
 dq 0,"[rsp+48]"
 dq 0,"[rsp+56]"
 
-endofexception:
-mov rax,0xc000
-call rax
-int3
-mov rax,0x10000
-call rax
-
-sleep:hlt
-jmp sleep
-
 padding:
 times 0x1000-(padding-startofexception) db 0
+
+endofexception:

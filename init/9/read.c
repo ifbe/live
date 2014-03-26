@@ -18,10 +18,10 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
 	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
-	say("ptdtl",(QWORD)cmdheader->prdtl);
+	//say("ptdtl",(QWORD)cmdheader->prdtl);
 
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;//e000左右
-	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
+	//say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
 
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
@@ -68,14 +68,14 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1){
-		say("error:no cmdslot",(QWORD)cmdslot);
+		//say("error:no cmdslot",(QWORD)cmdslot);
 		return 0;
 	}
-	say("cmdslot:",(QWORD)cmdslot);
+	//say("cmdslot:",(QWORD)cmdslot);
 
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(QWORD)(port->clb);
 	cmdheader += cmdslot;
-	say("cmdheader:",(QWORD)cmdheader);
+	//say("cmdheader:",(QWORD)cmdheader);
 
 	maketable(buf,from,cmdheader,count);
 
@@ -85,12 +85,12 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 		spin++;
 	}
 	if (spin==1000000){
-		say("error:port->tfd:",(QWORD)port->tfd);
+		//say("error:port->tfd:",(QWORD)port->tfd);
 	}
  
 	port->ci = 1<<cmdslot;	// Issue command
 
-	say("is:",(QWORD)port->is);
+	//say("is:",(QWORD)port->is);
 	unsigned int* pointer=(unsigned int*)(QWORD)(port->fb);
 
 	while (1){
@@ -99,7 +99,7 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 			break;
 		if (port->is & 0x40000000)	// Task file error
 		{
-			say("port error 1",0);
+			//say("port error 1",0);
 			return 0;
 		}
 	}

@@ -1,16 +1,16 @@
-[BITS 64]
+bits 64
 ;_________________________
 f1:
-    mov dword [decide+1],function1-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function1-(decide+5)		;selfmodify
     jmp ramdump
 f2:
-    mov dword [decide+1],function2-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function2-(decide+5)		;selfmodify
     jmp picture
 f3:
-    mov dword [decide+1],function3-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function3-(decide+5)		;selfmodify
     jmp cyberspace
 f4:
-    mov dword [decide+1],function4-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function4-(decide+5)		;selfmodify
     jmp console
 
 
@@ -37,7 +37,7 @@ char:
 
     movzx eax,al
     shl ax,4
-    lea esi,[eax+0xb000]
+    lea esi,[eax+0x7000]
 
     mov ecx,16           ;16行
 .yihang:
@@ -48,11 +48,11 @@ char:
       .yidian:
         shl al,1
         jnc .bg
-        mov edx,[frontcolor]
+        mov edx,[rel frontcolor]
         mov [edi],edx
         jmp .pointdone
       .bg:
-        mov edx,[backcolor]
+        mov edx,[rel backcolor]
         cmp edx,0xffffffff
         je .pointdone
         mov dword [edi],edx

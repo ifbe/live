@@ -17,13 +17,13 @@ call next	;push ip
 next:pop bx
 call printbx
 
-xor ax,ax
-mov es,ax
-mov di,0x8000
-mov cx,0x8000
-rep movsb
+;xor ax,ax
+;mov es,ax
+;mov di,0x8000
+;mov cx,0x8000
+;rep movsb
 
-jmp 0:0x8000
+jmp 0x2000:0x8000
 
 
 

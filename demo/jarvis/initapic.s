@@ -1,16 +1,7 @@
-org 0x10000
-[bits 64]
-;_____________apic timer_____________________
-;mov edi,0xfee00000
-;mov dword [edi+0x320],0x20           ;timer vector
-;mov dword [edi+0x3e0],3                ;devide value
-;mov dword [edi+0x380],0xffffff          ;init value
-;____________________________________
-
-
+bits 64
 ;_____________int 21h__________________
 ;keyboard:
-mov rax,keyboardisr
+lea rax,[rel keyboardisr]
 mov edi,0x1210
 call idtinstaller
 

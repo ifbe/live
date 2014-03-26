@@ -14,20 +14,20 @@ int identify(DWORD edi,QWORD addr)
         }
 
 	if (cmdslot == 32){
-		say("error:no cmdslot",(QWORD)cmdslot);
+		say("error:no cmdslot");
 		return -1;
 	}
-	say("cmdslot:",(QWORD)cmdslot);
+	//say("cmdslot:",(QWORD)cmdslot);
 
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(QWORD)(port->clb);
 	cmdheader += cmdslot;
-	say("cmdheader:",(QWORD)cmdheader);
+	//say("cmdheader:",(QWORD)cmdheader);
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
 	cmdheader->prdtl=1;
 
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
-	say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
+	//say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
 
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE);
@@ -54,7 +54,7 @@ int identify(DWORD edi,QWORD addr)
  
 	port->ci = 1<<cmdslot;	// Issue command
 
-	say("is:",(QWORD)port->is);
+	//say("is:",(QWORD)port->is);
 	unsigned int* pointer=(unsigned int*)(QWORD)(port->fb);
 
 	while (1){

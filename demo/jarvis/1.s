@@ -1,4 +1,4 @@
-[BITS 64]
+bits 64
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F1-----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;___________________________
 function1:
@@ -93,14 +93,14 @@ f1space:
     jmp ramdump
 
 f1alt:
-inc byte [altkey]
-test byte [altkey],1
+inc byte [rel altkey]
+test byte [rel altkey],1
 jnz .anscii
     .hex:
-    mov dword [dumpwhat-4],dumphex-dumpwhat                      ;selfmodify
+    mov dword [rel dumpwhat-4],dumphex-dumpwhat                      ;selfmodify
     jmp ramdump
     .anscii:
-    mov dword [dumpwhat-4],dumpanscii-dumpwhat                   ;selfmodify
+    mov dword [rel dumpwhat-4],dumpanscii-dumpwhat                   ;selfmodify
     jmp ramdump
 
 ;_______________________________________
@@ -112,28 +112,26 @@ altkey db 1
 ;______________________________
 ramdump:
 push r14
-mov dword [frontcolor],0xff00
-mov dword [linecount],0
+mov dword [rel frontcolor],0xff00
+mov dword [rel linecount],0
 
 dumpline:
     mov edi,0x100000        ;locate destination
-    mov eax,[linecount]
+    mov eax,[rel linecount]
     imul eax,4*1024*16
     add edi,eax
     call dumpanscii
 dumpwhat:
 
-inc byte [linecount]
-cmp byte [linecount],0x30
+inc byte [rel linecount]
+cmp byte [rel linecount],0x30
 jb dumpline
 
 pop r14
 
 
-
-
 displayaddress:
-mov dword [frontcolor],0xffffffff
+mov dword [rel frontcolor],0xffffffff
 
 lea rbx,[r14]
 mov edi,0x100000+4*1024*728+4*888
@@ -144,12 +142,8 @@ mov edi,0x100000+4*1024*744+4*888
 call dumprbx
 
 
-
-
 mouse:
-mov esi,0xb8b0                 ;kuang
 mov edi,0x100000
-;mov edi,[0x3028]
 mov eax,r15d
 mov bl,0x40
 div bl
@@ -175,9 +169,7 @@ add edi,4*1024
 loop .first
 
 call writescreen
-
 jmp forever
-
 ;___________________________________
 linecount:dd 0
 
@@ -191,7 +183,7 @@ dumpanscii:
 
 mov ecx,0x40
 .dump:
-    mov dword [frontcolor],0xff00
+    mov dword [rel frontcolor],0xff00
     mov al,0x20
     call char
 
@@ -224,18 +216,18 @@ dumphex:
 mov cl,0x10
 .dump4:
 mov eax,[r14]
-mov [save32],eax
+mov [rel save32],eax
 add r14,4
 
   mov ch,4
   .dump:
-  mov al,[save32]
+  mov al,[rel save32]
   shr al,4
   call char
-  mov al,[save32]
+  mov al,[rel save32]
   and al,0xf
   call char
-  shr dword [save32],8
+  shr dword [rel save32],8
   dec ch
   cmp ch,0
   jne .dump
