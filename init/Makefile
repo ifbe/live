@@ -1,6 +1,6 @@
 init:
-	make -C 9
+	make -C 4
 	nasm init.s
 clean:
 	rm -f init
-	rm -f 9/temp*
+	rm -f 4/temp*

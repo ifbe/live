@@ -158,13 +158,16 @@ void probeport(unsigned int addr)
 	HBA_PORT* port=(HBA_PORT*)(QWORD)addr;
 	disable(port);	// Stop command engine
 
+	char* p=(char*)0x8000;
+	for(;p<(char*)0x10000;p++)	*p=0;
+
 	//32*32=0x400
-	port->clb =0x88000;
+	port->clb =0x8000;
 	//*(DWORD*)0x7000=port->clb;
 	port->clbu = 0;
  
 	//0x100
-	port->fb = 0x88400;
+	port->fb = 0x8400;
 	//*(DWORD*)0x7008=port->fb;
 	port->fbu = 0;
  
@@ -174,7 +177,7 @@ void probeport(unsigned int addr)
 	for (i=0; i<32; i++)
 	{
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-		cmdheader[i].ctba=0x89000+(i<<8);
+		cmdheader[i].ctba=0x8800+(i<<8);
 		cmdheader[i].ctbau = 0;
 	}
 	//*(DWORD*)0x7010=cmdheader[0].ctba;
