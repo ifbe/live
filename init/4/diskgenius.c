@@ -70,19 +70,44 @@ void main()
 	if(*(WORD*)0x1001fe==0xAA55)say("good disk");
 	else{say("bad disk");return;}
 
-	QWORD partition;
-	if(*(QWORD*)0x100200==0x5452415020494645){
+	QWORD offset;
+	if(*(QWORD*)0x100200==0x5452415020494645)
+	{
 		say("gpt part");
 		read(0x100000,2,addr,32);
-		//find fat32 partition
-		partition=0;
+		for(offset=0x100000;offset<0x104000;offset+=0x80)    //get esp
+		{
+			if( *(QWORD*)offset==0x11d2f81fc12a7328 ){
+				if( *(QWORD*)(offset+8)==0x3bc93ec9a0004bba ){
+					offset=*(QWORD*)(offset+0x20);
+					break;
+				}
+			}
+		}
+		if(offset=0x104000)
+		{
+			say("no esp");
+			return;
+		}
 	}
 	else{
 		say("mbr disk");
-		//find esp partition
-		partition=0;
+		for(offset=0x1000be;offset<0x1000ee;offset+=0x10)    //get fat?
+		{
+			if( *(BYTE*)(offset+4)==0x7 | *(BYTE*)(offset+4)==0xb)
+			{
+				offset=(QWORD)(*(DWORD*)(offset+8));
+				break;
+			}
+		}
+		if(offset=0x1000ee)
+		{
+			say("no fat32");
+			return;
+		}
 	}
 
-	//read(0x100000,2,addr,32);
+	read(0x100000,offset,addr,1);
+	say("name:",*(QWORD*)0x100003);
 
 }
