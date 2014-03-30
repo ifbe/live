@@ -78,10 +78,3 @@ typedef struct tagHBA_CMD_HEADER
 	// DW4 - 7
 	DWORD	rsv1[4];	// Reserved
 } HBA_CMD_HEADER;
-
-void anscii(int x,int y,char ch);
-void say(char* p,QWORD z);
-unsigned int information();
-unsigned int probepci(unsigned int addr);
-unsigned int probeahci(unsigned int addr);
-void probeport(unsigned int addr);

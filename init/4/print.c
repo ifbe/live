@@ -58,6 +58,7 @@ void say(char* p,...)
 		x++;
 	}
 
+	if(first!=0)
 	{
 	        int i=0;
 		char ch;

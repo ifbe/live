@@ -68,7 +68,7 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1){
-		//say("error:no cmdslot",(QWORD)cmdslot);
+		//say("error:no cmdslot",0);
 		return 0;
 	}
 	//say("cmdslot:",(QWORD)cmdslot);

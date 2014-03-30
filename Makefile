@@ -23,6 +23,13 @@ qemu:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live
+usb:
+	sudo qemu-kvm \
+	-smp 2 \
+	-m 512 \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=/dev/sdb
 push:
 	make clean
 	git add --all .

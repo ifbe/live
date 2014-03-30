@@ -14,7 +14,7 @@ int identify(DWORD edi,QWORD addr)
         }
 
 	if (cmdslot == 32){
-		say("error:no cmdslot");
+		say("error:no cmdslot",0);
 		return -1;
 	}
 	//say("cmdslot:",(QWORD)cmdslot);
