@@ -1,23 +1,5 @@
 #include "struct.h"
-QWORD disk;
-
-
-void finddisk()
-{
-        QWORD addr=0x2808;
-        for(;addr<0x3000;addr+=0x10)
-        {
-                if( *(unsigned int*)addr ==0x61746173)
-                {
-                        addr-=0x8;
-                        disk=(QWORD)(*(unsigned int*)addr);
-                        say("sata address:",disk);
-			return;
-                }
-        }
-	disk=0;
-	return;
-}
+QWORD disk=0;
 
 
 void fat16()
@@ -30,37 +12,64 @@ void fat16()
 	say("fatsize:",fatsize);
 	QWORD clustersize=(QWORD)(*(BYTE*)0x10000d);
 	say("clustersize:",clustersize);
-	QWORD base=fat0+fatsize*2+32-clustersize*2;
-	say("base:",base);
-	QWORD root=base+clustersize*2;//=cluster2
-	say("root:",root);
+	QWORD cluster0=fat0+fatsize*2+32-clustersize*2;
+	say("cluster0:",cluster0);
 
-	read(0x100000,root,disk,32);
+	read(0x100000,cluster0+clustersize*2,disk,32);	//read root
+	say("cd root",cluster0+clustersize*2);
+
+	read(0x200000,fat0,disk,fatsize);	//cache fat0
+	say("fat cached",0);
+
+	QWORD name;
+
+
+//fat16_cd(0x202020204556494c);
+name=0x202020204556494c;
+
+//void fat16_cd(QWORD name)
+{
 	QWORD p=0x104000;
 	for(;p>0x100000;p-=0x20)
 	{
-		if( *(QWORD*)p==0x202020204556494c )
+		if( *(QWORD*)p==name )
 		{
 			if( *(BYTE*)(p+0xb)==0x10) break;
 		}
 	}
-	if(p==0x100000){say("not found,bye!",0);return;}
+	if(p==0x100000){say("directory not found,bye!",0);return;}
 
-	QWORD live=((QWORD)(*(WORD*)(p+0x14)))<<16;	//high 16bit
-	live+=(QWORD)(*(WORD*)(p+0x1a));		//low 16bit
-	say("cd live:",live);
+	QWORD directory=((QWORD)(*(WORD*)(p+0x14)))<<16;	//high 16bit
+	directory+=(QWORD)(*(WORD*)(p+0x1a));		//low 16bit
 
-	read(0x100000,fat0,disk,fatsize);
-	say("0x100000:whole fat",0);
+	read(0x100000,cluster0+directory*clustersize,disk,clustersize);
+	say("changed directory:",cluster0+directory*clustersize);
+}
 
-	QWORD next=live;
-	p=0x200000;
+
+//fat16_load(0x202020204556494c);
+name=0x202020204556494c;
+
+//void fat16_load(QWORD name)
+{
+	QWORD p=0x104000;
+	for(;p>0x100000;p-=0x20){ if( *(QWORD*)p==name ) break;	}
+	if(p==0x100000){say("file not found,bye!",0);return;}
+
+	QWORD file=((QWORD)(*(WORD*)(p+0x14)))<<16;	//high 16bit
+	file+=(QWORD)(*(WORD*)(p+0x1a));		//low 16bit
+
+	p=0x400000;
 	do{
-		read(p,base+clustersize*next,disk,clustersize);
+		read(p,cluster0+clustersize*file,disk,clustersize);
 		p+=clustersize*0x200;
-		next=(QWORD)(*(WORD*)(0x100000+2*next));
-		if(next==0xfff7){say("bad cluster",0);return;}
-	}while(next>=0xfff8);
+		file=(QWORD)(*(WORD*)(0x200000+2*file));
+		if(file==0xfff7){say("bad cluster",0);return;}
+	}while(file>=0xfff8);
+	say("total bytes:",p-0x400000);
+}
+
+
 }
 
 
@@ -74,37 +83,84 @@ void fat32()
 	say("fatsize:",fatsize);
 	QWORD clustersize=(QWORD)(*(BYTE*)0x10000d);
 	say("clustersize:",clustersize);
-	QWORD base=fat0+fatsize*2-clustersize*2;
-	say("base:",base);
-	QWORD root=base+clustersize*2;//=cluster2
-	say("root:",root);
+	QWORD cluster0=fat0+fatsize*2-clustersize*2;
+	say("cluster0:",cluster0);
 
-	read(0x100000,root,disk,clustersize);
+	read(0x100000,cluster0+clustersize*2,disk,clustersize);	//read root
+	say("cd root",cluster0+clustersize*2);
+
+	read(0x200000,fat0,disk,fatsize);
+	say("fat cached",0);
+
+	QWORD name;
+
+//fat32_cd(0x202020204556494c);
+name=0x202020204556494c;
+
+//void fat32_cd(QWORD name)
+{
 	QWORD p=0x100000+clustersize*0x200;
 	for(;p>0x100000;p-=0x20)
 	{
-		if( *(QWORD*)p==0x202020204556494c )
+		if( *(QWORD*)p== name)
 		{
 			if( *(BYTE*)(p+0xb)==0x10) break;
 		}
 	}
-	if(p==0x100000){say("not found,bye!",0);return;}
+	if(p==0x100000){say("directory not found,bye!",0);return;}
 
-	QWORD live=((QWORD)(*(WORD*)(p+0x14)))<<16;	//high 16bit
-	live+=(QWORD)(*(WORD*)(p+0x1a));		//low 16bit
-	say("cd live:",live);
+	QWORD directory=((QWORD)(*(WORD*)(p+0x14)))<<16;	//high 16bit
+	directory+=(QWORD)(*(WORD*)(p+0x1a));		//low 16bit
 
-	read(0x100000,fat0,disk,fatsize);
-	say("0x100000:whole fat",0);
+	read(0x100000,cluster0+directory*clustersize,disk,clustersize);
+	say("changed directory:",cluster0+directory*clustersize);
+}
 
-	QWORD next=live;
-	p=0x200000;
+
+//fat32_load(0x202020204556494c);
+name=0x202020204556494c;
+
+//void fat32_load(QWORD name)
+{
+	QWORD p=0x100000+clustersize*0x200;
+	for(;p>0x100000;p-=0x20)
+	{
+		if( *(QWORD*)p== name) break;
+	}
+	if(p==0x100000){say("file not found,bye!",0);return;}
+
+	QWORD file=((QWORD)(*(WORD*)(p+0x14)))<<16;	//high 16bit
+	file+=(QWORD)(*(WORD*)(p+0x1a));		//low 16bit
+
+	p=0x400000;
 	do{
-		read(p,base+clustersize*next,disk,clustersize);
+		read(p,cluster0+clustersize*file,disk,clustersize);
 		p+=clustersize*0x200;
-		next=0x100000+4*next;
-		if(next==0x0ffffff7){say("bad cluster",0);return;}
-	}while(next>=0x0ffffff8);
+		file=0x200000+4*file;
+		if(file==0x0ffffff7){say("bad cluster",0);return;}
+	}while(file>=0x0ffffff8);
+	say("total bytes:",p-0x400000);
+}
+
+
+}
+
+
+void finddisk()
+{
+        QWORD addr=0x2808;
+        for(;addr<0x3000;addr+=0x10)
+        {
+                if( *(unsigned int*)addr ==0x61746173)
+                {
+                        addr-=0x8;
+                        disk=(QWORD)(*(unsigned int*)addr);
+                        say("disk address:",disk);
+			return;
+                }
+        }
+	disk=0;
+	return;
 }
 
 

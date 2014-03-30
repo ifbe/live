@@ -1,4 +1,5 @@
 c:
+	rm -f temp*
 	gcc -c start.c -o temp.o
 	gcc -c -O2 print.c -o temp1.o
 	gcc -c -fPIC -O2 ahci.c -o temp2.o
