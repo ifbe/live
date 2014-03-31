@@ -59,10 +59,9 @@ void print(int x,int y,char ch);
 void print32(int x,int y,int z);
 void picture();
 
-#define u64 long long
-u64 offset;
+long long offset;
 
-u64 start()
+long long start()
 {
     offset=0x200000;
     char *buf;
@@ -107,8 +106,8 @@ void* mymalloc(int i)
 
 void point(int x,int y,int z)
 {
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
+    long long* video=(long long*)0x3028;
+    long long base=*video;
     char* p=(char*)0x3019;
     char bpp=*p/8;
 
@@ -122,7 +121,7 @@ void point(int x,int y,int z)
 void print(int x,int y,char ch)
 {
     int i,j;
-    u64 rsi=0x7000;
+    long long rsi=0x7000;
     char temp;
     char* p;
 

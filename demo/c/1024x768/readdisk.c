@@ -338,7 +338,7 @@ void point(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    QWORD source=0xb000;
+    QWORD source=0x7000;
     char temp;
     char* p;
 

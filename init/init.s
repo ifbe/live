@@ -32,3 +32,8 @@
 
 ;[where+4000,where+7fff]:
 incbin "4/temp"				;read disk and ......
+times 0x8000-($-$$) db 0
+
+;[where+8000,where+ffff]:
+incbin "5/temp"				;fake kernel
+times 0x10000-($-$$) db 0

@@ -98,7 +98,7 @@ void point(int x,int y,int z)
 void print(int x,int y,char ch)
 {
     int i,j;
-    u64 rsi=0xb000;
+    u64 rsi=0x7000;
     char temp;
     char* p;
 

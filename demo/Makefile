@@ -1,6 +1,6 @@
 pleasechoose:
 	make clean
-	make -C jarvis
+	make -C c
 clean:
 	rm -f demo
 	rm -f assembly/temp*

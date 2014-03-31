@@ -116,7 +116,9 @@ void fat32()
 
 
     //fat32_load(0x202020204556494c);
-    name=0x202020204556494c;
+    //name=0x202020204556494c;//live
+    //name=0x2020202020204433;//3d
+    name=0x202020544e495250;
 
     //void fat32_load(QWORD name)
     {
@@ -137,7 +139,7 @@ void fat32()
         for(i=0;i<0x40;i++){
             read(0x40000+i*0x1000,fat0+cacheblock*0x200+8*i,disk,8);
         }
-        while(p<0x120000)
+        while(p<0x200000)
         {
             read(p,cluster0+clustersize*file,disk,clustersize);
             //say("read:",cluster0+clustersize*file);

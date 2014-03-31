@@ -12,7 +12,8 @@
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 loadinit:
-    mov cx,8            ;[10000,8ffff]
+    ;mov cx,8            ;[10000,8ffff]
+    mov cx,2            ;[10000,8ffff]
     mov eax,128
     mov bx,0x1000
 continue:

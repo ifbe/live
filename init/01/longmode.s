@@ -155,7 +155,7 @@ alldone:
     mov fs,ax
     mov gs,ax
     mov ss,ax
-    mov rsp,0x1000000          ;..........16MB..........be careful
+    mov rsp,0x90000          ;..........16MB..........be careful
     jmp endoflongmode
 
 paddingoflongmode:
