@@ -96,6 +96,10 @@ mov esi,[rel saveesi]
 cmp dword [esi],"call"		;call 0x100000
 je cast
 
+mov esi,[rel saveesi]
+cmp dword [esi],"jump"		;call 0x100000
+je jump
+
 notfound:
 mov edi,[rel saveesi]
 mov dword [edi+32],"notf"
@@ -145,6 +149,19 @@ inc esi
 call fetchvalue
 call rbx
 jmp scroll
+;_______________________________
+
+
+;_______________________________
+jump:
+
+add esi,4
+cmp byte [esi],0x20
+jne notfound
+
+inc esi
+call fetchvalue
+jmp rbx
 ;_______________________________
 
 
