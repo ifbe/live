@@ -1,8 +1,8 @@
 init:
-	make -C 4
-	make -C 5
+	make -C ahci
+	make -C fakekernel
 	nasm init.s
 clean:
-	make clean -C 4
-	make clean -C 5
+	make clean -C ahci
+	make clean -C fakekernel
 	rm -f init

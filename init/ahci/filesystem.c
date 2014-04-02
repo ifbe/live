@@ -56,18 +56,21 @@ void fat16(QWORD disk)
 		say("first cluster of file:",file);
 
 		p=0x100000;
-		read(0x40000,fat0,disk,0x200);	//fat16,cache all
+		QWORD i;
+        	for(i=0;i<0x40;i++){	//fat16,cache all
+        	    read(0x40000+i*0x1000,fat0+8*i,disk,8);
+        	}
 		while(p<0x200000)
 		{
 			read(p,cluster0+clustersize*file,disk,clustersize);
-			say("read:",cluster0+clustersize*file);
+			//say("read:",cluster0+clustersize*file);
 			p+=clustersize*0x200;
 
 			file=(QWORD)(*(WORD*)(0x40000+2*file));
 
-			if(file<2){say("impossible cluster,bye!",0);return;}
-			if(file==0xfff7){say("bad cluster,bye!",0);return;}
-			if(file>=0xfff8) break;
+			if(file<2){say("impossible cluster,bye!",file);return;}
+			if(file==0xfff7){say("bad cluster,bye!",file);return;}
+			if(file>=0xfff8){say("last cluster:",file);break;}
 		}
 		say("total bytes:",p-0x100000);
 	}
@@ -156,8 +159,8 @@ void fat32(QWORD disk)
             }
 
             file=(QWORD)(*(DWORD*)(0x40000+4*(file%0x10000)));
-            if(file<2){say("impossible cluster,bye!",0);return;}
-            if(file==0x0ffffff7){say("bad cluster,bye!",0);return;}
+            if(file<2){say("impossible cluster,bye!",file);return;}
+            if(file==0x0ffffff7){say("bad cluster,bye!",file);return;}
             if(file>=0x0ffffff8){say("last cluster:",file);break;}
         }
     say("total bytes:",p-0x100000);

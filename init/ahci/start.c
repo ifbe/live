@@ -1,6 +1,15 @@
 void start()
 {
 	initahci();
+	//*((unsigned long long*)0x8000)=(unsigned long long )initahci;
+	//函数initahci的地址放到内存,肏蛋的c语言！！！！
+	//
+	//
+	//
+	//
+	//
+	__asm__("leaq initahci(%rip),%rax\n\t"
+		"movq %rax,0x8000\n\t");
 
         unsigned long long disk=finddisk();
 	disk&=0xffffffff;
@@ -19,6 +28,4 @@ void start()
 
 	if(type==16) fat16(disk);
 	if(type==32) fat32(disk);
-	asm("int3");
 }
-
