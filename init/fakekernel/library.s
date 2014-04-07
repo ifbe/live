@@ -93,6 +93,43 @@ frontcolor:dd 0xffffffff
 
 
 
+;_________________________________
+dumprbx:
+mov ecx,16
+.getaddress:
+        rol rbx,4
+        mov al,bl
+        and al,0x0f
+
+        push rbx
+        push rcx
+        call char
+        pop rcx
+        pop rbx
+
+        loop .getaddress
+ret
+;________________________________
+
+
+
+
+;__________________________________
+address:
+mov dword [rel frontcolor],0xffffffff
+
+lea rbx,[r14]
+mov edi,0x1000000+4*896
+call dumprbx
+
+lea rbx,[r14+r15]
+mov edi,0x1000000+4*1024*16+4*896
+call dumprbx
+;________________________________
+
+
+
+
 ;____________________________________
 writescreen:
     mov esi,0x1000000

@@ -1,4 +1,4 @@
-#include "struct.h"
+#include "sata.h"
 
 int identify(DWORD edi,QWORD addr)
 {

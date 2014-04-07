@@ -13,4 +13,6 @@ cmp al,0x01
 je esc
 
 cyberspace:
+call address
+call writescreen
 jmp forever

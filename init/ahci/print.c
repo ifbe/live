@@ -1,4 +1,3 @@
-int y=0;
 
 void point(int x,int y,int color)
 {
@@ -52,7 +51,7 @@ void say(char* p,...)
 
 	while(*p!='\0')
 	{
-		anscii(x+64,y,*p);
+		anscii(x+64,where(),*p);
 		p++;
 		x++;
 	}
@@ -65,10 +64,10 @@ void say(char* p,...)
 	        {
 	        ch=(char)(first&0x0000000f);
 	        first=first>>4;
-	        anscii(x+64+i,y,ch);
+	        anscii(x+64+i,where(),ch);
 	        }
 	}
 
-	y++;
-	if(y==50)y=0;
+	incwhere();
+	if(where()==50) cleanwhere();
 }

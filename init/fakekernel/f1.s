@@ -88,7 +88,7 @@ jmp ramdump
     jmp ramdump
 
 f1space:
-    mov r14,0xa000
+    mov r14,0x6000
     mov r15,0
     jmp ramdump
 
@@ -129,19 +129,6 @@ jb dumpline
 
 pop r14
 
-
-displayaddress:
-mov dword [rel frontcolor],0xffffffff
-
-lea rbx,[r14]
-mov edi,0x1000000+4*1024*728+4*888
-call dumprbx
-
-lea rbx,[r14+r15]
-mov edi,0x1000000+4*1024*744+4*888
-call dumprbx
-
-
 mouse:
 mov edi,0x1000000
 mov eax,r15d
@@ -168,6 +155,7 @@ xor edx,edx
 add edi,4*1024
 loop .first
 
+call address
 call writescreen
 jmp forever
 ;___________________________________
@@ -238,24 +226,3 @@ jnz .dump4
 ret
 ;_______________________________
 save32:dd 0
-
-
-
-
-;________________________________
-dumprbx:
-mov ecx,16
-.getaddress:
-	rol rbx,4
-	mov al,bl
-	and al,0x0f
-
-	push rbx
-	push rcx
-	call char
-	pop rcx
-	pop rbx
-
-	loop .getaddress
-ret
-;____________________________________

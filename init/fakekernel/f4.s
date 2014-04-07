@@ -253,10 +253,9 @@ cmp byte [rel looptimes],0x20
 jb .tmd
 mov dword [rel backcolor],0
 
+call address
 call writescreen
-
 jmp forever
-
 ;________________________________________
 edibackground:dd 0
 ediforeground:dd 0

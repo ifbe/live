@@ -1,5 +1,5 @@
 bits 64
-    mov r14,0x4000             ;r14 memory pointer
+    mov r14,0x6000          ;r14 memory pointer
     xor r15,r15             ;r15 offset pointer
 
     mov rdi,0x800

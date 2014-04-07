@@ -1,6 +1,5 @@
 #include "ahci.h"
 
-
 unsigned int findahci()
 {
 	QWORD addr=0x5008;
@@ -19,10 +18,6 @@ unsigned int findahci()
 	}
 return 0;
 }
-
-
-
-
 
 
 
@@ -58,10 +53,6 @@ unsigned int probepci(unsigned int addr)
 
 
 
-
-
-
-
 QWORD check_type(HBA_PORT *port)
 {
 	DWORD ssts = port->ssts;
@@ -78,7 +69,7 @@ unsigned int probeahci(unsigned int addr)
 	abar->ghc|=0x2;
 	//say("ahci cap and ghc:",((QWORD)(abar->cap)<<32)+(QWORD)(abar->ghc));
 
-	int i = 0;
+	QWORD i = 0;
 	DWORD pi = abar->pi;
 	while (i<32)
 	{
@@ -90,21 +81,21 @@ unsigned int probeahci(unsigned int addr)
 			switch(what)
 			{
 			case 0x00000101:
-			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)"sata\0\0\0\0";
+			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)"sata\0\0\0\0";
 			return addr+0x100+0x80*i;
 
 			case 0xeb140101:
-			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)"atapi\0\0\0";
+			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)"atapi\0\0\0";
 
 			case 0xc33c0101:
-			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)("enclo...");
+			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)("enclo...");
 
 			case 0x96690101:
-			*(QWORD*)(QWORD)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(QWORD)(0x2808+i*0x10)=*(QWORD*)("multi...");
+			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
+			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)("multi...");
 			}
 			}
 		}
@@ -112,10 +103,6 @@ unsigned int probeahci(unsigned int addr)
 		i ++;
 	}
 }
-
-
-
-
 
 
 

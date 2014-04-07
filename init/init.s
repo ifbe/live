@@ -21,14 +21,14 @@
 					;init ioapic to all off
 
 ;[where+1000,where+1fff]:
-%include "1/exception.s"		;set 32 default exception handler
+%include "04/exception.s"		;set 32 default exception handler
 					;call read disk
 
 ;[where+2000,where+2fff]:
-%include "2/temp.s"			;E=mc^2......
+%include "1/help.s"			;E=mc^2......
 
 ;[where+3000,where+3fff]:
-%include "3/anscii.s"			;anscii pixel table
+%include "2/anscii.s"			;anscii pixel table
 
 ;[where+4000,where+7fff]:
 incbin "ahci/temp"			;read file and throw in memory

@@ -1,4 +1,4 @@
-jarvis:
-	nasm base.s -o temp
+fakekernel:
+	nasm fakekernel.s -o temp
 clean:
 	rm -f jarvis
