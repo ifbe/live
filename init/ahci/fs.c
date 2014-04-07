@@ -6,27 +6,27 @@
 
 void fat16_cd(QWORD name)
 {
-	QWORD p=0x104000;
-	for(;p>0x100000;p-=0x20)
+	QWORD p=0x84000;
+	for(;p>0x80000;p-=0x20)
 	{
 		if( *(QWORD*)p==name )
 		{
 			if( *(BYTE*)(p+0xb)==0x10) break;
 		}
 	}
-	if(p==0x100000){say("directory not found,bye!",0);return;}
+	if(p==0x80000){say("directory not found,bye!",0);return;}
 
 	QWORD directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
 
-	read(0x100000,cluster0()+directory*clustersize(),disk(),clustersize());
+	read(0x80000,cluster0()+directory*clustersize(),disk(),clustersize());
 	say("changed directory:",cluster0()+directory*clustersize());
 }
 
 void fat16_load(QWORD name)
 {
 	QWORD p=0x104000;
-	for(;p>0x100000;p-=0x20){ if( *(QWORD*)p==name ) break;	}
-	if(p==0x100000){say("file not found,bye!",0);return;}
+	for(;p>0x80000;p-=0x20){ if( *(QWORD*)p==name ) break;	}
+	if(p==0x80000){say("file not found,bye!",0);return;}
 
 	QWORD file=(QWORD)(*(WORD*)(p+0x1a));	//fat16,only 16bit
 	say("first cluster of file:",file);
@@ -54,20 +54,20 @@ void fat16_load(QWORD name)
 
 void fat32_cd(QWORD name)
 {
-    QWORD p=0x100000+clustersize()*0x200;
-    for(;p>0x100000;p-=0x20)
+    QWORD p=0x80000+clustersize()*0x200;
+    for(;p>0x80000;p-=0x20)
     {
         if( *(QWORD*)p== name)
         {
             if( *(BYTE*)(p+0xb)==0x10) break;
         }
     }
-    if(p==0x100000){say("directory not found,bye!",0);return;}
+    if(p==0x80000){say("directory not found,bye!",0);return;}
 
     QWORD directory=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
     directory+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
 
-    read(0x100000,cluster0()+directory*clustersize(),disk(),clustersize());
+    read(0x80000,cluster0()+directory*clustersize(),disk(),clustersize());
     say("changed directory:",cluster0()+directory*clustersize());
 }
 

@@ -65,23 +65,23 @@ dq 0
 
 fat16:
 lea rdi,[rel saypartition]
-mov esi,[0x10001c]
+mov esi,[0x8001c]
 mov [rel realpartition],rsi
 call say
 
 lea rdi,[rel sayfatsize]
-movzx rsi,word [0x100016]
+movzx rsi,word [0x80016]
 mov [rel realfatsize],rsi
 call say
 
 lea rdi,[rel sayfat0]
-movzx rsi,word [0x10000e]
+movzx rsi,word [0x8000e]
 add rsi,[rel realpartition]
 mov [rel realfat0],rsi
 call say
 
 lea rdi,[rel sayclustersize]
-movzx rsi,byte [0x10000d]
+movzx rsi,byte [0x8000d]
 mov [rel realclustersize],rsi
 call say
 
@@ -95,12 +95,11 @@ sub rsi,[rel realclustersize]
 mov [rel realcluster0],rsi
 call say
 
-mov rdi,0x100000
+mov rdi,0x80000
 mov rsi,[rel realfat0]
 add rsi,[rel realfatsize]
 add rsi,[rel realfatsize]
-call disk
-mov rdx,rax
+mov rdx,[rel realdisk]
 mov rcx,32
 call read
 
@@ -111,27 +110,26 @@ add rsi,[rel realfatsize]
 call say
 ret
 
-saycdroot:db "cd root",0
 
 fat32:
 lea rdi,[rel saypartition]
-mov esi,[0x10001c]
+mov esi,[0x8001c]
 mov [rel realpartition],rsi
 call say
 
 lea rdi,[rel sayfatsize]
-mov esi,[0x100024]
+mov esi,[0x80024]
 mov [rel realfatsize],rsi
 call say
 
 lea rdi,[rel sayfat0]
-movzx rsi,word [0x10000e]
+movzx rsi,word [0x8000e]
 add rsi,[rel realpartition]
 mov [rel realfat0],rsi
 call say
 
 lea rdi,[rel sayclustersize]
-movzx rsi,byte [0x10000d]
+movzx rsi,byte [0x8000d]
 mov [rel realclustersize],rsi
 call say
 
@@ -144,13 +142,13 @@ sub rsi,[rel realclustersize]
 mov [rel realcluster0],rsi
 call say
 
-mov rdi,0x100000
+mov rdi,0x80000
 mov rsi,[rel realcluster0]
 add rsi,[rel realclustersize]
 add rsi,[rel realclustersize]
-call disk
-mov rdx,rax
-mov rcx,32
+mov rdx,[rel realdisk]
+mov rcx,8
+xor eax,eax
 call read
 
 lea rdi,[rel saycdroot]
@@ -183,3 +181,4 @@ sayfatsize:db "fatsize:",0
 sayfat0:db "fat0:",0
 sayclustersize:db "clustersize:",0
 saycluster0:db "cluster0:",0
+saycdroot:db "cd root:",0
