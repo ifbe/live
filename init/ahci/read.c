@@ -32,7 +32,7 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 	{
 		cmdtable->prdt_entry[i].dba = (DWORD)buf;
 		cmdtable->prdt_entry[i].dbc = 8*1024;	// 8K bytes
-		cmdtable->prdt_entry[i].i = 1;
+		//cmdtable->prdt_entry[i].i = 1;
 		buf += 8192;	// 4K words
 		count -= 16;	// 16 sectors
 	}

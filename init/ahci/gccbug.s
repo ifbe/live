@@ -147,7 +147,7 @@ mov rsi,[rel realcluster0]
 add rsi,[rel realclustersize]
 add rsi,[rel realclustersize]
 mov rdx,[rel realdisk]
-mov rcx,8
+mov rcx,32
 xor eax,eax
 call read
 
