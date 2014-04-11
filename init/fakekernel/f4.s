@@ -80,28 +80,40 @@ mov esi,[rel linenumber]
 shl esi,6
 lea edi,[rel line0]
 add esi,edi
-mov [rel saveesi],esi		;esi=current argument
+mov [rel backup],esi		;esi=current argument
 
-mov esi,[rel saveesi]
+mov esi,[rel backup]
 lea edi,[rel poweroff]
 mov ecx,9
 repe cmpsb
 je turnoff			;its poweroff
 
-mov esi,[rel saveesi]
+mov esi,[rel backup]
 cmp dword [esi],"addr"
 je changeaddr
 
-mov esi,[rel saveesi]
-cmp dword [esi],"call"		;call 0x100000
+mov esi,[rel backup]
+cmp dword [esi],"call"
 je cast
 
-mov esi,[rel saveesi]
-cmp dword [esi],"jump"		;call 0x100000
+mov esi,[rel backup]
+cmp dword [esi],"jump"
 je jump
 
+mov esi,[rel backup]
+cmp word [esi],"ls"
+je ls
+
+mov esi,[rel backup]
+cmp word [esi],"cd"
+je cd
+
+mov esi,[rel backup]
+cmp dword [esi],"load"
+je load
+
 notfound:
-mov edi,[rel saveesi]
+mov edi,[rel backup]
 mov dword [edi+32],"notf"
 mov dword [edi+36],"ound"
 ;____________________________________
@@ -122,8 +134,56 @@ jb .ok
     inc byte [rel linenumber]	;加一
     jmp console
 ;_________________________________
-saveesi:dd 0
+backup:dq 0
 poweroff:db "poweroff "
+
+
+
+
+;_________________________
+ls:
+
+add esi,2
+cmp byte [esi],' '
+jne notfound
+
+cmp byte [rel linenumber],0x1a
+jb .skip
+mov byte [rel linenumber],0   ;加一
+.skip:
+mov edi,[rel linenumber]
+inc edi
+shl edi,6
+lea esi,[rel line0]
+add edi,esi
+mov esi,0x80000
+
+mov ecx,16
+.many:
+movsq
+add esi,0x18
+add edi,8
+loop .many
+
+add byte [rel linenumber],4
+jmp scroll
+;_________________________
+
+
+
+
+;________________________
+cd:
+jmp scroll
+;______________________
+
+
+
+
+;________________________
+load:
+jmp scroll
+;______________________
 
 
 
@@ -217,12 +277,6 @@ jnz .continue
 
 ret
 ;__________________________________
-linenumber:dd 0x00
-length:dd 0
-line0:times 64 db ' '
-line1:times 64 db ' '
-lines:times 64*30 db ' '
-linenull:times 64 db ' '
 
 
 ;___________________________________________

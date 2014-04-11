@@ -155,3 +155,12 @@ ret
 addr:dq 0
 offset:dq 0
 temp:dq 0
+
+linenumber:dd 0x00
+length:dd 0
+
+line0:times 64 db ' '
+line1:times 64 db ' '
+lines:times 64*30 db ' '
+linenull:times 64 db ' '
+
