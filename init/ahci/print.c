@@ -42,16 +42,14 @@ void say(char* p,...)
 {
         register unsigned long long rdi asm("rdi");
         register unsigned long long rsi asm("rsi");
-        register unsigned long long rdx asm("rdx");
-        register unsigned long long rcx asm("rcx");
-        register unsigned long long r8 asm("r8");
-        register unsigned long long r9 asm("r9");
 	unsigned long long first=rsi;
-	int x=0;
+	unsigned long long x=0;
+	unsigned long long y=where();
 
 	while(*p!='\0')
 	{
-		anscii(x+64,where(),*p);
+		anscii(x+64,y,*p);
+		*(char*)(0xc000+y*64+x)=*p;
 		p++;
 		x++;
 	}
@@ -60,14 +58,15 @@ void say(char* p,...)
 	{
 	        int i=0;
 		char ch;
+		*(unsigned long long*)(0xc020+y*64)=first;
 	        for(i=15;i>=0;i--)
 	        {
-	        ch=(char)(first&0x0000000f);
+	        ch=(char)(first&0xf);
 	        first=first>>4;
-	        anscii(x+64+i,where(),ch);
+	        anscii(x+64+i,y,ch);
 	        }
 	}
 
-	incwhere();
-	if(where()==50) cleanwhere();
+	if(y>=50) cleanwhere();
+	else incwhere();
 }

@@ -4,14 +4,6 @@
 #define QWORD unsigned long long
 
 
-void readtable()
-{
-        read(0x80000,0,disk(),2);
-        if( *(WORD*)0x801fe !=0xAA55 ){say("bad disk",0);return;}
-        else say("good disk",0);
-}
-
-
 QWORD searchgpt()
 {
 	QWORD offset;
@@ -54,8 +46,12 @@ QWORD searchmbr()
 }
 
 
-void readpart()
+void parttable()
 {
+        read(0x80000,0,disk(),2);
+        if( *(WORD*)0x801fe !=0xAA55 ){say("bad disk",0);return;}
+        else say("good disk",0);
+
 	QWORD fat;
 	if(*(QWORD*)0x80200==0x5452415020494645){
 		say("gpt part",0);
@@ -73,7 +69,7 @@ void readpart()
 }
 
 
-void automount()
+void mount()
 {
 	if( *(WORD*)0x8000b !=0x200) {say("not 512B per sector,bye!",0);return;}
 	if( *(BYTE*)0x80010 !=2) {say("not 2 fat,bye!",0);return;}

@@ -23,49 +23,49 @@ cmp al,0x50
 je f2down
 
 f2left:
-mov rax,r15
+mov rax,[rel offset]
 mov bl,0x40
 div bl
 cmp ah,0
 je .equal
-dec r15
+dec qword [rel offset]
 jmp picture
     .equal:
-    cmp r14,0x800
+    cmp qword [rel addr],0x800
     jb picture
-    sub r14,0x800
+    sub qword [rel addr],0x800
     jmp picture
 
 f2right:
-mov rax,r15
+mov rax,[rel offset]
 mov bl,0x40
 div bl
 cmp ah,0x3f
 je .equal
-inc r15
+inc qword [rel offset]
 jmp picture
     .equal:
-    add r14,0x800
+    add qword [rel addr],0x800
     jmp picture
 
 f2up:
-cmp r15,0x40
+cmp qword [rel offset],0x40
 jb .below
-sub r15,0x40
+sub qword [rel offset],0x40
 jmp picture
     .below:
-    cmp r14,0x40
+    cmp qword [rel addr],0x40
     jb picture
-    sub r14,0x40
+    sub qword [rel addr],0x40
     jmp picture
 
 f2down:
-cmp r15,0xbbf
+cmp qword [rel offset],0xbbf
 ja .above
-add r15,0x40
+add qword [rel offset],0x40
 jmp picture
     .above:
-    add r14,0x40
+    add qword [rel addr],0x40
     jmp picture
 
 ;________________________________________

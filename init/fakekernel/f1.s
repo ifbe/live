@@ -42,54 +42,54 @@ jmp ramdump
 
 
 f1left:
-mov rax,r15
+mov rax,[rel offset]
 mov bl,0x40
 div bl
 cmp ah,0
 je .equal
-dec r15
+dec qword [rel offset]
 jmp ramdump
     .equal:
-    cmp r14,0x800
+    cmp qword [rel addr],0x800
     jb ramdump
-    sub r14,0x800
+    sub qword [rel addr],0x800
     jmp ramdump
 
 f1right:
-mov rax,r15
+mov rax,[rel offset]
 mov bl,0x40
 div bl
 cmp ah,0x3f
 je .equal
-inc r15
+inc qword [rel offset]
 jmp ramdump
     .equal:
-    add r14,0x800
+    add qword [rel addr],0x800
     jmp ramdump
 
 f1up:
-cmp r15,0x40
+cmp qword [rel offset],0x40
 jb .below
-sub r15,0x40
+sub qword [rel offset],0x40
 jmp ramdump
     .below:
-    cmp r14,0x40
+    cmp qword [rel addr],0x40
     jb ramdump
-    sub r14,0x40
+    sub qword [rel addr],0x40
     jmp ramdump
 
 f1down:
-cmp r15,0xbbf
+cmp qword [rel offset],0xbbf
 ja .above
-add r15,0x40
+add qword [rel offset],0x40
 jmp ramdump
     .above:
-    add r14,0x40
+    add qword [rel addr],0x40
     jmp ramdump
 
 f1space:
-    mov r14,0x6000
-    mov r15,0
+    mov qword [rel addr],0x6000
+    mov qword [rel offset],0
     jmp ramdump
 
 f1alt:
@@ -111,7 +111,7 @@ altkey db 1
 
 ;______________________________
 ramdump:
-push r14
+push qword [rel addr]
 mov dword [rel frontcolor],0xff00
 mov dword [rel linecount],0
 
@@ -127,11 +127,11 @@ inc byte [rel linecount]
 cmp byte [rel linecount],0x30
 jb dumpline
 
-pop r14
+pop qword [rel addr]
 
 mouse:
 mov edi,0x1000000
-mov eax,r15d
+mov eax,[rel offset]
 mov bl,0x40
 div bl
 
@@ -165,8 +165,6 @@ linecount:dd 0
 
 
 ;_______________________________
-;in:r14=memorystart,edi=destination
-;change:r14+64,rax,rdx,cl
 dumpanscii:
 
 mov ecx,0x40
@@ -175,7 +173,8 @@ mov ecx,0x40
     mov al,0x20
     call char
 
-    mov al,[r14]
+    mov rax,[rel addr]
+    mov al,[rax]
     cmp al,0x20
     jb .blank
     cmp al,0x7e
@@ -186,7 +185,7 @@ mov ecx,0x40
 
     .visiable:
     call char
-    inc r14
+    inc qword [rel addr]
 
 dec cl
 jnz .dump
@@ -197,15 +196,14 @@ ret
 
 
 ;_______________________________
-;in:r14=memorystart,edi=destination
-;change:r14+64,rax,rdx,cl
 dumphex:
 
 mov cl,0x10
 .dump4:
-mov eax,[r14]
+mov rax,[rel addr]
+mov eax,[rax]
 mov [rel save32],eax
-add r14,4
+add qword [rel addr],4
 
   mov ch,4
   .dump:

@@ -2,6 +2,10 @@ bits 64
 section .text
 extern say
 extern read
+extern fat16_cd
+extern fat16_load
+extern fat32_cd
+extern fat32_load
 global finddisk
 global disk
 global where
@@ -12,6 +16,12 @@ global fat32
 global clustersize
 global cluster0
 global fat0
+
+
+
+
+
+
 
 
 finddisk:
@@ -35,12 +45,20 @@ ret
 
 
 
+
+
+
+
 disk:
 mov rax,[rel realdisk]
 ret
 
 saydisk:db "disk:",0
 realdisk:dq 0
+
+
+
+
 
 
 
@@ -63,8 +81,12 @@ dq 0
 
 
 
+
+
+
+
 fat16:
-lea rdi,[rel saypartition]
+lea rdi,[rel saypartition]	;varieties
 mov esi,[0x8001c]
 mov [rel realpartition],rsi
 call say
@@ -95,7 +117,7 @@ sub rsi,[rel realclustersize]
 mov [rel realcluster0],rsi
 call say
 
-mov rdi,0x80000
+mov rdi,0x80000			;[80000]=root
 mov rsi,[rel realfat0]
 add rsi,[rel realfatsize]
 add rsi,[rel realfatsize]
@@ -108,7 +130,23 @@ mov rsi,[rel realfat0]
 add rsi,[rel realfatsize]
 add rsi,[rel realfatsize]
 call say
+
+mov rdi,0x8000			;[8000]=function address
+lea rax,[rel fat16_cd]
+stosq
+mov rax,"cd"
+stosq
+lea rax,[rel fat16_load]
+stosq
+mov rax,"load"
+stosq
+
 ret
+
+
+
+
+
 
 
 fat32:
@@ -156,7 +194,25 @@ mov rsi,[rel realcluster0]
 add rsi,[rel realclustersize]
 add rsi,[rel realclustersize]
 call say
+
+mov rdi,0x8000			;[8000]=function address
+lea rax,[rel fat32_cd]
+stosq
+mov rax,"cd"
+stosq
+lea rax,[rel fat32_load]
+stosq
+mov rax,"load"
+stosq
+
 ret
+
+
+
+
+
+
+
 
 fat0:
 mov rax,[rel realfat0]
@@ -169,6 +225,13 @@ ret
 cluster0:
 mov rax,[rel realcluster0]
 ret
+
+
+
+
+
+
+
 
 realpartition:dq 0
 realfatsize:dq 0

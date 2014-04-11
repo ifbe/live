@@ -1,7 +1,7 @@
 %include "initapic.s"
 %include "initelse.s"
 %include "forever.s"
-%include "library.s"
+%include "global.s"
 %include "f1.s"
 %include "f2.s"
 %include "f3.s"

@@ -89,8 +89,8 @@ repe cmpsb
 je turnoff			;its poweroff
 
 mov esi,[rel saveesi]
-cmp dword [esi],"r14="
-je changer14			;its r14=
+cmp dword [esi],"addr"
+je changeaddr
 
 mov esi,[rel saveesi]
 cmp dword [esi],"call"		;call 0x100000
@@ -129,11 +129,16 @@ poweroff:db "poweroff "
 
 
 ;______________________
-changer14:
+changeaddr:
 
 add esi,4
+cmp byte [esi],'='
+jne notfound
+
+inc esi
 call fetchvalue
-mov r14,rbx
+mov rax,[rel temp]
+mov [rel addr],rax
 jmp scroll
 ;_________________________
 
@@ -147,7 +152,7 @@ jne notfound
 
 inc esi
 call fetchvalue
-call rbx
+call [rel temp]
 jmp scroll
 ;_______________________________
 
@@ -161,13 +166,13 @@ jne notfound
 
 inc esi
 call fetchvalue
-jmp rbx
+jmp [rel temp]
 ;_______________________________
 
 
 ;________________________________
 fetchvalue:
-xor rbx,rbx
+mov qword [rel temp],0
 mov ecx,16
 .part:
 
@@ -188,10 +193,10 @@ ja notfound
 sub al,0x57          ;now its certainly a~f
 
 .generate:
-add bl,al
+add byte [rel temp],al
 cmp byte [esi],0x20
 je .finish
-shl rbx,4
+shl qword [rel temp],4
 
 loop .part
 

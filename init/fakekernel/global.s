@@ -118,11 +118,12 @@ ret
 address:
 mov dword [rel frontcolor],0xffffffff
 
-lea rbx,[r14]
+mov rbx,[rel addr]
 mov edi,0x1000000+4*896
 call dumprbx
 
-lea rbx,[r14+r15]
+mov rbx,[rel addr]
+add rbx,[rel offset]
 mov edi,0x1000000+4*1024*16+4*896
 call dumprbx
 ;________________________________
@@ -147,3 +148,10 @@ writescreen:
 
 ret
 ;_________________________________
+
+
+
+
+addr:dq 0
+offset:dq 0
+temp:dq 0

@@ -1,6 +1,6 @@
 bits 64
-    mov r14,0x6000          ;r14 memory pointer
-    xor r15,r15             ;r15 offset pointer
+    mov qword [rel addr],0x6000          ;r14 memory pointer
+    mov qword [rel offset],0             ;r15 offset pointer
 
     mov rdi,0x800
     mov [0xff8],rdi
