@@ -30,7 +30,7 @@ jna console
 dec byte [rel length]
 lea ebx,[rel line0]
 mov eax,[rel linenumber]
-shl eax,6
+shl eax,7
 add ebx,eax
 add ebx,[rel length]
 mov byte [ebx],' '
@@ -42,7 +42,7 @@ jmp console
 ;_____________________________________
 other4:
 
-cmp byte [rel length],64
+cmp byte [rel length],128
 jae console
 
 translate:
@@ -63,7 +63,7 @@ translate:
 record:
 lea ebx,[rel line0]
 mov edx,[rel linenumber]
-shl edx,6
+shl edx,7
 add ebx,edx
 add ebx,[rel length]
 mov [ebx],al
@@ -77,56 +77,77 @@ enter4:
 
 mov byte [rel length],0
 mov esi,[rel linenumber]
-shl esi,6
+shl esi,7
 lea edi,[rel line0]
 add esi,edi
 mov [rel backup],esi		;esi=current argument
 
 mov esi,[rel backup]
-lea edi,[rel poweroff]
-mov ecx,9
-repe cmpsb
-je turnoff			;its poweroff
+cmp dword [esi],"powe"		;if [esi]=="powe"
+jne skipturnoff
+cmp dword [esi+4],"roff"	;if [esi+4]=="roff"
+jne skipturnoff
+cmp byte [esi+8],' '		;if [esi+8]=0x20
+je turnoff
+skipturnoff:
 
 mov esi,[rel backup]
-cmp dword [esi],"addr"
+cmp dword [esi],"addr"		;if [esi]="addr"
+jne skipaddr
+cmp byte [esi+4],'='		;if [esi+4]="="
 je changeaddr
+skipaddr:
+
 
 mov esi,[rel backup]
 cmp dword [esi],"call"
+jne skipcast
+cmp byte [esi+4],0x20
 je cast
+skipcast:
 
 mov esi,[rel backup]
 cmp dword [esi],"jump"
+jne skipjump
+cmp byte [esi+4],0x20
 je jump
+skipjump:
 
 mov esi,[rel backup]
 cmp word [esi],"ls"
+jne skipls
+cmp byte [esi+2],0x20
 je ls
+skipls:
 
 mov esi,[rel backup]
 cmp word [esi],"cd"
+jne skipcd
+cmp byte [esi+2],0x20
 je cd
+skipcd:
 
 mov esi,[rel backup]
 cmp dword [esi],"load"
+jne skipload
+cmp byte [esi+4],0x20
 je load
+skipload:
 
 notfound:
 mov edi,[rel backup]
-mov dword [edi+32],"notf"
-mov dword [edi+36],"ound"
-;____________________________________
+add edi,128
+mov dword [edi],"notf"
+mov dword [edi+4],"ound"
+inc byte [rel linenumber]
 
-
-;________________________________
 scroll:
 cmp byte [rel linenumber],0x1f
 jb .ok
 
     lea esi,[rel line1]		;32行，往上挪！
     lea edi,[rel line0]
-    mov ecx,64*0x20
+    mov ecx,128*0x20
     rep movsb
     jmp console
 
@@ -135,7 +156,6 @@ jb .ok
     jmp console
 ;_________________________________
 backup:dq 0
-poweroff:db "poweroff "
 
 
 
@@ -143,19 +163,9 @@ poweroff:db "poweroff "
 ;_________________________
 ls:
 
-add esi,2
-cmp byte [esi],' '
-jne notfound
-
-cmp byte [rel linenumber],0x1a
-jb .skip
-mov byte [rel linenumber],0   ;加一
-.skip:
-mov edi,[rel linenumber]
-inc edi
-shl edi,6
-lea esi,[rel line0]
-add edi,esi
+inc byte [rel linenumber]   ;加一
+mov edi,[rel backup]
+add edi,128
 mov esi,0x80000
 
 mov ecx,16
@@ -165,7 +175,7 @@ add esi,0x18
 add edi,8
 loop .many
 
-add byte [rel linenumber],4
+add byte [rel linenumber],2
 jmp scroll
 ;_________________________
 
@@ -174,6 +184,21 @@ jmp scroll
 
 ;________________________
 cd:
+cmp word [0x8008],"cd"
+jne notfound
+mov rax,[rsi+3]
+
+mov ecx,8
+.fuckanscii:
+rol rax,8
+cmp al,0x60
+jb .next
+sub al,0x20
+.next:
+loop .fuckanscii
+
+mov rdi,rax
+call [0x8000]
 jmp scroll
 ;______________________
 
@@ -182,6 +207,21 @@ jmp scroll
 
 ;________________________
 load:
+cmp dword [0x8018],"load"
+jne notfound
+mov rax,[rsi+5]
+
+mov ecx,8
+.fuckanscii:
+rol rax,8
+cmp al,0x60
+jb .next
+sub al,0x20
+.next:
+loop .fuckanscii
+
+mov rdi,rax
+call [0x8010]
 jmp scroll
 ;______________________
 
@@ -191,11 +231,7 @@ jmp scroll
 ;______________________
 changeaddr:
 
-add esi,4
-cmp byte [esi],'='
-jne notfound
-
-inc esi
+add esi,5
 call fetchvalue
 mov rax,[rel temp]
 mov [rel addr],rax
@@ -206,11 +242,7 @@ jmp scroll
 ;_______________________________
 cast:
 
-add esi,4
-cmp byte [esi],0x20
-jne notfound
-
-inc esi
+add esi,5
 call fetchvalue
 call [rel temp]
 jmp scroll
@@ -220,11 +252,7 @@ jmp scroll
 ;_______________________________
 jump:
 
-add esi,4
-cmp byte [esi],0x20
-jne notfound
-
-inc esi
+add esi,5
 call fetchvalue
 jmp [rel temp]
 ;_______________________________
@@ -265,19 +293,6 @@ ret
 ;_______________________________-
 
 
-;_________________________________
-message:
-mov cl,64
-.continue:
-mov al,[ebx]
-call char
-inc ebx
-dec cl
-jnz .continue
-
-ret
-;__________________________________
-
 
 ;___________________________________________
 console:
@@ -296,7 +311,7 @@ rep stosd
 mov dword [rel frontcolor],0xff0000
 mov dword [rel backcolor],0xffffffff
 mov dword [rel looptimes],0
-.tmd:
+.lines:
     mov edi,[rel ediforeground]
     mov eax,4*1024*16
     ;add edi,eax
@@ -304,12 +319,20 @@ mov dword [rel looptimes],0
     add edi,eax
     lea ebx,[rel line0]
     mov eax,[rel looptimes]
-    shl eax,6
+    shl eax,7
     add ebx,eax
-    call message
+
+    mov cl,128
+    .continue:
+    mov al,[ebx]
+    call char
+    inc ebx
+    dec cl
+    jnz .continue
+
 inc byte [rel looptimes]
 cmp byte [rel looptimes],0x20
-jb .tmd
+jb .lines
 mov dword [rel backcolor],0
 
 call address

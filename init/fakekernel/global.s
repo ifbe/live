@@ -159,8 +159,8 @@ temp:dq 0
 linenumber:dd 0x00
 length:dd 0
 
-line0:times 64 db ' '
-line1:times 64 db ' '
-lines:times 64*30 db ' '
-linenull:times 64 db ' '
+line0:times 128 db ' '
+line1:times 128 db ' '
+lines:times 128*30 db ' '
+linenull:times 128 db ' '
 
