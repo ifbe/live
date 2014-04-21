@@ -1,8 +1,9 @@
 startofhelp:
-dq "F1: ramdump(arrow:see anywhere in memory,alt:transform)        "
-dq "F2: picture                                                    "
-dq "F3: 3d                                                         "
-dq "F4: console(ls,cd,assembly instructions)                       "
+dq "ESC     : menu                                                 "
+dq "F1      : ramdump(arrow:see anywhere in memory,alt:transform)  "
+dq "F2      : picture                                              "
+dq "F3      : 3d                                                   "
+dq "F4      : console(ls,cd,assembly instructions)                 "
 
 times 0x400 db 0
 

@@ -4,7 +4,7 @@ forever:
 
 hlt                     ;       sleep
 
-cmp byte [0xff0],0      ;       (keyboard interrupt)?
+cmp byte [0xff0],0      ;       (keyboard wake up me)?
 je forever              ;       no{sleep again}
                         ;       yes{
 mov byte [0xff0],0      ;               clear signal

@@ -1,27 +1,48 @@
 bits 64
 ;_________________________
 f1:
-    mov dword [rel decide+1],function1-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function1-(decide+5)	;selfmodify
     jmp ramdump
 f2:
-    mov dword [rel decide+1],function2-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function2-(decide+5)	;selfmodify
     jmp picture
 f3:
-    mov dword [rel decide+1],function3-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function3-(decide+5)	;selfmodify
     jmp cyberspace
 f4:
-    mov dword [rel decide+1],function4-(decide+5)		;selfmodify
+    mov dword [rel decide+1],function4-(decide+5)	;selfmodify
     jmp console
+;___________________________________________
 
 
-esc:
+;__________________________
 turnoff:
 mov dx,[0x4fc]
 mov ax,[0x4fe]
 or ax,0x2000
 out dx,ax
-
 ;__________________________
+
+
+
+
+;________________________________
+translate:
+    mov esi,0x7800                 ;table
+.search:
+    cmp [esi],al            ;先把al里的扫描码转换成anscii给al
+    je .convert
+    add esi,2
+    cmp esi,0x7880
+    jb .search
+    mov esi,0x7200           ;no,blank
+    jmp .finish
+.convert:
+    inc esi
+    lodsb
+.finish:
+    ret
+;____________________________________
 
 
 
@@ -89,6 +110,24 @@ char:
 ;______________________________________
 backcolor:dd 0
 frontcolor:dd 0xffffffff
+
+
+
+
+;_______________________________
+message:
+mov ecx,16
+.continue:
+push rcx
+push rsi
+lodsb
+call char
+pop rsi
+pop rcx
+inc esi
+loop .continue
+ret
+;______________________________
 
 
 

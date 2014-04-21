@@ -38,7 +38,7 @@ QWORD searchmbr()
 		}
 
 	}
-	if(offset==0x800fe)
+	if(offset==0x801fe)
 	{
 		say("no fat,bye!",0);
 		return 0;
@@ -50,17 +50,17 @@ void parttable()
 {
         read(0x80000,0,disk(),2);
         if( *(WORD*)0x801fe !=0xAA55 ){say("bad disk",0);return;}
-        else say("good disk",0);
+        else say("good disk",0x55aa);
 
 	QWORD fat;
 	if(*(QWORD*)0x80200==0x5452415020494645){
-		say("gpt part",0);
 		read(0x80000,2,disk(),32);
 		fat=searchgpt();
+		say("gpt part",fat);
 	}
 	else{
-		say("mbr disk",0);
 		fat=searchmbr();
+		say("mbr disk",fat);
 	}
 
 	if(fat!=0) read(0x80000,fat,disk(),1); //pbr

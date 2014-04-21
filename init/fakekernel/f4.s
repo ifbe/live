@@ -45,20 +45,7 @@ other4:
 cmp byte [rel length],128
 jae console
 
-translate:
-    mov esi,0x7800                 ;table
-.search:
-    cmp [esi],al            ;先把al里的扫描码转换成anscii给al
-    je .convert
-    add esi,2
-    cmp esi,0x7880
-    jb .search
-    mov esi,0x7200           ;no,blank
-    jmp .finish
-.convert:
-    inc esi
-    lodsb
-.finish:
+call translate
 
 record:
 lea ebx,[rel line0]

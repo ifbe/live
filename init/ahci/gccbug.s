@@ -12,7 +12,9 @@ global where
 global incwhere
 global cleanwhere
 global fat16
+global fat16root
 global fat32
+global fat32root
 global clustersize
 global cluster0
 global fat0
@@ -117,6 +119,7 @@ sub rsi,[rel realclustersize]
 mov [rel realcluster0],rsi
 call say
 
+fat16root:
 mov rdi,0x80000			;[80000]=root
 mov rsi,[rel realfat0]
 add rsi,[rel realfatsize]
@@ -180,6 +183,7 @@ sub rsi,[rel realclustersize]
 mov [rel realcluster0],rsi
 call say
 
+fat32root:
 mov rdi,0x80000
 mov rsi,[rel realcluster0]
 add rsi,[rel realclustersize]
