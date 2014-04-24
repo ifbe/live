@@ -1,8 +1,6 @@
 init:
-	make -C ahci
-	make -C fakekernel
+	make -C mykernel
 	nasm init.s
 clean:
-	make clean -C ahci
-	make clean -C fakekernel
+	make clean -C mykernel
 	rm -f init

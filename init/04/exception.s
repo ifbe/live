@@ -121,7 +121,7 @@ mov ecx,0x2000
 rep movsb
 
 call endofexception+0x2000	;+4000
-call endofexception+0x6000	;+8000
+;call endofexception+0x6000	;+8000
 sleep:hlt
 jmp sleep
 ;_______________________________________

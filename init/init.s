@@ -31,7 +31,7 @@
 ;[+3000,+3fff]:
 %include "2/anscii.s"			;anscii pixel table
 
-;))))))))))))))))))))    endof part1    ))))))))))))))))))))
+;)))))))))))))))))))) endof part1(16KB) ))))))))))))))))))))
 
 
 
@@ -55,12 +55,8 @@
 
 ;(((((((((((((((    part2:filesystem    (((((((((((((((
 
-;[+4000,+7fff]:
-incbin "ahci/temp"			;read file and throw in memory
-times 0x8000-($-$$) db 0
-
-;[+8000,+ffff]:
-incbin "fakekernel/temp"		;fake kernel,dump ram,console.(debug)
+;[+4000,+ffff]:
+incbin "mykernel/temp"		;fake kernel,dump ram,console.(debug)
 times 0x10000-($-$$) db 0
 
 ;))))))))))))))))))))    endof part2    )))))))))))))
