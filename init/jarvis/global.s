@@ -27,7 +27,7 @@ out dx,ax
 
 
 ;________________________________
-translate:
+scan2anscii:
     mov esi,0x7800                 ;table
 .search:
     cmp [esi],al            ;先把al里的扫描码转换成anscii给al
@@ -45,6 +45,54 @@ translate:
 ;____________________________________
 
 
+;___________________________________
+scan2hex:
+cmp al,0xb
+je .return0
+cmp al,0x1e
+je .returna
+cmp al,0x30
+je .returnb
+cmp al,0x2e
+je .returnc
+cmp al,0x20
+je .returnd
+cmp al,0x12
+je .returne
+cmp al,0x21
+je .returnf
+cmp al,0xb
+ja .wrong
+
+.return:
+dec al
+ret
+.wrong:
+mov al,0xff
+ret
+.return0:
+xor al,al
+ret
+.returna:
+mov al,0xa
+ret
+.returnb:
+mov al,0xb
+ret
+.returnc:
+mov al,0xc
+ret
+.returnd:
+mov al,0xd
+ret
+.returne:
+mov al,0xe
+ret
+.returnf:
+mov al,0xf
+ret
+
+;__________________________________
 
 
 ;进:esi,edi
@@ -135,37 +183,37 @@ ret
 ;_________________________________
 dumprbx:
 mov ecx,16
+mov byte [rel firstnonzero],0
 .getaddress:
         rol rbx,4
         mov al,bl
         and al,0x0f
 
+	cmp byte [rel firstnonzero],0		;have first non zero?
+	ja .print
+	cmp ecx,1				;last value?
+	je .print
+
+	cmp al,0				;not print 0
+	je .notprint
+
+	.setsignal:				;now we have a non zero
+	mov byte [rel firstnonzero],1
+
+	.print:
         push rbx
         push rcx
         call char
         pop rcx
         pop rbx
+	loop .getaddress
 
-        loop .getaddress
 ret
+	.notprint:
+	add edi,32
+	loop .getaddress
 ;________________________________
-
-
-
-
-;__________________________________
-address:
-mov dword [rel frontcolor],0xffffffff
-
-mov rbx,[rel addr]
-mov edi,0x1000000+4*896
-call dumprbx
-
-mov rbx,[rel addr]
-add rbx,[rel offset]
-mov edi,0x1000000+4*1024*16+4*896
-call dumprbx
-;________________________________
+firstnonzero: db 0
 
 
 
@@ -195,11 +243,10 @@ addr:dq 0
 offset:dq 0
 temp:dq 0
 
-linenumber:dd 0x00
-length:dd 0
+linenumber:dd 0
+length:dd 4
 
-line0:times 128 db ' '
+line0:db "sh$                                                                                                                             "
 line1:times 128 db ' '
 lines:times 128*30 db ' '
 linenull:times 128 db ' '
-

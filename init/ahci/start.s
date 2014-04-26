@@ -1,11 +1,17 @@
 bits 64
 section .text
+
+extern initahci
+extern parttable
+extern mount
 extern say
 extern read
 extern fat16_cd
 extern fat16_load
 extern fat32_cd
 extern fat32_load
+
+global start
 global finddisk
 global disk
 global where
@@ -18,6 +24,25 @@ global fat32root
 global clustersize
 global cluster0
 global fat0
+
+
+
+
+
+
+
+
+start:
+mov edi,0x8000
+xor rax,rax
+mov ecx,0x1000
+rep stosq
+
+call initahci
+call finddisk
+call parttable
+call mount
+ret
 
 
 

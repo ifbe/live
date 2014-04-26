@@ -155,7 +155,6 @@ xor edx,edx
 add edi,4*1024
 loop .first
 
-call address
 call writescreen
 jmp forever
 ;___________________________________

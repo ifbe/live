@@ -1,8 +1,8 @@
+;(((((((((((((((((    part0:init cpu    (((((((((((((((((
+
 ;our bootloader load initer to [anywhere,anywhere+ffff](anywhere<0x40000)
 ;you'd better not modify part1......except you know what you are doing......
 
-
-;(((((((((((((((((    part1:init cpu    (((((((((((((((((
 
 ;[+0,+0x3ff]:				;below explain what the file do
 %include "00/1024x768.s"		;put memory info in [2000,2fff]
@@ -33,30 +33,4 @@
 
 ;)))))))))))))))))))) endof part1(16KB) ))))))))))))))))))))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;you can delete all about part2 if you dont like my messy code
-;and use your whatever 64bit code like this (remember,never ret):
-;                             forever: hlt
-;                             jmp forever
-
-
-;(((((((((((((((    part2:filesystem    (((((((((((((((
-
-;[+4000,+ffff]:
-incbin "mykernel/temp"		;fake kernel,dump ram,console.(debug)
-times 0x10000-($-$$) db 0
-
-;))))))))))))))))))))    endof part2    )))))))))))))
+times 0x4000-($-$$) db 0

@@ -2,6 +2,8 @@ bits 64
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>----console----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;_______________________________________________
 function4:
+cmp al,0
+je console		;do nothing
 cmp al,0x3b
 je f1
 cmp al,0x3c
@@ -13,18 +15,18 @@ je f4
 cmp al,0x01
 je esc
 cmp al,0x1c
-je enter4
+je consoleenter
 cmp al,0x0e
-je backspace4
+je consolebackspace
 
-jmp other4
+jmp consoleother
 ;_______________________________________________________________________________
 
 
 ;_______________________________
-backspace4:
+consolebackspace:
 
-cmp byte [rel length],0
+cmp byte [rel length],4
 jna console
 
 dec byte [rel length]
@@ -40,12 +42,12 @@ jmp console
 
 
 ;_____________________________________
-other4:
+consoleother:
 
 cmp byte [rel length],128
 jae console
 
-call translate
+call scan2anscii
 
 record:
 lea ebx,[rel line0]
@@ -60,13 +62,14 @@ jmp console
 
 
 ;___________________________________
-enter4:
+consoleenter:
 
-mov byte [rel length],0
+mov byte [rel length],4
 mov esi,[rel linenumber]
 shl esi,7
 lea edi,[rel line0]
 add esi,edi
+add esi,4
 mov [rel backup],esi		;esi=current argument
 
 mov esi,[rel backup]
@@ -123,9 +126,10 @@ skipload:
 
 notfound:
 mov edi,[rel backup]
-add edi,128
+add edi,124
 mov dword [edi],"notf"
 mov dword [edi+4],"ound"
+mov dword [edi+128],"sh$ "
 inc byte [rel linenumber]
 
 scroll:
@@ -155,11 +159,11 @@ mov edi,[rel backup]
 add edi,128
 mov esi,0x80000
 
-mov ecx,16
+mov ecx,8
 .many:
 movsq
 add esi,0x18
-add edi,8
+add edi,0x8
 loop .many
 
 add byte [rel linenumber],2
@@ -284,22 +288,13 @@ ret
 ;___________________________________________
 console:
 mov edi,0x1000000
-mov eax,1024*4
-shl eax,6
-add edi,eax
-
-mov [rel edibackground],edi
-mov [rel ediforeground],edi
-
-mov eax,0x1234
-mov ecx,1024*640
+mov ecx,1024*750
+xor eax,eax
 rep stosd
 
-mov dword [rel frontcolor],0xff0000
-mov dword [rel backcolor],0xffffffff
 mov dword [rel looptimes],0
 .lines:
-    mov edi,[rel ediforeground]
+    mov edi,0x1000000
     mov eax,4*1024*16
     ;add edi,eax
     imul eax,[rel looptimes]
@@ -320,12 +315,8 @@ mov dword [rel looptimes],0
 inc byte [rel looptimes]
 cmp byte [rel looptimes],0x20
 jb .lines
-mov dword [rel backcolor],0
 
-call address
 call writescreen
 jmp forever
 ;________________________________________
-edibackground:dd 0
-ediforeground:dd 0
 looptimes:dd 0

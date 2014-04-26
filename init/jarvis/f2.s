@@ -82,7 +82,6 @@ mov ecx,1024*768
 cld
 rep movsd
 
-call address
 call writescreen
 jmp forever
 ;_________________________________________

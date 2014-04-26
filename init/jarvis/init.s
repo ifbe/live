@@ -63,9 +63,22 @@ endofinterrupt:
 
 
 
+
+
+
+
 ;_______________________________________
-call binaryahci
+
+;initahci
+call endofjarvis
+
+;initxhci
+call endofjarvis+0x4000
 ;__________________________________
+
+
+
+
 
 
 
@@ -85,5 +98,5 @@ call binaryahci
     mov ecx,0xfe
     rep stosq
 
-    jmp ramdump
+    jmp console
 ;____________________________________________________

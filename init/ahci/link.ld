@@ -1,6 +1,6 @@
 OUTPUT_FORMAT("binary")
 ENTRY(start)
-phys = 0x00000000;
+phys = 0;
 SECTIONS
 {
   .text phys : AT(phys) {
@@ -19,7 +19,7 @@ SECTIONS
   {
     bss = .;
     *(.bss)
-    . = ALIGN(4096);
+    . = ALIGN(8);
   }
   end = .;
 }

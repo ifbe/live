@@ -19,7 +19,7 @@ SECTIONS
   {
     bss = .;
     *(.bss)
-    . = ALIGN(4096);
+    . = ALIGN(8);
   }
   end = .;
 }
