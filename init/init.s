@@ -22,14 +22,14 @@
 					;init ioapic to all off
 
 ;[+1000,+1fff]:
-%include "04/exception.s"		;set 32 default exception handler
+%include "1/exception.s"		;set 32 default exception handler
 					;call read disk
 
 ;[+2000,+2fff]:
-%include "1/help.s"			;how to
+%include "2/help.s"			;how to
 
 ;[+3000,+3fff]:
-%include "2/anscii.s"			;anscii pixel table
+%include "3/anscii.s"			;anscii pixel table
 
 ;)))))))))))))))))))) endof part1(16KB) ))))))))))))))))))))
 
