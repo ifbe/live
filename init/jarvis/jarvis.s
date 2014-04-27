@@ -3,7 +3,6 @@
 ;[+4000,+7fff]:
 %include "init.s"
 %include "forever.s"
-%include "esc.s"
 %include "f1.s"
 %include "f2.s"
 %include "f3.s"

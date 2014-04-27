@@ -16,7 +16,7 @@ dec eax                 ;                       pointer-1
 mov al,[eax]            ;                       al=[pointer]
 
 decide:
-jmp function4		;               	it is in charge currently
+jmp dword function1	;               	what i do next
 			;		}
                         ;       }
 ;_________________________________________________

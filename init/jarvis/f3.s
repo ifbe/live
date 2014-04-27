@@ -9,8 +9,6 @@ cmp al,0x3d
 je f3
 cmp al,0x3e
 je f4
-cmp al,0x01
-je esc
 
 cyberspace:
 call writescreen

@@ -10,23 +10,15 @@ cmp al,0x3d
 je f3
 cmp al,0x3e
 je f4
-cmp al,0x01
-je esc
-;cmp al,0x1d
-;je ctrl
-;cmp al,0x38
-;je alt
-;cmp al,0x3a
-;je capslock
-;cmp al,0x2a
-;je shift
-;cmp al,0x0f
-;je tab
-;cmp al,0x5b
-;je super
 
-cmp al,0x39
-je f1space
+cmp al,0x01
+je f1esc
+cmp al,0xf
+je f1tab
+cmp al,0x1c
+je f1enter
+cmp al,0xe
+je f1backspace
 cmp al,0x4b
 je f1left
 cmp al,0x4d
@@ -35,11 +27,51 @@ cmp al,0x48
 je f1up
 cmp al,0x50
 je f1down
+cmp al,0x39
+je f1space
 cmp al,0x38
 je f1alt
+jmp f1other
 
+
+f1tab:
+cmp byte [rel chosen],6
+ja .chosenzero
+inc byte [rel chosen]
+jmp ramdump
+.chosenzero:
+mov byte [rel chosen],0
 jmp ramdump
 
+f1backspace:
+shr qword [rel f1temp],4
+jmp ramdump
+
+f1enter:
+test byte [rel esckey],1
+jnz ramdump
+cmp byte [rel chosen],0
+je escenter0
+cmp byte [rel chosen],1
+je escenter1
+cmp byte [rel chosen],7
+je turnoff
+jmp ramdump
+	escenter0:
+	cmp dword [rel f1temp+4],0
+	jne ramdump
+	mov rax,[rel f1temp]
+	mov [rel addr],rax
+	mov qword [rel f1temp],0
+	jmp ramdump
+
+	escenter1:
+	mov rax,[rel f1temp]
+	cmp rax,0xbff
+	ja ramdump
+	mov [rel offset],rax
+	mov qword [rel f1temp],0
+	jmp ramdump
 
 f1left:
 mov rax,[rel offset]
@@ -92,18 +124,38 @@ f1space:
     mov qword [rel offset],0
     jmp ramdump
 
+f1esc:
+inc byte [rel esckey]
+test byte [rel esckey],1
+jnz .anscii
+    .hex:
+    mov dword [rel mouseormenu-4],menu-mouseormenu	;selfmodify
+    jmp ramdump
+    .anscii:
+    mov dword [rel mouseormenu-4],mouse-mouseormenu	;selfmodify
+    jmp ramdump
+
 f1alt:
 inc byte [rel altkey]
 test byte [rel altkey],1
 jnz .anscii
     .hex:
-    mov dword [rel dumpwhat-4],dumphex-dumpwhat                      ;selfmodify
+    mov dword [rel dumpwhat-4],dumphex-dumpwhat		;selfmodify
     jmp ramdump
     .anscii:
-    mov dword [rel dumpwhat-4],dumpanscii-dumpwhat                   ;selfmodify
+    mov dword [rel dumpwhat-4],dumpanscii-dumpwhat	;selfmodify
     jmp ramdump
 
+f1other:
+call scan2hex
+cmp al,0x10
+ja ramdump
+shl qword [rel f1temp],4
+add [rel f1temp],al
+jmp ramdump
+
 ;_______________________________________
+esckey db 0
 altkey db 1
 
 
@@ -111,24 +163,100 @@ altkey db 1
 
 ;______________________________
 ramdump:
-push qword [rel addr]
-mov dword [rel frontcolor],0xff00
+
+mov rax,[rel addr]
+mov [rel dumppointer],rax
 mov dword [rel linecount],0
-
 dumpline:
-    mov edi,0x1000000        ;locate destination
-    mov eax,[rel linecount]
-    imul eax,4*1024*16
-    add edi,eax
-    call dumpanscii
-dumpwhat:
 
-inc byte [rel linecount]
-cmp byte [rel linecount],0x30
-jb dumpline
+	mov edi,0x1000000			;locate destination
+	mov eax,[rel linecount]
+	imul eax,4*1024*16
+	add edi,eax
+	call dword dumpanscii
+	dumpwhat:
+	inc byte [rel linecount]
+	cmp byte [rel linecount],0x30
+	jb dumpline
 
-pop qword [rel addr]
+call dword menu
+mouseormenu:
 
+call writescreen
+
+jmp forever
+
+;___________________________________
+dumppointer:dq 0
+linecount:dd 0
+
+
+
+
+;_______________________________
+dumpanscii:
+
+mov ecx,0x40
+.dump:
+    mov al,0x20
+    call char
+
+    mov rbx,[rel dumppointer]
+    mov al,[rbx]
+    cmp al,0x20
+    jb .blank
+    cmp al,0x7e
+    jb .visiable
+
+    .blank:
+    mov al,0x20
+
+    .visiable:
+    call char
+    inc qword [rel dumppointer]
+
+dec cl
+jnz .dump
+ret
+;_______________________________
+
+
+
+
+;_______________________________
+dumphex:
+
+mov cl,0x10
+.dump4:
+mov rax,[rel dumppointer]
+mov eax,[rax]
+mov [rel pcimust32],eax
+
+  mov ch,4
+  .dump:
+  mov al,[rel pcimust32]
+  shr al,4
+  call char
+  mov al,[rel pcimust32]
+  and al,0xf
+  call char
+  shr dword [rel pcimust32],8
+  dec ch
+  cmp ch,0
+  jne .dump
+
+add qword [rel dumppointer],4
+dec cl
+jnz .dump4
+
+ret
+;_______________________________
+pcimust32:dd 0
+
+
+
+
+;___________________________________
 mouse:
 mov edi,0x1000000
 mov eax,[rel offset]
@@ -155,71 +283,116 @@ xor edx,edx
 add edi,4*1024
 loop .first
 
-call writescreen
-jmp forever
+ret
 ;___________________________________
-linecount:dd 0
 
 
 
 
-;_______________________________
-dumpanscii:
+;_____________________________________
+menu:
+call mouse
+.menurow:
+mov rbx,[rel offset]
+and rbx,0xffffffffffffffc0
+shl rbx,10                      ;now ebx=line number * pixel/line
+add rbx,0x10000
+cmp rbx,0x200000
+jna .skiprow
+sub rbx,0x110000
+.skiprow:
 
-mov ecx,0x40
-.dump:
-    mov dword [rel frontcolor],0xff00
-    mov al,0x20
-    call char
+.menuline:
+mov rax,[rel offset]
+and rax,0x3f
+shl rax,6
+add rax,0x40
+cmp rax,0xc00
+jna .skipline
+sub rax,0x440
+.skipline:
 
-    mov rax,[rel addr]
-    mov al,[rax]
-    cmp al,0x20
-    jb .blank
-    cmp al,0x7e
-    jb .visiable
+add rbx,rax
+add rbx,0x1000000               ;framebuffer address
+mov [rel menuaddr],rbx
 
-    .blank:
-    mov al,0x20
 
-    .visiable:
-    call char
-    inc qword [rel addr]
+mov rbx,[rel menuaddr]
+.backcolor:
+        mov edi,ebx
+        mov ecx,0x100
+        .innercolor:
+        mov eax,ecx
+        shl eax,15
+        stosd
+        dec ecx
+        jnz .innercolor
 
-dec cl
-jnz .dump
+add ebx,0x1000          ;一行
+
+mov eax,ebx
+sub eax,[rel menuaddr]
+cmp eax,0x100000
+jb .backcolor
+
+
+somewords:
+
+lea esi,[rel message0]
+mov dword [rel menuoffset],0x8000
+.entries:
+mov edi,[rel menuaddr]
+add edi,[rel menuoffset]
+call message
+add dword [rel menuoffset],0x20000
+cmp dword [rel menuoffset],0x100000
+jb .entries
+
+mov edi,[rel menuaddr]
+add edi,0x8200
+mov rbx,[rel addr]
+call dumprbx
+mov edi,[rel menuaddr]
+add edi,0x28200
+mov rbx,[rel offset]
+call dumprbx
+mov edi,[rel menuaddr]
+add edi,0xc8200
+mov rbx,[rel f1temp]
+call dumprbx
+
+
+choose:
+mov edi,[rel chosen]
+shl edi,17
+add edi,[rel menuaddr]
+mov edx,32
+.loop32:
+
+mov ecx,0x100
+.innerloop:
+not dword [edi]
+add edi,4
+dec ecx
+jnz .innerloop
+
+add edi,0xc00
+dec edx
+jnz .loop32
+
 ret
 ;_______________________________
+chosen:dq 0
+f1temp:dq 0
+menuaddr dq 0
+menuoffset:dq 0
 
-
-
-
-;_______________________________
-dumphex:
-
-mov cl,0x10
-.dump4:
-mov rax,[rel addr]
-mov eax,[rax]
-mov [rel save32],eax
-add qword [rel addr],4
-
-  mov ch,4
-  .dump:
-  mov al,[rel save32]
-  shr al,4
-  call char
-  mov al,[rel save32]
-  and al,0xf
-  call char
-  shr dword [rel save32],8
-  dec ch
-  cmp ch,0
-  jne .dump
-
-dec cl
-jnz .dump4
-
-ret
-;_______________________________
-save32:dd 0
+message0:
+db "      addr:     "
+db "     offset:    "
+db "                "
+db "                "
+db "                "
+db "                "
+db "     input:     "
+db "    turnoff!    "

@@ -12,19 +12,17 @@ cmp al,0x3d
 je f3
 cmp al,0x3e
 je f4
-cmp al,0x01
-je esc
 cmp al,0x1c
-je consoleenter
+je f4enter
 cmp al,0x0e
-je consolebackspace
+je f4backspace
 
-jmp consoleother
+jmp f4other
 ;_______________________________________________________________________________
 
 
 ;_______________________________
-consolebackspace:
+f4backspace:
 
 cmp byte [rel length],4
 jna console
@@ -42,7 +40,7 @@ jmp console
 
 
 ;_____________________________________
-consoleother:
+f4other:
 
 cmp byte [rel length],128
 jae console
@@ -62,7 +60,7 @@ jmp console
 
 
 ;___________________________________
-consoleenter:
+f4enter:
 
 mov byte [rel length],4
 mov esi,[rel linenumber]
@@ -224,7 +222,7 @@ changeaddr:
 
 add esi,5
 call fetchvalue
-mov rax,[rel temp]
+mov rax,[rel f4temp]
 mov [rel addr],rax
 jmp scroll
 ;_________________________
@@ -235,7 +233,7 @@ cast:
 
 add esi,5
 call fetchvalue
-call [rel temp]
+call [rel f4temp]
 jmp scroll
 ;_______________________________
 
@@ -245,13 +243,13 @@ jump:
 
 add esi,5
 call fetchvalue
-jmp [rel temp]
+jmp [rel f4temp]
 ;_______________________________
 
 
 ;________________________________
 fetchvalue:
-mov qword [rel temp],0
+mov qword [rel f4temp],0
 mov ecx,16
 .part:
 
@@ -272,10 +270,10 @@ ja notfound
 sub al,0x57          ;now its certainly a~f
 
 .generate:
-add byte [rel temp],al
+add byte [rel f4temp],al
 cmp byte [esi],0x20
 je .finish
-shl qword [rel temp],4
+shl qword [rel f4temp],4
 
 loop .part
 
@@ -320,3 +318,20 @@ call writescreen
 jmp forever
 ;________________________________________
 looptimes:dd 0
+
+
+
+
+
+
+
+
+f4temp:dq 0
+
+linenumber:dd 0
+length:dd 4
+
+line0:db "sh$                                                                                                                             "
+line1:times 128 db ' '
+lines:times 128*30 db ' '
+linenull:times 128 db ' '

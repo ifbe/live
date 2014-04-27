@@ -15,6 +15,8 @@ f4:
 ;___________________________________________
 
 
+
+
 ;__________________________
 turnoff:
 mov dx,[0x4fc]
@@ -169,7 +171,13 @@ mov ecx,16
 push rcx
 push rsi
 lodsb
+cmp al,0x20
+ja .thisdone
+add edi,32
+jmp .notprint
+.thisdone:
 call char
+.notprint:
 pop rsi
 pop rcx
 inc esi
@@ -241,12 +249,3 @@ ret
 
 addr:dq 0
 offset:dq 0
-temp:dq 0
-
-linenumber:dd 0
-length:dd 4
-
-line0:db "sh$                                                                                                                             "
-line1:times 128 db ' '
-lines:times 128*30 db ' '
-linenull:times 128 db ' '

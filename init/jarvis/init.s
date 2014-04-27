@@ -98,5 +98,5 @@ call endofjarvis+0x4000
     mov ecx,0xfe
     rep stosq
 
-    jmp console
+    jmp decide
 ;____________________________________________________
