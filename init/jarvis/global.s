@@ -1,17 +1,21 @@
 bits 64
 ;_________________________
 f1:
-    mov dword [rel decide+1],function1-(decide+5)	;selfmodify
-    jmp ramdump
+	lea rax,[rel function1]
+	mov [rel screenwhat],rax
+	jmp ramdump
 f2:
-    mov dword [rel decide+1],function2-(decide+5)	;selfmodify
-    jmp picture
+	lea rax,[rel function2]
+	mov [rel screenwhat],rax
+	jmp picture
 f3:
-    mov dword [rel decide+1],function3-(decide+5)	;selfmodify
-    jmp cyberspace
+	lea rax,[rel function3]
+	mov [rel screenwhat],rax
+	jmp cyberspace
 f4:
-    mov dword [rel decide+1],function4-(decide+5)	;selfmodify
-    jmp console
+	lea rax,[rel function4]
+	mov [rel screenwhat],rax
+	jmp console
 ;___________________________________________
 
 
@@ -247,5 +251,6 @@ ret
 
 
 
+screenwhat:dq 0
 addr:dq 0
 offset:dq 0

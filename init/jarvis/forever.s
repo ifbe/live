@@ -16,7 +16,7 @@ dec eax                 ;                       pointer-1
 mov al,[eax]            ;                       al=[pointer]
 
 decide:
-jmp dword function1	;               	what i do next
+jmp [rel screenwhat];			get next addr
 			;		}
                         ;       }
 ;_________________________________________________

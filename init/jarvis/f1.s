@@ -129,10 +129,12 @@ inc byte [rel esckey]
 test byte [rel esckey],1
 jnz .anscii
     .hex:
-    mov dword [rel mouseormenu-4],menu-mouseormenu	;selfmodify
+    lea rax,[rel menu]
+    mov [rel mouseormenu],rax
     jmp ramdump
     .anscii:
-    mov dword [rel mouseormenu-4],mouse-mouseormenu	;selfmodify
+    lea rax,[rel mouse]
+    mov [rel mouseormenu],rax
     jmp ramdump
 
 f1alt:
@@ -140,10 +142,12 @@ inc byte [rel altkey]
 test byte [rel altkey],1
 jnz .anscii
     .hex:
-    mov dword [rel dumpwhat-4],dumphex-dumpwhat		;selfmodify
+    lea rax,[rel dumphex]
+    mov [rel hexoranscii],rax
     jmp ramdump
     .anscii:
-    mov dword [rel dumpwhat-4],dumpanscii-dumpwhat	;selfmodify
+    lea rax,[rel dumpanscii]
+    mov [rel hexoranscii],rax
     jmp ramdump
 
 f1other:
@@ -164,44 +168,50 @@ altkey db 1
 ;______________________________
 ramdump:
 
-mov rax,[rel addr]
-mov [rel dumppointer],rax
-mov dword [rel linecount],0
-dumpline:
-
-	mov edi,0x1000000			;locate destination
-	mov eax,[rel linecount]
-	imul eax,4*1024*16
-	add edi,eax
-	call dword dumpanscii
-	dumpwhat:
-	inc byte [rel linecount]
-	cmp byte [rel linecount],0x30
-	jb dumpline
-
-call dword menu
-mouseormenu:
-
+call [rel hexoranscii]
+call [rel mouseormenu]
 call writescreen
 
 jmp forever
 
 ;___________________________________
-dumppointer:dq 0
-linecount:dd 0
+mouseormenu:dq 0
+hexoranscii:dq 0
+
+
+
+
+;_____________________________________
+dumpanscii:
+
+mov rax,[rel addr]
+mov [rel ansciipointer],rax
+mov dword [rel ansciicount],0
+	ansciiline:
+	mov edi,0x1000000			;locate destination
+	mov eax,[rel ansciicount]
+	imul eax,4*1024*16
+	add edi,eax
+	call dumpanscii64
+	inc byte [rel ansciicount]
+	cmp byte [rel ansciicount],0x30
+	jb ansciiline
+;______________________________________
+ansciipointer:dq 0
+ansciicount:dd 0
 
 
 
 
 ;_______________________________
-dumpanscii:
+dumpanscii64:
 
 mov ecx,0x40
 .dump:
     mov al,0x20
     call char
 
-    mov rbx,[rel dumppointer]
+    mov rbx,[rel ansciipointer]
     mov al,[rbx]
     cmp al,0x20
     jb .blank
@@ -213,7 +223,7 @@ mov ecx,0x40
 
     .visiable:
     call char
-    inc qword [rel dumppointer]
+    inc qword [rel ansciipointer]
 
 dec cl
 jnz .dump
@@ -223,12 +233,34 @@ ret
 
 
 
-;_______________________________
+;_____________________________________
 dumphex:
+
+mov rax,[rel addr]
+mov [rel hexpointer],rax
+mov dword [rel hexcount],0
+	hexline:
+	mov edi,0x1000000			;locate destination
+	mov eax,[rel hexcount]
+	imul eax,4*1024*16
+	add edi,eax
+	call dumphex64
+	inc byte [rel hexcount]
+	cmp byte [rel hexcount],0x30
+	jb hexline
+;______________________________________
+hexpointer:dq 0
+hexcount:dd 0
+
+
+
+
+;_______________________________
+dumphex64:
 
 mov cl,0x10
 .dump4:
-mov rax,[rel dumppointer]
+mov rax,[rel hexpointer]
 mov eax,[rax]
 mov [rel pcimust32],eax
 
@@ -245,7 +277,7 @@ mov [rel pcimust32],eax
   cmp ch,0
   jne .dump
 
-add qword [rel dumppointer],4
+add qword [rel hexpointer],4
 dec cl
 jnz .dump4
 

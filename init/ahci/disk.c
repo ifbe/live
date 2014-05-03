@@ -30,7 +30,7 @@ QWORD searchmbr()
 	QWORD offset;
 	for(offset=0x801be;offset<0x801fe;offset+=0x10)    //find fat?
 	{
-		if( *(BYTE*)(offset+4)==0x7 | *(BYTE*)(offset+4)==0xb )
+		if( *(BYTE*)(offset+4)==0x6 | *(BYTE*)(offset+4)==0xb )
 		{
 			offset=(QWORD)(*(DWORD*)(offset+8));
 			say("fat? sector:",offset);

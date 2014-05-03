@@ -84,7 +84,6 @@ call endofjarvis+0x4000
 
 
 ;___________________________________________
-    sti
 
     mov qword [rel addr],0x6000          ;r14 memory pointer
     mov qword [rel offset],0             ;r15 offset pointer
@@ -98,5 +97,13 @@ call endofjarvis+0x4000
     mov ecx,0xfe
     rep stosq
 
+    lea rax,[rel function1]
+    mov [rel screenwhat],rax
+    lea rax,[rel menu]
+    mov [rel mouseormenu],rax
+    lea rax,[rel dumpanscii]
+    mov [rel hexoranscii],rax
+
+    sti
     jmp decide
 ;____________________________________________________
