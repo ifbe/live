@@ -1,16 +1,25 @@
 电脑像单片机那样用(gcc -fPIC不能用全局变量，FUCK！！！！GCC！！！！)
 
-编译：
+编译测试：
 1:改load/Makefile(应该不用改)
 2:改init/init.s(应该不用改)
-3:改demo/Makefile(把make -C 后面名字改成diskgenius,easiest等)
-	3.5:选assembly和c,改里面的Makefile选某个单文件裸程序,选其他,无视这条往下
-4:make(自动弹出qemu,可以用它测试)
+3:make(自动弹出qemu,出现彩屏即完全正常)
 
 真机使用:
-1:去windows下用神器bootice(else里面有)
-2:选fat32的U盘
-3:主引导改成usb-hdd+分区引导改成grub4dos
-4:else/grldr和else/menu.lst复制到U盘根目录
-5:本目录live复制到U盘根目录
-6:从u盘启动然后选择live确定
+一：grub4dos环境下：
+1.去windows下用神器bootice(else里面有)
+2.选fat32的U盘
+3.主引导改成usb-hdd+分区引导改成grub4dos
+4.else/grldr和else/menu.lst复制到U盘根目录
+5.init/init复制到U盘根目录
+6.从u盘启动然后选择live确定
+二：grub2环境下：
+1.在grub.cfg里加一条(按照自己的修改一下即可)：
+		menuentry 'init' {
+		set root='(hd0,msdos1)'
+		ntldr /live
+		}
+三：只装了windows：
+1.用bootice打开bcd
+2.添加一条实模式启动项
+3.选硬盘，选分区，选文件位置

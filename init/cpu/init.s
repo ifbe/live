@@ -4,10 +4,10 @@
 ;you'd better not modify part1......except you know what you are doing......
 
 
-;[+0,+0x3ff]:				;below explain what the file do
+;[+0,+0x3ff]:
 %include "00/1024x768.s"		;put memory info in [2000,2fff]
 					;put vesa info in [3000,3fff]
-					;set screen mode with bios
+					;set screen mode with bios(real mode)
 
 ;[+400,+7ff]:
 %include "01/longmode.s"		;switch from 16bit to 64bit
