@@ -54,14 +54,23 @@ cmp byte [rel chosen],0
 je escenter0
 cmp byte [rel chosen],1
 je escenter1
+cmp byte [rel chosen],2
+je escenter2
+cmp byte [rel chosen],3
+je escenter3
 cmp byte [rel chosen],7
 je turnoff
 jmp ramdump
+
 	escenter0:
 	cmp dword [rel f1temp+4],0
 	jne ramdump
 	mov rax,[rel f1temp]
+	mov rbx,rax
+	and rax,0xfffffffffffffc00
+	and rbx,0x3ff
 	mov [rel addr],rax
+	mov [rel offset],rbx
 	mov qword [rel f1temp],0
 	jmp ramdump
 
@@ -71,6 +80,28 @@ jmp ramdump
 	ja ramdump
 	mov [rel offset],rax
 	mov qword [rel f1temp],0
+	jmp ramdump
+
+	escenter2:
+	mov eax,[rel f1temp]
+	mov edi,[rel addr]
+	mov ebx,0
+	.loopsearch:
+	cmp [edi+ebx],eax
+	je .findit
+	inc ebx
+	cmp ebx,0xc00
+	jb .loopsearch
+	jmp ramdump
+	.findit:
+	mov [rel offset],rbx
+	jmp ramdump
+
+	escenter3:
+	mov eax,[rel f1temp]
+	mov rdi,[rel addr]
+	add rdi,[rel offset]
+	stosd
 	jmp ramdump
 
 f1left:
@@ -196,6 +227,7 @@ mov dword [rel ansciicount],0
 	inc byte [rel ansciicount]
 	cmp byte [rel ansciicount],0x30
 	jb ansciiline
+ret
 ;______________________________________
 ansciipointer:dq 0
 ansciicount:dd 0
@@ -248,6 +280,7 @@ mov dword [rel hexcount],0
 	inc byte [rel hexcount]
 	cmp byte [rel hexcount],0x30
 	jb hexline
+ret
 ;______________________________________
 hexpointer:dq 0
 hexcount:dd 0
@@ -422,9 +455,9 @@ menuoffset:dq 0
 message0:
 db "      addr:     "
 db "     offset:    "
-db "                "
-db "                "
+db "     search     "
+db "    [current]   "
 db "                "
 db "                "
 db "     input:     "
-db "    turnoff!    "
+db "    turnoff     "

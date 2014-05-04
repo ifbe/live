@@ -45,6 +45,12 @@ QWORD searchmbr()
 	}
 }
 
+void maybetesting()
+{
+	read(0x20000,256,disk(),768); //pbr
+	read(0x100000,2048,disk(),2048); //pbr
+	say("get [1m,2m)",0);
+}
 
 void parttable()
 {
@@ -52,27 +58,39 @@ void parttable()
         if( *(WORD*)0x801fe !=0xAA55 ){say("bad disk",0);return;}
         else say("good disk",0x55aa);
 
-	QWORD fat;
+	QWORD fatxx;
 	if(*(QWORD*)0x80200==0x5452415020494645){
 		read(0x80000,2,disk(),32);
-		fat=searchgpt();
-		say("gpt part",fat);
+		fatxx=searchgpt();
+		say("gpt part",fatxx);
 	}
 	else{
-		fat=searchmbr();
-		say("mbr disk",fat);
+		fatxx=searchmbr();
+		say("mbr disk",fatxx);
 	}
 
-	if(fat!=0) read(0x80000,fat,disk(),1); //pbr
-	else say("no fat? partition",0);
+	if(fatxx!=0){
+		read(0x80000,fatxx,disk(),1); //pbr
+		say("get pbr",0);
+	}
+	else{
+		maybetesting();
+	}
 
 }
 
-
 void mount()
 {
-	if( *(WORD*)0x8000b !=0x200) {say("not 512B per sector,bye!",0);return;}
-	if( *(BYTE*)0x80010 !=2) {say("not 2 fat,bye!",0);return;}
+	if( *(WORD*)0x8000b !=0x200) {
+		say("not 512B per sector,bye!",0);
+		maybetesting();
+		return;
+	}
+	if( *(BYTE*)0x80010 !=2) {
+		say("not 2 fat,bye!",0);
+		maybetesting();
+		return;
+	}
 
 	int similarity=50;
 
@@ -93,7 +111,7 @@ void mount()
 		fat32();
 		return;
 	}
-	say("seem not fatx,bye!",0);
+	say("seem not fatxx,bye!",0);
 	return;
 
 }

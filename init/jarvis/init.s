@@ -105,5 +105,6 @@ call endofjarvis+0x4000
     mov [rel hexoranscii],rax
 
     sti
+    xor rax,rax
     jmp decide
 ;____________________________________________________

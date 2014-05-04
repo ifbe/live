@@ -1,4 +1,4 @@
 init:
 	nasm jarvis.s -o temp
 clean:
-	rm -f temp*
+	rm -f temp temp*

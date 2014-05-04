@@ -1,8 +1,10 @@
+c:
+	gcc -c jpeg.c -o temp.o
+	ld -T link.ld temp.o -o ../demo
 jarvis:
 	nasm jarvis.s -o temp
-	gcc -c -fPIC jpeg.c -o temp.o
+	gcc -c jpeg.c -o temp.o
 	ld -T link.ld temp.o -o temp1
-	nasm link.s -o jarvis
+	nasm link.s -o ../demo
 clean:
-	rm -f temp*
-	rm -f jarvis
+	rm -f temp temp*

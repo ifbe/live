@@ -1,10 +1,4 @@
 #define u64 long long
-void point(int x,int y,int z);
-void draw(int x,int y,int z);
-double cosine(double x);
-double sine(double x);
-void taiji(double* base);
-
 void main()
 {
     double base=0.0;

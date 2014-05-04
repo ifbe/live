@@ -160,13 +160,13 @@ add rsi,[rel realfatsize]
 call say
 
 mov rdi,0x8000			;[8000]=function address
-lea rax,[rel fat16_cd]
-stosq
 mov rax,"cd"
 stosq
-lea rax,[rel fat16_load]
+lea rax,[rel fat16_cd]
 stosq
 mov rax,"load"
+stosq
+lea rax,[rel fat16_load]
 stosq
 
 ret
@@ -225,13 +225,13 @@ add rsi,[rel realclustersize]
 call say
 
 mov rdi,0x8000			;[8000]=function address
-lea rax,[rel fat32_cd]
-stosq
 mov rax,"cd"
 stosq
-lea rax,[rel fat32_load]
+lea rax,[rel fat32_cd]
 stosq
 mov rax,"load"
+stosq
+lea rax,[rel fat32_load]
 stosq
 
 ret

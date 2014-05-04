@@ -52,7 +52,6 @@ static const char njZZ[64]={ 0, 1, 8,16, 9, 2, 3,10,
 
 
 #define u64 long long
-u64 offset;
 
 void picture()
 {
@@ -69,15 +68,6 @@ void picture()
         video+=(u64)bpp;
         p+=3;
     }
-}
-
-
-void* mymalloc(int i)
-{
-    void* p;
-    p=(void*)offset;
-    offset+=i;
-    return p;
 }
 
 
@@ -601,22 +591,16 @@ int njDecode(const void* jpeg, const int size) {
 
 void main()
 {
-    char *buf;
-    buf=(char*)0x40000;
+    char *pic=(char*)0x20000;
     int i=0x12345678;
 
-//asm("int3");
-    print32(0,0,offset);
-    offset=0x200000;
-
     njInit();
-    i=njDecode(buf,278605);
+    i=njDecode(pic,278605);
 
     if(i){print32(0,0,i);return;}
 
-    print32(20,0,offset);
     picture();
+
+asm("int3");
     return;
 }
-
-

@@ -65,7 +65,7 @@ long long start()
 {
     offset=0x200000;
     char *buf;
-    buf=(char*)0x40000;
+    buf=(char*)0x20000;
     int i=0x12345678;
 
     njInit();
@@ -80,7 +80,7 @@ long long start()
 
 void picture()
 {
-    unsigned char* edi=(unsigned char*)offset;
+    unsigned char* edi=(unsigned char*)0x1400000;
     unsigned char* p=nj.rgb;
     int i;
 

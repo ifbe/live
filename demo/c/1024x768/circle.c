@@ -1,30 +1,4 @@
 #define u64 long long
-static inline unsigned char inb(unsigned short port);
-static inline void outw(unsigned short port,unsigned short val);
-char keyboard();
-void turnoff();
-void init();
-void point(int x,int y,int z);
-void draw(int x,int y,int z);
-void circle();
-double absolute(double ret);
-double squareroot(double x);
-double ln(double a);
-double logarithm(double x,double y);
-double exponent(double x);
-double power(double x,double y);
-double cosine(double x);
-double sine(double x);
-
-
-void main()                //位置固定在第一个函数
-{
-    init();               //清屏
-    circle();               //太极
-
-    while(keyboard()!=0x01);
-    turnoff();
-}
 
 
 static inline void outw( unsigned short port, unsigned short val )
@@ -96,6 +70,42 @@ void point(int x,int y,int z)
 void draw(int x,int y,int z)
 {
     point(x+512,384-y,z);
+}
+
+
+double cosine(double x)
+{
+    double ret=0,item=1.0,temp;
+    int n=0,i,sign=1;
+    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
+
+    do{
+        temp=item;
+        for(i=1;i<=2*n;i++)temp/=i;
+        ret+=sign*temp;
+        item*=x*x;
+        sign *=-1;
+        n++;
+      }while (temp>1e-10);
+return ret;
+}
+
+
+double sine(double x)
+{
+    int m = 1,i;
+    double temp,ret = 0.0;
+    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
+
+    do{
+        i=0;
+        if (m%2 == 0){temp= -1.0;}
+        else{temp= 1.0;}
+        for(i=1;i<=2*m-1;i++){temp = temp * x/i;}
+        ret+= temp;
+        m++;
+    }while (temp<-.0000005||temp>0.0000005);
+return ret;
 }
 
 
@@ -178,38 +188,11 @@ double power(double x,double y)
 }
 
 
-double cosine(double x)
+void main()                //位置固定在第一个函数
 {
-    double ret=0,item=1.0,temp;
-    int n=0,i,sign=1;
-    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
+    init();               //清屏
+    circle();               //太极
 
-    do{
-        temp=item;
-        for(i=1;i<=2*n;i++)temp/=i;
-        ret+=sign*temp;
-        item*=x*x;
-        sign *=-1;
-        n++;
-      }while (temp>1e-10);
-return ret;
+    while(keyboard()!=0x01);
+    turnoff();
 }
-
-
-double sine(double x)
-{
-    int m = 1,i;
-    double temp,ret = 0.0;
-    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
-
-    do{
-        i=0;
-        if (m%2 == 0){temp= -1.0;}
-        else{temp= 1.0;}
-        for(i=1;i<=2*m-1;i++){temp = temp * x/i;}
-        ret+= temp;
-        m++;
-    }while (temp<-.0000005||temp>0.0000005);
-return ret;
-}
-
