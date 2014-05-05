@@ -20,7 +20,7 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
 	//say("ptdtl",(QWORD)cmdheader->prdtl);
 
-	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;//e000左右
+	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
 	//say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
 
 	char* p=(char*)cmdtable;
@@ -31,14 +31,14 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 	for (i=0; i<cmdheader->prdtl-1; i++)
 	{
 		cmdtable->prdt_entry[i].dba = (DWORD)buf;
-		cmdtable->prdt_entry[i].dbc = 8*1024;	// 8K bytes
+		cmdtable->prdt_entry[i].dbc = 16*512-1; // 8K bytes
 		//cmdtable->prdt_entry[i].i = 1;
-		buf += 8192;	// 4K words
-		count -= 16;	// 16 sectors
+		buf += 0x2000;  // 4K words
+		count -= 16;    // 16 sectors
 	}
 	// Last entry
 	cmdtable->prdt_entry[i].dba = (DWORD)buf;
-	cmdtable->prdt_entry[i].dbc = count<<9;	// 512 bytes per sector
+	cmdtable->prdt_entry[i].dbc = count*512-1;	// 512 bytes per sector
 	//cmdtable->prdt_entry[i].i = 1;
  
 	// Setup command

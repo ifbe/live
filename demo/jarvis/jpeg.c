@@ -51,30 +51,23 @@ static const char njZZ[64]={ 0, 1, 8,16, 9, 2, 3,10,
                             53,60,61,54,47,55,62,63};
 
 
-void njInit(void);// For safety reasons
 int njDecode(const void* jpeg, const int size);
 void* mymalloc(int i);
-void point(int x,int y,int z);
-void print(int x,int y,char ch);
 void print32(int x,int y,int z);
 void picture();
 
 long long offset;
 
-long long start()
+void start()
 {
-    offset=0x200000;
+    offset=0x800000;
     char *buf;
     buf=(char*)0x20000;
     int i=0x12345678;
 
-    njInit();
     i=njDecode(buf,278605);
-    if(i){print32(0,0,i);return i;}
-    else{
-        picture();
-        return offset;
-    }
+    print32(0,0,i);
+    picture();
 }
 
 
@@ -265,7 +258,6 @@ static inline void njColIDCT(const int* blk, unsigned char *out, int stride) {
 }
 
 #define njThrow(e) do { nj.error = e; return; } while (0)
-#define njCheckError() do { if (nj.error) return; } while (0)
 
 static int njShowBits(int bits) {
     unsigned char newbyte;
@@ -461,6 +453,7 @@ static inline void njDecodeBlock(nj_component_t* c, unsigned char* out) {
     for(value=0;value<64;value++){nj.block[value]=0;}
     c->dcpred += njGetVLC(&nj.vlctab[c->dctabsel][0],0);
     nj.block[0] = (c->dcpred) * nj.qtab[c->qtsel][0];
+
     do {
         value = njGetVLC(&nj.vlctab[c->actabsel][0], &code);
         if (!code) break;  // EOB
@@ -469,6 +462,7 @@ static inline void njDecodeBlock(nj_component_t* c, unsigned char* out) {
         if (coef > 63) njThrow(NJ_SYNTAX_ERROR);
         nj.block[(int) njZZ[coef]] = value * nj.qtab[c->qtsel][coef];
     } while (coef < 63);
+
     for (coef = 0;  coef < 64;  coef += 8)
         njRowIDCT(&nj.block[coef]);
     for (coef = 0;  coef < 8;  ++coef)
@@ -483,6 +477,7 @@ static inline void njDecodeScan(void) {
     if (nj.length < 10) njThrow(NJ_SYNTAX_ERROR);
     if (nj.pos[0] != 3) njThrow(NJ_UNSUPPORTED);
     njSkip(1);
+
     for (i = 0, c = nj.comp;  i < 3;  ++i, ++c) {
         if (nj.pos[0] != c->cid) njThrow(NJ_SYNTAX_ERROR);
         if (nj.pos[1] & 0xEE) njThrow(NJ_SYNTAX_ERROR);
@@ -490,20 +485,25 @@ static inline void njDecodeScan(void) {
         c->actabsel = (nj.pos[1] & 1) | 2;
         njSkip(2);
     }
+
     if (nj.pos[0] || (nj.pos[1] != 63) || nj.pos[2]) njThrow(NJ_UNSUPPORTED);
     njSkip(nj.length);
+
     for (mbx = mby = 0;;) {
+
         for (i = 0, c = nj.comp;  i < 3;  ++i, ++c)
             for (sby = 0;  sby < c->ssy;  ++sby)
                 for (sbx = 0;  sbx < c->ssx;  ++sbx)
                 {
-                    njDecodeBlock(c,&c->pixels[((mby*c->ssy+sby)*c->stride+mbx*c->ssx+sbx)<<3]);
-                    njCheckError();
+			njDecodeBlock(c,&c->pixels[((mby*c->ssy+sby)*c->stride+mbx*c->ssx+sbx)<<3]);
+			if (nj.error){return;}
                 }
+
         if (++mbx >= nj.mbwidth) {
             mbx = 0;
             if (++mby >= nj.mbheight) break;
         }
+
         if (nj.rstinterval && !(--rstcount)) {
             nj.bufbits &= 0xF8;
 
@@ -515,9 +515,9 @@ static inline void njDecodeScan(void) {
             if (((i & 0xFFF8) != 0xFFD0) || ((i & 7) != nextrst)) njThrow(NJ_SYNTAX_ERROR);
             nextrst = (nextrst + 1) & 7;
             rstcount = nj.rstinterval;
-            for (i = 0;  i < 3;  ++i)
-                nj.comp[i].dcpred = 0;
+            for (i = 0;  i < 3;  ++i)	nj.comp[i].dcpred = 0;
         }
+
     }
     nj.error = __NJ_FINISHED;
 }
@@ -576,13 +576,6 @@ static inline void njConvert()
         }
 }
 
-void njInit(void) {
-    //memset(&nj, 0, sizeof(nj_context_t));
-    char* p=(char*)&nj;
-    int i;
-    for(i=0;i<sizeof(nj_context_t);i++){*p=0;p++;}
-}
-
 int njDecode(const void* jpeg, const int size) {
     nj.pos = (const unsigned char*) jpeg;
     nj.size = size & 0x7FFFFFFF;
@@ -593,7 +586,7 @@ int njDecode(const void* jpeg, const int size) {
     {
         if ((nj.size < 2)||(nj.pos[0]!= 0xFF)) return NJ_SYNTAX_ERROR;
 
-        njSkip(2);
+        njSkip(2);			//ffd8
         switch (nj.pos[-1]) {
             case 0xC0: njDecodeSOF();  break;
             case 0xC4: njDecodeDHT();  break;

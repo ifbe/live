@@ -247,7 +247,7 @@ mov ecx,0x40
     mov al,[rbx]
     cmp al,0x20
     jb .blank
-    cmp al,0x7e
+    cmp al,0x80
     jb .visiable
 
     .blank:
@@ -456,8 +456,8 @@ message0:
 db "      addr:     "
 db "     offset:    "
 db "     search     "
-db "    [current]   "
+db "     change     "
 db "                "
 db "                "
 db "     input:     "
-db "    turnoff     "
+db "    poweroff    "
