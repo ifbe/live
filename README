@@ -11,15 +11,15 @@
 2.选fat32的U盘
 3.主引导改成usb-hdd+分区引导改成grub4dos
 4.else/grldr和else/menu.lst复制到U盘根目录
-5.init/init复制到U盘根目录
+5.live复制到U盘根目录
 6.从u盘启动然后选择live确定
 二：grub2环境下：
 1.在grub.cfg里加一条(按照自己的修改一下即可)：
 		menuentry 'init' {
 		set root='(hd0,msdos1)'
-		ntldr /live
+		ntldr /init
 		}
 三：只装了windows：
-1.用bootice打开bcd
+1.用bootice打开c:\boot\bcd
 2.添加一条实模式启动项
-3.选硬盘，选分区，选文件位置
+3.选硬盘，选分区，选init文件位置

@@ -50,26 +50,7 @@ static const char njZZ[64]={ 0, 1, 8,16, 9, 2, 3,10,
                             58,59,52,45,38,31,39,46,
                             53,60,61,54,47,55,62,63};
 
-
-int njDecode(const void* jpeg, const int size);
-void* mymalloc(int i);
-void print32(int x,int y,int z);
-void picture();
-
 long long offset;
-
-void start()
-{
-    offset=0x800000;
-    char *buf;
-    buf=(char*)0x20000;
-    int i=0x12345678;
-
-    i=njDecode(buf,278605);
-    print32(0,0,i);
-    picture();
-}
-
 
 void picture()
 {
@@ -613,4 +594,14 @@ int njDecode(const void* jpeg, const int size) {
     nj.error = NJ_OK;
     njConvert();
     return nj.error;
+}
+
+
+void main()
+{
+    offset=0x800000;
+    int i=0x12345678;
+    i=njDecode((char*)(long long)where(),size());
+    print32(0,0,i);
+    picture();
 }

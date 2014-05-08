@@ -78,7 +78,7 @@ void decimal(int x,int y,s64 z)
 	}
 
 	temp=z;
-	while(temp>10){
+	while(temp>=10){
 	temp=temp/10;
 	i++;
 	}

@@ -8,7 +8,6 @@ clean:
 	make clean -s -C load
 	make clean -s -C init
 	rm -f live
-	rm -rf purecode
 qemutest:
 	qemu-kvm \
 	-smp 2 \

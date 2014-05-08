@@ -1,28 +1,4 @@
 #define u64 long long
-void main()
-{
-    double base=0.0;
-    while(1)
-    {
-        taiji(&base);
-    }
-}
-void taiji(double* base)
-{
-    double angle;
-    int basex,basey,x,y;
-    *base+=0.01;
-    basex=(int)(100*cosine(*base));
-    basey=(int)(100*sine(*base));
-    for(angle=0;angle<3.14;angle+=0.01)
-    {
-        x=basex+(int)(100*cosine(*base+angle));
-        y=basey+(int)(100*sine(*base+angle));
-        draw(x+250,y,0xffffffff);
-        draw(-x+250,-y,0);
-    }
-}
-
 
 double cosine(double x)
 {
@@ -77,4 +53,31 @@ void point(int x,int y,int z)
 void draw(int x,int y,int z)
 {
 point(x+512,384-y,z);
+}
+
+
+void taiji(double* base)
+{
+    double angle;
+    int basex,basey,x,y;
+    *base+=0.01;
+    basex=(int)(100*cosine(*base));
+    basey=(int)(100*sine(*base));
+    for(angle=0;angle<3.14;angle+=0.01)
+    {
+        x=basex+(int)(100*cosine(*base+angle));
+        y=basey+(int)(100*sine(*base+angle));
+        draw(x+250,y,0xffffffff);
+        draw(-x+250,-y,0);
+    }
+}
+
+
+void main()
+{
+    double base=0.0;
+    while(1)
+    {
+        taiji(&base);
+    }
 }

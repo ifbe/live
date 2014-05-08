@@ -48,7 +48,6 @@ void main()
     while(1)
     {
 	for(i=0;i<8000000;i++);
-	asm("hlt");
 	move();
     }
 }
