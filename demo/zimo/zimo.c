@@ -1,4 +1,5 @@
 #define u64 long long
+int table[16][16];
 
 
 void point(int x,int y,int z)
@@ -91,7 +92,6 @@ char keyboard()
 void main()
 {
 	int i,j,x=0,y=0;
-	int table[16][16];
 	char key=0;
 
 	for(i=0;i<16;i++)
@@ -102,25 +102,38 @@ void main()
 	{
 		for(i=0;i<16;i++)
 			for(j=0;j<16;j++)
-				{
-					cubie(i,j,table[i][j]);
-					point(i+720,j+320,table[i][j]);
-				}
+			{
+				cubie(i,j,table[i][j]);
+				point(i+720,j+320,table[i][j]);
+			}
+
 		for(j=40;j<=640;j+=40)			//heng
 			for(i=0;i<640;i++)
 				point(i,j,0xffffffff);
 		for(i=40;i<=640;i+=40)			//shu
 			for(j=0;j<=640;j++)
 				point(i,j,0xffffffff);
-		for(i=40*y;i<40*(y+1);i++)
+
+		for(i=40*y;i<40*(y+1);i++)		//kuang heng
 		{
 			point(40*x,i,0xff0000);
 			point(40*(x+1),i,0xff0000);
 		}
-		for(i=40*x;i<40*(x+1);i++)
+		for(i=40*x;i<40*(x+1);i++)		//kuang shu
 		{
 			point(i,40*y,0xff0000);
 			point(i,40*(y+1),0xff0000);
+		}
+		for(i=712;i<744;i++)			//xiao kuang heng
+		{
+			point(i,312,0xff0000);
+			point(i,344,0xff0000);
+		}
+
+		for(i=312;i<344;i++)			//xiao kuang shu
+		{
+			point(712,i,0xff0000);
+			point(744,i,0xff0000);
 		}
 
 		int theword=0;
