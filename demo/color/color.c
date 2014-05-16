@@ -1,4 +1,5 @@
 #define u64 long long
+int table[16][16];
 
 
 void point(int x,int y,int z)
@@ -43,32 +44,18 @@ void anscii(int x,int y,char ch)
 }
 
 
-void decimal(int x,int y,u64 z)
+void hexadecimal(int x,int y,u64 z)
 {
         char ch;
         int i=0;
-        u64 temp;
 
-        if(z<0){
-        anscii(x,y,'-');
-        x++;
-        z=-z;
-        }
-
-        temp=z;
-        while(temp>=10){
-        temp=temp/10;
-        i++;
-        }
-
-        for(;i>=0;i--)
+        for(i=7;i>=0;i--)
         {
-        ch=(char)(z%10);
-        z=z/10;
+        ch=(char)(z&0x0000000f);
+        z=z>>4;
         anscii(x+i,y,ch);
         }
 }
-
 
 static inline unsigned char inb( unsigned short port )
 {
@@ -91,24 +78,45 @@ char keyboard()
 }
 
 
-int random()
-{
-	int key,i=0;
-	char* memory=(char*)0x800;
-	for(i=0;i<0x800;i++)
-		key+=memory[i];
-	return key;
-}
-
-
 void main()
 {
+	int x=0,y=0,color,red=0,green=0,blue=0;
 	char key=0;
+
+	for(x=0;x<16;x++)
+		for(y=0;y<16;y++)
+			table[x][y]=0;
+
 	while(1)
 	{
-		decimal(20,12,random());
+		for(x=0;x<256;x++)
+			for(y=0;y<256;y++)
+			{
+				color=red*65536+y*256+x;
+				point(2*x,2*y,color);
+				point(2*x,2*y+1,color);
+				point(2*x+1,2*y,color);
+				point(2*x+1,2*y+1,color);
+			}
+
+		color=red*65536+green*256+blue;
+		for(x=512;x<1024;x++)
+			for(y=0;y<512;y++)
+				point(x,y,color);
+
+		point(2*blue,2*green,0xffffffff);
+		point(2*blue+1,2*green,0xffffffff);
+		point(2*blue,2*green+1,0xffffffff);
+		point(2*blue+1,2*green+1,0xffffffff);
+		hexadecimal(60,0,red*65536+green*256+blue);
 
 		key=keyboard();
 		if(key==0x1){break;}
+		if(key==0x4a){if(red>0) red--;}	//left
+		if(key==0x4e){if(red<255) red++;}	//right
+		if(key==0x48){if(green>0) green--;}	//up
+		if(key==0x50){if(green<255) green++;}	//down
+		if(key==0x4b){if(blue>0) blue--;}	//left
+		if(key==0x4d){if(blue<255) blue++;}	//right
 	}
 }

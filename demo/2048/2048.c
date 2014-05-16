@@ -34,9 +34,20 @@ void anscii(int x,int y,char ch)
             temp=*p;
             temp=temp<<j;
             temp&=0x80;
-            if(temp!=0){point(j+x,i+y,0xffffffff);}
-            else{point(j+x,i+y,0);}
-
+            if(temp!=0){
+                point(x+2*j,y+2*i,0);
+                point(x+2*j,y+2*i+1,0);
+                point(x+2*j+1,y+2*i,0);
+                point(x+2*j+1,y+2*i+1,0);
+            }
+/*
+            else{
+                point(x+2*j,y+2*i,0xffffffff);
+                point(x+2*j,y+2*i+1,0xffffffff);
+                point(x+2*j+1,y+2*i,0xffffffff);
+                point(x+2*j+1,y+2*i+1,0xffffffff);
+            }
+*/
         }
     points++;
     }
@@ -73,14 +84,28 @@ void decimal(int x,int y,u64 z)
 
 void cubie(int x,int y,int z)
 {
-	int i,j;
-	int temp=z&0xf0f0f0f0;
-	if(temp==0) temp=0x773311+ z<<4;
+	int i,j,color;
+	switch(z)
+	{
+		case 0:color=0x44444444;break;
+		case 2:color=0xfffffff0;break;
+		case 4:color=0xffffffc0;break;
+		case 8:color=0x995000;break;
+		case 16:color=0xc05000;break;
+		case 32:color=0xb03000;break;
+		case 64:color=0xff0000;break;
+		case 128:color=0xffffa0;break;
+		case 256:color=0xffff80;break;
+		case 512:color=0xffff00;break;
+		case 1024:color=0xffffb0;break;
+		case 2048:color=0xffffffff;break;
+		case 4096:color=0xffffffff;break;
+	}
 	for(i=x*160;i<(x+1)*160;i++)
 		for(j=y*160;j<(y+1)*160;j++)
-			point(i,j,temp);
+			point(i,j,color);
 
-	decimal(8+x*20,4+y*10,z);
+	if(z!=0) decimal(8+x*20,4+y*10,z);
 
 	for(i=x*160;i<(x+1)*160;i++)
 	{
@@ -95,24 +120,13 @@ void cubie(int x,int y,int z)
 }
 
 
-static inline unsigned char inb( unsigned short port )
+int random()
 {
-    unsigned char ret;
-    asm volatile( "inb %1, %0"
-                  : "=a"(ret) : "Nd"(port) );
-    return ret;
-}
-
-
-char keyboard()
-{
-    char ret,temp;
-    do{
-        while((inb(0x64)&0x01)==0);         //阻塞
-        ret=inb(0x60);
-        temp=ret&0x80;
-    }while(temp!=0);
-    return ret;
+        int key,i=0;
+        char* memory=(char*)0x0;
+        for(i=0;i<0x1000;i++)
+                key+=memory[i];
+        return key;
 }
 
 
@@ -130,14 +144,17 @@ void main()
 {
 	int i,j,temp;
 	int table[4][4];
+
 	for(i=0;i<4;i++)
 	{
 		for(j=0;j<4;j++)
 		{
-				temp=j*4 +i;
-				table[i][j]=power(3);
+				//temp=j*4 +i;
+				//table[i][j]=power(temp);
+				table[i][j]=0;
 		}
 	}
+	table[random() & 0x3][random() & 0x3]=power( (random() &0x1) +1 );
 
 	char key=0;
 	while(1)
@@ -153,40 +170,60 @@ void main()
 		{
 		for(i=0;i<4;i++)
 		{
-			int current=0;
-			int k;
+			int count=0;
 			int temp;
-			for(j=0;j<3;j++)
+			for(j=0;j<4;j++)	//整理
 			{
-				if(table[i][j] != 0)
-				{
-				for(k=j+1;k<4;k++)
-				{
-					if(table[i][k]!=0)
-					{
+			if(table[i][j] != 0)
+			{
+				temp=table[i][j];
+				table[i][j]=0;
+				table[i][count++]=temp;
+			}
+			}
 
-					if(table[i][k]!=table[i][j])
-					{
-						break;
-					}
-
-					temp=2*table[i][j];
-					table[i][j]=0;
-					table[i][k]=0;
-					table[i][current]=temp;
-					current++;
-					break;
-
-					}
-				}
+			//if(count==1)
+			if(count==2){
+				if(table[i][0]==table[i][1]){
+					table[i][0] *=2;
+					table[i][1]=0;
 				}
 			}
-			if(table[i][3]!=0)
-			{
-				temp=table[i][3];
-				table[i][3]=0;
-				table[i][current]=temp;
+
+			if(count==3){
+				if(table[i][0]==table[i][1]){
+					table[i][0] *=2;
+					table[i][1]=table[i][2];
+					table[i][2]=0;
+				}
+				else if(table[i][1]==table[i][2]){
+					table[i][1] *=2;
+					table[i][2]=0;
+				}
 			}
+			if(count==4){
+				if(table[i][0]==table[i][1]){
+					table[i][0] *=2;
+					table[i][1]=table[i][2];
+					table[i][2]=table[i][3];
+					table[i][3]=0;
+
+					if(table[i][1]==table[i][2]){
+						table[i][1] *=2;
+						table[i][2]=0;
+					}
+				}
+				else if(table[i][1]==table[i][2]){
+					table[i][1] *=2;
+					table[i][2]=table[i][3];
+					table[i][3]=0;
+				}
+				else if(table[i][2]==table[i][3]){
+					table[i][2] *=2;
+					table[i][3]=0;
+				}
+			}
+
 		}
 		}
 
@@ -194,112 +231,210 @@ void main()
 		{
 		for(i=0;i<4;i++)
 		{
-			int current=3;
-			int k;
+			int count=0;
 			int temp;
-			for(j=3;j>0;j--)
+			for(j=3;j>=0;j--)
 			{
-				if(table[i][j] != 0)
-				{
-				for(k=j-1;k>=0;k--)
-				{
-					if(table[i][k]!=0)
-					{
+			if(table[i][j] != 0)
+			{
+				temp=table[i][j];
+				table[i][j]=0;
+				table[i][3-count]=temp;
+				count++;
+			}
+			}
 
-					if(table[i][k]!=table[i][j]) break;
 
-					temp=2*table[i][j];
-					table[i][j]=0;
-					table[i][k]=0;
-					table[i][current]=temp;
-					current--;
-					break;
+			//if(count==1)
+			if(count==2){
+				if(table[i][3]==table[i][2]){
+					table[i][3] *=2;
+					table[i][2]=0;
+				}
+			}
 
+			if(count==3){
+				if(table[i][3]==table[i][2]){
+					table[i][3] *=2;
+					table[i][2]=table[i][1];
+					table[i][1]=0;
+				}
+				else if(table[i][2]==table[i][1]){
+					table[i][2] *=2;
+					table[i][1]=0;
+				}
+			}
+
+			if(count==4){
+				if(table[i][3]==table[i][2]){
+					table[i][3] *=2;
+					table[i][2]=table[i][1];
+					table[i][1]=table[i][0];
+					table[i][0]=0;
+
+					if(table[i][1]==table[i][2]){
+						table[i][2] *=2;
+						table[i][1]=0;
 					}
 				}
+				else if(table[i][2]==table[i][1]){
+					table[i][2] *=2;
+					table[i][1]=table[i][0];
+					table[i][0]=0;
+				}
+				else if(table[i][1]==table[i][0]){
+					table[i][1] *=2;
+					table[i][0]=0;
 				}
 			}
-			if(table[i][0]!=0)
-			{
-				temp=table[i][0];
-				table[i][0]=0;
-				table[i][current]=temp;
-			}
+
 		}
 		}
+
 		if(key==0x48)	//up
 		{
 		for(j=0;j<4;j++)
 		{
-			int current=0;
-			int k;
+			int count=0;
 			int temp;
-			for(i=0;i<3;i++)
+			for(i=0;i<4;i++)
 			{
-				if(table[i][j] != 0)
-				{
-				for(k=i+1;k<4;k++)
-				{
-					if(table[k][j]!=0)
-					{
+			if(table[i][j] != 0)
+			{
+				temp=table[i][j];
+				table[i][j]=0;
+				table[count++][j]=temp;
+			}
+			}
 
-					if(table[k][j]!=table[i][j]) break;
+			//if(count==1)
+			if(count==2){
+				if(table[0][j]==table[1][j]){
+					table[0][j] *=2;
+					table[1][j]=0;
+				}
+			}
+			if(count==3){
+				if(table[0][j]==table[1][j]){
+					table[0][j] *=2;
+					table[1][j]=table[2][j];
+					table[2][j]=0;
+				}
+				else if(table[1][j]==table[2][j]){
+					table[1][j] *=2;
+					table[2][j]=0;
+				}
+			}
+			if(count==4){
+				if(table[0][j]==table[1][j]){
+					table[0][j] *=2;
+					table[1][j]=table[2][j];
+					table[2][j]=table[3][j];
+					table[3][j]=0;
 
-					temp=2*table[i][j];
-					table[i][j]=0;
-					table[k][j]=0;
-					table[current][j]=temp;
-					current++;
-					break;
-
+					if(table[1][j]==table[2][j]){
+						table[1][j] *=2;
+						table[2][j]=0;
 					}
 				}
+				else if(table[1][j]==table[2][j]){
+					table[1][j] *=2;
+					table[2][j]=table[3][j];
+					table[3][j]=0;
+				}
+				else if(table[2][j]==table[3][j]){
+					table[2][j] *=2;
+					table[3][j]=0;
 				}
 			}
-			if(table[3][j]!=0)
-			{
-				temp=table[3][j];
-				table[3][j]=0;
-				table[current][j]=temp;
-			}
+
 		}
 		}
+
 		if(key==0x50)	//down
 		{
 		for(j=0;j<4;j++)
 		{
-			int current=3;
-			int k;
+			int count=0;
 			int temp;
-			for(i=3;i>0;i--)
+			for(i=3;i>=0;i--)
 			{
-				if(table[i][j] != 0)
-				{
-				for(k=i-1;k>=0;k--)
-				{
-					if(table[k][j]!=0)
-					{
+			if(table[i][j] != 0)
+			{
+				temp=table[i][j];
+				table[i][j]=0;
+				table[3-count][j]=temp;
+				count++;
+			}
+			}
 
-					if(table[k][j]!=table[i][j]) break;
+			//if(count==1)
+			if(count==2){
+				if(table[3][j]==table[2][j]){
+					table[3][j] *=2;
+					table[2][j]=0;
+				}
+			}
+			if(count==3){
+				if(table[3][j]==table[2][j]){
+					table[3][j] *=2;
+					table[2][j]=table[1][j];
+					table[1][j]=0;
+				}
+				else if(table[1][j]==table[2][j]){
+					table[2][j] *=2;
+					table[1][j]=0;
+				}
+			}
+			if(count==4){
+				if(table[3][j]==table[2][j]){
+					table[3][j] *=2;
+					table[2][j]=table[1][j];
+					table[1][j]=table[0][j];
+					table[0][j]=0;
 
-					temp=2*table[i][j];
-					table[i][j]=0;
-					table[k][j]=0;
-					table[current][j]=temp;
-					current--;
-					break;
-
+					if(table[1][j]==table[2][j]){
+						table[2][j] *=2;
+						table[1][j]=0;
 					}
 				}
+				else if(table[2][j]==table[1][j]){
+					table[2][j] *=2;
+					table[1][j]=table[0][j];
+					table[0][j]=0;
+				}
+				else if(table[1][j]==table[0][j]){
+					table[1][j] *=2;
+					table[0][j]=0;
 				}
 			}
-			if(table[0][j]!=0)
-			{
-				temp=table[0][j];
-				table[0][j]=0;
-				table[current][j]=temp;
+		}
+		}
+
+		int count=0;
+		int temp;
+		for(i=0;i<4;i++){
+		for(j=0;j<4;j++){
+			if(table[i][j]==0) count++;
+		}
+		}
+
+		if(count!=0){
+			temp=random() %count;
+			for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				if(table[i][j] == 0){
+					if(temp==0){
+					table[i][j]=power((random() & 0x1) +1 );
+					//decimal(100,20,table[i][j]);
+					goto breakall;
+					}
+					else temp--;
+				}
+			}
 			}
 		}
-		}
+		breakall:
+		temp=0;
 	}
 }

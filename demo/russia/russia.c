@@ -70,6 +70,19 @@ void decimal(int x,int y,u64 z)
 }
 
 
+
+void cubie(int x,int y,int z)
+{
+	int i,j;
+
+	for(i=x*40;i<(x+1)*40;i++){
+	for(j=40*y;j<(y+1)*40;j++){
+		point(i,j,z>0?0xffffffff:0);
+	}
+	}
+}
+
+
 static inline unsigned char inb( unsigned short port )
 {
     unsigned char ret;
@@ -93,22 +106,42 @@ char keyboard()
 
 int random()
 {
-	int key,i=0;
-	char* memory=(char*)0x800;
-	for(i=0;i<0x800;i++)
-		key+=memory[i];
-	return key;
+        int key,i=0;
+        char* memory=(char*)0x0;
+        for(i=0;i<0x1000;i++)
+                key+=memory[i];
+        return key;
+}
+
+
+int power(int in)
+{
+	if(in==0) return 1;
+
+	int temp=2;
+	for(in-=1;in>0;in--) temp*=2;
+	return temp;
 }
 
 
 void main()
 {
+	int i,j,temp;
+	char table[16][8];
+
+	for(i=0;i<4;i++){
+	for(j=0;j<4;j++){
+		//temp=j*4 +i;
+		//table[i][j]=power(temp);
+		table[i][j]=0;
+	}
+	}
+
 	char key=0;
 	while(1)
 	{
-		decimal(20,12,random());
-
+		table[0][0]=power(random() & 0x1);
+		cubie(0,0,table[0][0]);
 		key=keyboard();
-		if(key==0x1){break;}
 	}
 }
