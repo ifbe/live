@@ -97,7 +97,7 @@ call endofjarvis+0x4000
     mov ecx,0xfe
     rep stosq
 
-    lea rax,[rel function1]
+    lea rax,[rel function4]
     mov [rel screenwhat],rax
     lea rax,[rel menu]
     mov [rel mouseormenu],rax

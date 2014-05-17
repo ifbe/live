@@ -86,6 +86,12 @@ cmp byte [esi+4],'='		;if [esi+4]="="
 je changeaddr
 skipaddr:
 
+mov esi,[rel currentarg]
+cmp dword [esi],"test"
+jne skiptest
+cmp byte [esi+4],0x20
+je test
+skiptest:
 
 mov esi,[rel currentarg]
 cmp dword [esi],"call"
@@ -262,6 +268,14 @@ mov rax,[rel fetched]
 mov [rel addr],rax
 jmp scroll
 ;_________________________
+
+
+;______________________________
+test:
+mov rax,0x100000
+call rax
+jmp scroll
+;______________________________
 
 
 ;_______________________________

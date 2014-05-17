@@ -23,7 +23,7 @@ void anscii(int x,int y,char ch)
     char* p;
 
     points+=ch<<4;
-    x=8*x;
+    x=16*x;
     y=16*y;
 
     for(i=0;i<16;i++)
@@ -36,8 +36,8 @@ void anscii(int x,int y,char ch)
             temp&=0x80;
             if(temp!=0){
                 point(x+2*j,y+2*i,0);
-                point(x+2*j,y+2*i+1,0);
                 point(x+2*j+1,y+2*i,0);
+                point(x+2*j,y+2*i+1,0);
                 point(x+2*j+1,y+2*i+1,0);
             }
 /*
@@ -85,9 +85,26 @@ void decimal(int x,int y,u64 z)
 void cubie(int x,int y,int z)
 {
 	int i,j,color;
+	for(j=y*160;j<(y+1)*160;j++)
+	{
+		for(i=x*160;i<x*160+5;i++)
+		{
+			point(i,j,0x44444444);
+			point(i+155,j,0x44444444);
+		}
+	}
+	for(i=x*160;i<(x+1)*160;i++)
+	{
+		for(j=y*160;j<y*160+5;j++)
+		{
+			point(i,j,0x44444444);
+			point(i,j+155,0x44444444);
+		}
+	}
+
 	switch(z)
 	{
-		case 0:color=0x44444444;break;
+		case 0:color=0x55555555;break;
 		case 2:color=0xfffffff0;break;
 		case 4:color=0xffffffc0;break;
 		case 8:color=0x995000;break;
@@ -101,22 +118,11 @@ void cubie(int x,int y,int z)
 		case 2048:color=0xffffffff;break;
 		case 4096:color=0xffffffff;break;
 	}
-	for(i=x*160;i<(x+1)*160;i++)
-		for(j=y*160;j<(y+1)*160;j++)
+	for(i=x*160+5;i<x*160+155;i++)
+		for(j=y*160+5;j<y*160+155;j++)
 			point(i,j,color);
 
-	if(z!=0) decimal(8+x*20,4+y*10,z);
-
-	for(i=x*160;i<(x+1)*160;i++)
-	{
-		point(i,y*160,0xffffffff);
-		point(i,(y+1)*160,0xffffffff);
-	}
-	for(j=160*y;j<=(y+1)*160;j++)
-	{
-		point(160*x,j,0xffffffff);
-		point(160*(x+1),j,0xffffffff);
-	}
+	if(z!=0) decimal(4+x*10,4+y*10,z);
 }
 
 

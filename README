@@ -1,9 +1,9 @@
-电脑像单片机那样用(gcc -fPIC不能用全局变量，FUCK！！！！GCC！！！！)
+让电脑像单片机那样用(gcc -fPIC不能用全局变量，FUCK！！！！GCC！！！！)
 
 编译测试：
-1:改load/Makefile(应该不用改)
-2:改init/init.s(应该不用改)
-3:make(自动弹出qemu,出现彩屏即完全正常)
+1:linux下
+2:选择demo文件夹下某一个，cd进去make
+3:在本目录make(自动弹出qemu,出现彩屏即完全正常)
 
 真机使用:
 一：grub4dos环境下：
