@@ -27,8 +27,8 @@ cmp al,0x48
 je f1up
 cmp al,0x50
 je f1down
-cmp al,0x39
-je f1space
+;cmp al,0x39
+;je f1space
 cmp al,0x38
 je f1alt
 jmp f1other
@@ -150,10 +150,10 @@ jmp ramdump
     add qword [rel addr],0x40
     jmp ramdump
 
-f1space:
-    mov qword [rel addr],0x6000
-    mov qword [rel offset],0
-    jmp ramdump
+;f1space:
+;    mov qword [rel addr],0x6000
+;    mov qword [rel offset],0
+;    jmp ramdump
 
 f1esc:
 inc byte [rel esckey]

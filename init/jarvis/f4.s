@@ -17,6 +17,8 @@ je f4enter
 cmp al,0x0e
 je f4backspace
 
+cmp al,0x80
+ja console
 jmp f4other
 ;_______________________________________________________________________________
 

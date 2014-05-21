@@ -51,7 +51,7 @@ void point(int x,int y,int z)
 }
 
 
-double line(int x1,int y1,int x2,int y2)
+void line(int x1,int y1,int x2,int y2)
 {
 	int x,y;
 	if(x1 == x2){

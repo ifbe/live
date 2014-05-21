@@ -68,26 +68,6 @@ void hexadecimal(int x,int y,u64 z)
         }
 }
 
-static inline unsigned char inb( unsigned short port )
-{
-    unsigned char ret;
-    asm volatile( "inb %1, %0"
-                  : "=a"(ret) : "Nd"(port) );
-    return ret;
-}
-
-
-char keyboard()
-{
-    char ret,temp;
-    do{
-        while((inb(0x64)&0x01)==0);         //阻塞
-        ret=inb(0x60);
-        temp=ret&0x80;
-    }while(temp!=0);
-    return ret;
-}
-
 
 void main()
 {
@@ -148,7 +128,7 @@ void main()
 			hexadecimal(100,2*j,theword);
 		}
 
-		key=keyboard();
+		key=hltwait();
 		if(key==0x1){break;}
 		if(key==0x4b){if(x>0)	x--;}	//left
 		if(key==0x4d){if(x<15)	x++;}	//right

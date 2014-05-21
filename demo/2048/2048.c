@@ -169,7 +169,7 @@ void main()
 			for(j=0;j<4;j++)
 				cubie(i,j,table[j][i]);
 
-		key=keyboard();
+		key=hltwait();
 
 		if(key==0x1){break;}
 		if(key==0x4b)	//left

@@ -19,8 +19,8 @@ keyboardisr:
 push rax
 push rbx
 in al,0x60
-cmp al,0x80
-ja .leave
+;cmp al,0x80
+;ja .leave
 
 mov byte [0xff0],0xff           ;标志
 mov ebx,[0xff8]         ;信息
