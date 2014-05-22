@@ -126,7 +126,7 @@ void dot(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    u64 points=0x7000;
+    u64 points=0x6000;
     char temp;
     char* p;
 

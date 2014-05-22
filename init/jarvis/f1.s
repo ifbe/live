@@ -31,6 +31,9 @@ je f1down
 ;je f1space
 cmp al,0x38
 je f1alt
+
+cmp al,0x80
+ja ramdump
 jmp f1other
 
 

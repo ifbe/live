@@ -150,12 +150,10 @@ void probeport(unsigned int addr)
 
 	//32*32=0x400
 	port->clb =0x98000;
-	//*(DWORD*)0x7000=port->clb;
 	port->clbu = 0;
  
 	//0x100
 	port->fb = 0x98400;
-	//*(DWORD*)0x7008=port->fb;
 	port->fbu = 0;
  
 	//0x100*32=0x2000=8k

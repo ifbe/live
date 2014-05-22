@@ -19,7 +19,7 @@ void point(int x,int y,int z)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    u64 points=0x7000;
+    u64 points=0x6000;
     char temp;
     char* p;
 

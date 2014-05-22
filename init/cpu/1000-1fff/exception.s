@@ -462,7 +462,7 @@ anscii:
     jae .next
     movzx esi,al
     shl esi,4
-    add esi,0x7000
+    add esi,0x6000
     push rcx
     call char
     pop rcx
@@ -490,7 +490,7 @@ hex:
     push rcx
     push rsi
     movzx esi,dl
-    add esi,0x7000
+    add esi,0x6000
     call char
     pop rsi
     pop rcx

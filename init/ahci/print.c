@@ -14,7 +14,7 @@ void point(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    unsigned long long source=0x7000;
+    unsigned long long source=0x6000;
     char temp;
     char* p;
 
@@ -49,7 +49,7 @@ void say(char* p,...)
 	while(*p!='\0')
 	{
 		anscii(x+64,y,*p);
-		*(char*)(0xc000+y*64+x)=*p;
+		*(char*)(0x7000+y*64+x)=*p;
 		p++;
 		x++;
 	}
@@ -58,7 +58,7 @@ void say(char* p,...)
 	{
 	        int i=0;
 		char ch;
-		*(unsigned long long*)(0xc020+y*64)=first;
+		*(unsigned long long*)(0x7020+y*64)=first;
 	        for(i=15;i>=0;i--)
 	        {
 	        ch=(char)(first&0xf);

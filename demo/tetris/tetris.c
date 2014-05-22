@@ -35,7 +35,7 @@ void point(int x,int y,int z)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    u64 points=0x7000;
+    u64 points=0x6000;
     char temp;
     char* p;
 
@@ -117,6 +117,7 @@ int random()
         char* memory=(char*)0x0;
         for(i=0;i<0x1000;i++)
                 key+=memory[i];
+	if(key<0) key= -key;
         return key;
 }
 
@@ -382,8 +383,8 @@ void main()
 	table[48]=0xffffffff;
 	that.x=random() %27 +1;
 	that.y=1;
-	that.type=random() % 7;
-	that.direction=random() & 0x3;
+	that.type=5;
+	that.direction=2;
 	generate(&that);
 
 

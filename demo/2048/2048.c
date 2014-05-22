@@ -18,7 +18,7 @@ void point(int x,int y,int z)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    u64 points=0x7000;
+    u64 points=0x6000;
     char temp;
     char* p;
 
@@ -132,6 +132,7 @@ int random()
         char* memory=(char*)0x0;
         for(i=0;i<0x1000;i++)
                 key+=memory[i];
+	if(key<0) key= -key;
         return key;
 }
 
@@ -172,7 +173,7 @@ void main()
 		key=hltwait();
 
 		if(key==0x1){break;}
-		if(key==0x4b)	//left
+		else if(key==0x4b)	//left
 		{
 		for(i=0;i<4;i++)
 		{
@@ -233,7 +234,7 @@ void main()
 		}
 		}
 
-		if(key==0x4d)	//right
+		else if(key==0x4d)	//right
 		{
 		for(i=0;i<4;i++)
 		{
@@ -297,7 +298,7 @@ void main()
 		}
 		}
 
-		if(key==0x48)	//up
+		else if(key==0x48)	//up
 		{
 		for(j=0;j<4;j++)
 		{
@@ -357,7 +358,7 @@ void main()
 		}
 		}
 
-		if(key==0x50)	//down
+		else if(key==0x50)	//down
 		{
 		for(j=0;j<4;j++)
 		{
@@ -416,6 +417,7 @@ void main()
 			}
 		}
 		}
+		else continue;
 
 		int count=0;
 		int temp;

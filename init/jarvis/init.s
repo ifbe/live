@@ -1,4 +1,9 @@
 bits 64
+
+
+cli
+
+
 ;_____________int 21h__________________
 ;keyboard:
 lea rax,[rel keyboardisr]
@@ -19,21 +24,19 @@ keyboardisr:
 push rax
 push rbx
 in al,0x60
-;cmp al,0x80
-;ja .leave
-
-mov byte [0xff0],0xff           ;标志
-mov ebx,[0xff8]         ;信息
-mov [ebx],al
-inc ebx
-cmp bx,0xfe0
-jb .putback
-mov ebx,0x800
-.putback:
-mov [0xff8],ebx
+cmp al,0xe0
+je .leave
+	mov byte [0xff0],0xff		;标志
+	mov ebx,[0xff8]			;地址
+	mov [ebx],al
+	inc ebx
+	cmp bx,0xfe0
+	jb .put
+	mov ebx,0x800
+	.put:
+	mov [0xff8],ebx
 .leave:
-;eoi
-mov eax,0xfee000b0
+mov eax,0xfee000b0		;eoi
 mov dword [eax],0
 pop rbx
 pop rax
@@ -85,8 +88,8 @@ call endofjarvis+0x4000
 
 ;___________________________________________
 
-    mov qword [rel addr],0x6000          ;r14 memory pointer
-    mov qword [rel offset],0             ;r15 offset pointer
+    mov qword [rel addr],0x7000          ;r14 memory pointer
+    mov qword [rel offset],0x420         ;r15 offset pointer
 
     mov rdi,0x800
     mov [0xff8],rdi

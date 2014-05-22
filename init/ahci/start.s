@@ -33,10 +33,6 @@ global fat0
 
 
 start:
-mov edi,0x8000
-xor rax,rax
-mov ecx,0x1000
-rep stosq
 
 call initahci
 call finddisk
@@ -159,7 +155,7 @@ add rsi,[rel realfatsize]
 add rsi,[rel realfatsize]
 call say
 
-mov rdi,0x8000			;[8000]=function address
+mov rdi,0x6f00			;[7000]=function address
 mov rax,"cd"
 stosq
 lea rax,[rel fat16_cd]
@@ -224,7 +220,7 @@ add rsi,[rel realclustersize]
 add rsi,[rel realclustersize]
 call say
 
-mov rdi,0x8000			;[8000]=function address
+mov rdi,0x6f00			;[7000]=function address
 mov rax,"cd"
 stosq
 lea rax,[rel fat32_cd]

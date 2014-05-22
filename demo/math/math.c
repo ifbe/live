@@ -100,7 +100,7 @@ char convert(char old)
     char new=0x20;
     int i;
 
-    rsi=0x7800;
+    rsi=0x6800;
     for(i=0;i<44;i++)
     {
         p=(char*)rsi;
@@ -134,7 +134,7 @@ void point(int x,int y,int z)
 void print(int x,int y,char ch)
 {
     int i,j;
-    u64 rsi=0x7000;
+    u64 rsi=0x6000;
     char temp;
     char* p;
 

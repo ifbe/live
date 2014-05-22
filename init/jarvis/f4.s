@@ -75,6 +75,14 @@ je turnoff
 skipturnoff:
 
 mov esi,[rel currentarg]
+cmp dword [esi],"exit"
+jne skipexit
+cmp byte [esi+4],0x20
+je turnoff
+skipexit:
+
+
+mov esi,[rel currentarg]
 cmp dword [esi],"clea"
 jne skipclear
 cmp dword [esi+4],"r   "
@@ -217,7 +225,7 @@ jmp scroll
 
 ;________________________
 cd:
-cmp word [0x8000],"cd"
+cmp word [0x6f00],"cd"
 jne notfound
 mov rax,[rsi+3]
 
@@ -231,7 +239,7 @@ sub al,0x20
 loop .fuckanscii
 
 mov rdi,rax
-call [0x8008]
+call [0x6f08]
 jmp scroll
 ;______________________
 
@@ -240,10 +248,15 @@ jmp scroll
 
 ;________________________
 load:
-cmp dword [0x8010],"load"
+cmp dword [0x6f10],"load"
 jne notfound
-mov rax,[rsi+5]
 
+mov rdi,0x100000
+xor rax,rax
+mov ecx,0x40000
+rep stosd
+
+mov rax,[rsi+5]
 mov ecx,8
 .fuckanscii:
 rol rax,8
@@ -254,7 +267,7 @@ sub al,0x20
 loop .fuckanscii
 
 mov rdi,rax
-call [0x8018]
+call [0x6f18]
 jmp scroll
 ;______________________
 
