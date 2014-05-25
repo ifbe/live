@@ -6,7 +6,7 @@ startofacpi:
 ;变:rax,rbp,cx,*0x4008=RSD PTR 
 ;_________look for rsd ptr from e0000~ffff0__________
     mov rax,"RSD PTR "
-    mov [0x4008],rax
+    mov [0x4000],rax
     mov rbp,0xe0000
     mov cx,0x2000
 rsdptr:
@@ -26,7 +26,7 @@ rsdptr:
 ;变:*0x4000=&rsdp
 ;____________________________________
 findrsdptr:
-    mov [0x4000],rbp       ;rsdptr
+    mov [0x4008],rbp       ;rsdptr
     cmp byte [rbp+0xf],0x00 ;不是0就是xsdt
     jne xsdt
 
@@ -38,19 +38,18 @@ findrsdptr:
 ;_______________________________
 rsdt:
     mov eax,"RSDT"
-    mov [0x4018],eax
+    mov [0x4010],eax
     mov eax,[rbp+0x10]
-    mov [0x4010],eax        ;rsdt
+    mov [0x4018],eax        ;rsdt
     mov cl,[eax+4]
     sub cl,0x24
     add eax,0x24
     mov edi,0x4020
 .rsdttable:
     mov esi,[eax]
-    mov [edi],esi
-    add edi,0x8
+    mov [edi+8],esi
     movsd
-    add edi,4
+    add edi,0xc
     add eax,0x4
     sub cl,4
     cmp cl,0
@@ -67,18 +66,18 @@ rsdt:
 ;____________________________________
 xsdt:
     mov eax,"XSDT"
-    mov [0x4018],eax
+    mov [0x4010],eax
     mov rax,[rbp+0x18]
-    mov [0x4010],rax        ;xsdt
+    mov [0x4018],rax        ;xsdt
     mov cl,[rax+4]
     sub cl,0x24
     add eax,0x24
     mov edi,0x4020
 .xsdttable:
     mov esi,[eax]
-    mov [edi],esi
-    add edi,0x8
+    mov [edi+0x8],esi
     movsq
+    add edi,0x8
     add eax,0x8
     sub cl,8
     cmp cl,0
@@ -92,7 +91,7 @@ xsdt:
 ;变:rax,edi,ecx，*0xb8000~*0xbffff
 acpi:
 ;_______________search in facp for port________________________________
-    mov esi,0x4028            ;8008和8018分别是rsdp和xsdt
+    mov esi,0x4020            ;8008和8018分别是rsdp和xsdt
 .search:
     cmp dword [esi],"FACP"
     je facp
@@ -100,16 +99,15 @@ acpi:
     cmp esi,0x4400
     jb .search
 facp:
-    mov esi,[esi-0x8]           ;[esi-0x8]=facp
+    mov esi,[esi+0x8]           ;[esi-0x8]=facp
     mov ax,[esi+0x40]           ;[facp+0x40]=port
     mov [0x4fc],ax
     mov eax,[esi+0x28]
-    stosd
-    mov esi,[edi-4]
-    mov eax,[esi]
-    add edi,4
-    stosd                       ;dsdt
-    mov esi,[edi-0xc]
+    mov [edi+8],eax
+    mov eax,[eax]
+    mov [edi],eax
+
+    mov esi,[edi+0x8]
     mov eax,"_S5_"
 dsdt:
     cmp [esi],eax
@@ -119,10 +117,8 @@ dsdt:
 ;_________________________________________
 
 
-;进:
-;出:
-;用:
-;变:
+
+
 find_S5_:
 ;_________________________________
     xor ah,ah
@@ -169,21 +165,23 @@ pcieold:
     in eax,dx
     cmp eax,0xffffffff
     je .empty
-        mov eax,ebx
-        stosq
 
-        ;mov dx,0xcf8       ;id
-        ;out dx,eax
-        ;mov dx,0xcfc
-        ;in eax,dx
-        ;stosd
+	mov eax,ebx
+        mov dx,0xcf8       ;id
+        out dx,eax
+        mov dx,0xcfc
+        in eax,dx
+	mov [edi],eax
 
         lea eax,[ebx+8]    ;class
         mov dx,0xcf8
         out dx,eax
         mov dx,0xcfc
         in eax,dx
-        stosq
+	mov [edi+4],eax
+
+	mov [edi+8],ebx
+	add edi,0x10
 .empty:
     add ebx,0x100
     loop .enumeration

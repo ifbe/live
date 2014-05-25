@@ -59,7 +59,7 @@ pagedirectory:
 xor ax,ax
 mov es,ax
 mov di,0x800
-mov word [es:di],0xe0ff
+mov word [es:di],0xe0ff		;e0ff=jmp rax
 ;__________________________________
 
  

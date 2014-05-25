@@ -1,8 +1,8 @@
 #include "ahci.h"
 
-unsigned int findahci()
+unsigned int findaddr()
 {
-	QWORD addr=0x5008;
+	QWORD addr=0x5004;
 	unsigned int temp;
 	for(;addr<0x6000;addr+=0x10)
 	{
@@ -10,7 +10,7 @@ unsigned int findahci()
 		temp&=0xffffff00;
 		if(temp==0x01060100)
 		{
-			addr-=0x8;
+			addr+=4;
 			temp=*(unsigned int*)addr;
 			say("pci address:",(QWORD)temp);
 			return temp;
@@ -53,55 +53,123 @@ unsigned int probepci(unsigned int addr)
 
 
 
-QWORD check_type(HBA_PORT *port)
-{
-	DWORD ssts = port->ssts;
- 
-	BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
-	if (ipm == 0)	return 0;	//not exist
-	BYTE det = ssts & 0x0F;			//[0,3]
-	if (det == 0)	return 0;	//not exist
-	return (QWORD)(port->sig);
-}
-unsigned int probeahci(unsigned int addr)
+void probeahci(unsigned int addr)
 {
 	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
-	abar->ghc|=0x2;
-	//say("ahci cap and ghc:",((QWORD)(abar->cap)<<32)+(QWORD)(abar->ghc));
+	abar->ghc|=0x80000000;
+	abar->ghc&=0xfffffffd;
+}
 
-	QWORD i = 0;
+
+
+
+QWORD checkandsave(QWORD addr)
+{
+	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
+
 	DWORD pi = abar->pi;
-	while (i<32)
+	int count=0;
+	while(pi & 1)
 	{
-		if (pi & 1)
-		{
-			QWORD what=check_type(&abar->ports[i]);
-			if(what!=0)
-			{
-			switch(what)
-			{
-			case 0x00000101:
-			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)"sata\0\0\0\0";
-			return addr+0x100+0x80*i;
-
-			case 0xeb140101:
-			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)"atapi\0\0\0";
-
-			case 0xc33c0101:
-			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)("enclo...");
-
-			case 0x96690101:
-			*(QWORD*)(0x2800+i*0x10)=addr+0x100+i*0x80;
-			*(QWORD*)(0x2808+i*0x10)=*(QWORD*)("multi...");
-			}
-			}
-		}
 		pi >>= 1;
-		i ++;
+		count++;
 	}
+
+	int sign=0;
+	QWORD i = 0;
+	for(i=0;i<count;i++)
+	{
+	switch(abar->ports[i].sig)
+	{
+		case 0x00000101:{		//sata
+		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2020202061746173;
+		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
+		break;
+		}
+		case 0xeb140101:{		//atapi
+		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2020206970617461;
+		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
+		break;
+		}
+		case 0xc33c0101:{		//enclosure....
+		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2e2e2e6f6c636e65;
+		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
+		break;
+		}
+		case 0x96690101:{		//port multiplier
+		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2e2e2e69746c756d;
+		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
+		break;
+		}
+		default:{
+		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x20676e6968746f6e;
+		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
+		}
+	}
+}
+
+	if(sign==count) return 0;
+
+	QWORD* pointer=(QWORD*)0x2800;
+	for(i=0;i<64;i+=2)
+	{	
+		if( pointer[i] == 0x2020202061746173 )
+		{
+			return pointer[i+1];
+		}
+	}
+}
+
+
+unsigned int findport(unsigned int addr)
+{
+	unsigned int temp;
+	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
+
+	//try to get port
+	temp=checkandsave(addr);
+	if(temp!=0){
+		DWORD ssts = ( (HBA_PORT*)(QWORD)temp ) -> ssts;
+		BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
+		BYTE det = ssts & 0x0F;			//[0,3]
+
+		if( (ipm != 0) && (det != 0) )
+		{return temp;}
+	}
+
+	//something wrong,reset ports
+	int i;
+	char* p=(char*)0x98000;
+	for(i=0;i<0x2000;i++) p[i]=0;
+
+	DWORD pi = abar->pi;
+	int count=0;
+	while(pi & 1)
+	{
+		pi >>= 1;
+		count++;
+	}
+
+	for(i=0;i<count;i++)
+	{
+		abar->ports[i].fb = 0x98000+i*0x100;
+		abar->ports[i].fbu = 0;
+		abar->ports[i].cmd |=0x10;
+		abar->ports[i].cmd |=0x2;
+	}
+
+	//and try again
+	temp=checkandsave(addr);
+	if(temp!=0){
+		DWORD ssts = ( (HBA_PORT*)(QWORD)temp ) -> ssts;
+		BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
+		BYTE det = ssts & 0x0F;			//[0,3]
+
+		if( (ipm != 0) && (det != 0) )
+		{return temp;}
+	}
+
+	return 0;
 }
 
 
@@ -142,43 +210,43 @@ void disable(HBA_PORT *port)
 }
 void probeport(unsigned int addr)
 {
+	int i;
+	char* p=(char*)0x9a000;
+	for(i=0;i<0x6000;i++) p[i]=0;
+
 	HBA_PORT* port=(HBA_PORT*)(QWORD)addr;
 	disable(port);	// Stop command engine
 
-	char* p=(char*)0x98000;
-	for(;p<(char*)0xa0000;p++)	*p=0;
-
 	//32*32=0x400
-	port->clb =0x98000;
+	port->clb =0x9a000;
 	port->clbu = 0;
- 
-	//0x100
-	port->fb = 0x98400;
-	port->fbu = 0;
  
 	//0x100*32=0x2000=8k
 	HBA_CMD_HEADER *cmdheader=(HBA_CMD_HEADER*)(QWORD)(port->clb);
-	int i;
 	for (i=0; i<32; i++)
 	{
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-		cmdheader[i].ctba=0x98800+(i<<8);
+		cmdheader[i].ctba=0x9a400+(i<<8);
 		cmdheader[i].ctbau = 0;
 	}
-	//*(DWORD*)0x7010=cmdheader[0].ctba;
-	//say("port->clb:",(QWORD)port->clb);
-	//say("port->fb:",(QWORD)port->fb);
 	enable(port);	// Start command engine
 }
-
-
 
 
 void initahci()
 {
 	unsigned int addr;
-	addr=findahci();
-	addr=probepci(addr);
-	addr=probeahci(addr);
+
+	addr=findaddr();		//port addr of port
+	if(addr==0) return;
+
+	addr=probepci(addr);		//memory addr of ahci
+	if(addr==0) return;
+
+	probeahci(addr);
+
+	addr=findport(addr);		//memory addr of port
+	if(addr==0) return;
+
 	probeport(addr);
 }

@@ -2,21 +2,23 @@ bits 64
 ;_________________________________________________
 forever:
 
-hlt                     ;       sleep
+.compare:
+mov rax,[0xff8]
+cmp [0xfe8],rax			;	[0xff8]=[0xfe8]?
+jne .process
 
-cmp byte [0xff0],0      ;       (keyboard wake up me)?
-je forever              ;       no{sleep again}
-                        ;       yes{
-mov byte [0xff0],0      ;               clear signal
-mov eax,[0xff8]         ;               pointer=[0xff8]
-cmp eax,0x800            ;               (pointer=0x800(buffer head))?
-je forever              ;               yes{sleep again}
-                        ;               no{
-dec eax                 ;                       pointer-1
-mov al,[eax]            ;                       al=[pointer]
+.wait:
+hlt                     ;       sleep
+jmp .compare		;	waken up
+
+.process:
+mov rax,[0xff8]			;	pointer=[0xff8]
+mov al,[rax]    	        ;	return value=[pointer]
+inc qword [0xff8]
+cmp qword [0xff8],0xfe0		
+jb decide
+mov qword [0xff8],0x800
 
 decide:
-jmp [rel screenwhat];			get next addr
-			;		}
-                        ;       }
+jmp [rel screenwhat];
 ;_________________________________________________

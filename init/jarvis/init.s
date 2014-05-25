@@ -23,18 +23,15 @@ jmp endofkeyboard
 keyboardisr:
 push rax
 push rbx
-in al,0x60
-cmp al,0xe0
-je .leave
-	mov byte [0xff0],0xff		;标志
-	mov ebx,[0xff8]			;地址
+	in al,0x60
+	mov ebx,[0xfe8]			;地址
 	mov [ebx],al
 	inc ebx
-	cmp bx,0xfe0
-	jb .put
+	cmp ebx,0xfe0
+	jb .newaddr
 	mov ebx,0x800
-	.put:
-	mov [0xff8],ebx
+	.newaddr:
+	mov [0xfe8],ebx
 .leave:
 mov eax,0xfee000b0		;eoi
 mov dword [eax],0
@@ -91,14 +88,19 @@ call endofjarvis+0x4000
     mov qword [rel addr],0x7000          ;r14 memory pointer
     mov qword [rel offset],0x420         ;r15 offset pointer
 
-    mov rdi,0x800
-    mov [0xff8],rdi
-
+    mov edi,0x800
+    mov ecx,0x100
     xor rax,rax
-    mov [0xff0],rax         ;keyboard buffer end
-
-    mov ecx,0xfe
     rep stosq
+
+    mov rax,"input"
+    mov [0xfe0],rax
+    mov rax,0x800
+    mov [0xfe8],rax
+    mov rax,"progress"
+    mov [0xff0],rax
+    mov rax,0x800
+    mov [0xff8],rax
 
     lea rax,[rel function4]
     mov [rel screenwhat],rax

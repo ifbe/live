@@ -48,7 +48,7 @@ ret
 
 
 finddisk:
-mov esi,0x2808
+mov esi,0x2800
 .loop:
 cmp dword [esi],"sata"
 je .find
@@ -57,7 +57,7 @@ cmp esi,0x3000
 ja .return
 jmp .loop
 .find:
-mov rax,[esi-8]
+mov rax,[esi+8]
 mov [rel realdisk],rax
 .return:
 lea edi,[rel saydisk]

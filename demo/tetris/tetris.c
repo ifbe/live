@@ -413,7 +413,7 @@ void main()
 
 
 		//wait
-		char key=hltwait();
+		unsigned char key=hltwait();
 
 		if(key==0x01) break;
 		else if(key==0x4b)
@@ -462,7 +462,7 @@ void main()
 			{that.direction=(that.direction+3)%4;}
 			generate(&that);
 		}
-		else	//键盘下或者时间滴答
+		else if(key==0x50 | key==0xff)	//键盘下或者时间滴答
 		{
 			that.y ++;
 			that.y1 ++;
@@ -491,6 +491,7 @@ void main()
 				generate(&that);
 			}
 		}
+		else continue;
 
 		//one line full ?
 		for(i=47;i>0;i--)

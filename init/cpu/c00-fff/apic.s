@@ -29,9 +29,9 @@ savelapic:
 .continue:
     cmp dword [edi],0
     jne .addandagain
-	mov eax,[rel localapicaddress]
-	stosq
 	mov rax,"lapic"
+	stosq
+	mov eax,[rel localapicaddress]
 	stosq
 	jmp .endofthis
 .addandagain:
@@ -99,7 +99,7 @@ endoflocalapic:
 startofioapic:
 ;_______________________________________
 searchioapic:
-    mov edi,0x4008
+    mov edi,0x4000
 .search:
     cmp dword [edi],"MADT"
     je findioapic
@@ -117,7 +117,7 @@ searchioapic:
 findioapic:
 
 getinformation:
-    mov edi,[edi-8]
+    mov edi,[edi+8]
     mov [rel madtstart],edi
     mov eax,[edi+4]
     add eax,edi
@@ -161,9 +161,9 @@ saveioapic:
     cmp dword [edi],0
     jne .addandagain
 
-	mov eax,[rel ioapicaddress]
-	stosq
 	mov rax,"ioapic"
+	stosq
+	mov eax,[rel ioapicaddress]
 	stosq
 	jmp .endofthis
 

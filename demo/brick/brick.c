@@ -7,6 +7,7 @@ int random()
         char* memory=(char*)0x0;
         for(i=0;i<0x1000;i++)
                 key+=memory[i];
+	if(key<0) key=-key;
         return key;
 }
 
@@ -153,13 +154,13 @@ void main()
 		{
 			point(i,700,0xffffffff);
 		}
+
 		//print ball
 		cubie(ball.x,ball.y,0xffffffff);
 
 
 		//waitforsometime
-		//and change snake
-		char key=hltwait();
+		unsigned char key=hltwait();
 
 		//clear board
 		for(i=position-64;i<position+64;i++)
@@ -171,7 +172,8 @@ void main()
 		cubie(ball.x,ball.y,0);
 
 		//move board
-		if(key==0x4b){
+		if(key==0x01) break;
+		else if(key==0x4b){
 			if(position>80)
 			{
 				position-=0x16;
@@ -183,7 +185,7 @@ void main()
 				position+=0x16;
 			}
 		}
-		else
+		else if(key==0xff)
 		{
 			//ball moving
 			if(ball.x<16) ball.dx= -ball.dx;
@@ -210,7 +212,6 @@ void main()
 				table[line]&=temp;
 			}
 		}
-
 
 		//开始下一轮循环
 		if(ball.y>750) break;

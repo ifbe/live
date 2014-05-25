@@ -7,26 +7,29 @@ global hltwait
 ;_________________________________________________
 hltwait:
 
-hlt                     ;       sleep
+.compare:
+mov rax,[0xff8]
+cmp [0xfe8],rax                 ;       [0xff8]=[0xfe8]?
+jne .process
+
 mov rax,[rel signal]
 mov byte [rel signal],0
 cmp rax,0
-jnz .leave
+jnz .return
 
-cmp byte [0xff0],0      ;       (keyboard wake up me)?
-je hltwait              ;       no{sleep again}
-                        ;       yes{
-mov byte [0xff0],0      ;               clear signal
-mov eax,[0xff8]         ;               pointer=[0xff8]
-cmp eax,0x800            ;               (pointer=0x800(buffer head))?
-je hltwait              ;               yes{sleep again}
-                        ;               no{
-dec eax                 ;                       pointer-1
-mov al,[eax]            ;                       al=[pointer]
-cmp al,0x80
-ja hltwait
+.wait:
+hlt                             ;       sleep
+jmp .compare                    ;       waken up
 
-.leave:
+.process:
+mov rax,[0xff8]                 ;       pointer=[0xff8]
+mov al,[rax]                    ;       return value=[pointer]
+inc qword [0xff8]
+cmp qword [0xff8],0xfe0
+jb .return
+mov qword [0xff8],0x800
+
+.return:
 ret
 ;___________________________________________________
 

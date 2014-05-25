@@ -83,6 +83,7 @@ int random()
         char* memory=(char*)0x0;
         for(i=0;i<0x1000;i++)
                 key+=memory[i];
+	if(key<0) key=-key;
         return key;
 }
 
@@ -160,12 +161,14 @@ void main()
 
 		//waitforsometime
 		//and change snake
-		char key=hltwait();
+		unsigned char key=hltwait();
+		if(key==0x1) break;
 		if(key==0x4b) direction=1;
 		else if(key==0x4d) direction=2;
 		else if(key==0x48) direction=3;
 		else if(key==0x50) direction=4;
-		else direction=snake[0].direction;
+		else if(key==0xff) direction=snake[0].direction;
+		else continue;
 
 
 		//clear snake

@@ -7,6 +7,7 @@ image:
 clean:
 	make clean -s -C load
 	make clean -s -C init
+	make clean -s -C demo
 	rm -f live
 qemutest:
 	qemu-kvm \

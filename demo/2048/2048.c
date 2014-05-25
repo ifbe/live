@@ -163,16 +163,15 @@ void main()
 	}
 	table[random() & 0x3][random() & 0x3]=power( (random() &0x1) +1 );
 
-	char key=0;
 	while(1)
 	{
 		for(i=0;i<4;i++)
 			for(j=0;j<4;j++)
 				cubie(i,j,table[j][i]);
 
-		key=hltwait();
+		unsigned char key=hltwait();
 
-		if(key==0x1){break;}
+		if(key==0x1) break;
 		else if(key==0x4b)	//left
 		{
 		for(i=0;i<4;i++)
@@ -233,7 +232,6 @@ void main()
 
 		}
 		}
-
 		else if(key==0x4d)	//right
 		{
 		for(i=0;i<4;i++)
@@ -297,7 +295,6 @@ void main()
 
 		}
 		}
-
 		else if(key==0x48)	//up
 		{
 		for(j=0;j<4;j++)
@@ -357,7 +354,6 @@ void main()
 
 		}
 		}
-
 		else if(key==0x50)	//down
 		{
 		for(j=0;j<4;j++)
