@@ -75,7 +75,6 @@ QWORD checkandsave(QWORD addr)
 		count++;
 	}
 
-	int sign=0;
 	QWORD i = 0;
 	for(i=0;i<count;i++)
 	{
@@ -106,18 +105,18 @@ QWORD checkandsave(QWORD addr)
 		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
 		}
 	}
-}
-
-	if(sign==count) return 0;
+	}
 
 	QWORD* pointer=(QWORD*)0x2800;
 	for(i=0;i<64;i+=2)
-	{	
+	{
 		if( pointer[i] == 0x2020202061746173 )
 		{
 			return pointer[i+1];
 		}
 	}
+
+	return 0;
 }
 
 
@@ -136,6 +135,7 @@ unsigned int findport(unsigned int addr)
 		if( (ipm != 0) && (det != 0) )
 		{return temp;}
 	}
+	say("failed to find port 1:",0);
 
 	//something wrong,reset ports
 	int i;
@@ -158,7 +158,7 @@ unsigned int findport(unsigned int addr)
 		abar->ports[i].cmd |=0x2;
 	}
 
-	//and try again
+	//try again
 	temp=checkandsave(addr);
 	if(temp!=0){
 		DWORD ssts = ( (HBA_PORT*)(QWORD)temp ) -> ssts;
@@ -168,6 +168,7 @@ unsigned int findport(unsigned int addr)
 		if( (ipm != 0) && (det != 0) )
 		{return temp;}
 	}
+	say("failed to find port 2:",0);
 
 	return 0;
 }

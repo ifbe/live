@@ -28,18 +28,19 @@ void fat16_cd(QWORD name)
 
 void fat16_load(QWORD name)
 {
-	QWORD p=0x104000;
+	QWORD p=0x90000;
 	for(;p>0x80000;p-=0x20){ if( *(QWORD*)p==name ) break;	}
 	if(p==0x80000){say("file not found,bye!",0);return;}
 
 	QWORD file=(QWORD)(*(WORD*)(p+0x1a));	//fat16,only 16bit
 	say("first cluster of file:",file);
 
-	p=0x100000;
 	QWORD i;
        	for(i=0;i<0x40;i++){	//fat16,cache all
        	    read(0x40000+i*0x1000,fat0()+8*i,disk(),8);
        	}
+
+	p=0x100000;
 	while(p<0x200000)
 	{
 		read(p,cluster0()+clustersize()*file,disk(),clustersize());
@@ -81,12 +82,12 @@ void fat32_cd(QWORD name)
 
 void fat32_load(QWORD name)
 {
-	QWORD p=0x100000+clustersize()*0x200;
-	for(;p>0x100000;p-=0x20)
+	QWORD p=0x80000+clustersize()*0x200;
+	for(;p>0x80000;p-=0x20)
 	{
 		if( *(QWORD*)p== name) break;
 	}
-	if(p==0x100000){say("file not found,bye!",0);return;}
+	if(p==0x80000){say("file not found,bye!",0);return;}
 
 	QWORD file=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	file+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
@@ -94,10 +95,11 @@ void fat32_load(QWORD name)
 
 	QWORD cacheblock=0; //512 sectors per block
 	QWORD i;
-	p=0x100000;
 	for(i=0;i<0x40;i++){
 		read(0x40000+i*0x1000,fat0()+cacheblock*0x200+8*i,disk(),8);
 	}
+
+	p=0x100000;
 	while(p<0x200000)
 	{
 		read(p,cluster0()+clustersize()*file,disk(),clustersize());

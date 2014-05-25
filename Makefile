@@ -7,7 +7,6 @@ image:
 clean:
 	make clean -s -C load
 	make clean -s -C init
-	make clean -s -C demo
 	rm -f live
 qemutest:
 	qemu-kvm \
@@ -27,6 +26,7 @@ usbtest:
 	-drive id=disk,if=none,file=/dev/sdb
 push:
 	make clean
+	make clean -s -C demo
 	git add --all .
 	git commit -a
 	git push
