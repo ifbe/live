@@ -47,6 +47,17 @@ unsigned int probepci(unsigned int addr)
 	out32(0xcf8,addr+0x24);
 	addr=in32(0xcfc)&0xfffffff0;
 	say("ahci address:",(QWORD)addr);
+
+	int i=0;
+	unsigned long long* table=(unsigned long long*)0x5000;
+	for(i=0;i<0x200;i+=2)
+	{
+		if(table[i]==0){
+			table[i]=0x69636861;
+			table[i+1]=addr;
+			break;
+		}
+	}
 	return addr;
 }
 

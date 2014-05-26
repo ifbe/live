@@ -1,5 +1,0 @@
-
-void start()
-{
-	return;
-}

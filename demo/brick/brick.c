@@ -216,4 +216,6 @@ void main()
 		//开始下一轮循环
 		if(ball.y>750) break;
 	}
+
+	shutup20();
 }

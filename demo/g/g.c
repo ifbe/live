@@ -198,4 +198,6 @@ temp2=(double)( 5*(targetx-36)*(targetx-36) ) / ( (double)(targety-y0) );
 
 		//next loop
 	}
+
+	shutup20();
 }

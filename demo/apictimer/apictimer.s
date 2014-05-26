@@ -5,9 +5,9 @@ mov edi,0x1200
 call idtinstaller
 
 mov edi,0xfee00000
-mov dword [edi+0x320],0x20020       ;timer vector
-mov dword [edi+0x3e0],0x3          ;devide value
-mov dword [edi+0x380],0xffffff          ;init value
+mov dword [edi+0x320],0x20020	;timer vector
+mov dword [edi+0x3e0],0x3	;devide 0:2 1:4 2:8 3:16 8:32 9:64 a:128 b:1
+mov dword [edi+0x380],0xffffff	;init value
 sti
 ;______________________________
 

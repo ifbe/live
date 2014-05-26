@@ -1,6 +1,7 @@
 bits 64
 section .text
 global int20
+global shutup20
 global hltwait
 
 
@@ -45,6 +46,16 @@ sti
 
 ret
 ;___________________________________
+
+
+
+
+;_________________________________
+shutup20:
+mov edi,0xfee00320
+mov dword [edi],0x10000
+ret
+;_________________________________
 
 
 

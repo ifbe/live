@@ -1,5 +1,4 @@
 c:
-	rm -f temp*
 	nasm -f elf64 start.s -o start.o
 	gcc -c -fPIC -O2 print.c -o print.o
 	gcc -c -fPIC -O2 ahci.c -o ahci.o

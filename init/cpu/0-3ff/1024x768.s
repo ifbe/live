@@ -74,6 +74,7 @@ die:hlt
 
 
 
+
 supportlongmode:
 ;____________read cmos/disable nmi_____________
     mov di,0x500
@@ -85,6 +86,8 @@ cmos:
     cmp di,0x580
     jb cmos
 ;_____________________________________________
+
+
 
 
 ;____________int15 e820 memory detect___________
@@ -108,6 +111,8 @@ e820finish:
 ;_____________________________________________
 
 
+
+
 ;______________列出vesa模式________________
     mov cx,0x101
     mov di,0x3020
@@ -122,6 +127,8 @@ listresolution:
 ;_____________________________________________
 
 
+
+
 ;_________________________________
     mov si,0x3000
 searchresolution:
@@ -134,6 +141,8 @@ searchresolution:
     cmp byte [si+0x19],0x18
     jb searchresolution
 ;__________________________________
+
+
 
 
 ;__________________________________
@@ -153,8 +162,9 @@ setresolution:
     mov ax,0x4f02
     int 0x10
 ;__________________________________
-
     jmp endofscreen
+
+
 
 
 paddingofscreen:

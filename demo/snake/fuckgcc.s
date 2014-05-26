@@ -1,6 +1,7 @@
 bits 64
 section .text
 global int20
+global shutup20
 global hltwait
 
 
@@ -44,12 +45,22 @@ call idtinstaller
 
 mov edi,0xfee00000
 mov dword [edi+0x320],0x20020       ;timer vector
-mov dword [edi+0x3e0],0x8          ;devide value
+mov dword [edi+0x3e0],0x3          ;devide value
 mov dword [edi+0x380],0xffffff          ;init value
 sti
 
 ret
 ;___________________________________
+
+
+
+
+;_________________________________
+shutup20:
+mov edi,0xfee00320
+mov dword [edi],0x10000
+ret
+;_________________________________
 
 
 
