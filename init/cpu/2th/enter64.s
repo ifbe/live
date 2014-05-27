@@ -1,7 +1,7 @@
-;enter long mode directly
-startoflongmode:
+[BITS 16]
 
-BITS 16
+
+startofenter64:
 ;___________A20地址线______________
     in al, 92h  
     or al, 2  
@@ -10,48 +10,26 @@ BITS 16
 
 
 ;__________________________________________
-    mov ax,0x9000
-    mov ds,ax
+    xor ax,ax
     mov es,ax
 
-    ;清空0x1000~0x6fff
-    mov di,0
-    mov cx,0x1800
+    ;清空[0x4000,0x6fff]
+    mov di,0x4000
+    mov cx,0x3000
     xor eax, eax
     cld
-    rep stosd
+    rep stosb
 
-;&pdpt放入pml4(0x90000)(9000:0000)
-    mov di,0
-    mov eax,0x91003     ;存在&&可写
-    mov [es:di],eax     ;放入pml4
+    mov word [0x6000],0x83
 
 ;&pd放入pdpt(0x91000)(9000:1000)
-    mov di,0x1000
-    mov eax,0x92003
-    mov cx,4           ;共4GB
-.pdpt:
-    mov [es:di],eax
-    add eax,0x1000
-    add di,8
-    loop .pdpt
+    mov word [0x5000],0x6003
 
-;真实地址放入pd([92000,95fff])
-    mov di,0x2000
-    mov eax,0x83
+;&pdpt放入pml4(0x90000)(9000:0000)
+    mov word [0x4000],0x5003
+;_______________________________________
 
-pagedirectory:
-    mov [es:di],eax
-    add eax,0x200000
-    add di,8
-    cmp eax,0xffe00000
-    jb pagedirectory
-    mov [es:di],eax        ;the last one
 
-    xor eax,eax
-    mov ds,ax
-    mov es,ax 
-;________________________________________
 
 
 ;________________________________
@@ -82,7 +60,7 @@ mov word [es:di],0xe0ff		;e0ff=jmp rax
 ;_____________________________________
     mov eax, 10100000b                ; Set the PAE and PGE bit.
     mov cr4, eax
-    mov edx,0x90000                      ; Point CR3 at the PML4.
+    mov edx,0x4000                      ; Point CR3 at the PML4.
     mov cr3, edx
     mov ecx, 0xC0000080               ; Read from the EFER MSR. 
     rdmsr    
@@ -137,7 +115,7 @@ mov word [es:di],0xe0ff		;e0ff=jmp rax
 where:				;
     pop bx			;
     add eax,ebx			;
-    add eax,alldone-where	;rax=alldone的地址
+    add eax,endofenter64-where	;rax=endofenter64的地址
 
     a32 lgdt [0x7f0]  		;Load pointer (a32 because over 64k)
     jmp dword 0x0008:0x0800	;Load CS,flush instruction cache
@@ -145,20 +123,8 @@ where:				;
 ;______________________________________________
 
 
+paddingofenter64:
+times 0x200-(paddingofenter64-startofenter64) db 0
 
 
-[BITS 64]
-alldone:
-    mov ax,0x0010
-    mov ds,ax
-    mov es,ax
-    mov fs,ax
-    mov gs,ax
-    mov ss,ax
-    mov rsp,0x90000          ;..........16MB..........be careful
-    jmp endoflongmode
-
-paddingoflongmode:
-times 0x400-(paddingoflongmode-startoflongmode) db 0
-
-endoflongmode:
+endofenter64:

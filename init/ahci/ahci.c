@@ -74,6 +74,42 @@ void probeahci(unsigned int addr)
 
 
 
+void savedisk(QWORD first,QWORD second)
+{
+	int i;
+	QWORD* pointer=(QWORD*)0x4000;
+	for(i=0;i<0x200;i+=2)
+	{
+		if( pointer[i] == 0 )
+		{
+			pointer[i]=first;
+			pointer[i+1]=second;
+			break;
+		}
+	}
+}
+
+
+
+
+QWORD getdisk()
+{
+	int i;
+	QWORD* pointer=(QWORD*)0x4000;
+	for(i=0;i<0x200;i+=2)
+	{
+		if( pointer[i] == 0x2020202061746173 )
+		{
+			return pointer[i+1];
+		}
+	}
+
+	return 0;		//only when there is no sata
+}
+
+
+
+
 QWORD checkandsave(QWORD addr)
 {
 	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
@@ -92,42 +128,25 @@ QWORD checkandsave(QWORD addr)
 	switch(abar->ports[i].sig)
 	{
 		case 0x00000101:{		//sata
-		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2020202061746173;
-		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
-		break;
+			savedisk(0x2020202061746173,addr+0x100+i*0x80);
+			break;
 		}
 		case 0xeb140101:{		//atapi
-		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2020206970617461;
-		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
-		break;
+			savedisk(0x2020206970617461,addr+0x100+i*0x80);
+			break;
 		}
 		case 0xc33c0101:{		//enclosure....
-		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2e2e2e6f6c636e65;
-		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
-		break;
+			savedisk(0x2e2e2e6f6c636e65,addr+0x100+i*0x80);
+			break;
 		}
 		case 0x96690101:{		//port multiplier
-		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x2e2e2e69746c756d;
-		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
-		break;
-		}
-		default:{
-		*(QWORD*)(0x2800+i*0x10)=(QWORD)0x20676e6968746f6e;
-		*(QWORD*)(0x2808+i*0x10)=addr+0x100+i*0x80;
+			savedisk(0x2e2e2e69746c756d,addr+0x100+i*0x80);
+			break;
 		}
 	}
 	}
 
-	QWORD* pointer=(QWORD*)0x2800;
-	for(i=0;i<64;i+=2)
-	{
-		if( pointer[i] == 0x2020202061746173 )
-		{
-			return pointer[i+1];
-		}
-	}
-
-	return 0;
+	return getdisk();
 }
 
 
@@ -150,7 +169,7 @@ unsigned int findport(unsigned int addr)
 
 	//something wrong,reset ports
 	int i;
-	char* p=(char*)0x98000;
+	char* p=(char*)0x100000;
 	for(i=0;i<0x2000;i++) p[i]=0;
 
 	DWORD pi = abar->pi;
@@ -163,7 +182,7 @@ unsigned int findport(unsigned int addr)
 
 	for(i=0;i<count;i++)
 	{
-		abar->ports[i].fb = 0x98000+i*0x100;
+		abar->ports[i].fb = 0x100000+i*0x100;
 		abar->ports[i].fbu = 0;
 		abar->ports[i].cmd |=0x10;
 		abar->ports[i].cmd |=0x2;
@@ -223,14 +242,14 @@ void disable(HBA_PORT *port)
 void probeport(unsigned int addr)
 {
 	int i;
-	char* p=(char*)0x9a000;
+	char* p=(char*)0x108000;
 	for(i=0;i<0x6000;i++) p[i]=0;
 
 	HBA_PORT* port=(HBA_PORT*)(QWORD)addr;
 	disable(port);	// Stop command engine
 
 	//32*32=0x400
-	port->clb =0x9a000;
+	port->clb =0x108000;
 	port->clbu = 0;
  
 	//0x100*32=0x2000=8k
@@ -238,7 +257,7 @@ void probeport(unsigned int addr)
 	for (i=0; i<32; i++)
 	{
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-		cmdheader[i].ctba=0x9a400+(i<<8);
+		cmdheader[i].ctba=0x110000+(i<<8);
 		cmdheader[i].ctbau = 0;
 	}
 	enable(port);	// Start command engine

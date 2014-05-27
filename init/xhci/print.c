@@ -40,33 +40,47 @@ void anscii(int x,int y,char ch)
 }
 void say(char* p,...)
 {
-        register unsigned long long rdi asm("rdi");
         register unsigned long long rsi asm("rsi");
 	unsigned long long first=rsi;
-	unsigned long long x=0;
-	unsigned long long y=where();
+        char* journal=(char*)0x40000;
+        int x=0;
+        int y=*(int*)0x7fff8;
 
-	while(*p!='\0')
-	{
-		anscii(x+64,y,*p);
-		*(char*)(0x7800+y*64+x)=*p;
-		p++;
-		x++;
-	}
+        while(*p!='\0')
+        {
+                anscii(x,y,*p);
+                journal[y*64+x]=*p;
+                p++;
+                x++;
+        }
 
-	if(first!=0)
-	{
-	        int i=0;
-		char ch;
-		*(unsigned long long*)(0x7820+y*64)=first;
-	        for(i=15;i>=0;i--)
-	        {
-	        ch=(char)(first&0xf);
-	        first=first>>4;
-	        anscii(x+64+i,y,ch);
-	        }
-	}
+        if(first!=0)
+        {
+                int i=0;
+                char ch;
+                int signal=0;
 
-	if(y>=50) cleanwhere();
-	else incwhere();
+                for(i=0;i<16;i++) anscii(x+i,y,0x20);
+
+                for(i=0;i<16;i++)
+                {
+                        ch=( first >> (60-4*i) ) & 0xf;
+                        if(ch != 0) signal++;
+                        else if(signal) signal++;
+
+                        if(signal !=0)
+                        {
+                                ch+=0x30;
+                                if(ch>0x39) ch+=0x7;
+                                anscii(x+signal-1,y,ch);
+                                journal[y*64+x+signal-1]=ch;
+                        }
+                }
+        }
+
+        y=*(int*)0x7fff8;
+        y++;
+        if(y>=0xfff) *(int*)0x7fff8=0;
+        else *(int*)0x7fff8=y;
+
 }

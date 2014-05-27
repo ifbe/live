@@ -4,29 +4,37 @@
 ;you'd better not modify part1......except you know what you are doing......
 
 
-;[+0,+0x3ff]:
-%include "0-3ff/1024x768.s"		;put memory info in [2000,2fff]
-					;put vesa info in [3000,3fff]
-					;set screen mode with bios(real mode)
+;[+0,+1ff]:
+%include "0th/stillin16.s"	;put memory info in [2000,2fff]
+				;put vesa info in [3000,3fff]
 
-;[+400,+7ff]:
-%include "400-7ff/longmode.s"		;switch from 16bit to 64bit
-					;enable float point
-					;virtual mem=physical mem
+;[+200,3ff]
+%include "1th/1024x768.s"	;set screen mode with bios(real mode)
 
-;[+800,+bff]:
-%include "800-bff/old.s"	;or new	;put acpi info in [4000,4fff]
+;[+400,+5ff]:
+%include "2th/enter64.s"	;switch from 16bit to 64bit
+				;enable float point
 
-;[+c00,+fff]:
-%include "c00-fff/apic.s"		;init localapic to all off
-					;init ioapic to all off
+;[+600,+7ff]:
+%include "3th/prepare64.s"	;reload cr3,access to 16GB ram garanteed
+
+;[+800,+9ff]:
+%include "4th/acpi.s"		;put acpi info in [4000,4fff]
+
+;[+a00,+bff]:
+%include "5th/pciold.s"		;put pci info in [5000,5fff]
+
+;[+c00,+dff]:
+%include "6th/localapic.s"	;init localapic to all off
+
+;[+e00,+fff]:
+%include "7th/ioapic.s"		;init ioapic to all off
 
 ;[+1000,+1fff]:
-%include "1000-1fff/exception.s"	;set 32 default exception handler
-					;call read disk
+%include "8th/exception.s"	;set 32 default exception handler
 
 ;[+2000,+3fff]:
-%include "2000-3fff/anscii.s"		;anscii pixel table
+%include "9th/anscii.s"		;anscii pixel table
 
 ;)))))))))))))))))))) endof part1(16KB) ))))))))))))))))))))
 

@@ -16,3 +16,4 @@ clean:
 	make clean -s -C tetris
 	make clean -s -C win8
 	make clean -s -C xiangqi
+	make clean -s -C clock

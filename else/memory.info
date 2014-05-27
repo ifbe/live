@@ -1,19 +1,24 @@
-dq "[0,7ff]:free                                                   "
-dq "[800,fff]:keyboard buffer                                      "
+dq "[0,7ff]:    free                                               "
+
+dq "[800,fff]:  keyboard buffer                                    "
 dq "[1000,1fff]:idt                                                "
-dq "[2000,27ff]:memory info                                        "
-dq "[2800,2fff]:disk info                                          "
+dq "[2000,2fff]:memory info                                        "
 dq "[3000,3fff]:vesa info                                          "
+
 dq "[4000,4fff]:acpi info                                          "
 dq "[5000,5fff]:pci info                                           "
-dq "[6000,67ff]:anscii pixel                                       "
-dq "[6800,6fff]:scancode to anscii transform table                 "
-dq "[7000,7fff]:boot journal                                       "
+dq "[6000,6fff]:anscii pixel table                                 "
+dq "[7000,7fff]:scancode to anscii transform table                 "
 
-you will be load anywhere in [8000,3ffff]
+"init/init" will be load anywhere in [8000,3ffff]
+be careful when you are modifying [8000,3ffff]
 
-dq "[40000,7ffff]:cached file allocation table                     "
-dq "[80000,83fff]:current directory                                "
-dq "[84000,8ffff]:stack                                            "
-dq "[90000,97fff]:pml4,pdpt,pd,pt                                  "
+dq "[40000,7ffff]:boot journal                     "
+
+dq "[80000,85fff]:pml4,pdpt,pd,pt                                  "
+dq "[86000,9fff8]:stack                                            "
+
 dq "[98000,9ffff]:ahci physical region table                       "
+dq "[40000,7ffff]:cached file allocation table                     "
+dq "[2800,2fff]:disk info                                          "
+dq "[80000,83fff]:current directory                                "

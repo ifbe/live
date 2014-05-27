@@ -85,7 +85,7 @@ call endofjarvis+0x4000
 
 ;___________________________________________
 
-    mov qword [rel addr],0x7000          ;r14 memory pointer
+    mov qword [rel addr],0x40000          ;r14 memory pointer
     mov qword [rel offset],0x420         ;r15 offset pointer
 
     mov edi,0x800

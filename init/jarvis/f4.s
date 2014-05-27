@@ -225,7 +225,7 @@ jmp scroll
 
 ;________________________
 cd:
-cmp word [0x6f00],"cd"
+cmp word [0x7000],"cd"
 jne notfound
 mov rax,[rsi+3]
 
@@ -239,7 +239,7 @@ sub al,0x20
 loop .fuckanscii
 
 mov rdi,rax
-call [0x6f08]
+call [0x7008]
 jmp scroll
 ;______________________
 
@@ -248,7 +248,7 @@ jmp scroll
 
 ;________________________
 load:
-cmp dword [0x6f10],"load"
+cmp dword [0x7010],"load"
 jne notfound
 
 mov rdi,0x100000
@@ -267,7 +267,7 @@ sub al,0x20
 loop .fuckanscii
 
 mov rdi,rax
-call [0x6f18]
+call [0x7018]
 jmp scroll
 ;______________________
 
@@ -287,7 +287,7 @@ jmp scroll
 
 ;______________________________
 test:
-mov rax,0x100000
+mov rax,0x200000
 call rax
 jmp scroll
 ;______________________________

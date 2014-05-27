@@ -10,10 +10,9 @@ extern fat16_cd
 extern fat16_load
 extern fat32_cd
 extern fat32_load
+extern getdisk
 
 global start
-global finddisk
-global disk
 global where
 global incwhere
 global cleanwhere
@@ -34,8 +33,8 @@ global fat0
 
 start:
 
+mov qword [0x7fff8],0
 call initahci
-call finddisk
 call parttable
 call mount
 ret
@@ -47,86 +46,25 @@ ret
 
 
 
-finddisk:
-mov esi,0x2800
-.loop:
-cmp dword [esi],"sata"
-je .find
-add esi,0x10
-cmp esi,0x3000
-ja .return
-jmp .loop
-.find:
-mov rax,[esi+8]
-mov [rel realdisk],rax
-.return:
-lea edi,[rel saydisk]
-mov rsi,[rel realdisk]
-call say
-ret
-
-
-
-
-
-
-
-
-disk:
-mov rax,[rel realdisk]
-ret
-
-saydisk:db "disk:",0
-realdisk:dq 0
-
-
-
-
-
-
-
-
-incwhere:
-inc byte [rel realwhere]
-ret
-
-cleanwhere:
-mov qword [rel realwhere],0
-ret
-
-where:
-mov rax,[rel realwhere]
-ret
-
-realwhere:
-dq 0
-
-
-
-
-
-
-
-
 fat16:
 lea rdi,[rel saypartition]	;varieties
-mov esi,[0x8001c]
+mov esi,[0x12001c]
 mov [rel realpartition],rsi
 call say
 
 lea rdi,[rel sayfatsize]
-movzx rsi,word [0x80016]
+movzx rsi,word [0x120016]
 mov [rel realfatsize],rsi
 call say
 
 lea rdi,[rel sayfat0]
-movzx rsi,word [0x8000e]
+movzx rsi,word [0x12000e]
 add rsi,[rel realpartition]
 mov [rel realfat0],rsi
 call say
 
 lea rdi,[rel sayclustersize]
-movzx rsi,byte [0x8000d]
+movzx rsi,byte [0x12000d]
 mov [rel realclustersize],rsi
 call say
 
@@ -141,11 +79,12 @@ mov [rel realcluster0],rsi
 call say
 
 fat16root:
-mov rdi,0x80000			;[80000]=root
+call getdisk
+mov rdx,rax
+mov rdi,0x120000			;[120000]=root
 mov rsi,[rel realfat0]
 add rsi,[rel realfatsize]
 add rsi,[rel realfatsize]
-mov rdx,[rel realdisk]
 mov rcx,32
 call read
 
@@ -155,7 +94,7 @@ add rsi,[rel realfatsize]
 add rsi,[rel realfatsize]
 call say
 
-mov rdi,0x6f00			;[7000]=function address
+mov rdi,0x7000			;[7000]=function address
 mov rax,"cd"
 stosq
 lea rax,[rel fat16_cd]
@@ -175,23 +114,23 @@ ret
 
 fat32:
 lea rdi,[rel saypartition]
-mov esi,[0x8001c]
+mov esi,[0x12001c]
 mov [rel realpartition],rsi
 call say
 
 lea rdi,[rel sayfatsize]
-mov esi,[0x80024]
+mov esi,[0x120024]
 mov [rel realfatsize],rsi
 call say
 
 lea rdi,[rel sayfat0]
-movzx rsi,word [0x8000e]
+movzx rsi,word [0x12000e]
 add rsi,[rel realpartition]
 mov [rel realfat0],rsi
 call say
 
 lea rdi,[rel sayclustersize]
-movzx rsi,byte [0x8000d]
+movzx rsi,byte [0x12000d]
 mov [rel realclustersize],rsi
 call say
 
@@ -205,11 +144,12 @@ mov [rel realcluster0],rsi
 call say
 
 fat32root:
-mov rdi,0x80000
+call getdisk
+mov rdx,rax
+mov rdi,0x120000
 mov rsi,[rel realcluster0]
 add rsi,[rel realclustersize]
 add rsi,[rel realclustersize]
-mov rdx,[rel realdisk]
 mov rcx,32
 xor eax,eax
 call read
@@ -220,7 +160,7 @@ add rsi,[rel realclustersize]
 add rsi,[rel realclustersize]
 call say
 
-mov rdi,0x6f00			;[7000]=function address
+mov rdi,0x7000			;[7000]=function address
 mov rax,"cd"
 stosq
 lea rax,[rel fat32_cd]
