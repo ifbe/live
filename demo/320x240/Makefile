@@ -1,6 +1,6 @@
 c:
 	gcc -c start.c
 	gcc -c -O2 taiji.c
-	ld -T link.ld start.o taiji.o -o ../demo
+	ld -T link.ld start.o taiji.o -o out
 clean:
-	rm -f *.o
+	rm -f *.o out

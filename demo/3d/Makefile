@@ -1,6 +1,7 @@
 c:
 	gcc -c start.c
 	gcc -c -O2 3d.c
-	ld -T link.ld start.o 3d.o -o ../demo
+	nasm -f elf64 fuckgcc.s
+	ld -T link.ld start.o 3d.o fuckgcc.o -o 3d
 clean:
-	rm -f *.o
+	rm -f *.o 3d

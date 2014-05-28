@@ -31,10 +31,9 @@ QWORD searchmbr()
 	for(offset=0x1201be;offset<0x1201fe;offset+=0x10)    //find fat?
 	{
 		BYTE temp=*(BYTE*)(offset+4);
-		if( temp==0x4 | temp==0xb | temp==0xb)
+		if( temp==0x4 | temp==0x6 | temp==0xb)
 		{
 			offset=(QWORD)(*(DWORD*)(offset+8));
-			say("fat? sector:",offset);
 			return offset;
 		}
 
@@ -49,29 +48,29 @@ QWORD searchmbr()
 void maybetesting()
 {
 	read(0x200000,2048,getdisk(),2048); //pbr
-	say("get [2m,3m)",0);
+	say("maybe testing?",0);
 }
 
 void parttable()
 {
         read(0x120000,0,getdisk(),2);
         if( *(WORD*)0x1201fe !=0xAA55 ){say("bad disk",0);return;}
-        else say("good disk",0x55aa);
+        else say("good disk",0);
 
 	QWORD fatxx;
 	if(*(QWORD*)0x120200==0x5452415020494645){
 		read(0x120000,2,getdisk(),32);
 		fatxx=searchgpt();
-		say("gpt part",fatxx);
+		say("gpt disk",0);
 	}
 	else{
 		fatxx=searchmbr();
-		say("mbr disk",fatxx);
+		say("mbr disk",0);
 	}
 
 	if(fatxx!=0){
 		read(0x120000,fatxx,getdisk(),1); //pbr
-		say("get pbr",0);
+		say("partition sector:",fatxx);
 	}
 	else{
 		maybetesting();

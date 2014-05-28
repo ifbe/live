@@ -12,17 +12,6 @@ static inline unsigned char inb( unsigned short port )
     return ret;
 }
 
-char keyboard()
-{
-    char ret,temp;
-    do{
-        while((inb(0x64)&0x01)==0);         //阻塞
-        ret=inb(0x60);
-        temp=ret&0x80;
-    }while(temp!=0);
-    return ret;
-}
-
 double cosine(double x)
 {
 	int i;
@@ -155,14 +144,15 @@ void main()
 
 	while(1)
 	{
-	display();
-	in=keyboard();
-	if(in==0x48)d=d+0.01;
-	if(in==0x50)d=d-0.01;
-	if(in==0x4d)e=e-0.01;
-	if(in==0x4b)e=e+0.01;
-	if(in==0x33)f=f-0.01;
-	if(in==0x34)f=f+0.01;
+		display();
+		in=hltwait();
+		if(in==0x01) break;
+		else if(in==0x48)d=d+0.01;
+		else if(in==0x50)d=d-0.01;
+		else if(in==0x4d)e=e-0.01;
+		else if(in==0x4b)e=e+0.01;
+		else if(in==0x33)f=f-0.01;
+		else if(in==0x34)f=f+0.01;
 	}
 }
 

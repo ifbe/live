@@ -46,6 +46,12 @@ void say(char* p,...)
         int x=0;
         int y=*(int*)0x7fff8;
 
+        if(y>=0xffe | y<0){
+                y=0;
+                *(int*)0x7fff8=0;
+        }
+        else *(int*)0x7fff8=y+1;
+
         while(*p!='\0')
         {
                 anscii(x,y,*p);
@@ -77,10 +83,5 @@ void say(char* p,...)
                         }
                 }
         }
-
-        y=*(int*)0x7fff8;
-        y++;
-        if(y>=0xfff) *(int*)0x7fff8=0;
-        else *(int*)0x7fff8=y;
 
 }

@@ -1,7 +1,7 @@
-multitask:
+all:
 	gcc -c -O2 start.c
 	gcc -c -O2 c.c
 	nasm -f elf64 fuckgcc.s
-	ld -T link.ld start.o c.o fuckgcc.o -o ../demo
+	ld -T link.ld start.o c.o fuckgcc.o -o ooxx
 clean:
-	rm -f *.o temp*
+	rm -f *.o ooxx

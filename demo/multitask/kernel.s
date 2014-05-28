@@ -10,13 +10,13 @@ cli
 ;_________________________________________
 ;process 1
 lea edi,[rel pcb]
-mov dword [edi],0x110000	;rip
+mov dword [edi],0x210000	;rip
 mov byte [edi+8],0x08		;cs
 pushf
 pop rax
 or rax,0x200
 mov qword [edi+0x10],rax	;rflag
-mov dword [edi+0x18],0x120000	;rsp
+mov dword [edi+0x18],0x220000	;rsp
 mov byte [edi+0x20],0x10	;ss
 ;__________________________________
 
@@ -26,13 +26,13 @@ mov byte [edi+0x20],0x10	;ss
 ;_____________________________________
 ;process 2
 lea edi,[rel pcb+0x100]
-mov dword [edi],0x120000
+mov dword [edi],0x220000
 mov byte [edi+8],0x08
 pushf
 pop rax
 or rax,0x200
 mov qword [edi+0x10],rax
-mov dword [edi+0x18],0x130000
+mov dword [edi+0x18],0x230000
 mov byte [edi+0x20],0x10
 ;________________________________
 
@@ -63,3 +63,5 @@ times 0x20000-($-$$)db 0
 secondtask:
 incbin "temp2"
 times 0x30000-($-$$)db 0
+
+times 0x100000-($-$$)db 0

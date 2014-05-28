@@ -33,7 +33,12 @@ global fat0
 
 start:
 
-mov qword [0x7fff8],0
+mov edi,0x40000
+xor eax,eax
+mov ecx,0x10000
+cld
+rep stosd
+
 call initahci
 call parttable
 call mount

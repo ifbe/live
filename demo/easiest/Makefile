@@ -1,3 +1,4 @@
 easiest:
-	nasm easiest.s -o ../demo
+	nasm easiest.s -o easiest
 clean:
+	rm -f easiest

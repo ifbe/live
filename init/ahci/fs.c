@@ -11,10 +11,10 @@ void fat16_cd(QWORD name)
 	{
 		if( *(QWORD*)p==name )
 		{
-			if( *(BYTE*)(p+0xb)==0x10) break;
+			if( *(BYTE*)(p+0xb)&0x10) break;
 		}
 	}
-	if(p==0x120000){say("directory not found,bye!",0);return;}
+	if(p==0x120000){say("directory not found!",p);return;}
 
 	QWORD directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
 
@@ -64,10 +64,10 @@ void fat32_cd(QWORD name)
 	{
 	    if( *(QWORD*)p== name)
 	    {
-	        if( *(BYTE*)(p+0xb)==0x10) break;
+		if( *(BYTE*)(p+0xb)&0x10) break;
 	    }
 	}
-	if(p==0x120000){say("directory not found,bye!",0);return;}
+	if(p==0x120000){say("directory not found!",p);return;}
 
 	QWORD directory=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	directory+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit

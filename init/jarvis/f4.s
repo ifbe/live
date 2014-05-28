@@ -204,7 +204,7 @@ ls:
 call checkandchangeline
 lea edi,[rel line0]
 add edi,[rel linex128]
-mov esi,0x80000
+mov esi,0x120000
 
 mov ecx,8
 .many:
@@ -251,7 +251,7 @@ load:
 cmp dword [0x7010],"load"
 jne notfound
 
-mov rdi,0x100000
+mov rdi,0x200000
 xor rax,rax
 mov ecx,0x40000
 rep stosd

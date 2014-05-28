@@ -165,7 +165,7 @@ unsigned int findport(unsigned int addr)
 		if( (ipm != 0) && (det != 0) )
 		{return temp;}
 	}
-	say("failed to find port 1:",0);
+	say("failed to find port(try1)",0);
 
 	//something wrong,reset ports
 	int i;
@@ -198,7 +198,7 @@ unsigned int findport(unsigned int addr)
 		if( (ipm != 0) && (det != 0) )
 		{return temp;}
 	}
-	say("failed to find port 2:",0);
+	say("failed to find port(try2)",0);
 
 	return 0;
 }
@@ -233,8 +233,8 @@ void disable(HBA_PORT *port)
 	}
  
 	if(i==0){
-	say("error:can't disable:",(QWORD)(port->cmd));
-	return;
+		say("error:can't disable:",(QWORD)(port->cmd));
+		return;
 	}
 
 	//say("port->cmd after disable:",(QWORD)(port->cmd));

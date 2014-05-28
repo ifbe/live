@@ -1,6 +1,6 @@
-c:
-	nasm -f elf64 start.s -o temp.o
-	gcc -c jpeg.c -o temp1.o
-	ld -T link.ld temp.o temp1.o -o ../demo
+jpeg:
+	nasm -f elf64 start.s
+	gcc -c jpeg.c
+	ld -T link.ld start.o jpeg.o -o jpeg
 clean:
-	rm -f temp temp*
+	rm -f *.o jpeg

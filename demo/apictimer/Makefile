@@ -1,2 +1,2 @@
 all:
-	nasm apictimer.s -o ../demo
+	nasm apictimer.s -o apictimer
