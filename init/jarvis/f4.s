@@ -140,15 +140,11 @@ skipload:
 
 notfound:
 	call checkandchangeline
-	lea edi,[rel line0]
-	add edi,[rel linex128]
 	mov dword [edi],"notf"
 	mov dword [edi+4],"ound"
 
 scroll:
 	call checkandchangeline
-	lea edi,[rel line0]
-	add edi,[rel linex128]
 	mov dword [edi],"[   "
 	mov dword [edi+4],"/]$ "
 	mov dword [rel length],8
@@ -168,13 +164,19 @@ checkandchangeline:
 	jmp .return
 
 	.move:					;yes:move
+	push rsi
+	push rcx
 	lea esi,[rel line1]
 	lea edi,[rel line0]
 	mov ecx,128*0x30
 	cld
 	rep movsb
+	pop rcx
+	pop rsi
 
 	.return:
+	lea edi,[rel line0]
+	add edi,[rel linex128]
 	ret					;now line=a blank line
 ;____________________________________
 
@@ -201,21 +203,39 @@ jmp console
 ;_________________________
 ls:
 
-call checkandchangeline
-lea edi,[rel line0]
-add edi,[rel linex128]
+call checkandchangeline		;get new edi
 mov esi,0x120000
+xor ecx,ecx
+.notfinished:
 
-mov ecx,8
-.many:
-movsq
-mov byte [edi],'.'
-inc edi
-movsw
-movsb
-add esi,0x15
-add edi,0x3
-loop .many
+	.check:
+	cmp byte [esi+0xb],0xf
+	je .next
+
+	.firstname:
+	mov rax,[esi]
+	cmp rax,0
+	je .next
+	mov [edi],rax
+
+	.secondname:
+	mov eax,[esi+7]
+	mov al,'.'
+	cmp eax,0x2020202e
+	je .newposition
+	mov [edi+8],eax
+
+.newposition:
+add edi,0x10
+inc ecx
+	test ecx,0x7			;if 0,8,16,24,32 new position
+	jnz .next			;else don't change position
+	call checkandchangeline
+
+.next:
+add esi,0x20
+cmp esi,0x121000
+jb .notfinished
 
 jmp scroll
 ;_________________________

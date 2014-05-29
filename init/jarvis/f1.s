@@ -66,8 +66,6 @@ je turnoff
 jmp ramdump
 
 	escenter0:
-	cmp dword [rel f1temp+4],0
-	jne ramdump
 	mov rax,[rel f1temp]
 	mov rbx,rax
 	and rax,0xfffffffffffffc00
