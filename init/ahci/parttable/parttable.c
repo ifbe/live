@@ -45,12 +45,6 @@ QWORD searchmbr()
 	}
 }
 
-void maybetesting()
-{
-	read(0x200000,2048,getdisk(),2048); //pbr
-	say("maybe testing?",0);
-}
-
 void parttable()
 {
         read(0x120000,0,getdisk(),2);
@@ -72,45 +66,4 @@ void parttable()
 		read(0x120000,fatxx,getdisk(),1); //pbr
 		say("partition sector:",fatxx);
 	}
-	else{
-		maybetesting();
-	}
-
-}
-
-void mount()
-{
-	if( *(WORD*)0x12000b !=0x200) {
-		say("not 512B per sector,bye!",0);
-		maybetesting();
-		return;
-	}
-	if( *(BYTE*)0x120010 !=2) {
-		say("not 2 fat,bye!",0);
-		maybetesting();
-		return;
-	}
-
-	int similarity=50;
-
-	if( *(WORD*)0x120011 ==0) similarity++;		//fat32为0
-	else similarity--;
-	if( *(WORD*)0x120016 ==0) similarity++;		//fat32为0
-	else similarity--;
-
-	if(similarity==48)
-	{
-		say("fat16",0);
-		fat16();
-		return;
-	}
-	if(similarity==52)
-	{
-		say("fat32",0);
-		fat32();
-		return;
-	}
-	say("seem not fatxx,bye!",0);
-	return;
-
 }

@@ -97,6 +97,22 @@ je changeaddr
 skipaddr:
 
 mov esi,[rel currentarg]
+cmp dword [esi],"iden"		;if [esi]=="powe"
+jne skipidentify
+cmp dword [esi+4],"tify"	;if [esi+4]=="roff"
+jne skipidentify
+cmp byte [esi+8],' '		;if [esi+8]=0x20
+je identify
+skipidentify:
+
+mov esi,[rel currentarg]
+cmp dword [esi],"read"
+jne skipread
+cmp byte [esi+4],0x20
+je read
+skipread:
+
+mov esi,[rel currentarg]
 cmp dword [esi],"test"
 jne skiptest
 cmp byte [esi+4],0x20
@@ -200,6 +216,37 @@ jmp console
 
 
 
+;____________________________
+identify:
+cmp dword [0x7000],"iden"
+jne notfound
+cmp dword [0x7004],"tify"
+jne notfound
+
+call [0x7008]
+
+jmp scroll
+;________________________________
+
+
+
+
+;____________________________
+read:
+cmp dword [0x7010],"read"
+jne notfound
+
+add esi,5
+call fetchvalue
+mov esi,[rel fetched]
+call [0x7018]
+
+jmp scroll
+;________________________________
+
+
+
+
 ;_________________________
 ls:
 
@@ -213,6 +260,8 @@ xor ecx,ecx
 	je .next
 
 	.firstname:
+	cmp byte [esi],0xe5
+	je .next
 	mov rax,[esi]
 	cmp rax,0
 	je .next
@@ -245,7 +294,7 @@ jmp scroll
 
 ;________________________
 cd:
-cmp word [0x7000],"cd"
+cmp word [0x7020],"cd"
 jne notfound
 mov rax,[rsi+3]
 
@@ -259,7 +308,7 @@ sub al,0x20
 loop .fuckanscii
 
 mov rdi,rax
-call [0x7008]
+call [0x7028]
 jmp scroll
 ;______________________
 
@@ -268,7 +317,7 @@ jmp scroll
 
 ;________________________
 load:
-cmp dword [0x7010],"load"
+cmp dword [0x7030],"load"
 jne notfound
 
 mov rdi,0x200000
@@ -287,7 +336,7 @@ sub al,0x20
 loop .fuckanscii
 
 mov rdi,rax
-call [0x7018]
+call [0x7038]
 jmp scroll
 ;______________________
 

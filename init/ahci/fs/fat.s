@@ -1,9 +1,6 @@
 bits 64
 section .text
 
-extern initahci
-extern parttable
-extern mount
 extern say
 extern read
 extern fat16_cd
@@ -12,10 +9,6 @@ extern fat32_cd
 extern fat32_load
 extern getdisk
 
-global start
-global where
-global incwhere
-global cleanwhere
 global fat16
 global fat16root
 global fat32
@@ -23,26 +16,6 @@ global fat32root
 global clustersize
 global cluster0
 global fat0
-
-
-
-
-
-
-
-
-start:
-
-mov edi,0x40000
-xor eax,eax
-mov ecx,0x10000
-cld
-rep stosd
-
-call initahci
-call parttable
-call mount
-ret
 
 
 
@@ -99,7 +72,7 @@ add rsi,[rel realfatsize]
 add rsi,[rel realfatsize]
 call say
 
-mov rdi,0x7000			;[7000]=function address
+mov rdi,0x7020			;[7000]=function address
 mov rax,"cd"
 stosq
 lea rax,[rel fat16_cd]
@@ -165,7 +138,7 @@ add rsi,[rel realclustersize]
 add rsi,[rel realclustersize]
 call say
 
-mov rdi,0x7000			;[7000]=function address
+mov rdi,0x7020			;[7000]=function address
 mov rax,"cd"
 stosq
 lea rax,[rel fat32_cd]
