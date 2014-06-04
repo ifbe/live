@@ -11,7 +11,7 @@ void init()
     for(i=0;i<1024*768;i++)    //1024*768
     {
         video=(u64*)base;
-        *video=0xffff00;
+        *video=0;
         base+=bpp;
     }
 }
@@ -50,46 +50,6 @@ double sine(double x)
         m++;
     }while (temp<-.0000005||temp>0.0000005);
 return ret;
-}
-
-
-static inline void outw( unsigned short port, unsigned short val )
-{
-    asm volatile( "outw %0, %1"
-                  : : "a"(val), "Nd"(port) );
-}
-
-
-static inline unsigned char inb( unsigned short port )
-{
-    unsigned char ret;
-    asm volatile( "inb %1, %0"
-                  : "=a"(ret) : "Nd"(port) );
-    return ret;
-}
-
-
-void turnoff()
-{
-    short* p;
-    short port,val;
-    p=(short*)0x4fc;
-    port=*p;
-    p=(short*)0x4fe;
-    val=(*p)|0x2000;
-    outw(port,val);
-}
-
-
-char keyboard()
-{
-    char ret,temp;
-    do{
-        while((inb(0x64)&0x01)==0);         //阻塞
-        ret=inb(0x60);
-        temp=ret&0x80;
-    }while(temp!=0);
-    return ret;
 }
 
 
@@ -150,8 +110,8 @@ void print(int x,int y,char ch)
             temp=*p;
             temp=temp<<j;
             temp&=0x80;
-            if(temp!=0){point(j+x,i+y,0);}
-            else{point(j+x,i+y,0x00ffff00);}
+            if(temp!=0){point(j+x,i+y,0xffffffff);}
+            else{point(j+x,i+y,0);}
         }
     rsi++;
     }
@@ -191,36 +151,6 @@ void string(int x,int y,char* p)
     print(x,y,*p);
     p++;
     x++;
-    }
-}
-
-
-void draw(int x,int y,int z)
-{
-    point(x+512,384-y,z);
-}
-
-
-void geometry(char* anscii)
-{
-    int i;
-    double x;
-    for(i=-500;i<500;i++){draw(i,0,0);}    //横坐标
-    for(i=-300;i<300;i++){draw(0,i,0);}    //纵坐标
-                             //下面描点
-    if(*anscii=='s')
-    {
-        for(x=-5.00;x<5.00;x+=0.01)
-        {
-            draw(100*x,100*sine(x),0);
-        }
-    }
-    if(*anscii=='c')
-    {
-        for(x=-5.00;x<5.00;x+=0.01)
-        {
-            draw(100*x,100*cosine(x),0);
-        }
     }
 }
 
@@ -375,25 +305,15 @@ double calculator(char* infix)
 void analyse(char* anscii)
 {
     int i=0;
-    int sign=0;
 
     while(*(anscii+i)!='\0')
     {
-        if(*(anscii+i)>='a'&&*(anscii+i)<='z'){sign=1;break;} //有字母就不记算
         i++;
     }
-    if(sign==0)
-    {
-        init();
-        string(0,0,anscii);
-        printdouble(50,20,calculator(anscii));
-    }
-    else
-    {
-        init();
-        string(0,0,anscii);
-        geometry(anscii);
-    }
+
+    init();
+    string(0,0,anscii);
+    printdouble(50,20,calculator(anscii));
 }
 
 
@@ -411,10 +331,10 @@ void main()
 
     while(1)
     {
-        buffer[i]=keyboard();
+        buffer[i]=hltwait();
         switch(buffer[i])
         {
-            case 0x01:goto turnoff;
+            case 0x01:break;
             case 0x0e:{
                 print(i-1,0,0x20);
                 anscii[i]=0x20;
@@ -434,6 +354,4 @@ void main()
             }
         }
     }
-turnoff:
-    turnoff();
 }

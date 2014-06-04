@@ -251,7 +251,7 @@ jmp scroll
 ls:
 
 call checkandchangeline		;get new edi
-mov esi,0x120000
+mov esi,0x180000
 xor ecx,ecx
 .notfinished:
 
@@ -283,7 +283,7 @@ inc ecx
 
 .next:
 add esi,0x20
-cmp esi,0x121000
+cmp esi,0x181000
 jb .notfinished
 
 jmp scroll

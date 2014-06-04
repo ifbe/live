@@ -56,7 +56,7 @@ call getdisk
 mov rdx,rax
 mov rdi,0x200000
 pop rsi
-mov rcx,2048
+mov rcx,0x400			;512K
 call read
 
 cmp eax,0

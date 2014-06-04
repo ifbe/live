@@ -7,5 +7,4 @@ void start()
 	initahci();
 	initsata();
 	parttable();
-	mount();
 }
