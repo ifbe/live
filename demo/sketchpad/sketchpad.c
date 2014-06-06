@@ -171,8 +171,8 @@ void analyse(char* anscii)
 
 void main()
 {
-    char buffer[128];
-    char anscii[128];
+    unsigned char buffer[128];
+    unsigned char anscii[128];
     int i;
     anscii[127]='\0';        //字符串结尾
     for(i=0;i<127;i++){anscii[i]=0x20;}
@@ -184,9 +184,11 @@ void main()
     while(1)
     {
         buffer[i]=hltwait();
+	if(buffer[i]>=0x80) continue;
+
         switch(buffer[i])
         {
-            case 0x01:break;
+            case 0x01:return;
             case 0x0e:{
                 print(i-1,0,0x20);
                 anscii[i]=0x20;

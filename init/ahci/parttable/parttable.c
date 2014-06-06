@@ -14,7 +14,17 @@ QWORD gpt()
 				offset=*(QWORD*)(offset+0x20);
 				int result=mountfat(offset);
 				if( result >=0 ) return offset;
-				else say("fat result:",result);
+				else say("esp:",result);
+			}
+		}
+		else if( *(QWORD*)offset==0x4433b9e5ebd0a0a2 ){
+			if( *(QWORD*)(offset+8)==0xc79926b7b668c087 ){
+				say("ntfs",0);
+			}
+		}
+		else if( *(QWORD*)offset==0x477284830fc63daf ){
+			if( *(QWORD*)(offset+8)==0xe47d47d8693d798e ){
+				say("ext",0);
 			}
 		}
 	}
@@ -43,6 +53,10 @@ QWORD mbr()
 		if( temp==0x7 )
 		{
 			say("ntfs partition",0);
+		}
+		if( temp==0x83 )
+		{
+			say("ext partition",0);
 		}
 	}
 	if(offset==0x1201fe)

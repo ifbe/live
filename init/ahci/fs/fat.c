@@ -24,6 +24,34 @@ void fatcache()	//put cache in [0x180000]
 }
 
 
+void fat16_root()
+{
+	say("cd root:",fat0+fatsize*2);
+	read(0x180000,fat0+fatsize*2,getdisk(),32);
+}
+
+
+void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
+{
+	say("first cluster:",source);
+
+	QWORD rdi=dest;
+	while(rdi<dest+0x80000)
+	{
+		read(rdi,cluster0+clustersize*source,getdisk(),clustersize);
+		rdi+=clustersize*0x200;
+
+		source=(QWORD)(*(WORD*)(0x140000+2*source));
+
+		if(source<2){say("impossible cluster,bye!",source);return;}
+		if(source==0xfff7){say("bad cluster,bye!",source);return;}
+		if(source>=0xfff8) break;
+	}
+
+	say("total bytes:",rdi-dest);
+}
+
+
 void fat16_cd(QWORD name)
 {
 	QWORD p=0x200000;
@@ -38,14 +66,10 @@ void fat16_cd(QWORD name)
 
 	QWORD directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
 
-	if(directory==0){			//root
-		read(0x180000,fat0+fatsize*2,getdisk(),32);
-		say("cd root:",fat0+fatsize*2);
-		return;
-	}
-	read(0x180000,cluster0+directory*clustersize,getdisk(),clustersize);
-	say("cd cluster:",directory);
+	if(directory==0) fat16_root();
+	else fat16_data(0x180000,directory);
 }
+
 
 void fat16_load(QWORD name)
 {
@@ -54,42 +78,56 @@ void fat16_load(QWORD name)
 	if(p==0x180000){say("file not found,bye!",0);return;}
 
 	QWORD file=(QWORD)(*(WORD*)(p+0x1a));	//fat16,only 16bit
-	say("first cluster of file:",file);
-
-	p=0x200000;
-	while(p<0x400000)
-	{
-		read(p,cluster0+clustersize*file,getdisk(),clustersize);
-		//say("read:",cluster0+clustersize*file);
-		p+=clustersize*0x200;
-
-		file=(QWORD)(*(WORD*)(0x140000+2*file));
-
-		if(file<2){say("impossible cluster,bye!",file);return;}
-		if(file==0xfff7){say("bad cluster,bye!",file);return;}
-		if(file>=0xfff8){say("last cluster:",file);break;}
-	}
-	say("total bytes:",p-0x200000);
+	fat16_data(0x200000,file);
 }
 
 
-fat16()
+void fat16()
 {
-	QWORD sector=(QWORD)( *(DWORD*)0x13001c );
-	say("fat sector:",sector);
+	QWORD fatsector=(QWORD)( *(DWORD*)0x13001c );
+	say("fatsector:",fatsector);
 	fatsize=(QWORD)( *(WORD*)0x130016 );
 	say("fatsize:",fatsize);
-	fat0=sector + (QWORD)( *(WORD*)0x13000e );
+	fat0=fatsector + (QWORD)( *(WORD*)0x13000e );
 	say("fat0:",fat0);
 	clustersize=(QWORD)( *(BYTE*)0x13000d );
 	say("clustersize:",clustersize);
 	cluster0=fat0+fatsize*2+32-clustersize*2;
 	say("cluster0:",cluster0);
-	read(0x180000,fat0+fatsize*2,getdisk(),32);
-	say("cd root:",fat0+fatsize*2);
 
 	fatcache();
+	fat16_root();
 	finishfat16();
+}
+
+
+void fat32_root()
+{
+	read(0x180000,cluster0+clustersize*2,getdisk(),32);
+	say("cd root:",cluster0+clustersize*2);
+}
+
+
+void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
+{
+	say("first cluster:",source);
+
+	QWORD rdi=dest;
+	while(rdi<dest+0x80000)
+	{
+		read(rdi,cluster0+clustersize*source,getdisk(),clustersize);
+		rdi+=clustersize*0x200;
+
+		cacheblock=source/0x10000;
+		fatcache();
+
+		source=(QWORD)(*(DWORD*)(0x140000+4*(source%0x10000)));
+
+		if(source<2){say("impossible cluster,bye!",source);return;}
+		if(source==0x0ffffff7){say("bad cluster,bye!",source);return;}
+		if(source>=0x0ffffff8) break;
+	}
+	say("total bytes:",rdi-dest);
 }
 
 
@@ -108,14 +146,10 @@ void fat32_cd(QWORD name)
 	QWORD directory=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	directory+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
 
-	if(directory==0){
-		read(0x180000,cluster0+clustersize*2,getdisk(),32);
-		say("cd root:",cluster0+clustersize*2);
-		return;
-	}
-	read(0x180000,cluster0+directory*clustersize,getdisk(),clustersize);
-	say("cd cluster:",directory);
+	if(directory==0) fat32_root();
+	else fat32_data(0x180000,directory);
 }
+
 
 void fat32_load(QWORD name)
 {
@@ -128,43 +162,29 @@ void fat32_load(QWORD name)
 
 	QWORD file=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	file+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
-	say("first cluster of file:",file);
 
-	p=0x200000;
-	while(p<0x400000)
-	{
-		read(p,cluster0+clustersize*file,getdisk(),clustersize);//1簇
-		p+=clustersize*0x200;
-		//say("read:",cluster0+clustersize*file);
-
-		cacheblock=file/0x10000;
-		fatcache();
-
-		file=(QWORD)(*(DWORD*)(0x140000+4*(file%0x10000)));
-
-		if(file<2){say("impossible cluster,bye!",file);return;}
-		if(file==0x0ffffff7){say("bad cluster,bye!",file);return;}
-		if(file>=0x0ffffff8){say("last cluster:",file);break;}
-	}
-	say("total bytes:",p-0x200000);
+	fat32_data(0x200000,file);
 }
 
 
-fat32()
+void fat32()
 {
-	QWORD sector=(QWORD)( *(DWORD*)0x13001c );
-	say("fat sector:",sector);
+	QWORD fatsector=(QWORD)( *(DWORD*)0x13001c );
+	say("fatsector:",fatsector);
 	fatsize=(QWORD)( *(DWORD*)0x130024 );
 	say("fatsize:",fatsize);
-	fat0=sector + (QWORD)( *(WORD*)0x13000e );
+	fat0=fatsector + (QWORD)( *(WORD*)0x13000e );
 	say("fat0:",fat0);
 	clustersize=(QWORD)( *(BYTE*)0x13000d );
 	say("clustersize:",clustersize);
 	cluster0=fat0+fatsize*2-clustersize*2;
 	say("cluster0:",cluster0);
-	read(0x180000,cluster0+clustersize*2,getdisk(),32);
-	say("cd root:",cluster0+clustersize*2);
 
 	fatcache();
+
+	//read(0x180000,cluster0+clustersize*2,getdisk(),32);
+	//say("cd root:",cluster0+clustersize*2);
+	fat32_cd(0x202020202020202f);
+
 	finishfat32();
 }
