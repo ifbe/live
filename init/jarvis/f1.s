@@ -302,10 +302,10 @@ mov [rel pcimust32],eax
   .dump:
   mov al,[rel pcimust32]
   shr al,4
-  call char
+  call onlyhex
   mov al,[rel pcimust32]
   and al,0xf
-  call char
+  call onlyhex
   shr dword [rel pcimust32],8
   dec ch
   cmp ch,0

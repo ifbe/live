@@ -106,7 +106,8 @@ ret
 
 
 ;______________________________
-char:
+onlyhex:
+character:
     push rbx
     push rcx
 
@@ -168,6 +169,24 @@ frontcolor:dd 0xffffffff
 
 
 
+;__________________________________
+char:
+	cmp al,0x80
+	jae .blank
+	cmp al,0x20
+	jb .blank
+	call character
+	ret
+
+	.blank:
+	mov al,0x20
+	call character
+	ret
+;____________________________________
+
+
+
+
 ;_______________________________
 message:
 mov ecx,16
@@ -215,7 +234,7 @@ mov byte [rel firstnonzero],0
 	.print:
         push rbx
         push rcx
-        call char
+        call onlyhex
         pop rcx
         pop rbx
 	loop .getaddress

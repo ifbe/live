@@ -33,6 +33,12 @@ all:
 	cp xiangqi/xiangqi demo/
 	make -s -C clock
 	cp clock/clock demo/
+	make -s -C math
+	cp math/math demo/
+	make -s -C btree
+	cp btree/btree demo/
+	make -s -C sketchpad
+	cp sketchpad/sketchpad demo/
 clean:
 	rm -rf demo
 	make clean -s -C easiest
@@ -52,3 +58,6 @@ clean:
 	make clean -s -C win8
 	make clean -s -C xiangqi
 	make clean -s -C clock
+	make clean -s -C math
+	make clean -s -C sketchpad
+	make clean -s -C btree

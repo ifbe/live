@@ -24,10 +24,37 @@ void fatcache()	//put cache in [0x180000]
 }
 
 
+void explain()
+{
+	BYTE* rsi=(BYTE*)0x180000;
+	BYTE* rdi=(BYTE*)0x1c0000;
+	int i;
+
+	for(i=0;i<0x4000;i++) rdi[i]=0;
+
+	while(rsi<(BYTE*)0x1c0000)
+	{
+		if( rsi[0xb] !=0xf ){		//fat ignore
+		if( rsi[0] !=0xe5 ){		//not deleted
+		if( *(QWORD*)rsi !=0 ){		//have name
+			*(QWORD*)rdi=*(QWORD*)rsi;
+			QWORD temp=((QWORD)(*(WORD*)(rsi+0x14)))<<16; //high
+			temp+=(QWORD)(*(WORD*)(rsi+0x1a));  //low
+			*(QWORD*)(rdi+10)=temp;
+			rdi+=0x20;
+		}
+		}
+		}
+		rsi+=0x20;
+	}
+}
+
+
 void fat16_root()
 {
 	say("cd root:",fat0+fatsize*2);
 	read(0x180000,fat0+fatsize*2,getdisk(),32);
+	explain();
 }
 
 
@@ -54,7 +81,7 @@ void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 
 void fat16_cd(QWORD name)
 {
-	QWORD p=0x200000;
+	QWORD p=0x1c0000;
 	for(;p>0x180000;p-=0x20)
 	{
 		if( *(QWORD*)p==name )
@@ -68,12 +95,14 @@ void fat16_cd(QWORD name)
 
 	if(directory==0) fat16_root();
 	else fat16_data(0x180000,directory);
+
+	explain();
 }
 
 
 void fat16_load(QWORD name)
 {
-	QWORD p=0x200000;
+	QWORD p=0x1c0000;
 	for(;p>0x180000;p-=0x20){ if( *(QWORD*)p==name ) break;	}
 	if(p==0x180000){say("file not found,bye!",0);return;}
 
@@ -105,6 +134,7 @@ void fat32_root()
 {
 	read(0x180000,cluster0+clustersize*2,getdisk(),32);
 	say("cd root:",cluster0+clustersize*2);
+	explain();
 }
 
 
@@ -148,6 +178,8 @@ void fat32_cd(QWORD name)
 
 	if(directory==0) fat32_root();
 	else fat32_data(0x180000,directory);
+
+	explain();
 }
 
 
@@ -188,3 +220,56 @@ void fat32()
 
 	finishfat32();
 }
+
+
+int mountfat(QWORD sector)
+{
+        read(0x130000,sector,getdisk(),1); //pbr
+
+        if( *(WORD*)0x13000b !=0x200) {
+                say("not 512B per sector,bye!",0);
+                return -1;
+        }
+        if( *(BYTE*)0x130010 !=2) {
+                say("not 2 fat,bye!",0);
+                return -2;
+        }
+
+        int similarity=50;
+
+        if( *(WORD*)0x130011 ==0) similarity++;         //fat32为0
+        else similarity--;
+        if( *(WORD*)0x130016 ==0) similarity++;         //fat32为0
+        else similarity--;
+
+        if(similarity==48)
+        {
+                say("fat16",0);
+                fat16();
+        }
+        else if(similarity==52)
+        {
+                say("fat32",0);
+                fat32();
+        }
+        else
+        {
+                say("seem not fatxx,bye!",0);
+                return -3;
+        }
+
+        unsigned int* pointer=(unsigned int*)0x180000;
+        int i=0;
+        for(i=0;i<0x1000;i+=4)
+        {
+                if( pointer[i] == 0x4556494c )
+                {
+                        say("find our directory!!!!",0);
+                        return 1;
+                }
+        }
+
+        say("not in this partition",0);
+        return -4;
+}
+

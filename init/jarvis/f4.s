@@ -251,42 +251,22 @@ jmp scroll
 ls:
 
 call checkandchangeline		;get new edi
-mov esi,0x180000
+mov esi,0x1c0000
 xor ecx,ecx
-.notfinished:
-
-	.check:
-	cmp byte [esi+0xb],0xf
-	je .next
-
-	.firstname:
-	cmp byte [esi],0xe5
-	je .next
-	mov rax,[esi]
-	cmp rax,0
-	je .next
-	mov [edi],rax
-
-	.secondname:
-	mov eax,[esi+7]
-	mov al,'.'
-	cmp eax,0x2020202e
-	je .newposition
-	mov [edi+8],eax
-
-.newposition:
-add edi,0x10
+.continue:
+cmp dword [esi],0
+je scroll
+movsq
+add esi,0x18
+add edi,0x8
 inc ecx
-	test ecx,0x7			;if 0,8,16,24,32 new position
-	jnz .next			;else don't change position
-	call checkandchangeline
 
-.next:
-add esi,0x20
-cmp esi,0x181000
-jb .notfinished
-
-jmp scroll
+cmp ecx,0x200
+jae scroll
+test ecx,0x7
+jnz .continue
+call checkandchangeline
+jmp .continue
 ;_________________________
 
 

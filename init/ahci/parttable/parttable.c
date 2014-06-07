@@ -53,6 +53,10 @@ QWORD mbr()
 		if( temp==0x7 )
 		{
 			say("ntfs partition",0);
+			offset=(QWORD)(*(DWORD*)(offset+8));
+			int result=mountntfs(offset);
+			if( result >=0 ) return offset;
+			else say("ntfs result:",result);
 		}
 		if( temp==0x83 )
 		{
