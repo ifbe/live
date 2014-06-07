@@ -24,6 +24,23 @@ void fatcache()	//put cache in [0x180000]
 }
 
 
+QWORD small2capital(QWORD name)
+{
+	QWORD temp;
+	int i;
+	for(i=0;i<8;i++)
+	{
+		temp=( name>>(i*8) )&0xff;
+		if(temp>='a' && temp<='z')
+		{
+			name-= ( (QWORD)0x20 )<<(i*8);
+		}
+	}
+
+	return name;
+}
+
+
 void explain()
 {
 	BYTE* rsi=(BYTE*)0x180000;
@@ -81,6 +98,7 @@ void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 
 void fat16_cd(QWORD name)
 {
+	name=small2capital(name);
 	QWORD p=0x1c0000;
 	for(;p>0x180000;p-=0x20)
 	{
@@ -102,6 +120,7 @@ void fat16_cd(QWORD name)
 
 void fat16_load(QWORD name)
 {
+	name=small2capital(name);
 	QWORD p=0x1c0000;
 	for(;p>0x180000;p-=0x20){ if( *(QWORD*)p==name ) break;	}
 	if(p==0x180000){say("file not found,bye!",0);return;}
@@ -163,6 +182,7 @@ void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 
 void fat32_cd(QWORD name)
 {
+	name=small2capital(name);
 	QWORD p=0x180000+clustersize*0x200;
 	for(;p>0x180000;p-=0x20)
 	{
@@ -185,6 +205,7 @@ void fat32_cd(QWORD name)
 
 void fat32_load(QWORD name)
 {
+	name=small2capital(name);
 	QWORD p=0x180000+clustersize*0x200;
 	for(;p>0x180000;p-=0x20)
 	{

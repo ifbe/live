@@ -159,15 +159,26 @@ void ntfs_cd(QWORD name)
 {
 	QWORD* addr=(QWORD*)0x1c0000;
 	int i;
+	for(i=0;i<8;i++)
+	{
+		if( ( (name>>(i*8) )&0xff) == 0x20)
+		{
+			name-= (QWORD)0x20<<(i*8);
+		}
+	}
+
 	for(i=0;i<0x100;i+=4)
 	if(addr[i] ==name )
 	{
 		say("live:",addr[i+2]);
-		break;
+		explainmft(0x140000+0x400*addr[i+2]);
+		return;
 	}
-	if(i==0x100) return;
-
-	explainmft(0x140000+0x400*addr[i+2]);
+	if(i==0x100)
+	{
+		say("directory not found",0);
+		return;
+	}
 }
 
 
@@ -190,7 +201,8 @@ void ntfs(QWORD sector)
 
 	mftcache();
 	explainmft(0x141400);
-	ntfs_cd(0x6576696c);
+
+	finishntfs();
 }
 
 

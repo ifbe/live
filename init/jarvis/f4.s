@@ -276,18 +276,8 @@ jmp .continue
 cd:
 cmp word [0x7020],"cd"
 jne notfound
-mov rax,[rsi+3]
 
-mov ecx,8
-.fuckanscii:
-rol rax,8
-cmp al,0x60
-jb .next
-sub al,0x20
-.next:
-loop .fuckanscii
-
-mov rdi,rax
+mov rdi,[rsi+3]
 call [0x7028]
 jmp scroll
 ;______________________
@@ -305,17 +295,7 @@ xor rax,rax
 mov ecx,0x40000
 rep stosd
 
-mov rax,[rsi+5]
-mov ecx,8
-.fuckanscii:
-rol rax,8
-cmp al,0x60
-jb .next
-sub al,0x20
-.next:
-loop .fuckanscii
-
-mov rdi,rax
+mov rdi,[rsi+5]
 call [0x7038]
 jmp scroll
 ;______________________
