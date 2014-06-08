@@ -10,7 +10,7 @@ static QWORD cluster0;
 static QWORD cachecurrent=0xffffffff;
 static QWORD cacheblock=0;
 
-void fatcache()	//put cache in [0x180000]
+void fatcache()	//put cache in [0x140000]
 {
 	if(cachecurrent!=cacheblock)
 	{
@@ -21,23 +21,6 @@ void fatcache()	//put cache in [0x180000]
 		say("[cache]reload:",fat0+cacheblock*0x200);
 		cachecurrent=cacheblock;
 	}
-}
-
-
-QWORD small2capital(QWORD name)
-{
-	QWORD temp;
-	int i;
-	for(i=0;i<8;i++)
-	{
-		temp=( name>>(i*8) )&0xff;
-		if(temp>='a' && temp<='z')
-		{
-			name-= ( (QWORD)0x20 )<<(i*8);
-		}
-	}
-
-	return name;
 }
 
 
@@ -55,9 +38,11 @@ void explain()
 		if( rsi[0] !=0xe5 ){		//not deleted
 		if( *(QWORD*)rsi !=0 ){		//have name
 			*(QWORD*)rdi=*(QWORD*)rsi;
+
 			QWORD temp=((QWORD)(*(WORD*)(rsi+0x14)))<<16; //high
 			temp+=(QWORD)(*(WORD*)(rsi+0x1a));  //low
 			*(QWORD*)(rdi+10)=temp;
+
 			rdi+=0x20;
 		}
 		}
@@ -69,6 +54,9 @@ void explain()
 
 void fat16_root()
 {
+	BYTE* memory=(BYTE*)0x180000;
+	int i;
+	for(i=0;i<0x80000;i++) memory[i]=0;
 	say("cd root:",fat0+fatsize*2);
 	read(0x180000,fat0+fatsize*2,getdisk(),32);
 	explain();
@@ -98,32 +86,40 @@ void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 
 void fat16_cd(QWORD name)
 {
-	name=small2capital(name);
-	QWORD p=0x1c0000;
-	for(;p>0x180000;p-=0x20)
+	small2capital(&name);
+	QWORD p=0x180000;
+	for(;p<0x180800;p+=0x20)
 	{
-		if( *(QWORD*)p==name )
+		if( *(QWORD*)p == name )
 		{
 			if( *(BYTE*)(p+0xb)&0x10) break;
 		}
 	}
-	if(p==0x180000){say("directory not found!",p);return;}
+	if(p==0x180800){say("directory not found",0);return;}
 
 	QWORD directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
 
-	if(directory==0) fat16_root();
-	else fat16_data(0x180000,directory);
+	if(directory==0)
+	{
+		fat16_root();
+		return;
+	}
 
+	BYTE* memory=(BYTE*)0x180000;
+	int i;
+	for(i=0;i<0x80000;i++) memory[i]=0;
+
+	fat16_data(0x180000,directory);
 	explain();
 }
 
 
 void fat16_load(QWORD name)
 {
-	name=small2capital(name);
-	QWORD p=0x1c0000;
-	for(;p>0x180000;p-=0x20){ if( *(QWORD*)p==name ) break;	}
-	if(p==0x180000){say("file not found,bye!",0);return;}
+	small2capital(&name);
+	QWORD p=0x180000;
+	for(;p<0x1c0000;p+=0x20){ if( *(QWORD*)p==name ) break;	}
+	if(p==0x1c0000){say("file not found,bye!",0);return;}
 
 	QWORD file=(QWORD)(*(WORD*)(p+0x1a));	//fat16,only 16bit
 	fat16_data(0x200000,file);
@@ -151,8 +147,12 @@ void fat16()
 
 void fat32_root()
 {
-	read(0x180000,cluster0+clustersize*2,getdisk(),32);
+	BYTE* memory=(BYTE*)0x180000;
+	int i;
+	for(i=0;i<0x80000;i++) memory[i]=0;
+
 	say("cd root:",cluster0+clustersize*2);
+	read(0x180000,cluster0+clustersize*2,getdisk(),32);
 	explain();
 }
 
@@ -182,7 +182,7 @@ void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 
 void fat32_cd(QWORD name)
 {
-	name=small2capital(name);
+	small2capital(&name);
 	QWORD p=0x180000+clustersize*0x200;
 	for(;p>0x180000;p-=0x20)
 	{
@@ -196,16 +196,24 @@ void fat32_cd(QWORD name)
 	QWORD directory=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	directory+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
 
-	if(directory==0) fat32_root();
-	else fat32_data(0x180000,directory);
+	if(directory==0)
+	{
+		fat32_root();
+		return;
+	}
 
+	BYTE* memory=(BYTE*)0x180000;
+	int i;
+	for(i=0;i<0x80000;i++) memory[i]=0;
+
+	fat32_data(0x180000,directory);
 	explain();
 }
 
 
 void fat32_load(QWORD name)
 {
-	name=small2capital(name);
+	small2capital(&name);
 	QWORD p=0x180000+clustersize*0x200;
 	for(;p>0x180000;p-=0x20)
 	{
@@ -263,6 +271,9 @@ int mountfat(QWORD sector)
         if( *(WORD*)0x130016 ==0) similarity++;         //fat32为0
         else similarity--;
 
+	cachecurrent=0xffffffff;
+	cacheblock=0;
+
         if(similarity==48)
         {
                 say("fat16",0);
@@ -279,8 +290,8 @@ int mountfat(QWORD sector)
                 return -3;
         }
 
-        unsigned int* pointer=(unsigned int*)0x180000;
-        int i=0;
+        DWORD* pointer=(DWORD*)0x180000;
+        int i;
         for(i=0;i<0x1000;i+=4)
         {
                 if( pointer[i] == 0x4556494c )

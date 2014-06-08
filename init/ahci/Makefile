@@ -7,6 +7,7 @@ c:
 	nasm -f elf64 sata/sata.s -o sata.o
 	#partition table
 	gcc -c -fPIC -O2 parttable/parttable.c -o parttable.o
+	nasm -f elf64 parttable/mount.s -o mount.o
 	#filesystem
 	gcc -c -fPIC -O2 fs/fat.c -o fat.o
 	nasm -f elf64 fs/fat.s -o fatvars.o
@@ -15,7 +16,14 @@ c:
 	#link all
 	gcc -c -fPIC -O2 else/start.c -o start.o
 	gcc -c -fPIC -O2 else/print.c -o print.o
-	ld -T else/link.ld start.o print.o ahci.o identify.o read.o sata.o parttable.o fat.o fatvars.o ntfs.o ntfsvars.o -o temp.bin
+	gcc -c -fPIC -O2 else/else.c -o else.o
+	ld -T else/link.ld \
+	start.o print.o else.o \
+	ahci.o \
+	identify.o read.o sata.o \
+	parttable.o mount.o \
+	fat.o fatvars.o ntfs.o ntfsvars.o \
+	-o temp.bin
 	nasm else/16kb.s -o temp
 clean:
 	rm -f *.o

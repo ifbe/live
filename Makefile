@@ -3,7 +3,11 @@ image:
 	make -s -C load
 	make -s -C init
 	nasm else/link.s -o live
-vhd:
+clean:
+	make clean -s -C load
+	make clean -s -C init
+	rm -f live
+fat:
 	sudo modprobe nbd max_part=4
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/fat.vhd
 	sudo partprobe /dev/nbd0
@@ -12,11 +16,24 @@ vhd:
 	sudo umount /dev/nbd0p1
 	sudo qemu-nbd -d /dev/nbd0
 	sudo rmmod nbd
-
-clean:
-	make clean -s -C load
-	make clean -s -C init
-	rm -f live
+ntfs:
+	sudo modprobe nbd max_part=4
+	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/fat.vhd
+	sudo partprobe /dev/nbd0
+	sudo mount -o rw /dev/nbd0p1 /mnt/nbd
+	sudo cp live /mnt/nbd/live/live
+	sudo umount /dev/nbd0p1
+	sudo qemu-nbd -d /dev/nbd0
+	sudo rmmod nbd
+ext:
+	sudo modprobe nbd max_part=4
+	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/fat.vhd
+	sudo partprobe /dev/nbd0
+	sudo mount -o rw /dev/nbd0p1 /mnt/nbd
+	sudo cp live /mnt/nbd/live/live
+	sudo umount /dev/nbd0p1
+	sudo qemu-nbd -d /dev/nbd0
+	sudo rmmod nbd
 qemutest:
 	qemu-kvm \
 	-smp 2 \

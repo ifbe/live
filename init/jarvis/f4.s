@@ -90,11 +90,11 @@ je clear
 skipclear:
 
 mov esi,[rel currentarg]
-cmp dword [esi],"addr"		;if [esi]="addr"
-jne skipaddr
-cmp byte [esi+4],'='		;if [esi+4]="="
-je changeaddr
-skipaddr:
+cmp dword [esi],"moun"
+jne skipmount
+cmp byte [esi+4],'t'
+je mount
+skipmount:
 
 mov esi,[rel currentarg]
 cmp dword [esi],"iden"		;if [esi]=="powe"
@@ -216,6 +216,23 @@ jmp console
 
 
 
+;________________________
+mount:
+cmp dword [0x7070],"moun"
+jne notfound
+cmp byte [0x7074],"t"
+jne notfound
+cmp byte [0x7075],0
+jne notfound
+
+mov rdi,[rsi+6]
+call [0x7078]
+jmp scroll
+;______________________
+
+
+
+
 ;____________________________
 identify:
 cmp dword [0x7000],"iden"
@@ -301,17 +318,6 @@ jmp scroll
 ;______________________
 
 
-
-
-;______________________
-changeaddr:
-
-add esi,5
-call fetchvalue
-mov rax,[rel fetched]
-mov [rel addr],rax
-jmp scroll
-;_________________________
 
 
 ;______________________________
