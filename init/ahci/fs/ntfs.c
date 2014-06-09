@@ -141,7 +141,7 @@ void explainmft(QWORD data)
 	QWORD offset=mft + ( *(WORD*)(mft+0x14) );
 	while(offset<mft + 0x400)
 	{
-		switch( *(WORD*)offset )
+		switch( *(DWORD*)offset )
 		{
 			case 0x10:{
 				say("[10]standard infomation:",offset);
@@ -211,12 +211,15 @@ void explainmft(QWORD data)
 				say("[100]logged utility stream:",offset);
 				break;
 			}
+			case 0xffffffff:{
+				say("mft finish:",offset);
+				return;
+			}
 			default:{
 				say("unknown lastone:",offset);
 				break;
 			}
 		}
-
 		offset += *(DWORD*)(offset+4);
 	}
 }
