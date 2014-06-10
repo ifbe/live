@@ -5,6 +5,8 @@
 
 
 static QWORD sector0;
+static QWORD cacheblock;
+static QWORD cachecurrent;
 static QWORD clustersize;
 static QWORD indexsize;
 static QWORD mftcluster;
@@ -13,40 +15,154 @@ static QWORD pwd[10];
 static int ntfspwd;
 
 
-void mftcache()
+QWORD runcount(QWORD addr,QWORD length)
 {
-        read(0x140000,sector0+mftcluster*clustersize,getdisk(),0x200); //pbr
+	QWORD count=0;
+
+	while(length)
+	{
+		count=(count<<8)+(QWORD)(*(BYTE*)(addr+length));
+		length--;
+	}
+	return count&0xffffffffffffffff;
+}
+
+
+long long runcluster(QWORD addr,QWORD length)
+{
+	if(length==0){
+		say("runcluster error",0);
+		return;
+	}
+
+	long long cluster=(long long)(*(char*)(addr+length));
+	length--;
+	while(length)
+	{
+		cluster=(cluster<<8)+(long long)(*(BYTE*)(addr+length));
+		length--;
+	}
+	return cluster&0xffffffffffffffff;
+}
+
+
+void runformft(QWORD addr,QWORD mftnum)
+{
+	say("running for mft",0);
+	//把mft内mftnum*2开始的0x200个扇区读到内存[0x140000,0x17ffff]
+	//也就是(mftnum*2/clustersize)号簇开始的0x200/clustersize个簇
+	//妈的什么玩意,把第mftnum/0x100到第mftnum/0x100 + 0xff号记录
+	//比如0x753号，就把0x753&0xffffffffffffff00;
+	//(mftnum&0xffffffffffffff00)*2
+
+
+	QWORD rdi=0x140000;
+	BYTE data= *(BYTE*)addr;
+	BYTE low4bit=0xf & data;
+	BYTE high4bit=data >>4;
+	QWORD count=runcount(addr , (QWORD)low4bit);
+
+	QWORD lcn = sector0;
+	QWORD cluster=0;
+	while(high4bit)
+	{
+	cluster=(cluster<<8)+(long long)(*(BYTE*)(addr+low4bit+high4bit));
+	high4bit--;
+	}
+
+	lcn += cluster*clustersize;
+
+	read(rdi,lcn,getdisk(),clustersize*count);
+
+	rdi+=clustersize*count*0x200;
+	addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
+
+	while( *(BYTE*)addr != 0 )		//不准确
+	{
+		data= *(BYTE*)addr;
+		say("datarunning:",(QWORD)(data));
+		low4bit=0xf & data;
+		high4bit=data >>4;
+		count=runcount(addr , (QWORD)low4bit);
+		cluster=runcluster(addr+(QWORD)low4bit , (QWORD)high4bit);
+		lcn += cluster*clustersize;
+
+		say("lcn:",lcn);
+		say("count:",count);
+		read(rdi,lcn,getdisk(),clustersize*count);
+
+		rdi+=clustersize*count*0x200;
+		addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
+	}
+}
+
+
+void checkmftcache(QWORD mftnum)
+{
+	if(cachecurrent == cacheblock) return;
+
+	QWORD offset=0x138000 + ( *(WORD*)0x138014 );
+	DWORD property;
+	while(1)
+	{
+		if(offset > 0x138400) break;
+
+		property= *(DWORD*)offset;
+		if(property == 0xffffffff) break;
+
+		//care only about 0x80,ignore all other properties
+		if(property==0x80)
+		{
+			runformft(offset+(*(QWORD*)(offset+0x20)),mftnum);
+			cachecurrent = cacheblock;
+			return;
+		}
+
+		offset += *(DWORD*)(offset+4);
+	}
+	say("mft at 0x138000 wrong",0);
 }
 
 
 void datarun(QWORD rdi,QWORD addr)
 {
 	BYTE data= *(BYTE*)addr;
-	say("[a0]data:",data);
-
+	say("datarunning:",(QWORD)(data));
 	BYTE low4bit=0xf & data;
-	int count=0;
-	while(low4bit)
-	{
-		count=count*256+(int)(*(BYTE*)(addr+low4bit));
-		low4bit--;
-	}
-	say("[a0]cluster count:",count);
-
-	low4bit=0xf & data;
 	BYTE high4bit=data >>4;
-	int number=0;
+	QWORD count=runcount(addr , (QWORD)low4bit);
+	QWORD lcn = sector0;
+	QWORD cluster=0;
 	while(high4bit)
 	{
-		number=number*256+(int)(*(BYTE*)(addr+low4bit+high4bit));
-		high4bit--;
+	cluster=(cluster<<8)+(long long)(*(BYTE*)(addr+low4bit+high4bit));
+	high4bit--;
 	}
-	say("[a0]cluster number:",number);
 
-	read(rdi,sector0+number*clustersize,getdisk(),clustersize*count);
-
+	lcn += cluster*clustersize;
+	say("lcn:",lcn);
+	say("count:",count);
+	read(rdi,lcn,getdisk(),clustersize*count);
 	rdi+=clustersize*count*0x200;
-	addr= addr + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
+	addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
+
+	while( *(BYTE*)addr != 0 )		//不准确
+	{
+		data= *(BYTE*)addr;
+		say("datarunning:",(QWORD)(data));
+		low4bit=0xf & data;
+		high4bit=data >>4;
+		count=runcount(addr , (QWORD)low4bit);
+		cluster=runcluster(addr+(QWORD)low4bit , (QWORD)high4bit);
+		lcn += cluster*clustersize;
+
+		say("lcn:",lcn);
+		say("count:",count);
+		read(rdi,lcn,getdisk(),clustersize*count);
+
+		rdi+=clustersize*count*0x200;
+		addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
+	}
 }
 
 
@@ -131,7 +247,10 @@ void explaina0(QWORD addr)
 
 void explainmft(QWORD data)
 {
-	QWORD mft=0x140000+0x400*data;
+	cacheblock=data & 0xffffffffffffff00;
+	checkmftcache(data);		//reload cache
+
+	QWORD mft=0x140000+0x400*(data % 0x100);    //0x40000/0x400=0x100个
 	if( *(DWORD*)mft !=0x454c4946 )
 	{
 		say("[mft]wrong:",data);
@@ -139,9 +258,15 @@ void explainmft(QWORD data)
 	}
 
 	QWORD offset=mft + ( *(WORD*)(mft+0x14) );
-	while(offset<mft + 0x400)
+	DWORD property;
+	while(1)
 	{
-		switch( *(DWORD*)offset )
+		if(offset > mft + 0x400) break;
+
+		property= *(DWORD*)offset;
+		if(property == 0xffffffff) break;
+
+		switch(property)
 		{
 			case 0x10:{
 				say("[10]standard infomation:",offset);
@@ -210,10 +335,6 @@ void explainmft(QWORD data)
 			case 0x100:{
 				say("[100]logged utility stream:",offset);
 				break;
-			}
-			case 0xffffffff:{
-				say("mft finish:",offset);
-				return;
 			}
 			default:{
 				say("unknown lastone:",offset);
@@ -303,9 +424,12 @@ int mountntfs(QWORD sector)
 	mftcluster= *(QWORD*)0x130030;
 	say("mftcluster:",mftcluster);
 
-	mftcache();
-	explainmft(5);
+        read(0x138000,sector0+mftcluster*clustersize,getdisk(),0x20);
 
+	cachecurrent=0xffff;
+	cacheblock=0;
+
+	explainmft(5);
 	finishntfs();
 
 	return 0;

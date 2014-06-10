@@ -7,20 +7,20 @@ static QWORD fat0;
 static QWORD fatsize;
 static QWORD clustersize;
 static QWORD cluster0;
-static QWORD cachecurrent=0xffffffff;
-static QWORD cacheblock=0;
+static QWORD cachecurrent;
+static QWORD cacheblock;
 
-void fatcache()	//put cache in [0x140000]
+void checkfatcache()	//put cache in [0x140000]
 {
-	if(cachecurrent!=cacheblock)
-	{
-		QWORD i;
-		for(i=0;i<0x40;i++){
-			read(0x140000+i*0x1000,fat0+cacheblock*0x200+8*i,getdisk(),8);
-		}
-		say("[cache]reload:",fat0+cacheblock*0x200);
-		cachecurrent=cacheblock;
+	if(cachecurrent == cacheblock) return;
+
+
+	QWORD i;
+	for(i=0;i<0x40;i++){
+		read(0x140000+i*0x1000,fat0+cacheblock*0x200+8*i,getdisk(),8);
 	}
+	say("[cache]reload:",fat0+cacheblock*0x200);
+	cachecurrent=cacheblock;
 }
 
 
@@ -139,7 +139,7 @@ void fat16()
 	cluster0=fat0+fatsize*2+32-clustersize*2;
 	say("cluster0:",cluster0);
 
-	fatcache();
+	checkfatcache();
 	fat16_root();
 	finishfat16();
 }
@@ -168,7 +168,7 @@ void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 		rdi+=clustersize*0x200;
 
 		cacheblock=source/0x10000;
-		fatcache();
+		checkfatcache();
 
 		source=(QWORD)(*(DWORD*)(0x140000+4*(source%0x10000)));
 
@@ -241,7 +241,7 @@ void fat32()
 	cluster0=fat0+fatsize*2-clustersize*2;
 	say("cluster0:",cluster0);
 
-	fatcache();
+	checkfatcache();
 
 	//read(0x180000,cluster0+clustersize*2,getdisk(),32);
 	//say("cd root:",cluster0+clustersize*2);

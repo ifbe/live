@@ -8,18 +8,17 @@ clean:
 	make clean -s -C init
 	rm -f live
 fat:
-	make image
+	make -s image
 	sudo modprobe nbd max_part=4
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/fat.vhd
 	sudo partprobe /dev/nbd0
 	sudo mount -o rw /dev/nbd0p1 /mnt/nbd
 	sudo cp live /mnt/nbd/live/live
-	sleep 2s
 	sudo umount /dev/nbd0p1
 	sudo qemu-nbd -d /dev/nbd0
 	sudo rmmod nbd
 ntfs:
-	make image
+	make -s image
 	sudo modprobe nbd max_part=4
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/ntfs.vhd
 	sudo partprobe /dev/nbd0
@@ -29,7 +28,7 @@ ntfs:
 	sudo qemu-nbd -d /dev/nbd0
 	sudo rmmod nbd
 ext:
-	make image
+	make -s image
 	sudo modprobe nbd max_part=4
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/ext.vhd
 	sudo partprobe /dev/nbd0
@@ -84,7 +83,7 @@ exttest:
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/ext.vhd
 push:
-	make clean
+	make -s clean
 	make clean -s -C demo
 	git add --all .
 	git commit -a
