@@ -53,8 +53,8 @@ void mftpart(QWORD addr,QWORD mftnum)	//datarun地址，mft号
 	BYTE data= *(BYTE*)addr;
 	BYTE low4bit=0xf & data;
 	BYTE high4bit=data >>4;
-	QWORD lcn = sector0;	//=cluster0
-	QWORD cluster=0;
+	QWORD where = sector0;	//=cluster0
+	QWORD temp=0;
 	QWORD count;
 
 	QWORD wishstart=2 * ( mftnum&0xffffffffffffff00 );
@@ -63,16 +63,19 @@ void mftpart(QWORD addr,QWORD mftnum)	//datarun地址，mft号
 	QWORD runend;
 
 	//第一个run
+	say("[mft]run0:",addr);
 	while(high4bit)
 	{
-	cluster=(cluster<<8)+(long long)(*(BYTE*)(addr+low4bit+high4bit));
+	temp=(temp<<8)+(long long)(*(BYTE*)(addr+low4bit+high4bit));
 	high4bit--;
 	}
 	count=runcount(addr , (QWORD)low4bit);
 	addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
-	lcn += cluster*clustersize;
+	where += temp*clustersize;
 	runstart=0;
 	runend=count*clustersize;
+	say("[mft]where0:",where);
+	say("[mft]count0:",count);
 
 //判断是否是我们要的，是就读进内存
 //				[--------wishstart,wishend---------]
@@ -85,15 +88,16 @@ void mftpart(QWORD addr,QWORD mftnum)	//datarun地址，mft号
 	{
 		if(runend>=wishend)  //读[wishstart,wishend],结束
 		{
-			read(rdi,lcn+wishstart*clustersize,getdisk(),256);
+			read(rdi,where+wishstart*clustersize,getdisk(),256);
+			say("cache finish:",where+wishstart*clustersize);
 			return;
 		}
 		else			//读[wishstart,runend],没完
 		{
-			read(rdi,lcn+wishstart*clustersize,getdisk(),runend-wishstart);
+			read(rdi,where+wishstart*clustersize,getdisk(),runend-wishstart);
+			say("cache part:",where+wishstart*clustersize);
 			rdi+=clustersize*count*0x200;
 			wishstart=runend;
-			say("mft part 1",0);
 		}
 	}
 	//else 一个扇区都还没得到
@@ -106,12 +110,15 @@ void mftpart(QWORD addr,QWORD mftnum)	//datarun地址，mft号
 		high4bit=data >>4;
 
 		//剩下的run
+		say("[mft]run?:",addr);
 		count=runcount(addr , (QWORD)low4bit);
-		cluster=runcluster(addr+(QWORD)low4bit , (QWORD)high4bit);
+		temp=runcluster(addr+(QWORD)low4bit , (QWORD)high4bit);
 		addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
-		lcn += cluster*clustersize;
+		where += temp*clustersize;
 		runstart=runend;
 		runend+=count*clustersize;
+		say("[mft]where?:",where);
+		say("[mft]count?:",count);
 
 //判断是否是我们要的，是就读进内存
 //				[--------wishstart,wishend--------]
@@ -127,15 +134,16 @@ void mftpart(QWORD addr,QWORD mftnum)	//datarun地址，mft号
 		{
 			if(runend>=wishend)  //读[wishstart,wishend],结束
 			{
-				read(rdi,lcn+wishstart*clustersize,getdisk(),256);
+				read(rdi,where+wishstart*clustersize,getdisk(),256);
+				say("cache finish:",where+wishstart*clustersize);
 				return;
 			}
 			else			//读[wishstart,runend],没完
 			{
-				read(rdi,lcn+wishstart*clustersize,getdisk(),runend-wishstart);
+				read(rdi,where+wishstart*clustersize,getdisk(),runend-wishstart);
+				say("cache part:",where+wishstart*clustersize);
 				rdi+=clustersize*count*0x200;
 				wishstart=runend;
-				say("mft part 2",0);
 			}
 		}
 		//else 一个扇区都不读
@@ -151,20 +159,20 @@ void datarun(QWORD rdi,QWORD addr)
 	BYTE low4bit=0xf & data;
 	BYTE high4bit=data >>4;
 	QWORD count=runcount(addr , (QWORD)low4bit);
-	QWORD lcn = sector0;
-	QWORD cluster=0;
+	QWORD where = sector0;
+	QWORD temp=0;
 
 	//第一个run
 	while(high4bit)
 	{
-	cluster=(cluster<<8)+(long long)(*(BYTE*)(addr+low4bit+high4bit));
+	temp=(temp<<8)+(long long)(*(BYTE*)(addr+low4bit+high4bit));
 	high4bit--;
 	}
 	addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
-	lcn += cluster*clustersize;
+	where += temp*clustersize;
 
 	//读进内存
-	read(rdi,lcn,getdisk(),clustersize*count);
+	read(rdi,where,getdisk(),clustersize*count);
 	rdi+=clustersize*count*0x200;
 
 	while( *(BYTE*)addr != 0 )		//不准确
@@ -176,12 +184,12 @@ void datarun(QWORD rdi,QWORD addr)
 
 		//剩下的run
 		count=runcount(addr , (QWORD)low4bit);
-		cluster=runcluster(addr+(QWORD)low4bit , (QWORD)high4bit);
+		temp=runcluster(addr+(QWORD)low4bit , (QWORD)high4bit);
 		addr= addr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
-		lcn += cluster*clustersize;
+		where += temp*clustersize;
 
 		//读进内存
-		read(rdi,lcn,getdisk(),clustersize*count);
+		read(rdi,where,getdisk(),clustersize*count);
 		rdi+=clustersize*count*0x200;
 	}
 }
@@ -219,7 +227,7 @@ void explain80(QWORD addr)			//addr=property 90
 {
 	if( *(BYTE*)(addr+8) == 0 )
 	{
-		say("resident",0);
+		say("resident80",0);
 		DWORD length = *(DWORD*)(addr+0x10);
 		BYTE* rsi=(BYTE*)(addr + (QWORD)(*(DWORD*)(addr+0x14)) );
 		BYTE* rdi=(BYTE*)0x200000;
@@ -230,7 +238,7 @@ void explain80(QWORD addr)			//addr=property 90
 	}
 	else
 	{
-		say("non resident",0);
+		say("non resident80",0);
 		datarun(0x200000 , addr + (*(QWORD*)(addr+0x20)) );
 	}
 }
@@ -238,13 +246,14 @@ void explain80(QWORD addr)			//addr=property 90
 
 void explainindex(QWORD start,QWORD end)
 {
-	BYTE* rdi=(BYTE*)0x1c0000;
 	QWORD index=start;
+	say("index:",index);
+
+	BYTE* rdi=(BYTE*)0x1c0000;
 	int i;
 	for(i=0;i<0x800;i++) rdi[i]=0;		//clear [1c0000,1ffff8]
 
 	*(QWORD*)rdi= 0x2e;
-	say("index:",index);
 	*(QWORD*)(rdi+0x10)= (*(QWORD*)(index+0x10))&0xffffffffffff;
 	rdi+=0x20;
 
@@ -465,12 +474,12 @@ int mountntfs(QWORD sector)
 
 	clustersize=(QWORD)( *(BYTE*)0x13000d );
 	say("clustersize:",clustersize);
-	indexsize=(QWORD)( *(BYTE*)0x130044 );
-	say("indexsize:",indexsize);
-	mftsize=(QWORD)( *(BYTE*)0x130040 );
-	say("mftsize:",mftsize);
 	mftcluster= *(QWORD*)0x130030;
 	say("mftcluster:",mftcluster);
+	mftsize=(QWORD)( *(BYTE*)0x130040 );
+	say("mftsize:",mftsize);
+	indexsize=(QWORD)( *(BYTE*)0x130044 );
+	say("indexsize:",indexsize);
 
         read(0x138000,sector0+mftcluster*clustersize,getdisk(),0x20);
 	cachecurrent=0xffff;		//no mft cache yet
