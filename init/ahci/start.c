@@ -5,6 +5,4 @@ void start()
 	for(i=0;i<0x40000;i++) memory[i]=0;
 
 	initahci();
-	initsata();
-	parttable();
 }

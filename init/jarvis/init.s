@@ -70,10 +70,13 @@ endofinterrupt:
 ;_______________________________________
 
 ;initahci
-call endofjarvis
+call endofjarvis		;ahci(0x1000)
 
 ;initxhci
-call endofjarvis+0x4000
+call endofjarvis+0x1000		;xhci(0x1000)
+
+;initdisk
+call endofjarvis+0x2000		;disk(0x4000)
 ;__________________________________
 
 

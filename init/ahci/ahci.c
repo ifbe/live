@@ -1,5 +1,8 @@
 #include "ahci.h"
+#define ahcihome 0x100000
 
+//找到就返回ahci的pci地址，否则返回0
+//全部设备信息我放在0x5000了，非本环境自己枚举
 unsigned int findaddr()
 {
 	QWORD addr=0x5004;
@@ -34,6 +37,10 @@ static inline unsigned int in32( unsigned short port )
                   : "=a"(ret) : "Nd"(port) );
     return ret;
 }
+
+
+//进：pci地址
+//出：内存地址
 unsigned int probepci(unsigned int addr)
 {
 	out32(0xcf8,addr+0x4);
@@ -73,7 +80,8 @@ void probeahci(unsigned int addr)
 
 
 
-
+//first=挂在ahci上的设备名比如sata，second=它的地址
+//信息放在0x4000
 void savedisk(QWORD first,QWORD second)
 {
 	int i;
@@ -92,6 +100,8 @@ void savedisk(QWORD first,QWORD second)
 
 
 
+//从0x4000寻找sata
+//找到返回内存地址，找不到返回0
 QWORD getdisk()
 {
 	int i;
@@ -110,6 +120,8 @@ QWORD getdisk()
 
 
 
+//进：ahci内存地址
+//出：找到就返回第一个sata地址，否则0
 QWORD checkandsave(QWORD addr)
 {
 	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
@@ -150,6 +162,9 @@ QWORD checkandsave(QWORD addr)
 }
 
 
+//进：ahci内存地址
+//出：找到就返回第一个sata地址，否则0
+//有些bios没初始化
 unsigned int findport(unsigned int addr)
 {
 	unsigned int temp;
@@ -169,7 +184,7 @@ unsigned int findport(unsigned int addr)
 
 	//something wrong,reset ports
 	int i;
-	char* p=(char*)0x100000;
+	char* p=(char*)ahcihome;
 	for(i=0;i<0x2000;i++) p[i]=0;
 
 	DWORD pi = abar->pi;
@@ -182,7 +197,7 @@ unsigned int findport(unsigned int addr)
 
 	for(i=0;i<count;i++)
 	{
-		abar->ports[i].fb = 0x100000+i*0x100;
+		abar->ports[i].fb = ahcihome+i*0x100;
 		abar->ports[i].fbu = 0;
 		abar->ports[i].cmd |=0x10;
 		abar->ports[i].cmd |=0x2;
@@ -242,14 +257,14 @@ void disable(HBA_PORT *port)
 void probeport(unsigned int addr)
 {
 	int i;
-	char* p=(char*)0x108000;
+	char* p=(char*)(ahcihome+0x8000);
 	for(i=0;i<0x6000;i++) p[i]=0;
 
 	HBA_PORT* port=(HBA_PORT*)(QWORD)addr;
 	disable(port);	// Stop command engine
 
 	//32*32=0x400
-	port->clb =0x108000;
+	port->clb =ahcihome+0x8000;
 	port->clbu = 0;
  
 	//0x100*32=0x2000=8k
@@ -257,7 +272,7 @@ void probeport(unsigned int addr)
 	for (i=0; i<32; i++)
 	{
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-		cmdheader[i].ctba=0x110000+(i<<8);
+		cmdheader[i].ctba=ahcihome+0x10000+(i<<8);
 		cmdheader[i].ctbau = 0;
 	}
 	enable(port);	// Start command engine

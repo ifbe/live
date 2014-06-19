@@ -61,7 +61,7 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 	fis->countl = count&0xff;
 	fis->counth = (count>>8)&0xff;
 }
-int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
+int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 {
 	HBA_PORT* port =(HBA_PORT*)addr;
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
@@ -104,4 +104,15 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 		}
 	}
 	return 0;
+}
+int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
+{
+	QWORD i=0;
+	while(count>128)
+	{
+		readpart(buf+i*0x10000,from+i*128,addr,128);
+		i++;
+		count-=128;
+	}
+	readpart(buf+i*0x10000,from+i*128,addr,count);
 }

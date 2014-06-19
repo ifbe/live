@@ -1,4 +1,5 @@
 #define QWORD unsigned long long
+#define xhcihome 0x200000
 
 
 

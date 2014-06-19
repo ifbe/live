@@ -39,6 +39,8 @@ all:
 	cp btree/btree demo/
 	make -s -C sketchpad
 	cp sketchpad/sketchpad demo/
+	make -s -C mandelbrot
+	cp mandelbrot/mandelbrot demo/
 clean:
 	rm -rf demo
 	make clean -s -C easiest
@@ -61,3 +63,4 @@ clean:
 	make clean -s -C math
 	make clean -s -C sketchpad
 	make clean -s -C btree
+	make clean -s -C mandelbrot
