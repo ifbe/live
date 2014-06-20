@@ -107,6 +107,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 }
 int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 {
+/*
 	QWORD i=0;
 	while(count>128)
 	{
@@ -115,4 +116,13 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 		count-=128;
 	}
 	readpart(buf+i*0x10000,from+i*128,addr,count);
+*/
+	QWORD i=0;
+	while(count>16)
+	{
+		readpart(buf+i*0x2000,from+i*16,addr,16);
+		i++;
+		count-=16;
+	}
+	readpart(buf+i*0x2000,from+i*16,addr,count);
 }
