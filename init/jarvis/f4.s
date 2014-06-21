@@ -106,13 +106,6 @@ je identify
 skipidentify:
 
 mov esi,[rel currentarg]
-cmp dword [esi],"read"
-jne skipread
-cmp byte [esi+4],0x20
-je read
-skipread:
-
-mov esi,[rel currentarg]
 cmp dword [esi],"test"
 jne skiptest
 cmp byte [esi+4],0x20
@@ -241,22 +234,6 @@ cmp dword [0x7004],"tify"
 jne notfound
 
 call [0x7008]
-
-jmp scroll
-;________________________________
-
-
-
-
-;____________________________
-read:
-cmp dword [0x7010],"read"
-jne notfound
-
-add esi,5
-call fetchvalue
-mov esi,[rel fetched]
-call [0x7018]
 
 jmp scroll
 ;________________________________

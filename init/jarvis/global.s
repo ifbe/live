@@ -271,5 +271,3 @@ ret
 
 
 screenwhat:dq 0
-addr:dq 0
-offset:dq 0

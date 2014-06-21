@@ -47,44 +47,63 @@ mov byte [rel chosen],0
 jmp ramdump
 
 f1backspace:
-shr qword [rel f1temp],4
+shr qword [rel input],4
 jmp ramdump
 
 f1enter:
 test byte [rel esckey],1
 jnz ramdump
 cmp byte [rel chosen],0
-je escenter0
+je changeaddress
 cmp byte [rel chosen],1
-je escenter1
+je changesector
 cmp byte [rel chosen],2
-je escenter2
-cmp byte [rel chosen],3
-je escenter3
+je changeoffset
+cmp byte [rel chosen],4
+je searchmemory
+cmp byte [rel chosen],5
+je changememory
+cmp byte [rel chosen],6
+je changemode
 cmp byte [rel chosen],7
 je turnoff
 jmp ramdump
 
-	escenter0:
-	mov rax,[rel f1temp]
+	changeaddress:
+	mov rax,[rel input]
 	mov rbx,rax
 	and rax,0xfffffffffffffc00
 	and rbx,0x3ff
 	mov [rel addr],rax
 	mov [rel offset],rbx
-	mov qword [rel f1temp],0
+	mov qword [rel input],0
 	jmp ramdump
 
-	escenter1:
-	mov rax,[rel f1temp]
+	changesector:
+	mov rsi,[rel input]
+	mov [rel sector],rsi
+	and rsi,0xfffffffffffffff8
+	cmp dword [0x7010],"read"
+	jne ramdump
+	call [0x7018]
+	mov rax,[rel input]
+	and rax,0x7
+	shl rax,9
+	add rax,0x200000
+	mov [rel addr],rax
+	mov qword [rel input],0
+	jmp ramdump
+
+	changeoffset:
+	mov rax,[rel input]
 	cmp rax,0xbff
 	ja ramdump
 	mov [rel offset],rax
-	mov qword [rel f1temp],0
+	mov qword [rel input],0
 	jmp ramdump
 
-	escenter2:
-	mov eax,[rel f1temp]
+	searchmemory:
+	mov eax,[rel input]
 	mov edi,[rel addr]
 	mov ebx,0
 	.loopsearch:
@@ -98,11 +117,14 @@ jmp ramdump
 	mov [rel offset],rbx
 	jmp ramdump
 
-	escenter3:
-	mov eax,[rel f1temp]
+	changememory:
+	mov eax,[rel input]
 	mov rdi,[rel addr]
 	add rdi,[rel offset]
 	stosd
+	jmp ramdump
+
+	changemode:
 	jmp ramdump
 
 f1left:
@@ -186,8 +208,8 @@ f1other:
 call scan2hex
 cmp al,0x10
 ja ramdump
-shl qword [rel f1temp],4
-add [rel f1temp],al
+shl qword [rel input],4
+add [rel input],al
 jmp ramdump
 
 ;_______________________________________
@@ -420,13 +442,16 @@ mov rbx,[rel addr]
 call dumprbx
 mov edi,[rel menuaddr]
 add edi,0x28200
+mov rbx,[rel sector]
+call dumprbx
+mov edi,[rel menuaddr]
+add edi,0x48200
 mov rbx,[rel offset]
 call dumprbx
 mov edi,[rel menuaddr]
-add edi,0xc8200
-mov rbx,[rel f1temp]
+add edi,0x68200
+mov rbx,[rel input]
 call dumprbx
-
 
 choose:
 mov edi,[rel chosen]
@@ -449,16 +474,22 @@ jnz .loop32
 ret
 ;_______________________________
 chosen:dq 0
-f1temp:dq 0
 menuaddr dq 0
 menuoffset:dq 0
 
+
+;_____________________________
 message0:
-db "      addr:     "
-db "     offset:    "
-db "     search     "
-db "     change     "
-db "                "
-db "                "
-db "     input:     "
-db "    poweroff    "
+db "address:        "
+db "sector:         "
+db "offset:         "
+db "input:          "
+db "search!         "
+db "change!         "
+db "disk!           "
+db "poweroff!       "
+;________________________________
+addr:dq 0
+sector:dq 0
+offset:dq 0
+input:dq 0
