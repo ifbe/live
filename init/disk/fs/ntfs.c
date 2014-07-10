@@ -50,12 +50,12 @@ void explainrun(QWORD runaddr,long long* lcn,long long* count)
 
 void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 {
-	say("    run@",runaddr);
-	say("    {",0);
+	say("mftrun@",runaddr);
+	say("{",0);
 
 	//变量们
 	QWORD rdi=mftbuffer;
-	QWORD mftaddr = ntfssector;	//=cluster0
+	QWORD addr = ntfssector;	//=cluster0
 	BYTE data;
 	long long lcn;
 	long long count;
@@ -76,10 +76,10 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 		data--;
 	}
 	lcn=lcn & temp;
-	mftaddr += lcn*clustersize;
-	say("    sector:",mftaddr);
+	addr += lcn*clustersize;
+	say("sector:",addr);
 	count *= clustersize;
-	say("    size:",count);
+	say("size:",count);
 
 	data= *(BYTE*)runaddr;
 	runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
@@ -97,13 +97,13 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 	{
 		if(runend>=wishend)  //读[wishstart,wishend],结束
 		{
-			read(rdi,mftaddr+wishstart,getdisk(),256);
-			say("    }",0);
+			read(rdi,addr+wishstart,getdisk(),256);
+			say("}",0);
 			return;
 		}
 		else			//读[wishstart,runend],没完
 		{
-			read(rdi,mftaddr+wishstart,getdisk(),runend-wishstart);
+			read(rdi,addr+wishstart,getdisk(),runend-wishstart);
 			rdi+=count*0x200;
 			wishstart=runend;
 		}
@@ -115,10 +115,10 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 		//剩下的run
 		explainrun(runaddr,&lcn,&count);
 
-		mftaddr += lcn*clustersize;
-		say("    sector:",mftaddr);
+		addr += lcn*clustersize;
+		say("sector:",addr);
 		count *= clustersize;
-		say("    size:",count);
+		say("size:",count);
 
 		data= *(BYTE*)runaddr;
 		runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
@@ -139,13 +139,13 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 		{
 			if(runend>=wishend)  //读[wishstart,wishend],结束
 			{
-				read(rdi,mftaddr+wishstart,getdisk(),256);
-				say("    }",0);
+				read(rdi,addr+wishstart,getdisk(),256);
+				say("}",0);
 				return;
 			}
 			else			//读[wishstart,runend],没完
 			{
-				read(rdi,mftaddr+wishstart,getdisk(),runend-wishstart);
+				read(rdi,addr+wishstart,getdisk(),runend-wishstart);
 				rdi+=count*0x200;
 				wishstart=runend;
 			}
@@ -158,29 +158,35 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 
 void checkmftcache(QWORD mftnum)
 {
+	//是否需要重新载入某块mft
 	cacheblock=mftnum & 0xffffffffffffff00;
 	if(cachecurrent == cacheblock) return;
 
+	//开始找那一块地址并且读取
 	QWORD offset=0x138000 + ( *(WORD*)0x138014 );
 	DWORD property;
 	while(1)
 	{
 		if(offset > 0x138400) break;
-
 		property= *(DWORD*)offset;
-		if(property == 0xffffffff) break;
 
-		//care only about 0x80,ignore all other properties
+		if(property == 0xffffffff)
+		{
+			//结束了，mft没有80属性
+			say("wrong mft@138000",0);
+			return;
+		}
 		if(property==0x80)
 		{
+			//从mft的dararun中读取我们要的部分mft
 			mftpart(offset+(*(QWORD*)(offset+0x20)),mftnum);
 			cachecurrent = cacheblock;
 			return;
 		}
 
+		//offset=下一个property地址
 		offset += *(DWORD*)(offset+4);
 	}
-	say("mft at 0x138000 wrong",0);
 }
 
 
@@ -265,16 +271,16 @@ void explain80(QWORD addr)	//file data
 
 void index2raw(QWORD start,QWORD end)
 {
-	BYTE* buffer=(BYTE*)rawbuffer;
+	say("    index2raw:",rawpointer);
+
+	BYTE* buffer=(BYTE*)rawpointer;
 	QWORD index=start;
 	int i;
 
-	*(QWORD*)buffer= 0x2e;
-	*(QWORD*)(buffer+0x10)= (*(QWORD*)(index+0x10))&0xffffffffffff;
-	buffer+=0x20;
-
 	while(index<end)
 	{
+		if( *(DWORD*)(index+8) == 0x18 ) break;
+
 		for(i=0;i<*(BYTE*)(index+0x50);i++)
 		{
 			if(i>=0x10) break;
@@ -283,6 +289,7 @@ void index2raw(QWORD start,QWORD end)
 		*(QWORD*)(buffer+0x10)= (*(QWORD*)index)&0xffffffffffff;
 
 		index+= *(WORD*)(index+0x8);
+		rawpointer+=0x20;
 		buffer+=0x20;
 	}
 }
@@ -292,13 +299,38 @@ void explain90(QWORD addr)	//index root
 {
 	say("90@",addr);
 
-	addr += *(DWORD*)(addr+0x14);		//addr=property body
-	if( *(BYTE*)(addr+0x1c) !=0 )
+	//现在addr=属性体地址=索引根地址
+	addr += *(DWORD*)(addr+0x14);
+
+	//现在addr=索引头地址
+	addr+=0x10;
+
+	if( *(BYTE*)(addr+0xc) ==0 )	//是小索引
 	{
+		addr+=0x10;
+		index2raw(addr,addr+ (QWORD)(*(DWORD*)(addr+4)) );
+	}
+	else				//是大索引
+	{
+		addr+=0x10;
+		say("    @",addr);
+		index2raw(addr,addr+ (QWORD)(*(DWORD*)(addr+4)) );
+	}
+}
+
+
+void explainindex(QWORD addr)
+{
+	if( *(DWORD*)addr !=0x58444e49 )
+	{
+		say("wrong index",0);
 		return;
 	}
 
-	index2raw(addr+0x10,addr+0x10+ (QWORD)(*(DWORD*)(addr+4)) );
+	say("    vcn:",*(QWORD*)(addr+0x10));
+	QWORD start=addr + 0x18 + ( *(DWORD*)(addr+0x18) );
+	QWORD end=addr + ( *(DWORD*)(addr+0x1c) );
+	index2raw(start,end);
 }
 
 
@@ -307,16 +339,15 @@ void explaina0(QWORD addr)	//index allocation
 	say("a0@",addr);
 	datarun(indexbuffer , addr + (*(QWORD*)(addr+0x20)) );
 
-	if( *(DWORD*)indexbuffer !=0x58444e49 )
-	{
-		say("data run fail",0);
-		return;
-	}
+	//*(QWORD*)rawpointer= 0x2e;
+	//*(QWORD*)(rawpointer+0x10)= (*(QWORD*)(indexbuffer+0x10))&0xffffffffffff;
+	//rawpointer+=0x20;
 
 	say("    INDX@",indexbuffer);
-	QWORD start=indexbuffer + 0x18 + ( *(DWORD*)(indexbuffer+0x18) );
-	QWORD end=indexbuffer + ( *(DWORD*)(indexbuffer+0x1c) );
-	index2raw(start,end);
+	say("    {",0);
+		explainindex(indexbuffer);
+		explainindex(indexbuffer+0x1000);
+	say("    }",0);
 }
 
 
@@ -414,6 +445,7 @@ void explainmft(QWORD data)
 		}
 		offset += *(DWORD*)(offset+4);
 	}
+	say("",0);
 }
 
 
@@ -462,8 +494,13 @@ void ntfs_cd(QWORD name)
 		}
 	}
 
-	//清理rawbuffer
-	for(i=0;i<0x800;i++) addr[i]=0;		//clear [1c0000,1ffff8]
+	//清理indexbuffer,rawbuffer
+	addr=(QWORD*)indexbuffer;
+	for(i=0;i<0x800;i++) addr[i]=0;		//clear [180000,1bfff8]
+	addr=(QWORD*)rawbuffer;
+	for(i=0;i<0x800;i++) addr[i]=0;	//clear [1c0000,1ffff8]
+
+	//当前位置
 	rawpointer=rawbuffer;
 
 	//开始change directory
@@ -519,6 +556,7 @@ int mountntfs(QWORD sector)
 	say("mftcluster:",mftcluster);
 	QWORD indexsize=clustersize * (QWORD)( *(BYTE*)0x130044 );
 	say("indexsize:",indexsize);
+	say("",0);
 
 	//保存开头几个mft
         read(0x138000,ntfssector+mftcluster*clustersize,getdisk(),0x20);
