@@ -64,7 +64,7 @@ je searchmemory
 cmp byte [rel chosen],5
 je changememory
 cmp byte [rel chosen],6
-je changemode
+je viewjournal
 cmp byte [rel chosen],7
 je turnoff
 jmp ramdump
@@ -124,7 +124,8 @@ jmp ramdump
 	stosd
 	jmp ramdump
 
-	changemode:
+	viewjournal:
+	mov qword [rel addr],0x40000
 	jmp ramdump
 
 f1left:
@@ -486,7 +487,7 @@ db "offset:         "
 db "input:          "
 db "search!         "
 db "change!         "
-db "disk!           "
+db "journal!        "
 db "poweroff!       "
 ;________________________________
 addr:dq 0
