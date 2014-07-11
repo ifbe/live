@@ -97,8 +97,9 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 	{
 		if(runend>=wishend)  //读[wishstart,wishend],结束
 		{
-			read(rdi,addr+wishstart,getdisk(),256);
+			read(rdi,addr+wishstart,getdisk(),0x200);
 			say("}",0);
+			say("",0);
 			return;
 		}
 		else			//读[wishstart,runend],没完
@@ -139,8 +140,9 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 		{
 			if(runend>=wishend)  //读[wishstart,wishend],结束
 			{
-				read(rdi,addr+wishstart,getdisk(),256);
+				read(rdi,addr+wishstart,getdisk(),0x200);
 				say("}",0);
+				say("",0);
 				return;
 			}
 			else			//读[wishstart,runend],没完
@@ -279,7 +281,7 @@ void index2raw(QWORD start,QWORD end)
 
 	while(index<end)
 	{
-		if( *(DWORD*)(index+8) == 0x18 ) break;
+		if( *(DWORD*)(index+8) <= 0x18 ) break;
 
 		for(i=0;i<*(BYTE*)(index+0x50);i++)
 		{
@@ -299,22 +301,21 @@ void explain90(QWORD addr)	//index root
 {
 	say("90@",addr);
 
-	//现在addr=属性体地址=索引根地址
-	addr += *(DWORD*)(addr+0x14);
+	addr += *(DWORD*)(addr+0x14);	//现在addr=属性体地址=索引根地址
 
-	//现在addr=索引头地址
-	addr+=0x10;
+	addr+=0x10;			//现在addr=索引头地址
+	QWORD size=(QWORD)( *(DWORD*)(addr+4) );
 
+	addr+=0x10;			//现在addr=第一个索引项地址
+
+	//剩下的事(这块以后要改，排序什么的)
 	if( *(BYTE*)(addr+0xc) ==0 )	//是小索引
 	{
-		addr+=0x10;
-		index2raw(addr,addr+ (QWORD)(*(DWORD*)(addr+4)) );
+		index2raw(addr,addr+size);
 	}
 	else				//是大索引
 	{
-		addr+=0x10;
-		say("    @",addr);
-		index2raw(addr,addr+ (QWORD)(*(DWORD*)(addr+4)) );
+		index2raw(addr,addr+size);
 	}
 }
 
@@ -345,8 +346,14 @@ void explaina0(QWORD addr)	//index allocation
 
 	say("    INDX@",indexbuffer);
 	say("    {",0);
-		explainindex(indexbuffer);
-		explainindex(indexbuffer+0x1000);
+
+	QWORD p=indexbuffer;
+	while( *(DWORD*)p ==0x58444e49 )
+	{
+		explainindex(p);
+		p+=0x1000;
+	}
+
 	say("    }",0);
 }
 

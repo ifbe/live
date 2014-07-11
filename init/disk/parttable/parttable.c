@@ -109,4 +109,5 @@ void mount(QWORD name)
 
 	if(name == 0x746166) mountfat(offset);
 	if(name == 0x7366746e) mountntfs(offset);
+	if(name == 0x747865) mountext(offset);
 }
