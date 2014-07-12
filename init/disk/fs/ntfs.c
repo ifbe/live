@@ -18,8 +18,9 @@ static QWORD pwd[10];
 static int ntfspwd;
 
 
-void explainrun(QWORD runaddr,long long* lcn,long long* count)
+void explainrun(QWORD runaddr,long long* offset,long long* count)
 {
+	//变量
 	BYTE* run=(char*)runaddr;
 	BYTE data= run[0];
 	BYTE low4bit=0xf & data;
@@ -27,24 +28,34 @@ void explainrun(QWORD runaddr,long long* lcn,long long* count)
 	int i;
 	long long temp;
 
+	//簇数
 	temp=0;
 	for(i=low4bit;i>0;i--)
 	{
 		temp=(temp<<8)+(QWORD)run[i];
 	}
 	//say("runcount:",temp);
-	*count=temp;
+	*count=temp*clustersize;
 
+	//簇号
 	i=low4bit+high4bit;
-	if(run[i] < 0x80) temp=(long long)run[i];
-	else temp=(long long)(char)run[i];
+	if( (run[i] < 0x80) | (*offset==0) )	//正数 或者 传进来的是第一个run
+	{
+		temp=(long long)run[i];		//0x68变成0x0000000000000068
+	}
+	else					//负数 且 不是第一个run
+	{
+		temp=(long long)(char)run[i];	//0x98变成0xffffffffffffff98
+	}
 
 	for(i=low4bit+high4bit-1;i>low4bit;i--)
 	{
 		temp=(temp<<8)+(long long)run[i];
 	}
-	//say("runlcn:",temp);
-	*lcn=temp;
+
+	//从pbr开始偏移的扇区数
+	*offset=*offset + temp*clustersize;
+
 }
 
 
@@ -55,104 +66,72 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 
 	//变量们
 	QWORD rdi=mftbuffer;
-	QWORD addr = ntfssector;	//=cluster0
 	BYTE data;
-	long long lcn;
+	long long offset=0;
 	long long count;
 
 	QWORD wishstart=2 * ( mftnum&0xffffffffffffff00 );
 	QWORD wishend=wishstart+0x200;
-	QWORD runstart;
-	QWORD runend;
+	QWORD start=0;
+	QWORD end=0;
 
-	//第一个run
-	explainrun(runaddr,&lcn,&count);
-
-	QWORD temp=0;
-	data=( *(BYTE*)runaddr ) >> 4;
-	while(data)
+	//每个run走一轮，需要的部分读进内存
+	while(1)
 	{
-		temp=(temp<<8) + 0xff;
-		data--;
-	}
-	lcn=lcn & temp;
-	addr += lcn*clustersize;
-	say("sector:",addr);
-	count *= clustersize;
-	say("size:",count);
+		data= *(BYTE*)runaddr;
+		if(data == 0) break;
 
-	data= *(BYTE*)runaddr;
-	runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
-	runstart=0;
-	runend=count;
-
-	//判断是否是我们要的，是就读进内存
-	//				[------wishstart,wishend-------]
-	//	[------------------------------------------------------------>]
-	//1:	[runstart,runend]
-	//2:	[------------runstart,runend------------]
-	//3:	[---------------------runstart,runend-----------------------]
-
-	if(runend > wishstart)	//读[wishstart,?]
-	{
-		if(runend>=wishend)  //读[wishstart,wishend],结束
-		{
-			read(rdi,addr+wishstart,getdisk(),0x200);
-			say("}",0);
-			say("",0);
-			return;
-		}
-		else			//读[wishstart,runend],没完
-		{
-			read(rdi,addr+wishstart,getdisk(),runend-wishstart);
-			rdi+=count*0x200;
-			wishstart=runend;
-		}
-	}
-	//else 一个扇区都还没得到
-
-	while( *(BYTE*)runaddr != 0 )
-	{
-		//剩下的run
-		explainrun(runaddr,&lcn,&count);
-
-		addr += lcn*clustersize;
-		say("sector:",addr);
-		count *= clustersize;
+		explainrun(runaddr,&offset,&count);
+		say("sector:",ntfssector+offset);
 		say("size:",count);
 
-		data= *(BYTE*)runaddr;
 		runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
-		runstart=runend;
-		runend+=count;
+		start=end;
+		end += count;
 
-	//判断是否是我们要的，是就读进内存
-	//			[--------wishstart,wishend--------]
-	//[---------------------------------------------------------------->]
-	//1:[runstart,runend]
-	//2:[----------runstart,runend------------]
-	//3:[-------------------runstart,runend--------------------------]
-	//4:			[-----runstart,runend------]
-	//5:			[-----------runstart,runend-------------]
-	//6(不可能):			[--------runstart,runend--------]
-
-		if(runend > wishstart)	//读[wishstart,?]
+		//判断是否是我们要的，是就读进内存
+		//			[----wishstart,wishend----]
+		//[------------------------------------------------------]
+		//1:[--start,end--]
+		//2:[----------start,end------------]
+		//3:[-------------------start,end------------------------]
+		//4:			[-----start,end------]
+		//5:			[-----------start,end------------]
+		if(end > wishstart)	//读[wishstart,?]
 		{
-			if(runend>=wishend)  //读[wishstart,wishend],结束
+			//即将被读的开始扇区号
+			QWORD temp1;
+			//本run地址=ntfssector+offset
+			temp1=ntfssector+offset;
+			//本run中再偏移=(end-start)-(end-wishstart)
+			temp1=temp1+(end-start)-(end-wishstart);
+
+			if(end>=wishend)	//读满0x40000字节
 			{
-				read(rdi,addr+wishstart,getdisk(),0x200);
+				//即将被读的扇区数
+				QWORD temp2;
+				//本run结束-期待的块开始
+				temp2=(mftbuffer+0x40000-rdi)/0x200;
+
+				read(rdi,temp1,getdisk(),temp2);
+
+				say("done:",temp1);
 				say("}",0);
 				say("",0);
 				return;
 			}
-			else			//读[wishstart,runend],没完
+			else			//从wishstart读到本run结束
 			{
-				read(rdi,addr+wishstart,getdisk(),runend-wishstart);
-				rdi+=count*0x200;
-				wishstart=runend;
+				//即将被读的扇区数
+				QWORD temp2;
+				//本run结束-期待的块开始
+				temp2=end-wishstart;
+
+				read(rdi,temp1,getdisk(),temp2);
+				rdi+=temp2*0x200;
+				wishstart=end;
 			}
 		}
-		//else 一个扇区都不读
 
 	}
 }
@@ -199,48 +178,23 @@ void datarun(QWORD rdi,QWORD runaddr)
 
 	//变量们
 	BYTE data;
-	QWORD dataaddr = ntfssector;
-	long long lcn;
+	long long offset=0;
 	long long count;
 
-	//第一个run
-	explainrun(runaddr,&lcn,&count);
-
-	QWORD temp=0;
-	data=( *(BYTE*)runaddr ) >> 4;
-	while(data)
+	//每个run来一次
+	while(1)
 	{
-		temp=(temp<<8) + 0xff;
-		data--;
-	}
-	lcn=lcn & temp;
-	dataaddr += lcn*clustersize;
-	say("    sector:",dataaddr);
-	count *= clustersize;
-	say("    size:",count);
+		data= *(BYTE*)runaddr;
+		if(data == 0) break;
 
-	data= *(BYTE*)runaddr;
-	runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
-
-	//读进内存
-	read(rdi,dataaddr,getdisk(),count);
-	rdi+=count*0x200;
-
-	while( *(BYTE*)runaddr != 0 )		//不准确
-	{
-		//剩下的run
-		explainrun(runaddr,&lcn,&count);
-
-		dataaddr += lcn*clustersize;
-		say("    sector:",dataaddr);
-		count *= clustersize;
+		explainrun(runaddr,&offset,&count);
+		say("    sector:",ntfssector+offset);
 		say("    size:",count);
 
-		data= *(BYTE*)runaddr;
 		runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
 
 		//读进内存
-		read(rdi,dataaddr,getdisk(),count);
+		read(rdi,ntfssector+offset,getdisk(),count);
 		rdi+=count*0x200;
 	}
 
