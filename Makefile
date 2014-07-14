@@ -33,7 +33,7 @@ ext:
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/ext.vhd
 	sudo partprobe /dev/nbd0
 	sudo mount -o rw /dev/nbd0p1 /mnt/nbd
-	sudo cp live /mnt/nbd/live/live
+	sudo cp init/init /mnt/nbd/live/init
 	sudo umount /dev/nbd0p1
 	sudo qemu-nbd -d /dev/nbd0
 	sudo rmmod nbd

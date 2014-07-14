@@ -31,7 +31,9 @@ QWORD explaingpt()
 		}
 		else if( *(QWORD*)offset==0x477284830fc63daf ){
 		if( *(QWORD*)(offset+8)==0xe47d47d8693d798e ){
-			//say("ext",0);
+			*(QWORD*)addr=0x747865;
+			*(QWORD*)(addr+8)=*(QWORD*)(offset+0x20);
+			addr+=0x10;
 		}
 		}
 	}
@@ -64,7 +66,9 @@ QWORD explainmbr()
 		}
 		else if( temp==0x83 )
 		{
-			//say("ext partition",0);
+			*(QWORD*)addr=0x747865;
+			*(QWORD*)(addr+8)=(QWORD)(*(DWORD*)(offset+8));
+			addr+=0x10;
 		}
 	}
 }
