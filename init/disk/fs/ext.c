@@ -3,13 +3,120 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 #define inodebuffer 0x140000
-#define dirbuffer 0x180000
+#define tablebuffer 0x180000
 #define rawbuffer 0x1c0000
 
 
 static QWORD block0;
 static QWORD blocksize;
 static QWORD inode1;
+static QWORD inodesize;
+
+
+void checkinodecache()
+{
+	//read inodes
+        read(inodebuffer,block0+blocksize*inode1,getdisk(),0x200);
+}
+
+
+void explaininode(QWORD rdi,QWORD inode)
+{
+	checkinodecache();
+
+	QWORD rsi=inodebuffer+(inode-1)*inodesize+0x28;
+	int i;
+
+	if(*(WORD*)rsi == 0xf30a)
+	{
+		QWORD numbers;
+
+		say("    extend@",rsi);
+		numbers=*(WORD*)(rsi+2);
+		say("    {",0);
+		say("    numbers:",numbers);
+
+		rsi+=12;
+		for(i=0;i<numbers;i++)
+		{
+			QWORD temp1;
+			QWORD temp2;
+			say("    @",rsi);
+
+			temp1=*(DWORD*)(rsi+8);
+			temp1+= *(WORD*)(rsi+6);
+			temp1*=blocksize;
+			temp1+=block0;
+			say("    sector:",temp1);
+
+			temp2=*(WORD*)(rsi+4);
+			temp2*=blocksize;
+			say("    count:",temp2);
+
+			rsi+=12;
+
+		        read(rdi,temp1,getdisk(),temp2);
+			rdi+=0x200*blocksize;
+		}
+
+		say("    }",0);
+	}
+	else
+	{
+	say("    old@",rsi);
+	say("    {",0);
+	for(i=0;i<8;i++)
+	{
+		if(*(DWORD*)rsi != 0)
+		{
+			QWORD temp;
+			say("    pointer@",rsi);
+
+			temp=block0+(*(DWORD*)rsi)*blocksize;
+			say("sector:",temp);
+
+		        read(rdi,temp,getdisk(),blocksize);
+			rdi+=0x200*blocksize;
+		}
+
+		rsi+=4;
+	}
+	say("    }",0);
+	}
+}
+
+
+void table2raw(QWORD rsi)
+{
+	QWORD rdi=rawbuffer;
+	int i;
+
+	while(*(DWORD*)rsi != 0)
+	{
+		//先是名字
+		if( *(BYTE*)(rsi+6) < 16)
+		{
+			i=0;
+			while(*(BYTE*)(rsi+8+i) != 0)
+			{
+				*(BYTE*)(rdi+i)=*(BYTE*)(rsi+8+i);
+				i++;
+			}
+		}
+		else
+		{
+			*(QWORD*)rdi=*(QWORD*)(rsi+8);
+			*(QWORD*)(rdi+8)=*(QWORD*)(rsi+16);
+		}
+
+		//再是inode号
+		*(QWORD*)(rdi+0x10)=*(DWORD*)rsi;
+
+		//剩下的是。。。
+		rsi+=*(WORD*)(rsi+4);
+		rdi+=0x20;
+	}
+}
 
 
 void ext_cd(QWORD name)
@@ -18,24 +125,8 @@ void ext_cd(QWORD name)
 	blank2zero(&name);
 	if(name == '/')
 	{
-		//read inode
-	        read(inodebuffer,block0+blocksize*inode1,getdisk(),0x200);
-
-		DWORD* rsi=(DWORD*)(inodebuffer+0x80+0x28);
-		QWORD rdi=dirbuffer;
-		int i;
-		for(i=0;i<8;i++)
-		{
-			//f30a
-			if(rsi[i] != 0)
-			{
-				QWORD temp=block0+blocksize*rsi[i];
-				say("@",&rsi[i]);
-				say("",temp);
-			        read(rdi,temp,getdisk(),blocksize);
-				rdi+=0x200*blocksize;
-			}
-		}
+		explaininode(tablebuffer,2);
+		table2raw(tablebuffer);
 	}
 }
 
@@ -63,7 +154,9 @@ int mountext(QWORD sector)
 	//变量们
 	blocksize=*(DWORD*)0x130418;	//就不另开个temp变量了
 	blocksize=( 1<<(blocksize+10) )/0x200;
-	say("sectors/block=",blocksize);
+	say("sector/block=",blocksize);
+	inodesize=*(WORD*)0x130458;
+	say("byte/inode:",inodesize);
 
 	//读block descriptor
 	if(blocksize==2)
