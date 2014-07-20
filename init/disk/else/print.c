@@ -43,7 +43,8 @@ void say(char* p,...)
 	unsigned long long first=rsi;
 	char* journal=(char*)0x40000;
 	int x=0;
-	int y=*(int*)0x7fff8;
+	int y;
+	y=*(int*)0x7fff8;
 
 	if(y>=0xffe | y<0){
 		y=0;

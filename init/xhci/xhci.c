@@ -15,7 +15,7 @@ unsigned int findaddr()
                 {
                         addr+=4;
                         temp=*(unsigned int*)addr;
-                        say("pci address:",(QWORD)temp);
+                        say("xhci(port)@",(QWORD)temp);
                         return temp;
                 }
         }
@@ -45,11 +45,11 @@ unsigned int probepci(unsigned int addr)
         out32(0xcfc,temp);
 
         out32(0xcf8,addr+0x4);
-        say("pci status and command:",(QWORD)in32(0xcfc));
+        //say("pci status and command:",(QWORD)in32(0xcfc));
 
         out32(0xcf8,addr+0x10);
         addr=in32(0xcfc)&0xfffffff0;
-        say("xhci address:",(QWORD)addr);
+        say("xhci@",(QWORD)addr);
 
         int i=0;
         unsigned long long* table=(unsigned long long*)0x5000;
@@ -77,4 +77,5 @@ void initxhci()
         addr=probepci(addr);            //memory addr of ahci
         if(addr==0) return;
 
+	say("",0);
 }

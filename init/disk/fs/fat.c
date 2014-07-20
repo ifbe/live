@@ -22,7 +22,7 @@ void checkfatcache()	//put cache in [0x140000]
 	for(i=0;i<0x40;i++){
 		read(fatbuffer+i*0x1000,fat0+cacheblock*0x200+8*i,getdisk(),8);
 	}
-	say("[cache]reload:",fat0+cacheblock*0x200);
+	say("cacheblock:",cacheblock);
 	cachecurrent=cacheblock;
 }
 
@@ -57,7 +57,7 @@ void dir2raw()
 
 void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 {
-	say("first cluster:",source);
+	say("cluster:",source);
 
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
@@ -72,7 +72,8 @@ void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 		if(source>=0xfff8) break;
 	}
 
-	say("total bytes:",rdi-dest);
+	say("count:",rdi-dest);
+	say("",0);
 }
 
 
@@ -81,9 +82,10 @@ void fat16_root()
 	BYTE* memory=(BYTE*)indexbuffer;
 	int i;
 	for(i=0;i<0x80000;i++) memory[i]=0;
-	say("cd root:",fat0+fatsize*2);
+	say("cd ",fat0+fatsize*2);
 	read(indexbuffer,fat0+fatsize*2,getdisk(),32);
 	dir2raw();
+	say("",0);
 }
 
 
@@ -173,7 +175,7 @@ void fat16()
 
 void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 {
-	say("first cluster:",source);
+	say("cluster:",source);
 
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
@@ -190,7 +192,8 @@ void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 		if(source==0x0ffffff7){say("bad cluster,bye!",source);return;}
 		if(source>=0x0ffffff8) break;
 	}
-	say("total bytes:",rdi-dest);
+	say("count:",rdi-dest);
+	say("",0);
 }
 
 
@@ -203,6 +206,7 @@ void fat32_root()
 	say("cd root:",cluster0+clustersize*2);
 	read(indexbuffer,cluster0+clustersize*2,getdisk(),32);
 	dir2raw();
+	say("",0);
 }
 
 
@@ -333,18 +337,6 @@ int mountfat(QWORD sector)
                 return -3;
         }
 
-        DWORD* pointer=(DWORD*)rawbuffer;
-        int i;
-        for(i=0;i<0x1000;i+=4)
-        {
-                if( pointer[i] == 0x4556494c )
-                {
-                        say("find our directory!!!!",0);
-                        return 1;
-                }
-        }
-
-        say("not in this partition",0);
-        return -4;
+	return 0;
 }
 

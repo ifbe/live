@@ -82,8 +82,8 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 		if(data == 0) break;
 
 		explainrun(runaddr,&offset,&count);
-		say("sector:",ntfssector+offset);
-		say("size:",count);
+		say("    sector:",ntfssector+offset);
+		say("    size:",count);
 
 		runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
 		start=end;
@@ -115,7 +115,7 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 
 				read(rdi,temp1,getdisk(),temp2);
 
-				say("done:",temp1);
+				say("    lastpart:",temp1);
 				say("}",0);
 				say("",0);
 				return;
@@ -173,8 +173,8 @@ void checkmftcache(QWORD mftnum)
 
 void datarun(QWORD rdi,QWORD runaddr)
 {
-	say("    run@",runaddr);
-	say("    {",0);
+	say("run@",runaddr);
+	say("{",0);
 
 	//变量们
 	BYTE data;
@@ -198,7 +198,7 @@ void datarun(QWORD rdi,QWORD runaddr)
 		rdi+=count*0x200;
 	}
 
-	say("    }",0);
+	say("}",0);
 }
 
 
@@ -227,7 +227,7 @@ void explain80(QWORD addr)	//file data
 
 void index2raw(QWORD start,QWORD end)
 {
-	say("    index2raw:",rawpointer);
+	//say("    index2raw:",rawpointer);
 
 	BYTE* buffer=(BYTE*)rawpointer;
 	QWORD index=start;
@@ -298,8 +298,8 @@ void explaina0(QWORD addr)	//index allocation
 	//*(QWORD*)(rawpointer+0x10)= (*(QWORD*)(indexbuffer+0x10))&0xffffffffffff;
 	//rawpointer+=0x20;
 
-	say("    INDX@",indexbuffer);
-	say("    {",0);
+	say("INDX@",indexbuffer);
+	say("{",0);
 
 	QWORD p=indexbuffer;
 	while( *(DWORD*)p ==0x58444e49 )
@@ -308,7 +308,7 @@ void explaina0(QWORD addr)	//index allocation
 		p+=0x1000;
 	}
 
-	say("    }",0);
+	say("}",0);
 }
 
 
