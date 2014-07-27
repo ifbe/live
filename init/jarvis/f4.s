@@ -284,7 +284,7 @@ load:
 cmp dword [0x7030],"load"
 jne notfound
 
-mov rdi,0x200000
+mov rdi,0x400000
 xor rax,rax
 mov ecx,0x40000
 rep stosd
@@ -299,7 +299,7 @@ jmp scroll
 
 ;______________________________
 test:
-mov rax,0x200000
+mov rax,0x400000
 call rax
 jmp scroll
 ;______________________________

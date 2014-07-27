@@ -38,11 +38,13 @@ ext:
 	sudo qemu-nbd -d /dev/nbd0
 	sudo rmmod nbd
 qemutest:
-	qemu-kvm \
+	sudo qemu-kvm \
 	-smp 2 \
 	-m 512 \
 	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
+	-device usb-host,hostbus=2,hostaddr=5,bus=xhci.0,port=2 \
+	-device usb-tablet,bus=xhci.0,port=1 \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live
@@ -50,7 +52,6 @@ usbtest:
 	sudo qemu-kvm \
 	-smp 2 \
 	-m 512 \
-	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
@@ -59,7 +60,6 @@ fattest:
 	sudo qemu-kvm \
 	-smp 2 \
 	-m 512 \
-	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
@@ -68,7 +68,6 @@ ntfstest:
 	sudo qemu-kvm \
 	-smp 2 \
 	-m 512 \
-	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
@@ -77,7 +76,6 @@ exttest:
 	sudo qemu-kvm \
 	-smp 2 \
 	-m 512 \
-	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \

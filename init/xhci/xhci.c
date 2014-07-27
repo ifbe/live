@@ -1,3 +1,6 @@
+#define BYTE unsigned char
+#define WORD unsigned short
+#define DWORD unsigned int
 #define QWORD unsigned long long
 #define xhcihome 0x200000
 
@@ -37,7 +40,7 @@ static inline unsigned int in32( unsigned short port )
                   : "=a"(ret) : "Nd"(port) );
     return ret;
 }
-unsigned int probepci(unsigned int addr)
+unsigned int probepci(QWORD addr)
 {
         out32(0xcf8,addr+0x4);
         unsigned int temp=in32(0xcfc)|(1<<10);
@@ -49,7 +52,7 @@ unsigned int probepci(unsigned int addr)
 
         out32(0xcf8,addr+0x10);
         addr=in32(0xcfc)&0xfffffff0;
-        say("xhci@",(QWORD)addr);
+        say("xhci@",addr);
 
         int i=0;
         unsigned long long* table=(unsigned long long*)0x5000;
@@ -67,15 +70,117 @@ unsigned int probepci(unsigned int addr)
 
 
 
+int ownership(QWORD addr)
+{
+	QWORD temp=*(DWORD*)addr;
+
+	//set hc os owned semaphore
+	*(DWORD*)addr=temp|0x1000000;
+
+	//等一会
+	QWORD waiter=0xffffff;
+	for(;waiter>0;waiter--) asm("nop");
+
+	//时间到了，看看到手没
+	temp=*(DWORD*)addr;
+	temp&=0x1000000;
+	if(temp == 0x1000000)
+	{
+		say("    grabing ownership");
+
+		temp=*(DWORD*)addr;
+		temp&=0x10000;
+		if(temp == 0)
+		{
+			say("    bios gone");
+			return 0;
+		}
+	}
+
+	say("    failed",0);
+	return -1;
+}
+
+
+
+
+void explainxecp(QWORD addr)
+{
+	DWORD temp;
+	BYTE kind;
+	QWORD next;
+
+	say("{",0);
+	while(1)
+	{
+		temp=*(DWORD*)addr;
+
+		kind=temp&0xff;
+		if(kind == 0) break;
+		next=(temp>>6)&0x3fc;
+		if(next == 0) break;
+
+		say("    @",addr);
+		say("    cap:",kind);
+
+		if(kind == 1)
+		{
+			int result=ownership(addr);
+			if(result < 0) return;
+		}
+
+		addr+=next;
+	}
+	say("}",0);
+}
+
+
+
+
+void probexhci(QWORD addr)
+{
+	say("version:",(*(DWORD*)addr) >> 16);
+
+	QWORD caplength=(*(DWORD*)addr) & 0xffff;
+	say("caplength:",caplength&0xffff);
+
+	QWORD hcsparams1=*(DWORD*)(addr+4);
+	say("hcsparams1:",hcsparams1);
+	QWORD hcsparams2=*(DWORD*)(addr+8);
+	say("hcsparams2:",hcsparams2);
+	QWORD hcsparams3=*(DWORD*)(addr+0xc);
+	say("hcsparams3:",hcsparams3);
+	QWORD capparams=*(DWORD*)(addr+0x10);
+	say("capparams:",capparams);
+
+	say("",0);
+
+	QWORD dboff=addr+(*(DWORD*)(addr+0x14));
+	say("dboff:",dboff);
+	QWORD rtsoff=addr+(*(DWORD*)(addr+0x18));
+	say("rtsoff:",rtsoff);
+	QWORD operational=addr+caplength;
+	say("operational:",operational);
+	QWORD xecp=addr+( (capparams >> 16) << 2 );
+	say("xecp:",xecp);
+
+	explainxecp(xecp);
+}
+
+
+
+
 void initxhci()
 {
-        unsigned int addr;
+        QWORD addr;
 
-        addr=findaddr();                //port addr of port
+        addr=findaddr();                //pci addr of port
         if(addr==0) return;
 
         addr=probepci(addr);            //memory addr of ahci
         if(addr==0) return;
+
+	probexhci(addr);
 
 	say("",0);
 }

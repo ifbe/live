@@ -147,7 +147,7 @@ void fat16_load(QWORD name)
 	}
 
 	QWORD file=(QWORD)(*(WORD*)(p+0x1a));	//fat16,only 16bit
-	fat16_data(0x200000,file);
+	fat16_data(0x400000,file);
 }
 
 
@@ -272,7 +272,7 @@ void fat32_load(QWORD name)
 	QWORD file=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	file+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
 
-	fat32_data(0x200000,file);
+	fat32_data(0x400000,file);
 }
 
 

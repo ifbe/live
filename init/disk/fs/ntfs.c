@@ -211,7 +211,7 @@ void explain80(QWORD addr)	//file data
 		say("resident80",0);
 		DWORD length = *(DWORD*)(addr+0x10);
 		BYTE* rsi=(BYTE*)(addr + (QWORD)(*(DWORD*)(addr+0x14)) );
-		BYTE* rdi=(BYTE*)0x200000;
+		BYTE* rdi=(BYTE*)0x400000;
 		int i;
 		for(i=0;i<length;i++) rdi[i]=rsi[i];
 
@@ -220,7 +220,7 @@ void explain80(QWORD addr)	//file data
 	else
 	{
 		say("non resident80",0);
-		datarun(0x200000 , addr + (*(QWORD*)(addr+0x20)) );
+		datarun(0x400000 , addr + (*(QWORD*)(addr+0x20)) );
 	}
 }
 

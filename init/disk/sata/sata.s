@@ -30,10 +30,10 @@ ret
 directidentify:
 call getdisk
 mov rsi,rax
-mov rdi,0x200000
+mov rdi,0x400000
 call identify
 
-mov edi,0x200000
+mov edi,0x400000
 mov ecx,0x100
 .xxcchhgg:
 mov ax,[edi]
@@ -54,7 +54,7 @@ call say
 
 call getdisk
 mov rdx,rax
-mov rdi,0x200000
+mov rdi,0x400000
 pop rsi
 mov rcx,8			;512K
 call read

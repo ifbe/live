@@ -9,12 +9,12 @@ unsigned int findaddr()
 	unsigned int temp;
 	for(;addr<0x6000;addr+=0x10)
 	{
-		temp=*(unsigned int*)addr;
+		temp=*(DWORD*)addr;
 		temp&=0xffffff00;
 		if(temp==0x01060100)
 		{
 			addr+=4;
-			temp=*(unsigned int*)addr;
+			temp=*(DWORD*)addr;
 			say("ahci(port)@",(QWORD)temp);
 			return temp;
 		}
@@ -41,7 +41,7 @@ static inline unsigned int in32( unsigned short port )
 
 //进：pci地址
 //出：内存地址
-unsigned int probepci(unsigned int addr)
+unsigned int probepci(QWORD addr)
 {
 	out32(0xcf8,addr+0x4);
 	unsigned int temp=in32(0xcfc)|(1<<10);
@@ -53,10 +53,10 @@ unsigned int probepci(unsigned int addr)
 
 	out32(0xcf8,addr+0x24);
 	addr=in32(0xcfc)&0xfffffff0;
-	say("ahci@",(QWORD)addr);
+	say("ahci@",addr);
 
 	int i=0;
-	unsigned long long* table=(unsigned long long*)0x5000;
+	QWORD* table=(QWORD*)0x5000;
 	for(i=0;i<0x200;i+=2)
 	{
 		if(table[i]==0){
@@ -71,9 +71,9 @@ unsigned int probepci(unsigned int addr)
 
 
 
-void probeahci(unsigned int addr)
+void probeahci(QWORD addr)
 {
-	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
+	HBA_MEM* abar=(HBA_MEM*)addr;
 	abar->ghc|=0x80000000;
 	abar->ghc&=0xfffffffd;
 }
@@ -124,7 +124,7 @@ QWORD getdisk()
 //出：找到就返回第一个sata地址，否则0
 QWORD checkandsave(QWORD addr)
 {
-	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
+	HBA_MEM* abar=(HBA_MEM*)addr;
 
 	DWORD pi = abar->pi;
 	int count=0;
@@ -165,10 +165,10 @@ QWORD checkandsave(QWORD addr)
 //进：ahci内存地址
 //出：找到就返回第一个sata地址，否则0
 //有些bios没初始化
-unsigned int findport(unsigned int addr)
+unsigned int findport(QWORD addr)
 {
 	unsigned int temp;
-	HBA_MEM* abar=(HBA_MEM*)(QWORD)addr;
+	HBA_MEM* abar=(HBA_MEM*)addr;
 
 	//try to get port
 	temp=checkandsave(addr);
@@ -254,13 +254,13 @@ void disable(HBA_PORT *port)
 
 	//say("port->cmd after disable:",(QWORD)(port->cmd));
 }
-void probeport(unsigned int addr)
+void probeport(QWORD addr)
 {
 	int i;
 	char* p=(char*)(ahcihome+0x8000);
 	for(i=0;i<0x6000;i++) p[i]=0;
 
-	HBA_PORT* port=(HBA_PORT*)(QWORD)addr;
+	HBA_PORT* port=(HBA_PORT*)addr;
 	disable(port);	// Stop command engine
 
 	//32*32=0x400
@@ -281,7 +281,11 @@ void probeport(unsigned int addr)
 
 void initahci()
 {
-	unsigned int addr;
+	QWORD addr;
+
+	//clear home
+	addr=ahcihome;
+	for(;addr<ahcihome+0x100000;addr++) *(BYTE*)addr=0;
 
 	addr=findaddr();		//port addr of port
 	if(addr==0) return;
