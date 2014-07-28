@@ -1,5 +1,5 @@
 #define u64 long long
-int x=-250,y=0,xx,yy;
+static int x=-250,y=0,xx,yy;
 
 
 void point(int x,int y,int z)
