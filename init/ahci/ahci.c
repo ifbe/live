@@ -1,5 +1,5 @@
 #include "ahci.h"
-#define ahcihome 0x100000
+#define ahcihome 0x200000
 
 //找到就返回ahci的pci地址，否则返回0
 //全部设备信息我放在0x5000了，非本环境自己枚举

@@ -50,7 +50,7 @@ static const char njZZ[64]={ 0, 1, 8,16, 9, 2, 3,10,
                             58,59,52,45,38,31,39,46,
                             53,60,61,54,47,55,62,63};
 
-long long offset;
+static long long offset;
 
 void picture()
 {

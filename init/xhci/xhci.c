@@ -2,7 +2,7 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
-#define xhcihome 0x200000
+#define xhcihome 0x300000
 
 
 
@@ -164,7 +164,39 @@ void probexhci(QWORD addr)
 	QWORD xecp=addr+( (capparams >> 16) << 2 );
 	say("xecp:",xecp);
 
-	explainxecp(xecp);
+	explainxecp(xecp);	//mostly,grab ownership
+
+	//-------------------reset-------------------
+	//init system io memory map,if supported
+	//xhci reset,wait until CNR flag is 0
+
+	//-------------------xhci结构---------------------
+	//program the max device slot enabled field in config register
+	//program the dcbaap
+	//program crcr,point to addr of first trb in command ring
+
+	//-----------------------中断----------------------
+	//misx table,message addr,message data,enable vector
+	//allocate&init msix pending bit array
+	//point table&pba offset to message control table and pending bit array
+	//init message control register of msix capability structure
+
+	//--------------------每个设备---------------------------
+
+		//-------------define event ring-----------
+		//allocate and initialize the event ring segments
+		//erst,point to and define size(in trbs)of event ring
+		//erstsz,number of segments described by erst
+		//erdp,addr of first segment described by erst
+		//erstba,point to where event ring segment table is located
+
+		//enable msix,enable flag in msix cap struct meessage control r
+		//init interval field of interrupt moderation register
+		//enable INTE in USBCMD
+		//enable IE in interrupt management r
+
+	//-----------------xhci启动-----------------
+	//write usbcmd,turn host controller on
 }
 
 
