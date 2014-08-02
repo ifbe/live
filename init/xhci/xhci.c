@@ -224,6 +224,7 @@ void explainxecp(QWORD addr)
 	BYTE kind;
 	QWORD next;
 
+	say("explain xecp",0);
 	say("{",0);
 	while(1)
 	{
@@ -253,49 +254,66 @@ void explainxecp(QWORD addr)
 
 void probexhci()
 {
-	say("version:",(*(DWORD*)memaddr) >> 16);
-
-	QWORD caplength=(*(DWORD*)memaddr) & 0xffff;
-	say("caplength:",caplength&0xffff);
-
-	QWORD hcsparams1=*(DWORD*)(memaddr+4);
-	say("hcsparams1:",hcsparams1);
-	QWORD hcsparams2=*(DWORD*)(memaddr+8);
-	say("hcsparams2:",hcsparams2);
-	QWORD hcsparams3=*(DWORD*)(memaddr+0xc);
-	say("hcsparams3:",hcsparams3);
-	QWORD capparams=*(DWORD*)(memaddr+0x10);
-	say("capparams:",capparams);
-
-	say("",0);
-
-	QWORD dboff=memaddr+(*(DWORD*)(memaddr+0x14));
-	say("dboff:",dboff);
-	QWORD rtsoff=memaddr+(*(DWORD*)(memaddr+0x18));
-	say("rtsoff:",rtsoff);
-	QWORD operational=memaddr+caplength;
-	say("operational:",operational);
-	QWORD xecp=memaddr+( (capparams >> 16) << 2 );
-	say("xecp:",xecp);
-
-	explainxecp(xecp);	//mostly,grab ownership
-
-	say("initxhci",0);
+	say("base information",0);
 	say("{",0);
 
+	QWORD version=(*(DWORD*)memaddr) >> 16;
+	QWORD caplength=(*(DWORD*)memaddr) & 0xffff;
+
+	QWORD hcsparams1=*(DWORD*)(memaddr+4);
+	QWORD hcsparams2=*(DWORD*)(memaddr+8);
+	QWORD hcsparams3=*(DWORD*)(memaddr+0xc);
+	QWORD capparams=*(DWORD*)(memaddr+0x10);
+
+	QWORD dboff=memaddr+(*(DWORD*)(memaddr+0x14));
+	QWORD rtsoff=memaddr+(*(DWORD*)(memaddr+0x18));
+	QWORD operational=memaddr+caplength;
+	QWORD xecp=memaddr+( (capparams >> 16) << 2 );
+
+	say("    version:",version);
+	say("    caplength:",caplength);
+
+	say("    hcsparams1:",hcsparams1);
+	say("    hcsparams2:",hcsparams2);
+	say("    hcsparams3:",hcsparams3);
+	say("    capparams:",capparams);
+
+	say("    dboff:",dboff);
+	say("    rtsoff:",rtsoff);
+	say("    operational:",operational);
+	say("    xecp:",xecp);
+
+	say("}",0);
 
 
+	//mostly,grab ownership
+	explainxecp(xecp);
+
+
+
+
+	//打印bios初始化完后的状态
+	say("before we destory everything",0);
+	say("{",0);
+
+	QWORD usbcommand=*(DWORD*)operational;
+	QWORD usbstatus=*(DWORD*)(operational+4);
+	say("    usbcommand:",usbcommand);
+	say("    usbstatus:",usbstatus);
+
+
+	say("}",0);
+
+
+
+	say("init xhci",0);
+	say("{",0);
 
 //----------------------------1.xhci复位------------------------------
 //init system io memory map,if supported
 //xhci reset,wait until CNR flag is 0
 //--------------------------------------------------------------------
 	say("    1.stop&reset:",0);
-
-	QWORD usbcommand=*(DWORD*)operational;
-	QWORD usbstatus=*(DWORD*)(operational+4);
-	say("    usbcommand(origin):",usbcommand);
-	say("    usbstatus(origin):",usbstatus);
 
 	//xhci正在运行吗
 	if( (usbstatus&0x1) == 0)		//HCH位为0，即正在运行
@@ -341,8 +359,8 @@ void probexhci()
 	//好像第一步成功了
 	usbcommand=*(DWORD*)operational;
 	usbstatus=*(DWORD*)(operational+4);
-	say("    usbcommand(now):",usbcommand);
-	say("    usbstatus(now):",usbstatus);
+	say("    usbcommand:",usbcommand);
+	say("    usbstatus:",usbstatus);
 	say("    ok!",0);
 
 
@@ -406,12 +424,13 @@ void initxhci()
 	addr=xhcihome;
 	for(;addr<xhcihome+0x100000;addr++) *(BYTE*)addr=0;
 
-        findaddr();		//pci addr of port
+	//pci部分
+        findaddr();
         if(portaddr==0) return;
-
-        probepci();		//memory addr of xhci
+        probepci();
         if(memaddr==0) return;
 
+	//真正的部分
 	probexhci();
 
 	say("",0);
