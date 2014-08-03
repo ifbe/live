@@ -254,8 +254,9 @@ void explainxecp(QWORD addr)
 
 void probexhci()
 {
-	say("base information",0);
-	say("{",0);
+//基本信息
+say("base information",0);
+say("{",0);
 
 	QWORD version=(*(DWORD*)memaddr) >> 16;
 	QWORD caplength=(*(DWORD*)memaddr) & 0xffff;
@@ -265,8 +266,8 @@ void probexhci()
 	QWORD hcsparams3=*(DWORD*)(memaddr+0xc);
 	QWORD capparams=*(DWORD*)(memaddr+0x10);
 
-	QWORD dboff=memaddr+(*(DWORD*)(memaddr+0x14));
-	QWORD rtsoff=memaddr+(*(DWORD*)(memaddr+0x18));
+	QWORD doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
+	QWORD runtime=memaddr+(*(DWORD*)(memaddr+0x18));
 	QWORD operational=memaddr+caplength;
 	QWORD xecp=memaddr+( (capparams >> 16) << 2 );
 
@@ -278,42 +279,49 @@ void probexhci()
 	say("    hcsparams3:",hcsparams3);
 	say("    capparams:",capparams);
 
-	say("    dboff:",dboff);
-	say("    rtsoff:",rtsoff);
-	say("    operational:",operational);
-	say("    xecp:",xecp);
+	say("    doorbell@",doorbell);
+	say("    runtime@",runtime);
+	say("    operational@",operational);
+	say("    xecp@",xecp);
 
-	say("}",0);
-
-
-	//mostly,grab ownership
-	explainxecp(xecp);
+say("}",0);
 
 
 
 
-	//打印bios初始化完后的状态
-	say("before we destory everything",0);
-	say("{",0);
+//mostly,grab ownership
+explainxecp(xecp);
+
+
+
+
+//打印bios初始化完后的状态
+say("before we destory everything",0);
+say("{",0);
 
 	QWORD usbcommand=*(DWORD*)operational;
 	QWORD usbstatus=*(DWORD*)(operational+4);
+	QWORD crcr=*(DWORD*)(operational+0x18);
+	QWORD dcbaa=*(DWORD*)(operational+0x30);
+	QWORD config=*(DWORD*)(operational+0x38);
 	say("    usbcommand:",usbcommand);
 	say("    usbstatus:",usbstatus);
+	say("    crcr:",crcr);
+	say("    dcbaa:",dcbaa);
+	say("    config:",config);
 
 
-	say("}",0);
+say("}",0);
 
 
 
-	say("init xhci",0);
-	say("{",0);
-
+say("init xhci",0);
+say("{",0);
 //----------------------------1.xhci复位------------------------------
 //init system io memory map,if supported
 //xhci reset,wait until CNR flag is 0
 //--------------------------------------------------------------------
-	say("    1.stop&reset:",0);
+say("1.stop&reset:",0);
 
 	//xhci正在运行吗
 	if( (usbstatus&0x1) == 0)		//HCH位为0，即正在运行
@@ -356,9 +364,15 @@ void probexhci()
 		return;
 	}
 
-	//好像第一步成功了
-	usbcommand=*(DWORD*)operational;
+	//controller not ready=1就是没准备好
 	usbstatus=*(DWORD*)(operational+4);
+	if( (usbstatus&0x800) == 0x800 )
+	{
+		say("    error:controller not ready:",usbstatus);
+		return;
+	}
+
+	//好像第一步成功了
 	say("    usbcommand:",usbcommand);
 	say("    usbstatus:",usbstatus);
 	say("    ok!",0);
@@ -371,37 +385,68 @@ void probexhci()
 //program the dcbaap
 //program crcr,point to addr of first trb in command ring
 //----------------------------------------------------------
-	say("    2.maxslot&context&ring",0);
+say("2.maxslot&context&ring:",0);
+
+	//maxslot=deviceslots
+	*(DWORD*)(operational+0x38)=(*(DWORD*)(memaddr+4)) &0xff;
+	say("    maxslot:",*(DWORD*)(operational+0x38) );
+
+	//dcbaa使用内存[xhcihome,xhcihome+0x40000)
+	*(DWORD*)(operational+0x30)=xhcihome;
+	say("    dcbaa:",*(DWORD*)(operational+0x30) );
+
+	//crcr使用内存[xhcihome+0x40000,xhcihome+0x80000)
+	*(DWORD*)(operational+0x18)=xhcihome+0x40000;
+	say("    crcr:",*(DWORD*)(operational+0x18));
 
 
 
 
 //-----------------------3.中断----------------------
-//misx table,message addr,message data,enable vector
+//msix table,message addr,message data,enable vector
 //allocate&init msix pending bit array
 //point table&pba offset to message control table and pending bit array
 //init message control register of msix capability structure
 //-------------------------------------------------
-	say("    3.interrupt",0);
+say("3.interrupt:",0);
+
+	//msixtable[0].addr
+	*(DWORD*)msixtable=0xfee00000;
+	//msixtable[0].data
+	*(DWORD*)(msixtable+8)=0x20;
+	//msixtable[0].control,enable
+	*(DWORD*)(msixtable+0xc)&=0xfffffffe;
+
+	say("    msix[0]",0);
 
 
 
 
 //--------------------4.设备---------------------------
 //------------------------------------------------------
-	say("    4.device",0);
+say("4.device:",0);
 
 	//-------------define event ring-----------
 	//allocate and initialize the event ring segments
+	*(QWORD*)(xhcihome+0x80000)=xhcihome+0xc0000;
 	//erst,point to and define size(in trbs)of event ring
+	*(DWORD*)(xhcihome+0x80000+8)=16;
 	//erstsz,number of segments described by erst
+	*(DWORD*)(runtime+0x28)=1;
 	//erdp,addr of first segment described by erst
+	*(DWORD*)(runtime+0x38)=xhcihome+0xc0000;
 	//erstba,point to where event ring segment table is located
+	*(DWORD*)(runtime+0x30)=xhcihome+0x80000;
 
-	//enable msix,enable flag in msix cap struct meessage control r
 	//init interval field of interrupt moderation register
+	//*(DWORD*)(runtime+0x24)=
+
 	//enable INTE in USBCMD
+	*(DWORD*)operational |= 0x4;
 	//enable IE in interrupt management r
+	*(DWORD*)(runtime+0x20) |= 0x2;
+
+	say("    event ring done",0);
 
 
 
@@ -409,9 +454,12 @@ void probexhci()
 //---------------------xhci启动---------------------
 //write usbcmd,turn host controller on
 //-------------------------------------------------
-	say("    5.turnon",0);
+say("5.turnon",0);
+	//turn on
+	*(DWORD*)operational |= 0x1;
+	say("    turned on",0);
 
-	say("}",0);
+say("}",0);
 }
 
 
