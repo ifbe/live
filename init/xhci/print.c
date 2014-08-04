@@ -52,9 +52,10 @@ void say(char* p,...)
         }
         else *(int*)0x7fff8=y+1;
 
+	int screeny=y%30;
         while(*p!='\0')
         {
-                anscii(x,y,*p);
+                anscii(x,screeny,*p);
                 journal[y*64+x]=*p;
                 p++;
                 x++;
@@ -66,7 +67,7 @@ void say(char* p,...)
                 char ch;
                 int signal=0;
 
-                for(i=0;i<16;i++) anscii(x+i,y,0x20);
+                for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
 
                 for(i=0;i<16;i++)
                 {
@@ -78,7 +79,7 @@ void say(char* p,...)
                         {
                                 ch+=0x30;
                                 if(ch>0x39) ch+=0x7;
-                                anscii(x+signal-1,y,ch);
+                                anscii(x+signal-1,screeny,ch);
                                 journal[y*64+x+signal-1]=ch;
                         }
                 }

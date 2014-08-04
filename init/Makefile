@@ -1,13 +1,13 @@
 init:
-	#0x4000
+	#[0,0x3fff]
 	make -s -C cpu
-	#0x4000
+	#[0x4000,0x7fff]
 	make -s -C jarvis
-	#0x1000
+	#[0x8000,0x9fff]
 	make -s -C ahci
-	#0x1000
+	#[0xa000,0xbfff]
 	make -s -C xhci
-	#0x4000
+	#[0xc000,0xffff]
 	make -s -C disk
 	#one cat to rule them all
 	cat cpu/temp jarvis/temp ahci/temp xhci/temp disk/temp > init

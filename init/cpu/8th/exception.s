@@ -266,6 +266,10 @@ jmp lastwords
 unknown:
 mov dword [rel killer+4],0x01234567
 mov dword [rel killer],0x89abcdef
+push rax
+mov rax,0xfee000b0
+mov dword [rax],0
+pop rax
 jmp lastwords
 ;________________________________________
 

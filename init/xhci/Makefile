@@ -1,8 +1,9 @@
 c:
 	gcc -c -fPIC -O2 start.c
-	gcc -c -fPIC -O2 print.c
 	gcc -c -fPIC -O2 xhci.c
-	ld -T link.ld start.o print.o xhci.o -o temp.bin
+	gcc -c -fPIC -O2 print.c
+	nasm -f elf64 interrupt.s
+	ld -T link.ld start.o xhci.o print.o interrupt.o -o temp.bin
 	nasm end.s -o temp
 clean:
 	rm -f *.o

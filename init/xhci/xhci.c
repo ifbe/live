@@ -6,9 +6,10 @@
 
 
 static QWORD portaddr=0;
-static QWORD memaddr=0;
 static QWORD msixtable=0;
 static QWORD pendingtable=0;
+static QWORD memaddr=0;
+static QWORD operational;
 
 
 
@@ -251,6 +252,17 @@ void explainxecp(QWORD addr)
 
 
 
+void realisr20()
+{
+	say("oh!interrupt!",0);
+	say("{",0);
+	say("    command:",*(DWORD*)operational);
+	say("    status:",*(DWORD*)(operational+4));
+	say("}",0);
+}
+
+
+
 
 void probexhci()
 {
@@ -268,7 +280,8 @@ say("{",0);
 
 	QWORD doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
 	QWORD runtime=memaddr+(*(DWORD*)(memaddr+0x18));
-	QWORD operational=memaddr+caplength;
+	operational=memaddr+caplength;
+	QWORD portsc=operational+0x400;
 	QWORD xecp=memaddr+( (capparams >> 16) << 2 );
 
 	say("    version:",version);
@@ -282,6 +295,7 @@ say("{",0);
 	say("    doorbell@",doorbell);
 	say("    runtime@",runtime);
 	say("    operational@",operational);
+	say("    portsc@",portsc);
 	say("    xecp@",xecp);
 
 say("}",0);
@@ -417,6 +431,8 @@ say("3.interrupt:",0);
 	//msixtable[0].control,enable
 	*(DWORD*)(msixtable+0xc)&=0xfffffffe;
 
+	int20();
+
 	say("    msix[0]",0);
 
 
@@ -428,13 +444,13 @@ say("4.device:",0);
 
 	//-------------define event ring-----------
 	//allocate and initialize the event ring segments
-	*(QWORD*)(xhcihome+0x80000)=xhcihome+0xc0000;
+	*(QWORD*)(xhcihome+0x80000)=xhcihome+0x81000;
 	//erst,point to and define size(in trbs)of event ring
-	*(DWORD*)(xhcihome+0x80000+8)=16;
+	*(DWORD*)(xhcihome+0x80000+8)=32;
 	//erstsz,number of segments described by erst
 	*(DWORD*)(runtime+0x28)=1;
 	//erdp,addr of first segment described by erst
-	*(DWORD*)(runtime+0x38)=xhcihome+0xc0000;
+	*(DWORD*)(runtime+0x38)=xhcihome+0x81000;
 	//erstba,point to where event ring segment table is located
 	*(DWORD*)(runtime+0x30)=xhcihome+0x80000;
 
@@ -457,7 +473,8 @@ say("4.device:",0);
 say("5.turnon",0);
 	//turn on
 	*(DWORD*)operational |= 0x1;
-	say("    turned on",0);
+	say("    command:",*(DWORD*)operational);
+	say("    status:",*(DWORD*)(operational+4));
 
 say("}",0);
 }
