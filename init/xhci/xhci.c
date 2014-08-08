@@ -8,8 +8,13 @@
 static QWORD portaddr=0;
 static QWORD msixtable=0;
 static QWORD pendingtable=0;
+
 static QWORD memaddr=0;
 static QWORD operational;
+static QWORD portsc;
+static QWORD doorbell;
+static QWORD runtime;
+
 
 
 
@@ -48,109 +53,115 @@ static inline unsigned int in32( unsigned short port )
 }
 void explaincapability()
 {
+say("pci cap:",0);
+say("{",0);
+
 	DWORD offset;
 	DWORD temp;
 	DWORD kind;
 	DWORD next;
-
-	say("pci cap:",0);
-	say("{",0);
 
 	out32(0xcf8,portaddr+0x34);
 	offset=in32(0xcfc)&0xff;
 
 	while(1)
 	{
-		out32(0xcf8,portaddr+offset);
-		temp=in32(0xcfc);
-		kind=temp&0xff;
-		next=(temp>>8)&0xff;
+	out32(0xcf8,portaddr+offset);
+	temp=in32(0xcfc);
+	kind=temp&0xff;
+	next=(temp>>8)&0xff;
 
-		say("    @",offset);
-		switch(kind)
+	say("    @",offset);
+	switch(kind)
+	{
+		case 0x5:
 		{
-			case 0x5:
+			out32(0xcf8,portaddr+offset);
+			temp=in32(0xcfc);
+			if( (temp&0x800000) !=0 )
 			{
-				out32(0xcf8,portaddr+offset);
-				temp=in32(0xcfc);
-				if( (temp&0x800000) !=0 )
-				{
-					say("    32bit msi:",kind);
-					//out32(0xcf8,portaddr+offset+4);
-					//out32(0xcfc,0xfee00000);
-					//out32(0xcf8,portaddr+offset+8);
-					//out32(0xcfc,0x20);
-					//out32(0xcf8,portaddr+offset);
-					//out32(0xcfc,temp|0x10000);
-
-					//out32(0xcf8,portaddr+offset+4);
-					//say("    addr:",in32(0xcfc));
-					//out32(0xcf8,portaddr+offset+8);
-					//say("    data:",in32(0xcfc)&0xffff);
-					//out32(0xcf8,portaddr+offset);
-					//say("    control:",in32(0xcfc)>>16);
-				}
-				else
-				{
-					say("    64bit msi:",kind);
-					//out32(0xcf8,portaddr+offset+8);
-					//out32(0xcfc,0xfee00000);
-					//out32(0xcf8,portaddr+offset+0x10);
-					//out32(0xcfc,0x20);
-					//out32(0xcf8,portaddr+offset);
-					//out32(0xcfc,temp|0x10000);
-
-					//out32(0xcf8,portaddr+offset+8);
-					//say("    addr:",in32(0xcfc));
-					//out32(0xcf8,portaddr+offset+0x10);
-					//say("    data:",in32(0xcfc)&0xffff);
-					//out32(0xcf8,portaddr+offset);
-					//say("    control:",in32(0xcfc)>>16);
-				}
-
-				break;
+				say("    32bit msi:",kind);
+				//out32(0xcf8,portaddr+offset+4);
+				//out32(0xcfc,0xfee00000);
+				//out32(0xcf8,portaddr+offset+8);
+				//out32(0xcfc,0x20);
+				//out32(0xcf8,portaddr+offset);
+				//out32(0xcfc,temp|0x10000);
+	
+				//out32(0xcf8,portaddr+offset+4);
+				//say("    addr:",in32(0xcfc));
+				//out32(0xcf8,portaddr+offset+8);
+				//say("    data:",in32(0xcfc)&0xffff);
+				//out32(0xcf8,portaddr+offset);
+				//say("    control:",in32(0xcfc)>>16);
 			}
-			case 0x11:
+			else
 			{
-				say("    msix:",kind);
-
-				//read bar0
-				out32(0xcf8,portaddr+0x10);
-				memaddr=in32(0xcfc)&0xfffffff0;
-
-				//table offset
-				out32(0xcf8,portaddr+offset+4);
-				msixtable=memaddr+in32(0xcfc);
-				say("    msix table:",msixtable);
-
-				//pba offset
-				out32(0xcf8,portaddr+offset+8);
-				pendingtable=memaddr+in32(0xcfc);
-				say("    pending table:",pendingtable);
-
-				//messagecontrol
-				out32(0xcf8,portaddr+offset);
-				temp=in32(0xcfc)|0x80000000;
-				out32(0xcf8,portaddr+offset);
-				out32(0xcfc,temp);
-				say("    control:",in32(0xcfc)>>16);
-
-				break;
+				say("    64bit msi:",kind);
+				//out32(0xcf8,portaddr+offset+8);
+				//out32(0xcfc,0xfee00000);
+				//out32(0xcf8,portaddr+offset+0x10);
+				//out32(0xcfc,0x20);
+				//out32(0xcf8,portaddr+offset);
+				//out32(0xcfc,temp|0x10000);
+	
+				//out32(0xcf8,portaddr+offset+8);
+				//say("    addr:",in32(0xcfc));
+				//out32(0xcf8,portaddr+offset+0x10);
+				//say("    data:",in32(0xcfc)&0xffff);
+				//out32(0xcf8,portaddr+offset);
+				//say("    control:",in32(0xcfc)>>16);
 			}
-			default:
-			{
-				say("    ?:",kind);
-			}
+	
+			break;
 		}
+		case 0x11:
+		{
+			say("    msix:",kind);
+	
+			//read bar0
+			out32(0xcf8,portaddr+0x10);
+			memaddr=in32(0xcfc)&0xfffffff0;
+	
+			//table offset
+			out32(0xcf8,portaddr+offset+4);
+			msixtable=memaddr+in32(0xcfc);
+			say("    msix table:",msixtable);
+	
+			//pba offset
+			out32(0xcf8,portaddr+offset+8);
+			pendingtable=memaddr+in32(0xcfc);
+			say("    pending table:",pendingtable);
+	
+			//messagecontrol
+			out32(0xcf8,portaddr+offset);
+			temp=in32(0xcfc)|0x80000000;
 
-		if(kind == 0) break;	//当前capability类型为0，结束
-		if(next < 0x40) break;	//下一capability位置错误，结束
+			out32(0xcf8,portaddr+offset);
+			out32(0xcfc,temp);
 
-		offset=next;
+			out32(0xcf8,portaddr+offset);
+			say("    control:",in32(0xcfc)>>16);
+	
+			break;
+		}
+		default:
+		{
+			say("    ?:",kind);
+		}
 	}
+	
+	if(kind == 0) break;	//当前capability类型为0，结束
+	if(next < 0x40) break;	//下一capability位置错误，结束
+	
+	offset=next;
+	}
+	
+say("}",0);
 
-	say("}",0);
 }
+
+
 QWORD probepci()
 {
 	//disable pin interrupt
@@ -254,11 +265,23 @@ void explainxecp(QWORD addr)
 
 void realisr20()
 {
-	say("oh!interrupt!",0);
-	say("{",0);
-	say("    command:",*(DWORD*)operational);
-	say("    status:",*(DWORD*)(operational+4));
-	say("}",0);
+say("oh!interrupt!",0);
+say("{",0);
+
+	QWORD status=*(DWORD*)(operational+4);
+	say("    status:",0);
+	if( (status&0x8) == 0x8)
+	{
+		//检查runtime
+		DWORD iman=*(DWORD*)(runtime+0x20);
+		say("    IMAN:",iman);
+
+		DWORD erdp=*(DWORD*)(runtime+0x38);
+		say("    ERDP:",erdp);
+		if(erdp&0x8 == 0x8) *(DWORD*)(runtime+0x38)=erdp;
+	}
+
+say("}",0);
 }
 
 
@@ -278,10 +301,10 @@ say("{",0);
 	QWORD hcsparams3=*(DWORD*)(memaddr+0xc);
 	QWORD capparams=*(DWORD*)(memaddr+0x10);
 
-	QWORD doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
-	QWORD runtime=memaddr+(*(DWORD*)(memaddr+0x18));
 	operational=memaddr+caplength;
-	QWORD portsc=operational+0x400;
+	portsc=operational+0x400;
+	doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
+	runtime=memaddr+(*(DWORD*)(memaddr+0x18));
 	QWORD xecp=memaddr+( (capparams >> 16) << 2 );
 
 	say("    version:",version);
@@ -292,10 +315,10 @@ say("{",0);
 	say("    hcsparams3:",hcsparams3);
 	say("    capparams:",capparams);
 
-	say("    doorbell@",doorbell);
-	say("    runtime@",runtime);
 	say("    operational@",operational);
 	say("    portsc@",portsc);
+	say("    doorbell@",doorbell);
+	say("    runtime@",runtime);
 	say("    xecp@",xecp);
 
 say("}",0);
@@ -318,11 +341,16 @@ say("{",0);
 	QWORD crcr=*(DWORD*)(operational+0x18);
 	QWORD dcbaa=*(DWORD*)(operational+0x30);
 	QWORD config=*(DWORD*)(operational+0x38);
+	QWORD msixcontrol=*(DWORD*)(msixtable+0xc);
+	QWORD msixpending=*(DWORD*)pendingtable;
+
 	say("    usbcommand:",usbcommand);
 	say("    usbstatus:",usbstatus);
 	say("    crcr:",crcr);
 	say("    dcbaa:",dcbaa);
 	say("    config:",config);
+	say("    msixcontrol:",msixcontrol);
+	say("    msixpending:",msixpending);
 
 
 say("}",0);
@@ -399,7 +427,7 @@ say("1.stop&reset:",0);
 //program the dcbaap
 //program crcr,point to addr of first trb in command ring
 //----------------------------------------------------------
-say("2.maxslot&context&ring:",0);
+say("2.maxslot&dcbaa&crcr:",0);
 
 	//maxslot=deviceslots
 	*(DWORD*)(operational+0x38)=(*(DWORD*)(memaddr+4)) &0xff;
@@ -408,6 +436,9 @@ say("2.maxslot&context&ring:",0);
 	//dcbaa使用内存[xhcihome,xhcihome+0x40000)
 	*(DWORD*)(operational+0x30)=xhcihome;
 	say("    dcbaa:",*(DWORD*)(operational+0x30) );
+	//scratchpad
+	//*(DWORD*)xhcihome=xhcihome+0x1000;
+	//say("    scratchpad:",xhcihome+0x1000);
 
 	//crcr使用内存[xhcihome+0x40000,xhcihome+0x80000)
 	*(DWORD*)(operational+0x18)=xhcihome+0x40000;
@@ -424,42 +455,48 @@ say("2.maxslot&context&ring:",0);
 //-------------------------------------------------
 say("3.interrupt:",0);
 
+	int20();
+
 	//msixtable[0].addr
 	*(DWORD*)msixtable=0xfee00000;
 	//msixtable[0].data
 	*(DWORD*)(msixtable+8)=0x20;
+
 	//msixtable[0].control,enable
-	*(DWORD*)(msixtable+0xc)&=0xfffffffe;
-
-	int20();
-
-	say("    msix[0]",0);
+	msixcontrol=*(DWORD*)(msixtable+0xc);
+	*(DWORD*)(msixtable+0xc)=msixcontrol&0xfffffffe;
+	say("    msixcontrol:",*(DWORD*)(msixtable+0xc));
 
 
 
 
-//--------------------4.设备---------------------------
+//--------------------4.eventring---------------------------
 //------------------------------------------------------
-say("4.device:",0);
+say("4.eventring:",0);
 
 	//-------------define event ring-----------
-	//allocate and initialize the event ring segments
-	*(QWORD*)(xhcihome+0x80000)=xhcihome+0x81000;
-	//erst,point to and define size(in trbs)of event ring
-	*(DWORD*)(xhcihome+0x80000+8)=32;
-	//erstsz,number of segments described by erst
+	//build the "event ring segment table"
+	*(DWORD*)(xhcihome+0x80000)=xhcihome+0x90000;
+	*(DWORD*)(xhcihome+0x80008)=0x100;
+
+	//IMOD
+	*(DWORD*)(runtime+0x24)=4000;
+
+	//ERSTSZ
 	*(DWORD*)(runtime+0x28)=1;
-	//erdp,addr of first segment described by erst
-	*(DWORD*)(runtime+0x38)=xhcihome+0x81000;
-	//erstba,point to where event ring segment table is located
+
+	//ERDP
+	*(DWORD*)(runtime+0x38)=xhcihome+0x90000;
+	*(DWORD*)(runtime+0x3c)=0;	//这一行也必须有
+
+	//ERSTBA
 	*(DWORD*)(runtime+0x30)=xhcihome+0x80000;
+	*(DWORD*)(runtime+0x34)=0;	//这一行必须有
 
-	//init interval field of interrupt moderation register
-	//*(DWORD*)(runtime+0x24)=
-
-	//enable INTE in USBCMD
+	//enable EWE|HSEIE|INTE(0x400|0x8|0x4) in USBCMD
 	*(DWORD*)operational |= 0x4;
-	//enable IE in interrupt management r
+
+	//IMAN
 	*(DWORD*)(runtime+0x20) |= 0x2;
 
 	say("    event ring done",0);
@@ -495,7 +532,7 @@ void initxhci()
         probepci();
         if(memaddr==0) return;
 
-	//真正的部分
+	//xhci
 	probexhci();
 
 	say("",0);

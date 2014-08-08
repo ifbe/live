@@ -39,6 +39,7 @@ ext:
 	sudo rmmod nbd
 qemutest:
 	sudo qemu-kvm \
+	-monitor stdio \
 	-smp 2 \
 	-m 512 \
 	-device usb-ehci,id=ehci \
