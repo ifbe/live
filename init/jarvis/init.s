@@ -88,7 +88,7 @@ call endofjarvis+0x4000		;disk(0x4000)
 
 ;___________________________________________
 
-    mov qword [rel addr],0x40000          ;r14 memory pointer
+    mov qword [rel addr],0x40000         ;r14 memory pointer
     mov qword [rel offset],0x420         ;r15 offset pointer
 
     mov edi,0x800
@@ -105,7 +105,7 @@ call endofjarvis+0x4000		;disk(0x4000)
     mov rax,0x800
     mov [0xff8],rax
 
-    lea rax,[rel function4]
+    lea rax,[rel function1]
     mov [rel screenwhat],rax
     lea rax,[rel menu]
     mov [rel mouseormenu],rax

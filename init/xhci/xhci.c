@@ -3,15 +3,24 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 #define xhcihome 0x300000
+#define dcbaahome xhcihome+0
+#define scratchpadhome xhcihome+0x10000
+#define crcrhome xhcihome+0x40000
+#define ersthome xhcihome+0x80000
+#define eventhome xhcihome+0x90000
 
 
 static QWORD portaddr=0;
+static QWORD memaddr=0;
+
 static QWORD msixtable=0;
 static QWORD pendingtable=0;
 
-static QWORD memaddr=0;
+static QWORD commandenqueue=crcrhome;
+static DWORD commandcycle=1;
+
 static QWORD operational;
-static QWORD portsc;
+static QWORD portbase;
 static QWORD doorbell;
 static QWORD runtime;
 
@@ -272,13 +281,45 @@ say("{",0);
 	say("    status:",0);
 	if( (status&0x8) == 0x8)
 	{
-		//检查runtime
+		//清理EINT
+		*(DWORD*)(operational+4)=status|0x8;
+
+		//检查IMAN.IP
 		DWORD iman=*(DWORD*)(runtime+0x20);
 		say("    IMAN:",iman);
 
+		//检查ERDP.EHB
 		DWORD erdp=*(DWORD*)(runtime+0x38);
 		say("    ERDP:",erdp);
-		if(erdp&0x8 == 0x8) *(DWORD*)(runtime+0x38)=erdp;
+		if( (erdp&0x8) == 0x8)
+		{
+			//取一条event,看看是啥情况
+			QWORD pointer=erdp&0xfffffffffffffff0;
+			QWORD trbtype=*(DWORD*)(pointer+0xc);
+			trbtype=(trbtype>>10)&0x3f;
+			say("    trbtype:",trbtype);
+
+			//设备插入拔出
+			if(trbtype == 0x22)
+			{
+				//哪个端口改变了
+				QWORD portid=(*(DWORD*)pointer) >> 24;
+				say("    port id:",portid);
+
+				QWORD portaddr=portbase+portid*0x10-0x10;
+				say("    port addr:",portaddr);
+
+				//到改变的地方看看
+				QWORD portsc=*(DWORD*)portaddr;
+				say("    port status:",portsc);
+
+				//告诉主控，收到变化,bit17写1
+				*(DWORD*)portaddr=portsc;
+			}
+
+			*(DWORD*)(runtime+0x38)=erdp+0x10;
+			*(DWORD*)(runtime+0x3c)=0;
+		}
 	}
 
 say("}",0);
@@ -302,7 +343,7 @@ say("{",0);
 	QWORD capparams=*(DWORD*)(memaddr+0x10);
 
 	operational=memaddr+caplength;
-	portsc=operational+0x400;
+	portbase=operational+0x400;
 	doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
 	runtime=memaddr+(*(DWORD*)(memaddr+0x18));
 	QWORD xecp=memaddr+( (capparams >> 16) << 2 );
@@ -316,7 +357,7 @@ say("{",0);
 	say("    capparams:",capparams);
 
 	say("    operational@",operational);
-	say("    portsc@",portsc);
+	say("    portbase@",portbase);
 	say("    doorbell@",doorbell);
 	say("    runtime@",runtime);
 	say("    xecp@",xecp);
@@ -338,14 +379,30 @@ say("{",0);
 
 	QWORD usbcommand=*(DWORD*)operational;
 	QWORD usbstatus=*(DWORD*)(operational+4);
+	QWORD pagesize=0x1000;
 	QWORD crcr=*(DWORD*)(operational+0x18);
 	QWORD dcbaa=*(DWORD*)(operational+0x30);
 	QWORD config=*(DWORD*)(operational+0x38);
 	QWORD msixcontrol=*(DWORD*)(msixtable+0xc);
 	QWORD msixpending=*(DWORD*)pendingtable;
 
+	//蛋疼的计算pagesize
+	QWORD psz=*(DWORD*)(operational+8);
+	while(1)
+	{
+		if(psz == 0){
+			say("psz:",psz);
+			return;
+		}
+		if(psz == 1) break;
+
+		psz>>1;
+		pagesize<<1;
+	}
+
 	say("    usbcommand:",usbcommand);
 	say("    usbstatus:",usbstatus);
+	say("    pagesize:",pagesize);
 	say("    crcr:",crcr);
 	say("    dcbaa:",dcbaa);
 	say("    config:",config);
@@ -433,15 +490,18 @@ say("2.maxslot&dcbaa&crcr:",0);
 	*(DWORD*)(operational+0x38)=(*(DWORD*)(memaddr+4)) &0xff;
 	say("    maxslot:",*(DWORD*)(operational+0x38) );
 
-	//dcbaa使用内存[xhcihome,xhcihome+0x40000)
-	*(DWORD*)(operational+0x30)=xhcihome;
+	//dcbaa
+	*(DWORD*)(operational+0x30)=dcbaahome;
+	*(DWORD*)(operational+0x34)=0;
 	say("    dcbaa:",*(DWORD*)(operational+0x30) );
-	//scratchpad
-	//*(DWORD*)xhcihome=xhcihome+0x1000;
-	//say("    scratchpad:",xhcihome+0x1000);
 
-	//crcr使用内存[xhcihome+0x40000,xhcihome+0x80000)
-	*(DWORD*)(operational+0x18)=xhcihome+0x40000;
+	//scratchpad
+	//*(DWORD*)dcbaahome=scratchpadhome;
+	//say("    scratchpad:",scratchpadhome);
+
+	//crcr
+	*(DWORD*)(operational+0x18)=crcrhome;
+	*(DWORD*)(operational+0x1c)=0;
 	say("    crcr:",*(DWORD*)(operational+0x18));
 
 
@@ -459,6 +519,7 @@ say("3.interrupt:",0);
 
 	//msixtable[0].addr
 	*(DWORD*)msixtable=0xfee00000;
+	*(DWORD*)(msixtable+4)=0;
 	//msixtable[0].data
 	*(DWORD*)(msixtable+8)=0x20;
 
@@ -476,25 +537,26 @@ say("4.eventring:",0);
 
 	//-------------define event ring-----------
 	//build the "event ring segment table"
-	*(DWORD*)(xhcihome+0x80000)=xhcihome+0x90000;
-	*(DWORD*)(xhcihome+0x80008)=0x100;
-
-	//IMOD
-	*(DWORD*)(runtime+0x24)=4000;
+	*(DWORD*)(ersthome)=eventhome;
+	*(DWORD*)(ersthome+0x8)=0x100;
 
 	//ERSTSZ
 	*(DWORD*)(runtime+0x28)=1;
 
-	//ERDP
-	*(DWORD*)(runtime+0x38)=xhcihome+0x90000;
-	*(DWORD*)(runtime+0x3c)=0;	//这一行也必须有
-
 	//ERSTBA
-	*(DWORD*)(runtime+0x30)=xhcihome+0x80000;
+	*(DWORD*)(runtime+0x30)=ersthome;
 	*(DWORD*)(runtime+0x34)=0;	//这一行必须有
 
+	//ERDP
+	*(DWORD*)(runtime+0x38)=eventhome;
+	*(DWORD*)(runtime+0x3c)=0;	//这一行也必须有
+
 	//enable EWE|HSEIE|INTE(0x400|0x8|0x4) in USBCMD
-	*(DWORD*)operational |= 0x4;
+	*(DWORD*)operational |= 0xc;
+	//*(DWORD*)operational |= 0x40c;
+
+	//IMOD
+	*(DWORD*)(runtime+0x24)=4000;
 
 	//IMAN
 	*(DWORD*)(runtime+0x20) |= 0x2;
@@ -519,6 +581,49 @@ say("}",0);
 
 
 
+void probeport()
+{
+say("detect port",0);
+say("{",0);
+
+	QWORD portnum;
+	QWORD portsc;
+
+	for(portnum=1;portnum<8;portnum++)
+	{
+	portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+	if( (portsc&0x1) == 0x1)	//里面有东西
+	{
+		say("    port:",portnum);
+		say("    portsc:",portsc);
+
+		//变成enable状态
+		if( (portsc&0x2) == 0x2)
+		{
+			say("    enabled",0);
+		}
+		else	//enable it
+		{
+			say("    enabling");
+		}
+
+		//写enable slot command trb
+		*(QWORD*)commandenqueue=0;
+		*(QWORD*)(commandenqueue+8)=0;
+		*(DWORD*)(commandenqueue+0xc)=9<<10+commandcycle;
+
+		//敲0号门铃
+		*(DWORD*)doorbell=0;
+		say("    doorbell:",doorbell);
+	}
+	}
+
+say("}",0);
+}
+
+
+
+
 void initxhci()
 {
 	//clear home
@@ -534,6 +639,9 @@ void initxhci()
 
 	//xhci
 	probexhci();
+
+	//port
+	probeport();
 
 	say("",0);
 }

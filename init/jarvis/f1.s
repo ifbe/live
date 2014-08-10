@@ -29,8 +29,6 @@ cmp al,0x50
 je f1down
 ;cmp al,0x39
 ;je f1space
-cmp al,0x38
-je f1alt
 
 cmp al,0x80
 ja ramdump
@@ -64,11 +62,12 @@ je searchmemory
 cmp byte [rel chosen],5
 je changememory
 cmp byte [rel chosen],6
-je viewjournal
+je changeview
 cmp byte [rel chosen],7
 je turnoff
 jmp ramdump
 
+	;____________________________________
 	changeaddress:
 	mov rax,[rel input]
 	mov rbx,rax
@@ -78,7 +77,9 @@ jmp ramdump
 	mov [rel offset],rbx
 	mov qword [rel input],0
 	jmp ramdump
+	;___________________________________
 
+	;____________________________________
 	changesector:
 	mov rsi,[rel input]
 	mov [rel sector],rsi
@@ -93,7 +94,9 @@ jmp ramdump
 	mov [rel addr],rax
 	mov qword [rel input],0
 	jmp ramdump
+	;____________________________________
 
+	;____________________________________
 	changeoffset:
 	mov rax,[rel input]
 	cmp rax,0xbff
@@ -101,7 +104,9 @@ jmp ramdump
 	mov [rel offset],rax
 	mov qword [rel input],0
 	jmp ramdump
+	;_____________________________________
 
+	;______________________________________
 	searchmemory:
 	mov eax,[rel input]
 	mov edi,[rel addr]
@@ -116,17 +121,33 @@ jmp ramdump
 	.findit:
 	mov [rel offset],rbx
 	jmp ramdump
+	;___________________________________
 
+	;________________________________
 	changememory:
 	mov eax,[rel input]
 	mov rdi,[rel addr]
 	add rdi,[rel offset]
-	stosd
+	mov [rdi],eax
+	mov qword [rel input],0
 	jmp ramdump
+	;_______________________________
 
-	viewjournal:
-	mov qword [rel addr],0x40000
-	jmp ramdump
+	;__________________________________
+	changeview:
+	inc byte [rel viewmode]
+	test byte [rel viewmode],1
+	jnz .anscii
+	    .hex:
+	    lea rax,[rel dumphex]
+	    mov [rel hexoranscii],rax
+	    jmp ramdump
+	    .anscii:
+	    lea rax,[rel dumpanscii]
+	    mov [rel hexoranscii],rax
+	    jmp ramdump
+	;__________________________________
+	viewmode:dd 1
 
 f1left:
 mov rax,[rel offset]
@@ -192,19 +213,6 @@ jnz .anscii
     mov [rel mouseormenu],rax
     jmp ramdump
 
-f1alt:
-inc byte [rel altkey]
-test byte [rel altkey],1
-jnz .anscii
-    .hex:
-    lea rax,[rel dumphex]
-    mov [rel hexoranscii],rax
-    jmp ramdump
-    .anscii:
-    lea rax,[rel dumpanscii]
-    mov [rel hexoranscii],rax
-    jmp ramdump
-
 f1other:
 call scan2hex
 cmp al,0x10
@@ -215,7 +223,6 @@ jmp ramdump
 
 ;_______________________________________
 esckey db 0
-altkey db 1
 
 
 
@@ -485,10 +492,10 @@ db "address:        "
 db "sector:         "
 db "offset:         "
 db "input:          "
-db "search!         "
-db "change!         "
-db "journal!        "
-db "poweroff!       "
+db "search          "
+db "change          "
+db "anscii/hex      "
+db "poweroff        "
 ;________________________________
 addr:dq 0
 sector:dq 0
