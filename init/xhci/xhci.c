@@ -499,8 +499,13 @@ say("2.maxslot&dcbaa&crcr:",0);
 	//*(DWORD*)dcbaahome=scratchpadhome;
 	//say("    scratchpad:",scratchpadhome);
 
+	//command linktrb:lastone point to firstone
+	*(QWORD*)(crcrhome+255*0x10)=crcrhome;
+	*(QWORD*)(crcrhome+255*0x10+8)=0;
+	*(QWORD*)(crcrhome+255*0x10+0xc)=(6<<10)+2;
+
 	//crcr
-	*(DWORD*)(operational+0x18)=crcrhome;
+	*(DWORD*)(operational+0x18)=crcrhome+1;
 	*(DWORD*)(operational+0x1c)=0;
 	say("    crcr:",*(DWORD*)(operational+0x18));
 
@@ -572,6 +577,12 @@ say("4.eventring:",0);
 say("5.turnon",0);
 	//turn on
 	*(DWORD*)operational |= 0x1;
+
+	//wait for 100ms?
+	QWORD wait3=0xffffff;
+	while(wait3--)asm("nop");
+
+	//
 	say("    command:",*(DWORD*)operational);
 	say("    status:",*(DWORD*)(operational+4));
 
@@ -581,44 +592,154 @@ say("}",0);
 
 
 
-void probeport()
+void initport(portnum)
 {
-say("detect port",0);
+say("init port:",0);
 say("{",0);
 
+//--------initial enumeration?event interrupt?--------------
+say("1.i am port manager",0);
+//----------------------------------------------------------
+
+//---------------------which naughty port-------------------
+say("2.portnum:",portnum);
+//---------------------------------------------------------
+
+//---------------read portsc,attach?detach?--------------------
+DWORD portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+//--------------------------------------------------------
+
+if( (portsc&0x1) == 0x1)	//是attach
+{
+	say("3.device attach!",0);
+
+
+
+
+	//---------------enable slot------------------
+	say("4.sending command:enable slot",0);
+
+	*(QWORD*)commandenqueue=0;
+	*(QWORD*)(commandenqueue+8)=0;
+	*(DWORD*)(commandenqueue+0xc)=(9<<10)+commandcycle;
+
+	commandenqueue+=0x10;
+
+	*(DWORD*)doorbell=0;
+	//-------------------------------------------
+
+
+
+
+	//----------------getslot---------------------
+	say("5.allocate device context",0);
+	//---------------------------------------------
+
+
+
+
+	//--------------address device----------------
+	say("6.sending command:address device",0);
+	//--------------------------------------------
+
+
+
+	//------------------get descriptor-----------------
+	say("7.sending command:get descriptor",0);
+	//i.allocate an 8B buffer to receive the device descriptor
+	//ii.init setup stage td
+	//	trbtype=setup stage trb
+	//	trb transfer length=8
+	//	ioc=0
+	//	idt=1
+	//	bmrequesttype=0x80(dir=device2host,type=standard,recepient=dev)
+	//	brequest=6(get descriptor)
+	//	wvalue=0x100,low byte=0(index),high byte=1(type)
+	//	windex=0
+	//	wlength=8
+	//	cycle bit=current producer cycle state
+	//iii.advance endpoint0 transfer ring enqueue pointer
+	//iv.init data stage td
+	//	trbtype=data stage trb
+	//	dir=1
+	//	trb transfer length=8
+	//	chain bit=0
+	//	ioc=0
+	//	idt=0
+	//	data buffer pointer=&device descriptor receive buffer
+	//	cycle bit=current producer cycle state
+	//v.advance endpoint0 transfer ring enqueue pointer
+	//vi.init status stage td
+	//	trbtype=status stage trb
+	//	dir=0
+	//	length=0
+	//	ioc=1
+	//	idt=0
+	//	data buffer pointer=0
+	//	cycle bit=current producer cycle state
+	//vii.advance endpoint0 transfer ring enqueue pointer
+	//viii.ring device slot doorbell(control ep0 enqueue pointer update)
+	//vx.update ep0 context max packet size with wmaxpacketsize
+	//x.issue evaluate context command,use updated max packet size
+
+	//--------------------------------------------
+
+
+
+
+	//read complete usb device descriptor
+	say("8.sending command:get descriptor",0);
+	//------------------------------------
+
+
+
+
+	//evaluate context command,inform xhc of the value of hub and max....
+	say("9.sending command:evaluate context",0);
+
+
+
+
+	//class driver 4.3.5
+	say("9.sending command:set configuration",0);
+
+
+
+	//if required configure alternate interface,4.3.6
+	say("10.alternate interface",0);
+
+
+
+
+	//pipe fully operational
+	say("done!",0);
+}
+else			//是detach
+{
+	say("3.device detach!",0);
+
+	say("something to be done!",0);
+}
+
+say("}",0);
+}
+
+
+
+
+void probeport()
+{
 	QWORD portnum;
-	QWORD portsc;
+	DWORD portsc;
 
 	for(portnum=1;portnum<8;portnum++)
 	{
-	portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
-	if( (portsc&0x1) == 0x1)	//里面有东西
-	{
-		say("    port:",portnum);
-		say("    portsc:",portsc);
-
-		//变成enable状态
-		if( (portsc&0x2) == 0x2)
+		portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+		if( (portsc&0x1) == 0x1)	//里面有东西
 		{
-			say("    enabled",0);
+			initport(portnum);
 		}
-		else	//enable it
-		{
-			say("    enabling");
-		}
-
-		//写enable slot command trb
-		*(QWORD*)commandenqueue=0;
-		*(QWORD*)(commandenqueue+8)=0;
-		*(DWORD*)(commandenqueue+0xc)=9<<10+commandcycle;
-
-		//敲0号门铃
-		*(DWORD*)doorbell=0;
-		say("    doorbell:",doorbell);
 	}
-	}
-
-say("}",0);
 }
 
 
