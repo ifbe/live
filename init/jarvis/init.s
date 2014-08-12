@@ -63,6 +63,7 @@ endofinterrupt:
 
 
 
+sti
 
 
 
@@ -112,7 +113,6 @@ call endofjarvis+0x4000		;disk(0x4000)
     lea rax,[rel dumpanscii]
     mov [rel hexoranscii],rax
 
-    sti
     xor rax,rax
     jmp decide
 ;____________________________________________________

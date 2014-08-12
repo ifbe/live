@@ -3,26 +3,33 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 #define xhcihome 0x300000
-#define dcbaahome xhcihome+0
-#define scratchpadhome xhcihome+0x10000
+#define ersthome xhcihome+0
+#define eventhome xhcihome+0x10000
 #define crcrhome xhcihome+0x40000
-#define ersthome xhcihome+0x80000
-#define eventhome xhcihome+0x90000
+#define dcbaahome xhcihome+0x80000
+#define scratchpadhome xhcihome+0x90000
+#define inputhome xhcihome+0xa0000
+#define outputhome xhcihome+0xb0000
+#define transferhome xhcihome+0xc0000
 
 
 static QWORD portaddr=0;
-static QWORD memaddr=0;
 
+static QWORD memaddr=0;
 static QWORD msixtable=0;
 static QWORD pendingtable=0;
-
-static QWORD commandenqueue=crcrhome;
-static DWORD commandcycle=1;
 
 static QWORD operational;
 static QWORD portbase;
 static QWORD doorbell;
 static QWORD runtime;
+static QWORD contextsize;
+
+volatile static QWORD eventsignal=0;
+static QWORD eventaddr;
+
+static QWORD commandenqueue=crcrhome;
+static DWORD commandcycle=1;
 
 
 
@@ -245,7 +252,7 @@ void explainxecp(QWORD addr)
 	BYTE kind;
 	QWORD next;
 
-	say("explain xecp",0);
+	say("explain xecp@",addr);
 	say("{",0);
 	while(1)
 	{
@@ -272,62 +279,6 @@ void explainxecp(QWORD addr)
 
 
 
-void realisr20()
-{
-say("oh!interrupt!",0);
-say("{",0);
-
-	QWORD status=*(DWORD*)(operational+4);
-	say("    status:",0);
-	if( (status&0x8) == 0x8)
-	{
-		//清理EINT
-		*(DWORD*)(operational+4)=status|0x8;
-
-		//检查IMAN.IP
-		DWORD iman=*(DWORD*)(runtime+0x20);
-		say("    IMAN:",iman);
-
-		//检查ERDP.EHB
-		DWORD erdp=*(DWORD*)(runtime+0x38);
-		say("    ERDP:",erdp);
-		if( (erdp&0x8) == 0x8)
-		{
-			//取一条event,看看是啥情况
-			QWORD pointer=erdp&0xfffffffffffffff0;
-			QWORD trbtype=*(DWORD*)(pointer+0xc);
-			trbtype=(trbtype>>10)&0x3f;
-			say("    trbtype:",trbtype);
-
-			//设备插入拔出
-			if(trbtype == 0x22)
-			{
-				//哪个端口改变了
-				QWORD portid=(*(DWORD*)pointer) >> 24;
-				say("    port id:",portid);
-
-				QWORD portaddr=portbase+portid*0x10-0x10;
-				say("    port addr:",portaddr);
-
-				//到改变的地方看看
-				QWORD portsc=*(DWORD*)portaddr;
-				say("    port status:",portsc);
-
-				//告诉主控，收到变化,bit17写1
-				*(DWORD*)portaddr=portsc;
-			}
-
-			*(DWORD*)(runtime+0x38)=erdp+0x10;
-			*(DWORD*)(runtime+0x3c)=0;
-		}
-	}
-
-say("}",0);
-}
-
-
-
-
 void probexhci()
 {
 //基本信息
@@ -346,7 +297,9 @@ say("{",0);
 	portbase=operational+0x400;
 	doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
 	runtime=memaddr+(*(DWORD*)(memaddr+0x18));
-	QWORD xecp=memaddr+( (capparams >> 16) << 2 );
+
+	if( (capparams&0x4) == 0x4){contextsize=0x40;}
+	else{contextsize=0x20;}
 
 	say("    version:",version);
 	say("    caplength:",caplength);
@@ -355,12 +308,12 @@ say("{",0);
 	say("    hcsparams2:",hcsparams2);
 	say("    hcsparams3:",hcsparams3);
 	say("    capparams:",capparams);
+	say("    contextsize:",contextsize);
 
 	say("    operational@",operational);
 	say("    portbase@",portbase);
 	say("    doorbell@",doorbell);
 	say("    runtime@",runtime);
-	say("    xecp@",xecp);
 
 say("}",0);
 
@@ -368,6 +321,7 @@ say("}",0);
 
 
 //mostly,grab ownership
+QWORD xecp=memaddr+( (capparams >> 16) << 2 );
 explainxecp(xecp);
 
 
@@ -592,12 +546,31 @@ say("}",0);
 
 
 
+void waitevent(QWORD trbtype)
+{
+	QWORD data;
+	while(1)
+	{
+		if(eventsignal==0) continue;
+
+		data=*(DWORD*)(eventaddr+0xc);
+		if( ( (data>>10)&0x3f) == trbtype)
+		{
+			eventsignal=0;
+			return;
+		}
+	}
+}
+
+
+
+
 void initport(portnum)
 {
 say("init port:",0);
 say("{",0);
 
-//--------initial enumeration?event interrupt?--------------
+//------------who is calling me?--------------------
 say("1.i am port manager",0);
 //----------------------------------------------------------
 
@@ -605,9 +578,9 @@ say("1.i am port manager",0);
 say("2.portnum:",portnum);
 //---------------------------------------------------------
 
-//---------------read portsc,attach?detach?--------------------
 DWORD portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
-//--------------------------------------------------------
+DWORD slot;
+QWORD addr;
 
 if( (portsc&0x1) == 0x1)	//是attach
 {
@@ -616,36 +589,64 @@ if( (portsc&0x1) == 0x1)	//是attach
 
 
 
-	//---------------enable slot------------------
-	say("4.sending command:enable slot",0);
+	//---------------obtain slot------------------
+	say("4.enable slot",0);
 
 	*(QWORD*)commandenqueue=0;
 	*(QWORD*)(commandenqueue+8)=0;
 	*(DWORD*)(commandenqueue+0xc)=(9<<10)+commandcycle;
-
 	commandenqueue+=0x10;
-
 	*(DWORD*)doorbell=0;
+
+	waitevent(0x21);
+
+	slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
+	say("    slot:",slot);
 	//-------------------------------------------
 
 
 
 
-	//----------------getslot---------------------
-	say("5.allocate device context",0);
+	//-------------slot initialization----------------
+	say("5.init slot",0);
+	if(slot>=0x10){
+		say("    bad slotnum",0);
+		return;
+	}
+
+	//clear to zero
+	addr=inputhome+slot*0x1000;
+	for(;addr<inputhome+slot*0x1000+0x1000;addr+=4)
+	{
+		*(DWORD*)addr=0;
+	}
+	//A0,A1 flag=1
+	addr=inputhome+slot*0x1000;
+	*(DWORD*)(addr+4)=3;
+	//slot context
+	*(DWORD*)(addr+contextsize)=1<<27;
+	*(DWORD*)(addr+contextsize+4)=portnum<<16;
+	//transfer ring initialization
+	
+	//endpoint context0
+	*(DWORD*)(addr+contextsize*2+4)=(((portsc>>10)&0xf)<<16)|(4<<3)|0x6;
+	*(DWORD*)(addr+contextsize*2+8)=transferhome+slot*0x1000+1;
+
+	//output context
+	addr=outputhome+slot*0x1000;
 	//---------------------------------------------
 
 
 
 
 	//--------------address device----------------
-	say("6.sending command:address device",0);
+	say("6.address device",0);
 	//--------------------------------------------
 
 
 
 	//------------------get descriptor-----------------
-	say("7.sending command:get descriptor",0);
+	say("7.get descriptor",0);
 	//i.allocate an 8B buffer to receive the device descriptor
 	//ii.init setup stage td
 	//	trbtype=setup stage trb
@@ -688,20 +689,20 @@ if( (portsc&0x1) == 0x1)	//是attach
 
 
 	//read complete usb device descriptor
-	say("8.sending command:get descriptor",0);
+	say("8.get descriptor2",0);
 	//------------------------------------
 
 
 
 
 	//evaluate context command,inform xhc of the value of hub and max....
-	say("9.sending command:evaluate context",0);
+	say("9.evaluate context",0);
 
 
 
 
 	//class driver 4.3.5
-	say("9.sending command:set configuration",0);
+	say("9.set configuration",0);
 
 
 
@@ -718,7 +719,7 @@ else			//是detach
 {
 	say("3.device detach!",0);
 
-	say("something to be done!",0);
+	say("sending command:disable slot",0);
 }
 
 say("}",0);
@@ -765,4 +766,65 @@ void initxhci()
 	probeport();
 
 	say("",0);
+}
+
+
+
+
+void realisr20()
+{
+say("oh!interrupt!",0);
+say("{",0);
+
+	QWORD status=*(DWORD*)(operational+4);
+	say("    status:",0);
+	if( (status&0x8) == 0x8)
+	{
+		//清理EINT
+		*(DWORD*)(operational+4)=status|0x8;
+
+		//检查IMAN.IP
+		DWORD iman=*(DWORD*)(runtime+0x20);
+		say("    IMAN:",iman);
+
+		//检查ERDP.EHB
+		DWORD erdp=*(DWORD*)(runtime+0x38);
+		say("    ERDP:",erdp);
+		if( (erdp&0x8) == 0x8)
+		{
+			//取一条event,看看是啥情况
+			QWORD pointer=erdp&0xfffffffffffffff0;
+			QWORD trbtype=*(DWORD*)(pointer+0xc);
+			trbtype=(trbtype>>10)&0x3f;
+			say("    trbtype:",trbtype);
+
+			//设备插入拔出
+			if(trbtype == 0x22)
+			{
+				//哪个端口改变了
+				QWORD portid=(*(DWORD*)pointer) >> 24;
+				say("    port id:",portid);
+
+				QWORD portaddr=portbase+portid*0x10-0x10;
+				say("    port addr:",portaddr);
+
+				//到改变的地方看看
+				QWORD portsc=*(DWORD*)portaddr;
+				say("    port status:",portsc);
+
+				//告诉主控，收到变化,bit17写1
+				*(DWORD*)portaddr=portsc;
+			}
+			if(trbtype == 0x21)
+			{
+				eventsignal=0xffff;
+				eventaddr=pointer;
+			}
+
+			*(DWORD*)(runtime+0x38)=erdp+0x10;
+			*(DWORD*)(runtime+0x3c)=0;
+		}
+	}
+
+say("}",0);
 }
