@@ -44,6 +44,10 @@ void say(char* p,...)
 	char* journal=(char*)0x40000;
 	int x=0;
 	int y=*(int*)0x7fff8;
+	int screeny=y%48;
+        for(x=0;x<64;x++) anscii(x,screeny,0x20);
+
+	x=0;
 
 	if(y>=0xffe | y<0){
 		y=0;
@@ -51,7 +55,6 @@ void say(char* p,...)
 	}
 	else *(int*)0x7fff8=y+1;
 
-	int screeny=y%30;
 	while(*p!='\0')
 	{
 		anscii(x,screeny,*p);

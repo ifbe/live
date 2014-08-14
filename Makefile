@@ -92,6 +92,8 @@ exttest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/ext.vhd
+copy:
+	sudo cp init/init /mnt/efi/live/init
 push:
 	make -s clean
 	make clean -s -C demo

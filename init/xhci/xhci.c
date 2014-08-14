@@ -26,7 +26,7 @@ static QWORD runtime;
 static QWORD contextsize;
 
 volatile static QWORD eventsignal=0;
-static QWORD eventaddr;
+volatile static QWORD eventaddr;
 
 static QWORD commandenqueue=crcrhome;
 static DWORD commandcycle=1;
@@ -546,18 +546,26 @@ say("}",0);
 
 
 
-void waitevent(QWORD trbtype)
+int waitevent(QWORD trbtype)
 {
+	QWORD timeout=0;
 	QWORD data;
 	while(1)
 	{
-		if(eventsignal==0) continue;
+		if(timeout>0xfffff){
+			say("timeout!",0);
+			return -1;
+		}
+		if(eventsignal==0){
+			timeout++;
+			continue;
+		}
 
 		data=*(DWORD*)(eventaddr+0xc);
 		if( ( (data>>10)&0x3f) == trbtype)
 		{
 			eventsignal=0;
-			return;
+			return 1;
 		}
 	}
 }
@@ -580,7 +588,6 @@ say("2.portnum:",portnum);
 
 DWORD portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
 DWORD slot;
-QWORD addr;
 
 if( (portsc&0x1) == 0x1)	//是attach
 {
@@ -598,7 +605,7 @@ if( (portsc&0x1) == 0x1)	//是attach
 	commandenqueue+=0x10;
 	*(DWORD*)doorbell=0;
 
-	waitevent(0x21);
+	if(waitevent(0x21)<0) return;
 
 	slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
 	say("    slot:",slot);
@@ -614,26 +621,28 @@ if( (portsc&0x1) == 0x1)	//是attach
 		return;
 	}
 
-	//clear to zero
-	addr=inputhome+slot*0x1000;
-	for(;addr<inputhome+slot*0x1000+0x1000;addr+=4)
+	//1)clear to zero
+	QWORD inputaddr=inputhome+slot*0x1000;
+	for(;inputaddr<inputhome+slot*0x1000+0x1000;inputaddr+=4)
 	{
-		*(DWORD*)addr=0;
+		*(DWORD*)inputaddr=0;
 	}
-	//A0,A1 flag=1
-	addr=inputhome+slot*0x1000;
-	*(DWORD*)(addr+4)=3;
-	//slot context
-	*(DWORD*)(addr+contextsize)=1<<27;
-	*(DWORD*)(addr+contextsize+4)=portnum<<16;
-	//transfer ring initialization
-	
-	//endpoint context0
-	*(DWORD*)(addr+contextsize*2+4)=(((portsc>>10)&0xf)<<16)|(4<<3)|0x6;
-	*(DWORD*)(addr+contextsize*2+8)=transferhome+slot*0x1000+1;
+	inputaddr=inputhome+slot*0x1000;
+	//2)A0,A1 flag=1
+	*(DWORD*)(inputaddr+4)=3;
+	//3)slot context
+	*(DWORD*)(inputaddr+contextsize)=1<<27;
+	*(DWORD*)(inputaddr+contextsize+4)=portnum<<16;
+	//4)transfer ring initialization
+	QWORD transferaddr=transferhome+slot*0x1000;
+	//5)endpoint context0
+	*(DWORD*)(inputaddr+contextsize*2+4)=(((portsc>>10)&0xf)<<16)|(4<<3)|6;
+	*(DWORD*)(inputaddr+contextsize*2+8)=transferaddr+1;
 
-	//output context
-	addr=outputhome+slot*0x1000;
+	//6)output context
+	QWORD outputaddr=outputhome+slot*0x1000;
+	//7)output context填入对应dcbaa
+	//8)address device command for device slot
 	//---------------------------------------------
 
 
@@ -773,11 +782,11 @@ void initxhci()
 
 void realisr20()
 {
-say("oh!interrupt!",0);
-say("{",0);
+shout("oh!interrupt!",0);
+shout("{",0);
 
 	QWORD status=*(DWORD*)(operational+4);
-	say("    status:",0);
+	shout("    status:",0);
 	if( (status&0x8) == 0x8)
 	{
 		//清理EINT
@@ -785,32 +794,32 @@ say("{",0);
 
 		//检查IMAN.IP
 		DWORD iman=*(DWORD*)(runtime+0x20);
-		say("    IMAN:",iman);
+		shout("    IMAN:",iman);
 
 		//检查ERDP.EHB
 		DWORD erdp=*(DWORD*)(runtime+0x38);
-		say("    ERDP:",erdp);
+		shout("    ERDP:",erdp);
 		if( (erdp&0x8) == 0x8)
 		{
 			//取一条event,看看是啥情况
 			QWORD pointer=erdp&0xfffffffffffffff0;
 			QWORD trbtype=*(DWORD*)(pointer+0xc);
 			trbtype=(trbtype>>10)&0x3f;
-			say("    trbtype:",trbtype);
+			shout("    trbtype:",trbtype);
 
 			//设备插入拔出
 			if(trbtype == 0x22)
 			{
 				//哪个端口改变了
 				QWORD portid=(*(DWORD*)pointer) >> 24;
-				say("    port id:",portid);
+				shout("    port id:",portid);
 
 				QWORD portaddr=portbase+portid*0x10-0x10;
-				say("    port addr:",portaddr);
+				shout("    port addr:",portaddr);
 
 				//到改变的地方看看
 				QWORD portsc=*(DWORD*)portaddr;
-				say("    port status:",portsc);
+				shout("    port status:",portsc);
 
 				//告诉主控，收到变化,bit17写1
 				*(DWORD*)portaddr=portsc;
@@ -826,5 +835,5 @@ say("{",0);
 		}
 	}
 
-say("}",0);
+shout("}",0);
 }
