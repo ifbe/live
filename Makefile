@@ -56,7 +56,7 @@ newtest:
 	-m 512 \
 	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
-	-device usb-tablet,bus=xhci.0,port=1 \
+	-device usb-tablet,bus=xhci.0,port=4 \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live

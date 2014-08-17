@@ -2,11 +2,12 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
+
 #define xhcihome 0x300000
 #define ersthome xhcihome+0
 #define eventhome xhcihome+0x10000
 #define crcrhome xhcihome+0x40000
-#define dcbaahome xhcihome+0x80000
+#define contexthome xhcihome+0x80000
 #define scratchpadhome xhcihome+0x90000
 #define inputhome xhcihome+0xa0000
 #define outputhome xhcihome+0xb0000
@@ -20,10 +21,16 @@ static QWORD msixtable=0;
 static QWORD pendingtable=0;
 
 static QWORD operational;
-static QWORD portbase;
 static QWORD doorbell;
 static QWORD runtime;
 static QWORD contextsize;
+
+static QWORD portbase;
+static QWORD portcount;
+static QWORD usb3start;
+static QWORD usb3count;
+static QWORD usb2start;
+static QWORD usb2count;
 
 volatile static QWORD eventsignal=0;
 volatile static QWORD eventaddr;
@@ -242,6 +249,34 @@ int ownership(QWORD addr)
 	say("    failed",0);
 	return -1;
 }
+void supportedprotocol(QWORD addr)
+{
+	QWORD first=(*(DWORD*)addr) >> 16;
+	QWORD third=*(DWORD*)(addr+8);
+
+	if(first>=0x300)	//usb3
+	{
+		usb3start=third & 0xff;
+		usb3count=(third>>8) & 0xff;
+
+		say("    usb3:",first);
+		say("    firstport:",usb3start);
+		say("    count:",usb3count);
+	}
+	else if(first>=0x200)	//usb2
+	{
+		usb2start=third & 0xff;
+		usb2count=(third>>8) & 0xff;
+
+		say("    usb2:",first);
+		say("    firstport:",usb2start);
+		say("    count:",usb2count);
+	}
+	else
+	{
+		say("usb1?",0);
+	}
+}
 
 
 
@@ -249,31 +284,35 @@ int ownership(QWORD addr)
 void explainxecp(QWORD addr)
 {
 	DWORD temp;
-	BYTE kind;
-	QWORD next;
 
 	say("explain xecp@",addr);
 	say("{",0);
 	while(1)
 	{
-		temp=*(DWORD*)addr;
-
-		kind=temp&0xff;
-		if(kind == 0) break;
-		next=(temp>>6)&0x3fc;
-		if(next == 0) break;
-
 		say("    @",addr);
-		say("    cap:",kind);
+		temp=*(DWORD*)addr;
+		BYTE kind=temp&0xff;
+		QWORD next=(temp>>6)&0x3fc;
 
-		if(kind == 1)
+		say("    cap:",kind);
+		switch(kind)
 		{
-			int result=ownership(addr);
-			if(result < 0) return;
+			case 1:{
+				if( ownership(addr) < 0 ) goto failed;
+				else break;
+			}
+			case 2:{
+				supportedprotocol(addr);
+				break;
+			}
 		}
 
+		if(next == 0) break;
 		addr+=next;
 	}
+
+
+failed:
 	say("}",0);
 }
 
@@ -294,9 +333,10 @@ say("{",0);
 	QWORD capparams=*(DWORD*)(memaddr+0x10);
 
 	operational=memaddr+caplength;
-	portbase=operational+0x400;
 	doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
 	runtime=memaddr+(*(DWORD*)(memaddr+0x18));
+	portbase=operational+0x400;
+	portcount=hcsparams1>>24;
 
 	if( (capparams&0x4) == 0x4){contextsize=0x40;}
 	else{contextsize=0x20;}
@@ -311,9 +351,10 @@ say("{",0);
 	say("    contextsize:",contextsize);
 
 	say("    operational@",operational);
-	say("    portbase@",portbase);
 	say("    doorbell@",doorbell);
 	say("    runtime@",runtime);
+	say("    portbase@",portbase);
+	say("    portcount@",portcount);
 
 say("}",0);
 
@@ -445,12 +486,12 @@ say("2.maxslot&dcbaa&crcr:",0);
 	say("    maxslot:",*(DWORD*)(operational+0x38) );
 
 	//dcbaa
-	*(DWORD*)(operational+0x30)=dcbaahome;
+	*(DWORD*)(operational+0x30)=contexthome;
 	*(DWORD*)(operational+0x34)=0;
 	say("    dcbaa:",*(DWORD*)(operational+0x30) );
 
 	//scratchpad
-	//*(DWORD*)dcbaahome=scratchpadhome;
+	//*(DWORD*)contexthome=scratchpadhome;
 	//say("    scratchpad:",scratchpadhome);
 
 	//command linktrb:lastone point to firstone
@@ -546,14 +587,59 @@ say("}",0);
 
 
 
+void clear(QWORD addr,QWORD size)
+{
+	BYTE* pointer=(BYTE*)addr;
+	int i;
+	for(i=0;i<size;i++) pointer[i]=0;
+}
+
+
+
+
+//第一个DWORD，第二个DWORD，第三个DWORD。。。。
+void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
+{
+	DWORD* pointer=(DWORD*)commandenqueue;
+
+	//写ring
+	pointer[0]=d0;
+	pointer[1]=d1;
+	pointer[2]=d2;
+	pointer[3]=d3;
+
+	//enqueue指针怎么变
+	commandenqueue+=0x10;
+
+	//处理完了，敲门铃
+	*(DWORD*)doorbell=0;
+}
+
+
+
+
+void context(QWORD addr,int dci,DWORD d0,DWORD d1,DWORD d2,DWORD d3,DWORD d4)
+{
+	DWORD* pointer=(DWORD*)(addr+dci*contextsize);
+
+	pointer[0]=d0;
+	pointer[1]=d1;
+	pointer[2]=d2;
+	pointer[3]=d3;
+	pointer[4]=d4;
+}
+
+
+
+
 int waitevent(QWORD trbtype)
 {
 	QWORD timeout=0;
-	QWORD data;
+	DWORD* p;
 	while(1)
 	{
-		if(timeout>0xfffff){
-			say("timeout!",0);
+		if(timeout>0xffffff){
+			say("    timeout!",0);
 			return -1;
 		}
 		if(eventsignal==0){
@@ -561,11 +647,19 @@ int waitevent(QWORD trbtype)
 			continue;
 		}
 
-		data=*(DWORD*)(eventaddr+0xc);
-		if( ( (data>>10)&0x3f) == trbtype)
+		p=(DWORD*)eventaddr;
+		if( ( (p[3]>>10)&0x3f) == trbtype)
 		{
-			eventsignal=0;
-			return 1;
+			if( (p[2]>>24) != 1)
+			{
+				say("    error code:",p[2]>>24);
+				return -2;
+			}
+			else
+			{
+				eventsignal=0;
+				return 1;
+			}
 		}
 	}
 }
@@ -573,89 +667,97 @@ int waitevent(QWORD trbtype)
 
 
 
-void initport(portnum)
+void checkport(portnum)
 {
-say("init port:",0);
-say("{",0);
+	DWORD portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+	if( (portsc&0x1) != 0x1){
+		say("nothing in port:",portnum);
+		return;
+	}
 
-//------------who is calling me?--------------------
-say("1.i am port manager",0);
-//----------------------------------------------------------
 
-//---------------------which naughty port-------------------
-say("2.portnum:",portnum);
-//---------------------------------------------------------
 
-DWORD portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
-DWORD slot;
 
-if( (portsc&0x1) == 0x1)	//是attach
-{
-	say("3.device attach!",0);
+	say("port:",portnum);
+	say("{",0);
+
+
+
+
+	//-----------we only know these for now-----------
+	say("0.information:",0);
+	say("    status:",portsc);
+	if( (portnum>=usb3start) && (portnum<usb3start+usb3count) )
+	{
+		say("    3.0",0);
+	}
+	if( (portnum>=usb2start) && (portnum<usb2start+usb2count) )
+	{
+		say("    2.0",0);
+	}
+	//----------------------------------------
 
 
 
 
 	//---------------obtain slot------------------
-	say("4.enable slot",0);
+	say("1.requesting slot",0);
 
-	*(QWORD*)commandenqueue=0;
-	*(QWORD*)(commandenqueue+8)=0;
-	*(DWORD*)(commandenqueue+0xc)=(9<<10)+commandcycle;
-	commandenqueue+=0x10;
-	*(DWORD*)doorbell=0;
+	command(0,0,0, (9<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
 
-	if(waitevent(0x21)<0) return;
-
-	slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
-	say("    slot:",slot);
+	QWORD slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
+	if(slot>=0x10){
+		say("    bad slotnum",slot);
+		goto failed;
+	}
+	say("    obtained slot:",slot);
 	//-------------------------------------------
 
 
 
 
 	//-------------slot initialization----------------
-	say("5.init slot",0);
-	if(slot>=0x10){
-		say("    bad slotnum",0);
-		return;
-	}
-
-	//1)clear to zero
 	QWORD inputaddr=inputhome+slot*0x1000;
-	for(;inputaddr<inputhome+slot*0x1000+0x1000;inputaddr+=4)
-	{
-		*(DWORD*)inputaddr=0;
-	}
-	inputaddr=inputhome+slot*0x1000;
-	//2)A0,A1 flag=1
-	*(DWORD*)(inputaddr+4)=3;
-	//3)slot context
-	*(DWORD*)(inputaddr+contextsize)=1<<27;
-	*(DWORD*)(inputaddr+contextsize+4)=portnum<<16;
-	//4)transfer ring initialization
-	QWORD transferaddr=transferhome+slot*0x1000;
-	//5)endpoint context0
-	*(DWORD*)(inputaddr+contextsize*2+4)=(((portsc>>10)&0xf)<<16)|(4<<3)|6;
-	*(DWORD*)(inputaddr+contextsize*2+8)=transferaddr+1;
-
-	//6)output context
 	QWORD outputaddr=outputhome+slot*0x1000;
-	//7)output context填入对应dcbaa
-	//8)address device command for device slot
+	QWORD transferaddr=transferhome+slot*0x1000;
+
+	say("2.initing slot",0);
+	say("    inputaddr:",inputaddr);
+	say("    outputaddr:",outputaddr);
+	say("    transferaddr:",transferaddr);
+
+	//1)clear context
+	clear(inputaddr,0x1000);
+	clear(outputaddr,0x1000);
+	clear(transferaddr,0x1000);
+
+	//construct input
+	context(inputaddr,0,        0,	3,	0,	0,	0);
+	context(inputaddr,1,        1<<27,portnum<<16,	0,	0,	0);
+	context(inputaddr,2,        0,(64<<16)|(4<<3)|6,transferaddr+1,0,0x40);
+
+	//output context地址填入对应dcbaa
+	*(DWORD*)(contexthome+slot*8)=outputaddr;
+	*(DWORD*)(contexthome+slot*8+4)=0;
+
+	//address device command for device slot
+	command(inputaddr,0,0, (slot<<24)+(11<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
 	//---------------------------------------------
 
 
 
 
 	//--------------address device----------------
-	say("6.address device",0);
+	say("3.address device",0);
 	//--------------------------------------------
 
 
 
 	//------------------get descriptor-----------------
-	say("7.get descriptor",0);
+	say("4.get descriptor",0);
 	//i.allocate an 8B buffer to receive the device descriptor
 	//ii.init setup stage td
 	//	trbtype=setup stage trb
@@ -698,40 +800,37 @@ if( (portsc&0x1) == 0x1)	//是attach
 
 
 	//read complete usb device descriptor
-	say("8.get descriptor2",0);
+	say("5.get descriptor2",0);
 	//------------------------------------
 
 
 
 
 	//evaluate context command,inform xhc of the value of hub and max....
-	say("9.evaluate context",0);
+	say("6.evaluate context",0);
 
 
 
 
 	//class driver 4.3.5
-	say("9.set configuration",0);
+	say("7.set configuration",0);
 
 
 
 	//if required configure alternate interface,4.3.6
-	say("10.alternate interface",0);
+	say("8.alternate interface",0);
 
 
 
 
 	//pipe fully operational
 	say("done!",0);
-}
-else			//是detach
-{
-	say("3.device detach!",0);
 
-	say("sending command:disable slot",0);
-}
 
-say("}",0);
+
+
+	failed:
+	say("}",0);
 }
 
 
@@ -742,13 +841,12 @@ void probeport()
 	QWORD portnum;
 	DWORD portsc;
 
-	for(portnum=1;portnum<8;portnum++)
+	command(0,0,0, (1<<24)+(10<<10)+commandcycle );
+	if(waitevent(0x21)<0) return;
+
+	for(portnum=1;portnum<=portcount;portnum++)
 	{
-		portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
-		if( (portsc&0x1) == 0x1)	//里面有东西
-		{
-			initport(portnum);
-		}
+		checkport(portnum);
 	}
 }
 
@@ -758,9 +856,7 @@ void probeport()
 void initxhci()
 {
 	//clear home
-        QWORD addr;
-	addr=xhcihome;
-	for(;addr<xhcihome+0x100000;addr++) *(BYTE*)addr=0;
+	clear(xhcihome,0x100000);
 
 	//pci部分
         findaddr();
@@ -782,8 +878,8 @@ void initxhci()
 
 void realisr20()
 {
-shout("oh!interrupt!",0);
-shout("{",0);
+	shout("interrupt20",0);
+	shout("{",0);
 
 	QWORD status=*(DWORD*)(operational+4);
 	shout("    status:",0);
@@ -835,5 +931,5 @@ shout("{",0);
 		}
 	}
 
-shout("}",0);
+	shout("}",0);
 }
