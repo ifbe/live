@@ -4,14 +4,19 @@
 #define QWORD unsigned long long
 
 #define xhcihome 0x300000
+
 #define ersthome xhcihome+0
 #define eventhome xhcihome+0x10000
+
 #define crcrhome xhcihome+0x40000
+
 #define contexthome xhcihome+0x80000
 #define scratchpadhome xhcihome+0x90000
-#define inputhome xhcihome+0xa0000
-#define outputhome xhcihome+0xb0000
-#define transferhome xhcihome+0xc0000
+
+#define inputhome xhcihome+0xc0000
+#define outputhome xhcihome+0xd0000
+#define transferhome xhcihome+0xe0000
+#define bufferhome xhcihome+0xf0000
 
 
 static QWORD portaddr=0;
@@ -32,11 +37,6 @@ static QWORD usb3count;
 static QWORD usb2start;
 static QWORD usb2count;
 
-volatile static QWORD eventsignal=0;
-volatile static QWORD eventaddr;
-
-static QWORD commandenqueue=crcrhome;
-static DWORD commandcycle=1;
 
 
 
@@ -354,7 +354,7 @@ say("{",0);
 	say("    doorbell@",doorbell);
 	say("    runtime@",runtime);
 	say("    portbase@",portbase);
-	say("    portcount@",portcount);
+	say("    portcount:",portcount);
 
 say("}",0);
 
@@ -552,14 +552,14 @@ say("4.eventring:",0);
 	*(DWORD*)(runtime+0x3c)=0;	//这一行也必须有
 
 	//enable EWE|HSEIE|INTE(0x400|0x8|0x4) in USBCMD
-	*(DWORD*)operational |= 0xc;
+	*(DWORD*)operational = (*(DWORD*)operational) | 0xc;
 	//*(DWORD*)operational |= 0x40c;
 
 	//IMOD
 	*(DWORD*)(runtime+0x24)=4000;
 
 	//IMAN
-	*(DWORD*)(runtime+0x20) |= 0x2;
+	*(DWORD*)(runtime+0x20) = (*(DWORD*)(runtime+0x20)) | 0x2;
 
 	say("    event ring done",0);
 
@@ -571,7 +571,7 @@ say("4.eventring:",0);
 //-------------------------------------------------
 say("5.turnon",0);
 	//turn on
-	*(DWORD*)operational |= 0x1;
+	*(DWORD*)operational = (*(DWORD*)operational) | 0x1;
 
 	//wait for 100ms?
 	QWORD wait3=0xffffff;
@@ -598,6 +598,8 @@ void clear(QWORD addr,QWORD size)
 
 
 //第一个DWORD，第二个DWORD，第三个DWORD。。。。
+static QWORD commandenqueue=crcrhome;
+static DWORD commandcycle=1;
 void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 {
 	DWORD* pointer=(DWORD*)commandenqueue;
@@ -618,6 +620,37 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 
 
 
+void transfer(int slot,int endpoint,int desctype,int length)
+{
+	QWORD transferaddr=transferhome+slot*0x1000;
+	QWORD temp=*(QWORD*)(transferaddr+0xff0);
+	DWORD* pointer=(DWORD*)(transferaddr+temp*0x10);
+
+	//setup stage
+	pointer[0]=0x680+(desctype<<24);
+	pointer[1]=length<<16;
+	pointer[2]=8;
+	pointer[3]=0x30041+(2<<10);
+	//data stage
+	pointer[4]=bufferhome+slot*0x1000+0x20*(desctype-1);
+	pointer[5]=0;
+	pointer[6]=length;
+	pointer[7]=0x10001+(3<<10);
+	//status stage
+	pointer[8]=0;
+	pointer[9]=0;
+	pointer[10]=0;
+	pointer[11]=0x21+(4<<10);
+
+	*(QWORD*)(transferaddr+0xff0)+=3;
+
+	//doorbell
+	*(DWORD*)(doorbell+4*slot)=endpoint;
+}
+
+
+
+
 void context(QWORD addr,int dci,DWORD d0,DWORD d1,DWORD d2,DWORD d3,DWORD d4)
 {
 	DWORD* pointer=(DWORD*)(addr+dci*contextsize);
@@ -632,6 +665,8 @@ void context(QWORD addr,int dci,DWORD d0,DWORD d1,DWORD d2,DWORD d3,DWORD d4)
 
 
 
+volatile static QWORD eventsignal=0;
+volatile static QWORD eventaddr;
 int waitevent(QWORD trbtype)
 {
 	QWORD timeout=0;
@@ -680,21 +715,25 @@ void checkport(portnum)
 
 	say("port:",portnum);
 	say("{",0);
+	say("    status:",portsc);
 
 
 
 
 	//-----------we only know these for now-----------
 	say("0.information:",0);
-	say("    status:",portsc);
 	if( (portnum>=usb3start) && (portnum<usb3start+usb3count) )
 	{
 		say("    3.0",0);
 	}
 	if( (portnum>=usb2start) && (portnum<usb2start+usb2count) )
 	{
-		say("    2.0",0);
+		say("    2.0,disabled",0);
+		*(DWORD*)(portbase+portnum*0x10-0x10)=portsc|0x10;
+		waitevent(0x22);
 	}
+	DWORD speed=(portsc>>10)&0xf;
+	say("    speed:",speed);
 	//----------------------------------------
 
 
@@ -721,110 +760,98 @@ void checkport(portnum)
 	QWORD inputaddr=inputhome+slot*0x1000;
 	QWORD outputaddr=outputhome+slot*0x1000;
 	QWORD transferaddr=transferhome+slot*0x1000;
+	QWORD bufferaddr=bufferhome+slot*0x1000;
 
 	say("2.initing slot",0);
 	say("    inputaddr:",inputaddr);
 	say("    outputaddr:",outputaddr);
 	say("    transferaddr:",transferaddr);
+	say("    bufferaddr:",bufferaddr);
 
 	//1)clear context
 	clear(inputaddr,0x1000);
 	clear(outputaddr,0x1000);
 	clear(transferaddr,0x1000);
+	clear(bufferaddr,0x1000);
 
 	//construct input
 	context(inputaddr,0,        0,	3,	0,	0,	0);
-	context(inputaddr,1,        1<<27,portnum<<16,	0,	0,	0);
+	context(inputaddr,1,        (1<<27)+(speed<<20),portnum<<16,0,0,0);
 	context(inputaddr,2,        0,(64<<16)|(4<<3)|6,transferaddr+1,0,0x40);
 
 	//output context地址填入对应dcbaa
 	*(DWORD*)(contexthome+slot*8)=outputaddr;
 	*(DWORD*)(contexthome+slot*8+4)=0;
 
-	//address device command for device slot
+	//address device(bsr=0)
 	command(inputaddr,0,0, (slot<<24)+(11<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
+	say("    slot state:",(*(DWORD*)(outputaddr+0xc))>>27); //if2,addressed
+	say("    ep0 state:",(*(DWORD*)(outputaddr+0x20))&0x3);
 	//---------------------------------------------
 
 
 
 
-	//--------------address device----------------
-	say("3.address device",0);
+	//------------------get descriptor-----------------
+	say("3.adjust input",0);
+
+	transfer(slot,1,1,8);
+	if(waitevent(0x20)<0) goto failed;
+
+	//change input
+	DWORD packetsize=*(BYTE*)(bufferaddr+7);
+	context(inputaddr,2,0,(packetsize<<16)|(4<<3)|6,transferaddr+1,0,0x40);
+	say("    got packetsize:",packetsize);
+
+	//evaluate
+	command(inputaddr,0,0, (slot<<24)+(13<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+	say("    evaluated",0);
 	//--------------------------------------------
+
 
 
 
 	//------------------get descriptor-----------------
-	say("4.get descriptor",0);
-	//i.allocate an 8B buffer to receive the device descriptor
-	//ii.init setup stage td
-	//	trbtype=setup stage trb
-	//	trb transfer length=8
-	//	ioc=0
-	//	idt=1
-	//	bmrequesttype=0x80(dir=device2host,type=standard,recepient=dev)
-	//	brequest=6(get descriptor)
-	//	wvalue=0x100,low byte=0(index),high byte=1(type)
-	//	windex=0
-	//	wlength=8
-	//	cycle bit=current producer cycle state
-	//iii.advance endpoint0 transfer ring enqueue pointer
-	//iv.init data stage td
-	//	trbtype=data stage trb
-	//	dir=1
-	//	trb transfer length=8
-	//	chain bit=0
-	//	ioc=0
-	//	idt=0
-	//	data buffer pointer=&device descriptor receive buffer
-	//	cycle bit=current producer cycle state
-	//v.advance endpoint0 transfer ring enqueue pointer
-	//vi.init status stage td
-	//	trbtype=status stage trb
-	//	dir=0
-	//	length=0
-	//	ioc=1
-	//	idt=0
-	//	data buffer pointer=0
-	//	cycle bit=current producer cycle state
-	//vii.advance endpoint0 transfer ring enqueue pointer
-	//viii.ring device slot doorbell(control ep0 enqueue pointer update)
-	//vx.update ep0 context max packet size with wmaxpacketsize
-	//x.issue evaluate context command,use updated max packet size
+	say("4.now we know everything:",0);
 
+	transfer(slot,1,1,0x12);
+	if(waitevent(0x20)<0) goto failed;
+	//say("    blength:",*(BYTE*)bufferaddr);
+	//say("    bdescriptortype:",*(BYTE*)(bufferaddr+1));
+	say("    bcdusb:",*(WORD*)(bufferaddr+2));
+	say("    bdeviceclass:",*(BYTE*)(bufferaddr+4));
+	say("    bdevicesubclass:",*(BYTE*)(bufferaddr+5));
+	say("    bdeviceprotocol:",*(BYTE*)(bufferaddr+6));
+	say("    bmaxpacketsize0:",*(BYTE*)(bufferaddr+7));
+	say("    vendor:",*(WORD*)(bufferaddr+8));
+	say("    product:",*(WORD*)(bufferaddr+0xa));
+	say("    bcddevice:",*(WORD*)(bufferaddr+0xc));
+	say("    imanufacturer:",*(BYTE*)(bufferaddr+0xe));
+	say("    iproduct:",*(BYTE*)(bufferaddr+0xf));
+	say("    iserialnumber:",*(BYTE*)(bufferaddr+0x10));
+	say("    bnumconfigurations:",*(BYTE*)(bufferaddr+0x11));
+
+	transfer(slot,1,2,9);
+	if(waitevent(0x20)<0) goto failed;
+	say("    wtotallength:",*(WORD*)(bufferaddr+0x20+2));
+	say("    bnuminterface:",*(BYTE*)(bufferaddr+0x20+4));
+	say("    bconfigurationvalue:",*(BYTE*)(bufferaddr+0x20+5));
+	say("    iconfiguration:",*(BYTE*)(bufferaddr+0x20+6));
+	say("    bmattributes:",*(BYTE*)(bufferaddr+0x20+7));
+	say("    bmaxpower:",*(BYTE*)(bufferaddr+0x20+8));
+
+	transfer(slot,1,3,0x12);
+	if(waitevent(0x20)<0) goto failed;
+
+	transfer(slot,1,6,10);
+	if(waitevent(0x20)<0) goto failed;
+
+	transfer(slot,1,7,9);
+	if(waitevent(0x20)<0) goto failed;
 	//--------------------------------------------
-
-
-
-
-	//read complete usb device descriptor
-	say("5.get descriptor2",0);
-	//------------------------------------
-
-
-
-
-	//evaluate context command,inform xhc of the value of hub and max....
-	say("6.evaluate context",0);
-
-
-
-
-	//class driver 4.3.5
-	say("7.set configuration",0);
-
-
-
-	//if required configure alternate interface,4.3.6
-	say("8.alternate interface",0);
-
-
-
-
-	//pipe fully operational
-	say("done!",0);
 
 
 
@@ -899,6 +926,9 @@ void realisr20()
 		{
 			//取一条event,看看是啥情况
 			QWORD pointer=erdp&0xfffffffffffffff0;
+			eventsignal=0xffff;
+			eventaddr=pointer;
+
 			QWORD trbtype=*(DWORD*)(pointer+0xc);
 			trbtype=(trbtype>>10)&0x3f;
 			shout("    trbtype:",trbtype);
@@ -919,11 +949,6 @@ void realisr20()
 
 				//告诉主控，收到变化,bit17写1
 				*(DWORD*)portaddr=portsc;
-			}
-			if(trbtype == 0x21)
-			{
-				eventsignal=0xffff;
-				eventaddr=pointer;
 			}
 
 			*(DWORD*)(runtime+0x38)=erdp+0x10;
