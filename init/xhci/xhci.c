@@ -673,7 +673,7 @@ int waitevent(QWORD trbtype)
 	DWORD* p;
 	while(1)
 	{
-		if(timeout>0xffffff){
+		if(timeout>0xffffffff){
 			say("    timeout!",0);
 			return -1;
 		}
@@ -702,6 +702,123 @@ int waitevent(QWORD trbtype)
 
 
 
+void explaindescriptor(QWORD addr)
+{
+	DWORD type=*(BYTE*)(addr+1);
+	if(	(type==0)|((type>7)&(type<0x21))|(type>0x23)	) return;
+
+	say("	@",addr);
+
+	if(type==1)	//设备描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	say("    bcdusb:",*(WORD*)(addr+2));
+	say("    bdeviceclass:",*(BYTE*)(addr+4));
+	say("    bdevicesubclass:",*(BYTE*)(addr+5));
+	say("    bdeviceprotocol:",*(BYTE*)(addr+6));
+	say("    bmaxpacketsize0:",*(BYTE*)(addr+7));
+	say("    vendor:",*(WORD*)(addr+8));
+	say("    product:",*(WORD*)(addr+0xa));
+	say("    bcddevice:",*(WORD*)(addr+0xc));
+	say("    imanufacturer:",*(BYTE*)(addr+0xe));
+	say("    iproduct:",*(BYTE*)(addr+0xf));
+	say("    iserialnumber:",*(BYTE*)(addr+0x10));
+	say("    bnumconfigurations:",*(BYTE*)(addr+0x11));
+	}
+
+	if(type==2)	//配置描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	say("    wtotallength:",*(WORD*)(addr+2));
+	say("    bnuminterface:",*(BYTE*)(addr+4));
+	say("    bconfigurationvalue:",*(BYTE*)(addr+5));
+	say("    iconfiguration:",*(BYTE*)(addr+6));
+	say("    bmattributes:",*(BYTE*)(addr+7));
+	say("    bmaxpower:",*(BYTE*)(addr+8));
+
+	DWORD totallength=*(WORD*)(addr+2);
+	DWORD offset=0;
+	while(offset<totallength)
+	{
+		offset+=*(BYTE*)(addr+offset);
+		explaindescriptor(addr+offset);
+	}
+	}
+
+	if(type==3)	//字符串描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	}
+
+	if(type==4)	//接口描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	say("    binterfacenumber:",*(BYTE*)(addr+2));
+	say("    balternatesetting:",*(BYTE*)(addr+3));
+	say("    bnumendpoints:",*(BYTE*)(addr+4));
+	say("    binterfaceclass:",*(BYTE*)(addr+5));
+	say("    binterfacesubclass:",*(BYTE*)(addr+6));
+	say("    binterfaceprotol:",*(BYTE*)(addr+7));
+	say("    iinterface:",*(BYTE*)(addr+8));
+	}
+
+	if(type==5)	//端点描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	say("    bendpointaddress:",*(BYTE*)(addr+2));
+	say("    bmattributes:",*(BYTE*)(addr+3));
+	say("    wmaxpacketsize:",*(WORD*)(addr+4));
+	say("    binterval:",*(BYTE*)(addr+6));
+	}
+
+	if(type==6)	//设备限定描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	say("    bcdusb:",*(WORD*)(addr+2));
+	say("    bdeviceclass:",*(BYTE*)(addr+4));
+	say("    bdevicesubclass:",*(BYTE*)(addr+5));
+	say("    bdeviceprotocol:",*(BYTE*)(addr+6));
+	say("    bmaxpacketsize0:",*(BYTE*)(addr+7));
+	say("    bnumconfigurations:",*(BYTE*)(addr+8));
+	}
+
+	if(type==7)	//其他速率配置描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	say("    wtotallength:",*(WORD*)(addr+2));
+	say("    bnuminterfaces:",*(BYTE*)(addr+4));
+	say("    bconfigurationvalue:",*(BYTE*)(addr+5));
+	say("    iconfiguration:",*(BYTE*)(addr+6));
+	say("    bmattributes:",*(BYTE*)(addr+7));
+	say("    bmaxpower:",*(BYTE*)(addr+8));
+	}
+
+	if(type==0x21)	//hid设备描述符
+	{
+	say("    blength:",*(BYTE*)addr);
+	say("    bdescriptortype:",*(BYTE*)(addr+1));
+	say("    bcdhid:",*(WORD*)(addr+2));
+	say("    bcountrycode:",*(BYTE*)(addr+4));
+	say("    bnumdescriptor:",*(BYTE*)(addr+5));
+	say("    bdescriptortype:",*(BYTE*)(addr+6));
+	say("    wdescriptorlength:",*(WORD*)(addr+7));
+	say("    bdescriptortype:",*(BYTE*)(addr+9));
+	say("    wdescriptorlength:",*(WORD*)(addr+10));
+	}
+	//if(type==0x21)	//hid报告描述符
+	//if(type==0x21)	//hid物理描述符
+}
+
+
+
+
 void checkport(portnum)
 {
 	DWORD portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
@@ -715,24 +832,35 @@ void checkport(portnum)
 
 	say("port:",portnum);
 	say("{",0);
-	say("    status:",portsc);
 
 
 
 
 	//-----------we only know these for now-----------
 	say("0.information:",0);
+	if( (portsc>>16) >0 )
+	{
+		*(DWORD*)(portbase+portnum*0x10-0x10)=portsc;
+	}
+	portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+	
+
 	if( (portnum>=usb3start) && (portnum<usb3start+usb3count) )
 	{
 		say("    3.0",0);
 	}
 	if( (portnum>=usb2start) && (portnum<usb2start+usb2count) )
 	{
-		say("    2.0,disabled",0);
+		say("    2.0,resetting",0);
 		*(DWORD*)(portbase+portnum*0x10-0x10)=portsc|0x10;
 		waitevent(0x22);
+		portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
 	}
+
+	DWORD pls=(portsc>>5)&0xf;
 	DWORD speed=(portsc>>10)&0xf;
+	say("    status:",portsc);
+	say("    pls:",pls);
 	say("    speed:",speed);
 	//----------------------------------------
 
@@ -819,38 +947,15 @@ void checkport(portnum)
 
 	transfer(slot,1,1,0x12);
 	if(waitevent(0x20)<0) goto failed;
-	//say("    blength:",*(BYTE*)bufferaddr);
-	//say("    bdescriptortype:",*(BYTE*)(bufferaddr+1));
-	say("    bcdusb:",*(WORD*)(bufferaddr+2));
-	say("    bdeviceclass:",*(BYTE*)(bufferaddr+4));
-	say("    bdevicesubclass:",*(BYTE*)(bufferaddr+5));
-	say("    bdeviceprotocol:",*(BYTE*)(bufferaddr+6));
-	say("    bmaxpacketsize0:",*(BYTE*)(bufferaddr+7));
-	say("    vendor:",*(WORD*)(bufferaddr+8));
-	say("    product:",*(WORD*)(bufferaddr+0xa));
-	say("    bcddevice:",*(WORD*)(bufferaddr+0xc));
-	say("    imanufacturer:",*(BYTE*)(bufferaddr+0xe));
-	say("    iproduct:",*(BYTE*)(bufferaddr+0xf));
-	say("    iserialnumber:",*(BYTE*)(bufferaddr+0x10));
-	say("    bnumconfigurations:",*(BYTE*)(bufferaddr+0x11));
+	explaindescriptor(bufferaddr);
 
 	transfer(slot,1,2,9);
 	if(waitevent(0x20)<0) goto failed;
-	say("    wtotallength:",*(WORD*)(bufferaddr+0x20+2));
-	say("    bnuminterface:",*(BYTE*)(bufferaddr+0x20+4));
-	say("    bconfigurationvalue:",*(BYTE*)(bufferaddr+0x20+5));
-	say("    iconfiguration:",*(BYTE*)(bufferaddr+0x20+6));
-	say("    bmattributes:",*(BYTE*)(bufferaddr+0x20+7));
-	say("    bmaxpower:",*(BYTE*)(bufferaddr+0x20+8));
 
-	transfer(slot,1,3,0x12);
+	transfer(slot,1,2,*(WORD*)(bufferaddr+0x22));
 	if(waitevent(0x20)<0) goto failed;
+	explaindescriptor(bufferaddr+0x20);
 
-	transfer(slot,1,6,10);
-	if(waitevent(0x20)<0) goto failed;
-
-	transfer(slot,1,7,9);
-	if(waitevent(0x20)<0) goto failed;
 	//--------------------------------------------
 
 
@@ -948,7 +1053,7 @@ void realisr20()
 				shout("    port status:",portsc);
 
 				//告诉主控，收到变化,bit17写1
-				*(DWORD*)portaddr=portsc;
+				*(DWORD*)portaddr=portsc&0xfffffffd;
 			}
 
 			*(DWORD*)(runtime+0x38)=erdp+0x10;
