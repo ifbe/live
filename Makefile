@@ -38,6 +38,7 @@ ext:
 	sudo qemu-nbd -d /dev/nbd0
 	sudo rmmod nbd
 qemutest:
+	make -s image
 	sudo qemu-kvm \
 	-monitor stdio \
 	-smp 2 \
@@ -49,6 +50,7 @@ qemutest:
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live
 newtest:
+	make -s image
 	#qemu-kvm 1.6.2 is wierd,but below 2.x.x is ok!
 	sudo /opt/qemu/bin/qemu-system-x86_64 \
 	-monitor stdio \
@@ -93,6 +95,7 @@ exttest:
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/ext.vhd
 copy:
+	make -s image
 	sudo cp init/init /mnt/efi/live/init
 push:
 	make -s clean

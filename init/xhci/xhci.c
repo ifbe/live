@@ -770,8 +770,18 @@ void explaindescriptor(QWORD addr)
 	{
 	say("    blength:",*(BYTE*)addr);
 	say("    bdescriptortype:",*(BYTE*)(addr+1));
-	say("    bendpointaddress:",*(BYTE*)(addr+2));
-	say("    bmattributes:",*(BYTE*)(addr+3));
+
+	BYTE endpoint=*(BYTE*)(addr+2);
+	say("    endpoint:",endpoint&0xf);
+	if(endpoint>0x80){say("    in",0);}
+	else{say("    out",0);}
+
+	BYTE eptype=*(BYTE*)(addr+3);
+	if(eptype==0) say("    control",0);
+	else if(eptype==1) say("    isochronous",0);
+	else if(eptype==2) say("    bulk",0);
+	else say("    interrupt",0);
+
 	say("    wmaxpacketsize:",*(WORD*)(addr+4));
 	say("    binterval:",*(BYTE*)(addr+6));
 	}
@@ -811,6 +821,7 @@ void explaindescriptor(QWORD addr)
 	say("    wdescriptorlength:",*(WORD*)(addr+7));
 	say("    bdescriptortype:",*(BYTE*)(addr+9));
 	say("    wdescriptorlength:",*(WORD*)(addr+10));
+
 	}
 	//if(type==0x21)	//hid报告描述符
 	//if(type==0x21)	//hid物理描述符
@@ -915,14 +926,17 @@ void checkport(portnum)
 	command(inputaddr,0,0, (slot<<24)+(11<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
-	say("    slot state:",(*(DWORD*)(outputaddr+0xc))>>27); //if2,addressed
-	say("    ep0 state:",(*(DWORD*)(outputaddr+0x20))&0x3);
+	DWORD slotstate=(*(DWORD*)(outputaddr+0xc))>>27; //if2,addressed
+	DWORD ep0state=(*(DWORD*)(outputaddr+0x20))&0x3;
+	if(slotstate==2) say("    slot addressed!",0);
+	else say("    slot state:",slotstate);
+	say("    ep0 state:",ep0state);
 	//---------------------------------------------
 
 
 
 
-	//------------------get descriptor-----------------
+	//-----------------change packetsize------------------
 	say("3.adjust input",0);
 
 	transfer(slot,1,1,8);
@@ -936,7 +950,7 @@ void checkport(portnum)
 	//evaluate
 	command(inputaddr,0,0, (slot<<24)+(13<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
-	say("    evaluated",0);
+	say("    slot evaluated!",0);
 	//--------------------------------------------
 
 
