@@ -12,11 +12,13 @@
 
 #define contexthome xhcihome+0x80000
 #define scratchpadhome xhcihome+0x90000
+#define bufferhome xhcihome+0xa0000
+#define hidbufferhome xhcihome+0xb0000
 
 #define inputhome xhcihome+0xc0000
 #define outputhome xhcihome+0xd0000
-#define transferhome xhcihome+0xe0000
-#define bufferhome xhcihome+0xf0000
+#define controlhome xhcihome+0xe0000
+#define inthome xhcihome+0xf0000
 
 
 static QWORD portaddr=0;
@@ -603,6 +605,7 @@ static DWORD commandcycle=1;
 void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 {
 	DWORD* pointer=(DWORD*)commandenqueue;
+	say("command ring@",commandenqueue);
 
 	//写ring
 	pointer[0]=d0;
@@ -620,31 +623,82 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 
 
 
-void transfer(int slot,int endpoint,int desctype,int length)
+//setuppacket
+//[0,7]:bmrequesttype	example:	0x80
+//[8,15]:brequest			0x6
+//[16,31]:wvalue			(descriptor type>>8)+descriptor index
+//[32,47]:windex			0
+//[48,63]:wlength			length
+void controltransfer(int slot,QWORD setuppacket,QWORD buffer)
 {
-	QWORD transferaddr=transferhome+slot*0x1000;
-	QWORD temp=*(QWORD*)(transferaddr+0xff0);
-	DWORD* pointer=(DWORD*)(transferaddr+temp*0x10);
+	QWORD temp;
 
-	//setup stage
-	pointer[0]=0x680+(desctype<<24);
-	pointer[1]=length<<16;
-	pointer[2]=8;
-	pointer[3]=0x30041+(2<<10);
-	//data stage
-	pointer[4]=bufferhome+slot*0x1000+0x20*(desctype-1);
-	pointer[5]=0;
-	pointer[6]=length;
-	pointer[7]=0x10001+(3<<10);
-	//status stage
-	pointer[8]=0;
-	pointer[9]=0;
-	pointer[10]=0;
-	pointer[11]=0x21+(4<<10);
+	//从(output)context得到ring地址
+	temp=*(QWORD*)(outputhome+slot*0x1000+contextsize+8);
+	QWORD ring=temp&0xfffffffffffffff0;
+	temp=*(QWORD*)(ring+0xff0);
+	DWORD* pointer=(DWORD*)(ring+temp*0x10);
 
-	*(QWORD*)(transferaddr+0xff0)+=3;
+	//
+	say("transfer ring@",&pointer[0]);
+
+	//we should analyse the setuppacket
+	if((setuppacket&0xff)==0)
+	{
+		//setup stage
+		pointer[0]=setuppacket&0xffffffff;
+		pointer[1]=setuppacket>>32;
+		pointer[2]=8;
+		pointer[3]=0x41+(2<<10);
+		//status stage
+		pointer[4]=0;
+		pointer[5]=0;
+		pointer[6]=0;
+		pointer[7]=0x21+(4<<10)+(1<<16);	//in
+
+		*(QWORD*)(ring+0xff0)+=2;
+	}
+	else
+	{
+		//setup stage
+		pointer[0]=setuppacket&0xffffffff;
+		pointer[1]=setuppacket>>32;
+		pointer[2]=8;
+		pointer[3]=0x30041+(2<<10);
+		//data stage
+		pointer[4]=buffer;
+		pointer[5]=0;
+		pointer[6]=setuppacket>>48;
+		pointer[7]=0x10001+(3<<10);
+		//status stage
+		pointer[8]=0;
+		pointer[9]=0;
+		pointer[10]=0;
+		pointer[11]=0x21+(4<<10);
+
+		*(QWORD*)(ring+0xff0)+=3;
+	}
 
 	//doorbell
+	*(DWORD*)(doorbell+4*slot)=1;
+}
+void transfer(int slot,int endpoint,DWORD d0,DWORD d1,DWORD d2,DWORD d3)
+{
+	QWORD temp;
+
+	//从(output)context得到ring地址
+	temp=*(QWORD*)(outputhome+slot*0x1000+endpoint*contextsize+8);
+	QWORD ring=temp&0xfffffffffffffff0;
+	temp=*(QWORD*)(ring+0xff0);
+	DWORD* pointer=(DWORD*)(ring+temp*0x10);
+
+	say("transfer ring@",&pointer[0]);
+
+	pointer[0]=d0;
+	pointer[1]=d1;
+	pointer[2]=d2;
+	pointer[3]=d3;
+
 	*(DWORD*)(doorbell+4*slot)=endpoint;
 }
 
@@ -702,6 +756,8 @@ int waitevent(QWORD trbtype)
 
 
 
+//以下是提取自descriptor的最重要信息，每次只被这个函数更新,就像人记笔记......
+//
 void explaindescriptor(QWORD addr)
 {
 	DWORD type=*(BYTE*)(addr+1);
@@ -740,8 +796,10 @@ void explaindescriptor(QWORD addr)
 
 	DWORD totallength=*(WORD*)(addr+2);
 	DWORD offset=0;
-	while(offset<totallength)
+	while(1)
 	{
+		if(offset>totallength) break;
+		if( *(BYTE*)(addr+offset) <8) break;
 		offset+=*(BYTE*)(addr+offset);
 		explaindescriptor(addr+offset);
 	}
@@ -896,27 +954,33 @@ void checkport(portnum)
 
 
 	//-------------slot initialization----------------
+	QWORD buffer=bufferhome+slot*0x1000;
+	QWORD hidbuffer=hidbufferhome+slot*0x1000;
 	QWORD inputaddr=inputhome+slot*0x1000;
 	QWORD outputaddr=outputhome+slot*0x1000;
-	QWORD transferaddr=transferhome+slot*0x1000;
-	QWORD bufferaddr=bufferhome+slot*0x1000;
+	QWORD controladdr=controlhome+slot*0x1000;
+	QWORD intaddr=inthome+slot*0x1000;
 
 	say("2.initing slot",0);
+	say("    buffer:",buffer);
+	say("    hidbuffer:",hidbuffer);
 	say("    inputaddr:",inputaddr);
 	say("    outputaddr:",outputaddr);
-	say("    transferaddr:",transferaddr);
-	say("    bufferaddr:",bufferaddr);
+	say("    controladdr:",controladdr);
+	say("    intaddr:",intaddr);
 
 	//1)clear context
+	clear(buffer,0x1000);
+	clear(hidbuffer,0x1000);
 	clear(inputaddr,0x1000);
 	clear(outputaddr,0x1000);
-	clear(transferaddr,0x1000);
-	clear(bufferaddr,0x1000);
+	clear(controladdr,0x1000);
+	clear(intaddr,0x1000);
 
 	//construct input
 	context(inputaddr,0,        0,	3,	0,	0,	0);
 	context(inputaddr,1,        (1<<27)+(speed<<20),portnum<<16,0,0,0);
-	context(inputaddr,2,        0,(64<<16)|(4<<3)|6,transferaddr+1,0,0x40);
+	context(inputaddr,2,        0,(64<<16)|(4<<3)|6,controladdr+1,0,0x40);
 
 	//output context地址填入对应dcbaa
 	*(DWORD*)(contexthome+slot*8)=outputaddr;
@@ -927,10 +991,14 @@ void checkport(portnum)
 	if(waitevent(0x21)<0) goto failed;
 
 	DWORD slotstate=(*(DWORD*)(outputaddr+0xc))>>27; //if2,addressed
-	DWORD ep0state=(*(DWORD*)(outputaddr+0x20))&0x3;
+	DWORD epstate=(*(DWORD*)(outputaddr+0x20))&0x3;
+
 	if(slotstate==2) say("    slot addressed!",0);
 	else say("    slot state:",slotstate);
-	say("    ep0 state:",ep0state);
+	if(epstate==0){
+		say("    ep0 wrong",0);
+		goto failed;
+	}
 	//---------------------------------------------
 
 
@@ -939,18 +1007,28 @@ void checkport(portnum)
 	//-----------------change packetsize------------------
 	say("3.adjust input",0);
 
-	transfer(slot,1,1,8);
+	controltransfer(slot,0x8000001000680,buffer);
 	if(waitevent(0x20)<0) goto failed;
 
 	//change input
-	DWORD packetsize=*(BYTE*)(bufferaddr+7);
-	context(inputaddr,2,0,(packetsize<<16)|(4<<3)|6,transferaddr+1,0,0x40);
+	DWORD packetsize=*(BYTE*)(buffer+7);
+	context(inputaddr,2,0,(packetsize<<16)|(4<<3)|6,controladdr+1,0,0x40);
 	say("    got packetsize:",packetsize);
 
 	//evaluate
 	command(inputaddr,0,0, (slot<<24)+(13<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
-	say("    slot evaluated!",0);
+
+
+	slotstate=(*(DWORD*)(outputaddr+0xc))>>27; //if2,addressed
+	epstate=(*(DWORD*)(outputaddr+0x20))&0x3;
+
+	if(slotstate==2) say("    slot addressed!",0);
+	else say("    slot state:",slotstate);
+	if(epstate==0){
+		say("    ep0 wrong",0);
+		goto failed;
+	}
 	//--------------------------------------------
 
 
@@ -959,18 +1037,49 @@ void checkport(portnum)
 	//------------------get descriptor-----------------
 	say("4.now we know everything:",0);
 
-	transfer(slot,1,1,0x12);
+	controltransfer(slot,0x12000001000680,buffer);
 	if(waitevent(0x20)<0) goto failed;
-	explaindescriptor(bufferaddr);
+	explaindescriptor(buffer);
 
-	transfer(slot,1,2,9);
+	controltransfer(slot,0x9000002000680,buffer+0x20);
 	if(waitevent(0x20)<0) goto failed;
 
-	transfer(slot,1,2,*(WORD*)(bufferaddr+0x22));
+	QWORD temp=*(WORD*)(buffer+0x22);
+	temp=(temp<<48)+0x2000680;
+	controltransfer(slot,temp,buffer+0x20);
 	if(waitevent(0x20)<0) goto failed;
-	explaindescriptor(bufferaddr+0x20);
-
+	explaindescriptor(buffer+0x20);
 	//--------------------------------------------
+
+
+
+
+	//---------------configure------------------
+	say("5.configure:",0);
+
+	context(inputaddr,0,        0,	9,	0,	0,	0);
+	context(inputaddr,4,        0x30000,0x8003e,intaddr+1,0,0x80008);
+
+	command(inputaddr,0,0, (slot<<24)+(12<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
+	slotstate=(*(DWORD*)(outputaddr+0xc))>>27;
+	epstate=(*(DWORD*)(outputaddr+0x60))&0x3;
+	if(slotstate==3) say("    slot configured!",0);
+	else say("    slot state:",slotstate);
+	if(epstate==0){
+		say("    ep3 wrong",0);
+		goto failed;
+	}
+
+
+	//set configuration:0x0000,0000,0001,09,00
+	controltransfer(slot,0x10900,0);
+	if(waitevent(0x20)<0) goto failed;
+	say("    device configured",0);
+
+	transfer(slot,3,	hidbuffer,0,6,	0x25+(1<<10));
+	//------------------------------------------
 
 
 
@@ -1024,56 +1133,76 @@ void initxhci()
 
 void realisr20()
 {
-	shout("interrupt20",0);
-	shout("{",0);
+shout("interrupt20",0);
+shout("{",0);
 
-	QWORD status=*(DWORD*)(operational+4);
-	shout("    status:",0);
-	if( (status&0x8) == 0x8)
+QWORD status=*(DWORD*)(operational+4);
+shout("    status:",0);
+if( (status&0x8) == 0x8)
+{
+	//清理EINT
+	*(DWORD*)(operational+4)=status|0x8;
+
+	//检查IMAN.IP
+	DWORD iman=*(DWORD*)(runtime+0x20);
+	shout("    IMAN:",iman);
+
+	//检查ERDP.EHB
+	DWORD erdp=*(DWORD*)(runtime+0x38);
+	shout("    ERDP:",erdp);
+
+	//if( (erdp&0x8) == 0x8)
+	//{
+	//取一条event,看看是啥情况
+	QWORD pointer=erdp&0xfffffffffffffff0;
+	eventsignal=0xffff;
+	eventaddr=pointer;
+
+	QWORD trbtype=*(DWORD*)(pointer+0xc);
+	trbtype=(trbtype>>10)&0x3f;
+	shout("    trbtype:",trbtype);
+
+	switch(trbtype)
 	{
-		//清理EINT
-		*(DWORD*)(operational+4)=status|0x8;
-
-		//检查IMAN.IP
-		DWORD iman=*(DWORD*)(runtime+0x20);
-		shout("    IMAN:",iman);
-
-		//检查ERDP.EHB
-		DWORD erdp=*(DWORD*)(runtime+0x38);
-		shout("    ERDP:",erdp);
-		if( (erdp&0x8) == 0x8)
-		{
-			//取一条event,看看是啥情况
-			QWORD pointer=erdp&0xfffffffffffffff0;
-			eventsignal=0xffff;
-			eventaddr=pointer;
-
-			QWORD trbtype=*(DWORD*)(pointer+0xc);
-			trbtype=(trbtype>>10)&0x3f;
-			shout("    trbtype:",trbtype);
-
-			//设备插入拔出
-			if(trbtype == 0x22)
+		case 0x20:{
+			QWORD endpoint=((*(DWORD*)(eventaddr+0xc))>>16)&0x1f;
+			shout("    endpoint:",endpoint);
+			if(endpoint==3)
 			{
-				//哪个端口改变了
-				QWORD portid=(*(DWORD*)pointer) >> 24;
-				shout("    port id:",portid);
+				QWORD hidbuffer=hidbufferhome+0x1000;
+				QWORD offset=*(DWORD*)(hidbuffer+0xff0) +8;
 
-				QWORD portaddr=portbase+portid*0x10-0x10;
-				shout("    port addr:",portaddr);
+				if(offset>0xf00) offset=0;
+				*(DWORD*)(hidbuffer+0xff0)=offset;
 
-				//到改变的地方看看
-				QWORD portsc=*(DWORD*)portaddr;
-				shout("    port status:",portsc);
-
-				//告诉主控，收到变化,bit17写1
-				*(DWORD*)portaddr=portsc&0xfffffffd;
+				transfer(1,3,	hidbuffer+offset,0,6,	0x25+(1<<10));
 			}
+			break;
+		}
+		case 0x22:{		//设备插入拔出
 
-			*(DWORD*)(runtime+0x38)=erdp+0x10;
-			*(DWORD*)(runtime+0x3c)=0;
+			//哪个端口改变了
+			QWORD portid=(*(DWORD*)pointer) >> 24;
+			shout("    port id:",portid);
+
+			QWORD portaddr=portbase+portid*0x10-0x10;
+			shout("    port addr:",portaddr);
+
+			//到改变的地方看看
+			QWORD portsc=*(DWORD*)portaddr;
+			shout("    port status:",portsc);
+
+			//告诉主控，收到变化,bit17写1
+			*(DWORD*)portaddr=portsc&0xfffffffd;
+
+			break;
 		}
 	}
 
-	shout("}",0);
+	*(DWORD*)(runtime+0x38)=erdp+0x10;
+	*(DWORD*)(runtime+0x3c)=0;
+	//}
+}
+
+shout("}",0);
 }
