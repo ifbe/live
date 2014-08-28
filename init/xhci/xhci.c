@@ -599,7 +599,7 @@ void clear(QWORD addr,QWORD size)
 
 
 
-//第一个DWORD，第二个DWORD，第三个DWORD。。。。
+//直接在command ring上写TRB（1个TRB=4个DWORD）,然后处理enqueue指针，最后ring
 static QWORD commandenqueue=crcrhome;
 static DWORD commandcycle=1;
 void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
@@ -623,7 +623,7 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 
 
 
-//setuppacket
+//setuppacket格式:
 //[0,7]:bmrequesttype	example:	0x80
 //[8,15]:brequest			0x6
 //[16,31]:wvalue			(descriptor type>>8)+descriptor index
@@ -682,38 +682,68 @@ void controltransfer(int slot,QWORD setuppacket,QWORD buffer)
 	//doorbell
 	*(DWORD*)(doorbell+4*slot)=1;
 }
-void transfer(int slot,int endpoint,DWORD d0,DWORD d1,DWORD d2,DWORD d3)
+
+
+
+
+struct trb{
+	QWORD addr;
+	DWORD d0;
+	DWORD d1;
+	DWORD d2;
+	DWORD d3;
+};
+static struct trb trb;
+void writetrb()
 {
-	QWORD temp;
-
-	//从(output)context得到ring地址
-	temp=*(QWORD*)(outputhome+slot*0x1000+endpoint*contextsize+8);
-	QWORD ring=temp&0xfffffffffffffff0;
-	temp=*(QWORD*)(ring+0xff0);
-	DWORD* pointer=(DWORD*)(ring+temp*0x10);
-
+	//得到这次往哪儿写
+	QWORD temp=*(QWORD*)(trb.addr+0xff0);
+	DWORD* pointer=(DWORD*)(trb.addr+temp);
 	say("transfer ring@",&pointer[0]);
 
-	pointer[0]=d0;
-	pointer[1]=d1;
-	pointer[2]=d2;
-	pointer[3]=d3;
+	//下次往哪儿写
+	temp+=0x10;
+	if(temp>0xf00)	temp=0;
+	*(QWORD*)(trb.addr+0xff0)=temp;
 
-	*(DWORD*)(doorbell+4*slot)=endpoint;
+	pointer[0]=trb.d0;
+	pointer[1]=trb.d1;
+	pointer[2]=trb.d2;
+	pointer[3]=trb.d3;
 }
 
 
 
 
-void context(QWORD addr,int dci,DWORD d0,DWORD d1,DWORD d2,DWORD d3,DWORD d4)
+void ring(int slot,int endpoint)
 {
-	DWORD* pointer=(DWORD*)(addr+dci*contextsize);
+	*(DWORD*)(doorbell+4*slot)=endpoint;
+}
 
-	pointer[0]=d0;
-	pointer[1]=d1;
-	pointer[2]=d2;
-	pointer[3]=d3;
-	pointer[4]=d4;
+
+
+struct context{		//传参太麻烦...
+	QWORD addr;	//目的context地址头
+	int dci;	//偏移多少个context(每个context0x20或者0x40字节)
+	DWORD d0;
+	DWORD d1;
+	DWORD d2;
+	DWORD d3;
+	DWORD d4;
+	DWORD d5;
+	DWORD d6;
+	DWORD d7;
+};
+static struct context context;
+void writecontext()
+{
+	DWORD* pointer=(DWORD*)(context.addr+context.dci*contextsize);
+
+	pointer[0]=context.d0;
+	pointer[1]=context.d1;
+	pointer[2]=context.d2;
+	pointer[3]=context.d3;
+	pointer[4]=context.d4;
 }
 
 
@@ -978,9 +1008,27 @@ void checkport(portnum)
 	clear(intaddr,0x1000);
 
 	//construct input
-	context(inputaddr,0,        0,	3,	0,	0,	0);
-	context(inputaddr,1,        (1<<27)+(speed<<20),portnum<<16,0,0,0);
-	context(inputaddr,2,        0,(64<<16)|(4<<3)|6,controladdr+1,0,0x40);
+	context.addr=inputaddr;
+	context.dci=0;			//input context
+	context.d0=0;
+	context.d1=3;
+	context.d2=0;
+	context.d3=0;
+	context.d4=0;
+	writecontext();
+
+	context.dci=1;			//slot context
+        context.d0=(1<<27)+(speed<<20);
+	context.d1=portnum<<16;
+	writecontext();
+
+	context.dci=2;			//ep0 context
+	context.d0=0;
+	context.d1=(64<<16)|(4<<3)|6;
+	context.d2=controladdr+1;
+	context.d3=0;
+	context.d4=0x40;
+	writecontext();
 
 	//output context地址填入对应dcbaa
 	*(DWORD*)(contexthome+slot*8)=outputaddr;
@@ -1012,7 +1060,14 @@ void checkport(portnum)
 
 	//change input
 	DWORD packetsize=*(BYTE*)(buffer+7);
-	context(inputaddr,2,0,(packetsize<<16)|(4<<3)|6,controladdr+1,0,0x40);
+	context.addr=inputaddr;
+	context.dci=2;			//ep0 context
+	context.d0=0;
+	context.d1=(packetsize<<16)|(4<<3)|6;
+	context.d2=controladdr+1;
+	context.d3=0;
+	context.d4=0x40;
+	writecontext();
 	say("    got packetsize:",packetsize);
 
 	//evaluate
@@ -1023,7 +1078,7 @@ void checkport(portnum)
 	slotstate=(*(DWORD*)(outputaddr+0xc))>>27; //if2,addressed
 	epstate=(*(DWORD*)(outputaddr+0x20))&0x3;
 
-	if(slotstate==2) say("    slot addressed!",0);
+	if(slotstate==2) say("    slot evaluated!",0);
 	else say("    slot state:",slotstate);
 	if(epstate==0){
 		say("    ep0 wrong",0);
@@ -1056,9 +1111,22 @@ void checkport(portnum)
 
 	//---------------configure------------------
 	say("5.configure:",0);
+	context.addr=inputaddr;
+	context.dci=0;			//input context
+        context.d0=0;
+	context.d1=9;
+	context.d2=0;
+	context.d3=0;
+	context.d4=0;
+	writecontext();
 
-	context(inputaddr,0,        0,	9,	0,	0,	0);
-	context(inputaddr,4,        0x30000,0x8003e,intaddr+1,0,0x80008);
+	context.dci=4;			//ep1.1 context
+	context.d0=0x30000;
+	context.d1=0x8003e;
+	context.d2=intaddr+1;
+	context.d3=0;
+	context.d4=0x80008;
+	writecontext();
 
 	command(inputaddr,0,0, (slot<<24)+(12<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
@@ -1078,7 +1146,13 @@ void checkport(portnum)
 	if(waitevent(0x20)<0) goto failed;
 	say("    device configured",0);
 
-	transfer(slot,3,	hidbuffer,0,6,	0x25+(1<<10));
+	trb.addr=intaddr;
+	trb.d0=hidbuffer;
+	trb.d1=0;
+	trb.d2=6;
+	trb.d3=0x25+(1<<10);
+	writetrb();
+	ring(slot,3);
 	//------------------------------------------
 
 
@@ -1164,6 +1238,7 @@ if( (status&0x8) == 0x8)
 
 	switch(trbtype)
 	{
+/*
 		case 0x20:{
 			QWORD endpoint=((*(DWORD*)(eventaddr+0xc))>>16)&0x1f;
 			shout("    endpoint:",endpoint);
@@ -1175,10 +1250,12 @@ if( (status&0x8) == 0x8)
 				if(offset>0xf00) offset=0;
 				*(DWORD*)(hidbuffer+0xff0)=offset;
 
-				transfer(1,3,	hidbuffer+offset,0,6,	0x25+(1<<10));
+				writetrb(1,3,	hidbuffer+offset,0,6,	0x25+(1<<10));
+				ring(1,3);
 			}
 			break;
 		}
+*/
 		case 0x22:{		//设备插入拔出
 
 			//哪个端口改变了
