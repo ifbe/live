@@ -45,9 +45,9 @@ static QWORD usb2count;
 
 void findaddr()
 {
-        QWORD addr=0x5004;
+        QWORD addr=0x4004;
         DWORD temp;
-        for(;addr<0x6000;addr+=0x10)
+        for(;addr<0x5000;addr+=0x10)
         {
                 temp=*(DWORD*)addr;
                 temp&=0xffffff00;
@@ -623,69 +623,6 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 
 
 
-//setuppacket格式:
-//[0,7]:bmrequesttype	example:	0x80
-//[8,15]:brequest			0x6
-//[16,31]:wvalue			(descriptor type>>8)+descriptor index
-//[32,47]:windex			0
-//[48,63]:wlength			length
-void controltransfer(int slot,QWORD setuppacket,QWORD buffer)
-{
-	QWORD temp;
-
-	//从(output)context得到ring地址
-	temp=*(QWORD*)(outputhome+slot*0x1000+contextsize+8);
-	QWORD ring=temp&0xfffffffffffffff0;
-	temp=*(QWORD*)(ring+0xff0);
-	DWORD* pointer=(DWORD*)(ring+temp*0x10);
-
-	//
-	say("transfer ring@",&pointer[0]);
-
-	//we should analyse the setuppacket
-	if((setuppacket&0xff)==0)
-	{
-		//setup stage
-		pointer[0]=setuppacket&0xffffffff;
-		pointer[1]=setuppacket>>32;
-		pointer[2]=8;
-		pointer[3]=0x41+(2<<10);
-		//status stage
-		pointer[4]=0;
-		pointer[5]=0;
-		pointer[6]=0;
-		pointer[7]=0x21+(4<<10)+(1<<16);	//in
-
-		*(QWORD*)(ring+0xff0)+=2;
-	}
-	else
-	{
-		//setup stage
-		pointer[0]=setuppacket&0xffffffff;
-		pointer[1]=setuppacket>>32;
-		pointer[2]=8;
-		pointer[3]=0x30041+(2<<10);
-		//data stage
-		pointer[4]=buffer;
-		pointer[5]=0;
-		pointer[6]=setuppacket>>48;
-		pointer[7]=0x10001+(3<<10);
-		//status stage
-		pointer[8]=0;
-		pointer[9]=0;
-		pointer[10]=0;
-		pointer[11]=0x21+(4<<10);
-
-		*(QWORD*)(ring+0xff0)+=3;
-	}
-
-	//doorbell
-	*(DWORD*)(doorbell+4*slot)=1;
-}
-
-
-
-
 struct trb{
 	QWORD addr;
 	DWORD d0;
@@ -719,6 +656,62 @@ void ring(int slot,int endpoint)
 {
 	*(DWORD*)(doorbell+4*slot)=endpoint;
 }
+
+
+
+struct setup{
+	BYTE bmrequesttype;	//	0x80
+	BYTE brequest;		//	0x6
+	WORD wvalue;		//	(descriptor type>>8)+descriptor index
+	WORD windex;		//	0
+	WORD wlength;		//	length
+
+	QWORD addr;
+	QWORD data;
+};
+static struct setup packet;
+void controltransfer()
+{
+	//we should analyse the setuppacket
+	if(packet.bmrequesttype==0)
+	{
+	//setup stage
+	trb.addr=packet.addr;
+	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
+	trb.d1=(packet.wlength<<16)+packet.windex;
+	trb.d2=8;
+	trb.d3=0x41+(2<<10);
+	writetrb();
+
+	//status stage
+	trb.d0=trb.d1=trb.d2=0;
+	trb.d3=0x21+(4<<10)+(1<<16);	//in
+	writetrb();
+	}
+	else
+	{
+	//setup stage
+	trb.addr=packet.addr;
+	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
+	trb.d1=(packet.wlength<<16)+packet.windex;
+	trb.d2=8;
+	trb.d3=0x30041+(2<<10);
+	writetrb();
+
+	//data stage
+	trb.d0=packet.data;
+	trb.d1=0;
+	trb.d2=packet.wlength;
+	trb.d3=0x10001+(3<<10);
+	writetrb();
+
+	//status stage
+	trb.d0=trb.d1=trb.d2=0;
+	trb.d3=0x21+(4<<10);
+	writetrb();
+	}
+}
+
 
 
 
@@ -834,13 +827,13 @@ void explaindescriptor(QWORD addr)
 		explaindescriptor(addr+offset);
 	}
 	}
-
+/*
 	if(type==3)	//字符串描述符
 	{
 	say("    blength:",*(BYTE*)addr);
 	say("    bdescriptortype:",*(BYTE*)(addr+1));
 	}
-
+*/
 	if(type==4)	//接口描述符
 	{
 	say("    blength:",*(BYTE*)addr);
@@ -874,6 +867,7 @@ void explaindescriptor(QWORD addr)
 	say("    binterval:",*(BYTE*)(addr+6));
 	}
 
+/*
 	if(type==6)	//设备限定描述符
 	{
 	say("    blength:",*(BYTE*)addr);
@@ -885,7 +879,6 @@ void explaindescriptor(QWORD addr)
 	say("    bmaxpacketsize0:",*(BYTE*)(addr+7));
 	say("    bnumconfigurations:",*(BYTE*)(addr+8));
 	}
-
 	if(type==7)	//其他速率配置描述符
 	{
 	say("    blength:",*(BYTE*)addr);
@@ -897,7 +890,7 @@ void explaindescriptor(QWORD addr)
 	say("    bmattributes:",*(BYTE*)(addr+7));
 	say("    bmaxpower:",*(BYTE*)(addr+8));
 	}
-
+*/
 	if(type==0x21)	//hid设备描述符
 	{
 	say("    blength:",*(BYTE*)addr);
@@ -1033,8 +1026,12 @@ void checkport(portnum)
 	//output context地址填入对应dcbaa
 	*(DWORD*)(contexthome+slot*8)=outputaddr;
 	*(DWORD*)(contexthome+slot*8+4)=0;
+	//----------------------------------
 
-	//address device(bsr=0)
+
+
+
+	//-----------address device(bsr=0)-----------------
 	command(inputaddr,0,0, (slot<<24)+(11<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
@@ -1055,7 +1052,15 @@ void checkport(portnum)
 	//-----------------change packetsize------------------
 	say("3.adjust input",0);
 
-	controltransfer(slot,0x8000001000680,buffer);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x100;
+	packet.windex=0;
+	packet.wlength=8;
+	packet.addr=controladdr;
+	packet.data=buffer;
+	controltransfer();
+	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
 	//change input
@@ -1092,16 +1097,38 @@ void checkport(portnum)
 	//------------------get descriptor-----------------
 	say("4.now we know everything:",0);
 
-	controltransfer(slot,0x12000001000680,buffer);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x100;
+	packet.windex=0;
+	packet.wlength=0x12;
+	packet.addr=controladdr;
+	packet.data=buffer;
+	controltransfer();
+	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer);
 
-	controltransfer(slot,0x9000002000680,buffer+0x20);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x200;
+	packet.windex=0;
+	packet.wlength=0x9;
+	packet.addr=controladdr;
+	packet.data=buffer+0x20;
+	controltransfer();
+	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
-	QWORD temp=*(WORD*)(buffer+0x22);
-	temp=(temp<<48)+0x2000680;
-	controltransfer(slot,temp,buffer+0x20);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x200;
+	packet.windex=0;
+	packet.wlength=*(WORD*)(buffer+0x22);
+	packet.addr=controladdr;
+	packet.data=buffer+0x20;
+	controltransfer();
+	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer+0x20);
 	//--------------------------------------------
@@ -1142,7 +1169,14 @@ void checkport(portnum)
 
 
 	//set configuration:0x0000,0000,0001,09,00
-	controltransfer(slot,0x10900,0);
+	packet.bmrequesttype=0;
+	packet.brequest=9;
+	packet.wvalue=1;
+	packet.windex=0;
+	packet.wlength=0;
+	packet.addr=controladdr;
+	controltransfer();
+	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	say("    device configured",0);
 
@@ -1199,7 +1233,7 @@ void initxhci()
 	//port
 	probeport();
 
-	say("",0);
+	say("xhci done",0);
 }
 
 

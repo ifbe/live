@@ -15,7 +15,7 @@ startofenter64:
 
     ;清空[0x4000,0x6fff]
     mov di,0x4000
-    mov cx,0x3000
+    mov cx,0x4000
     xor eax, eax
     cld
     rep stosb

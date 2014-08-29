@@ -14,7 +14,7 @@ void point(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    unsigned long long source=0x6000;
+    unsigned long long source=0x5000;
     char temp;
     char* p;
 

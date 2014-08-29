@@ -20,8 +20,22 @@ global finishext
 
 
 
+findfreespace:
+mov edi,0x4000
+.continue:
+cmp qword [edi],0
+je .return
+add edi,0x10
+jmp .continue
+
+.return:
+ret
+
+
+
+
 finishfat16:
-mov rdi,0x7020			;[7000]=function address
+call findfreespace
 mov rax,"cd"
 stosq
 lea rax,[rel fat16_cd]
@@ -43,7 +57,7 @@ finishfat32:
 
 fat32root:
 
-mov rdi,0x7020			;[7000]=function address
+call findfreespace
 mov rax,"cd"
 stosq
 lea rax,[rel fat32_cd]
@@ -59,7 +73,7 @@ ret
 
 
 finishntfs:
-mov rdi,0x7020
+call findfreespace
 mov rax,"cd"
 stosq
 lea rax,[rel ntfs_cd]
@@ -76,7 +90,7 @@ ret
 
 
 finishext:
-mov rdi,0x7020
+call findfreespace
 mov rax,"cd"
 stosq
 lea rax,[rel ext_cd]

@@ -86,7 +86,7 @@ void parttable()
 	if(*(QWORD*)0x120200==0x5452415020494645) explaingpt();
 	else explainmbr();
 
-	mounter();
+	automount();
 }
 
 

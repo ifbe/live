@@ -2,9 +2,22 @@
 
 
 startofpci:
+
+
+    mov ecx,0x400
+    mov edi,0x4000
+spaceforpci:
+    cmp qword [edi],0
+    jne .trynext
+    cmp qword [edi+8],0
+    je pcieold
+.trynext:
+    add edi,0x10
+    loop spaceforpci
+
+
 ;___________pcie(0xcf8/0xcfc)______________
 pcieold:
-    mov edi,0x5000
     mov ebx,0x80000000
     mov ecx,0xffff
 .enumeration:

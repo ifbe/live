@@ -116,7 +116,7 @@ call idtinstall
 loop .external
 
 lea rsi,[rel endofexception]
-mov edi,0x6000
+mov edi,0x5000
 mov ecx,0x2000
 rep movsb
 
@@ -466,7 +466,7 @@ anscii:
     jae .next
     movzx esi,al
     shl esi,4
-    add esi,0x6000
+    add esi,0x5000
     push rcx
     call char
     pop rcx
@@ -494,7 +494,7 @@ hex:
     push rcx
     push rsi
     movzx esi,dl
-    add esi,0x6000
+    add esi,0x5000
     call char
     pop rsi
     pop rcx

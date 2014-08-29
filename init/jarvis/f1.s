@@ -79,22 +79,33 @@ jmp ramdump
 	jmp ramdump
 	;___________________________________
 
-	;____________________________________
+	;________________________________________________
 	changesector:
+
+	mov rsi,0x4000
+	.continue:
+	cmp dword [rsi],"read"
+	je .findit
+	add rsi,0x10
+	cmp rsi,0x5000
+	jae ramdump
+	jmp .continue
+
+	.findit:
+	mov rdx,[rsi+8]
 	mov rsi,[rel input]
 	mov [rel sector],rsi
 	and rsi,0xfffffffffffffff8
-	cmp dword [0x7010],"read"
-	jne ramdump
-	call [0x7018]
+	call rdx
+
 	mov rax,[rel input]
 	and rax,0x7
 	shl rax,9
-	add rax,0x200000
+	add rax,0x400000
 	mov [rel addr],rax
 	mov qword [rel input],0
 	jmp ramdump
-	;____________________________________
+	;_________________________________________________
 
 	;____________________________________
 	changeoffset:

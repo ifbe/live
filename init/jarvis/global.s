@@ -34,7 +34,7 @@ out dx,ax
 
 ;________________________________
 scan2anscii:
-    mov esi,0x6800                 ;table
+    mov esi,0x5800                 ;table
 .search:
     cmp [esi],al            ;先把al里的扫描码转换成anscii给al
     je .convert
@@ -113,7 +113,7 @@ character:
 
     movzx eax,al
     shl ax,4
-    lea esi,[eax+0x6000]
+    lea esi,[eax+0x5000]
 
     mov ecx,16           ;16行
 .yihang:

@@ -1,28 +1,29 @@
 c:
+	gcc -c -fPIC -O2 start.c -o build/start.o
 	#sata
-	gcc -c -fPIC -O2 sata/identify.c -o identify.o
-	gcc -c -fPIC -O2 sata/read.c -o read.o
-	nasm -f elf64 sata/sata.s -o sata.o
+	gcc -c -fPIC -O2 sata/identify.c -o build/identify.o
+	gcc -c -fPIC -O2 sata/read.c -o build/read.o
+	nasm -f elf64 sata/sata.s -o build/sata.o
 	#partition table
-	gcc -c -fPIC -O2 parttable/parttable.c -o parttable.o
-	nasm -f elf64 parttable/mount.s -o mount.o
+	gcc -c -fPIC -O2 parttable/parttable.c -o build/parttable.o
+	nasm -f elf64 parttable/mount.s -o build/mount.o
 	#filesystem
-	gcc -c -fPIC -O2 fs/fat.c -o fat.o
-	gcc -c -fPIC -O2 fs/ntfs.c -o ntfs.o
-	gcc -c -fPIC -O2 fs/ext.c -o ext.o
-	nasm -f elf64 fs/fs.s -o fs.o
+	gcc -c -fPIC -O2 fs/fat.c -o build/fat.o
+	gcc -c -fPIC -O2 fs/ntfs.c -o build/ntfs.o
+	gcc -c -fPIC -O2 fs/ext.c -o build/ext.o
+	nasm -f elf64 fs/fs.s -o build/fs.o
 	#library
-	gcc -c -fPIC -O2 else/start.c -o start.o
-	gcc -c -fPIC -O2 else/print.c -o print.o
-	gcc -c -fPIC -O2 else/else.c -o else.o
+	gcc -c -fPIC -O2 else/print.c -o build/print.o
+	gcc -c -fPIC -O2 else/else.c -o build/else.o
 	#link all
 	ld -T else/link.ld \
-	start.o print.o else.o \
-	identify.o read.o sata.o \
-	parttable.o mount.o \
-	fat.o ntfs.o ext.o fs.o \
+	build/start.o \
+	build/print.o build/else.o \
+	build/identify.o build/read.o build/sata.o \
+	build/parttable.o build/mount.o \
+	build/fat.o build/ntfs.o build/ext.o build/fs.o \
 	-o temp.bin
 	nasm else/16kb.s -o temp
 clean:
-	rm -f *.o
+	rm -f build/*
 	rm -f temp*

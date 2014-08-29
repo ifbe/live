@@ -11,5 +11,5 @@
 
 ;))))))))))))))))))))    endof part2    )))))))))))))
 
-times 0x4000-($-$$) db 0
+times 0x2000-($-$$) db 0
 endofjarvis:

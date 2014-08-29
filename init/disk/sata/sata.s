@@ -12,7 +12,14 @@ global initsata
 
 
 initsata:
-mov rdi,0x7000			;[7000]=function address
+mov rdi,0x4000
+.findfreespace:
+cmp qword [rdi],0
+je .start
+add rdi,0x10
+jmp .findfreespace
+
+.start:
 mov rax,"identify"
 stosq
 lea rax,[rel directidentify]

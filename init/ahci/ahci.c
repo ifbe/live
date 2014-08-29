@@ -5,9 +5,9 @@
 //全部设备信息我放在0x5000了，非本环境自己枚举
 unsigned int findaddr()
 {
-	QWORD addr=0x5004;
+	QWORD addr=0x4004;
 	unsigned int temp;
-	for(;addr<0x6000;addr+=0x10)
+	for(;addr<0x5000;addr+=0x10)
 	{
 		temp=*(DWORD*)addr;
 		temp&=0xffffff00;
@@ -56,7 +56,7 @@ unsigned int probepci(QWORD addr)
 	say("ahci@",addr);
 
 	int i=0;
-	QWORD* table=(QWORD*)0x5000;
+	QWORD* table=(QWORD*)0x4000;
 	for(i=0;i<0x200;i+=2)
 	{
 		if(table[i]==0){

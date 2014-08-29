@@ -29,8 +29,7 @@ f4backspace:
 cmp byte [rel length],8
 jna console
 
-;lea ebx,[rel line0]
-mov ebx,0x6000
+lea ebx,[rel line0]
 add ebx,[rel linex128]
 dec byte [rel length]
 add ebx,[rel length]
@@ -49,8 +48,7 @@ jae console
 call scan2anscii
 
 record:
-;lea ebx,[rel line0]
-mov ebx,0x6000
+lea ebx,[rel line0]
 add ebx,[rel linex128]
 add ebx,[rel length]
 mov [ebx],al
@@ -62,8 +60,7 @@ jmp console
 ;___________________________________
 f4enter:
 
-;lea eax,[rel line0]
-mov eax,0x6000
+lea eax,[rel line0]
 add eax,[rel linex128]
 add eax,8
 mov [rel currentarg],eax		;esi=current argument
@@ -73,14 +70,14 @@ cmp dword [esi],"powe"		;if [esi]=="powe"
 jne skipturnoff
 cmp dword [esi+4],"roff"	;if [esi+4]=="roff"
 jne skipturnoff
-cmp byte [esi+8],0		;if [esi+8]=0x20
+cmp byte [esi+8],' '		;if [esi+8]=0x20
 je turnoff
 skipturnoff:
 
 mov esi,[rel currentarg]
 cmp dword [esi],"exit"
 jne skipexit
-cmp byte [esi+4],0
+cmp byte [esi+4],0x20
 je turnoff
 skipexit:
 
@@ -88,13 +85,32 @@ skipexit:
 mov esi,[rel currentarg]
 cmp dword [esi],"clea"
 jne skipclear
-cmp byte [esi+4],'r'
+cmp dword [esi+4],"r   "
 je clear
 skipclear:
 
 mov esi,[rel currentarg]
+cmp dword [esi],"moun"
+jne skipmount
+cmp byte [esi+4],'t'
+je mount
+skipmount:
+
+mov esi,[rel currentarg]
+cmp dword [esi],"iden"		;if [esi]=="powe"
+jne skipidentify
+cmp dword [esi+4],"tify"	;if [esi+4]=="roff"
+jne skipidentify
+cmp byte [esi+8],' '		;if [esi+8]=0x20
+je identify
+skipidentify:
+
+mov esi,[rel currentarg]
 cmp dword [esi],"test"
+jne skiptest
+cmp byte [esi+4],0x20
 je test
+skiptest:
 
 mov esi,[rel currentarg]
 cmp dword [esi],"call"
@@ -112,35 +128,24 @@ skipjump:
 
 mov esi,[rel currentarg]
 cmp word [esi],"ls"
+jne skipls
+cmp byte [esi+2],0x20
 je ls
+skipls:
 
-searchprogram:
-	mov esi,[rel currentarg]
-	call fetchanscii
-	call cmdtoaddr
+mov esi,[rel currentarg]
+cmp word [esi],"cd"
+jne skipcd
+cmp byte [esi+2],0x20
+je cd
+skipcd:
 
-	mov esi,[rel currentarg]
-	.continue:
-	cmp byte [esi],0x20
-	jna .fetch
-	inc esi
-	jmp .continue
-	.fetch:
-	inc esi
-	call fetchanscii
-
-	call checkandchangeline
-	mov rbx,[rel address]
-	call explainrbx
-	mov rbx,[rel anscii]
-	call explainrbx
-
-	mov rax,[rel address]
-	cmp rax,0
-	je scroll
-	mov rdi,[rel anscii]
-	call rax
-	jmp scroll
+mov esi,[rel currentarg]
+cmp dword [esi],"load"
+jne skipload
+cmp byte [esi+4],0x20
+je load
+skipload:
 
 notfound:
 	call checkandchangeline
@@ -170,10 +175,8 @@ checkandchangeline:
 	.move:					;yes:move
 	push rsi
 	push rcx
-	;lea esi,[rel line1]
-	mov esi,0x6080
-	;lea edi,[rel line0]
-	mov edi,0x6000
+	lea esi,[rel line1]
+	lea edi,[rel line0]
 	mov ecx,128*0x30
 	cld
 	rep movsb
@@ -181,8 +184,7 @@ checkandchangeline:
 	pop rsi
 
 	.return:
-	;lea edi,[rel line0]
-	mov edi,0x6000
+	lea edi,[rel line0]
 	add edi,[rel linex128]
 	ret					;now line=a blank line
 ;____________________________________
@@ -190,45 +192,51 @@ checkandchangeline:
 
 
 
-;_________________________________
-explainrbx:		;care about 32bit only,because......
-	add edi,8
-	rol rbx,32
-
-	mov ecx,8
-	.continue2:
-	rol rbx,4
-	mov al,bl
-	and al,0xf
-	add al,0x30
-	cmp al,0x3a
-	jb .done
-	add al,7
-	.done:
-	stosb
-	loop .continue2
-
-	ret
-;_______________________________
-
-
-
-
 ;____________________________________
 clear:
-;lea edi,[rel line0]
-mov edi,0x6000
+lea edi,[rel line0]
 mov al,0x20
 mov ecx,128*0x30
 rep stosb
-;lea edi,[rel line0]
-mov edi,0x6000
+lea edi,[rel line0]
 mov rax,"[   /]$ "
 stosq
 mov dword [rel linex128],0
 mov dword [rel length],8
 jmp console
 ;_______________________________________
+
+
+
+
+;________________________
+mount:
+cmp dword [0x7070],"moun"
+jne notfound
+cmp byte [0x7074],"t"
+jne notfound
+cmp byte [0x7075],0
+jne notfound
+
+mov rdi,[rsi+6]
+call [0x7078]
+jmp scroll
+;______________________
+
+
+
+
+;____________________________
+identify:
+cmp dword [0x7000],"iden"
+jne notfound
+cmp dword [0x7004],"tify"
+jne notfound
+
+call [0x7008]
+
+jmp scroll
+;________________________________
 
 
 
@@ -254,6 +262,19 @@ jnz .continue
 call checkandchangeline
 jmp .continue
 ;_________________________
+
+
+
+
+;________________________
+cd:
+cmp word [0x7020],"cd"
+jne notfound
+
+mov rdi,[rsi+3]
+call [0x7028]
+jmp scroll
+;______________________
 
 
 
@@ -289,7 +310,7 @@ cast:
 
 add esi,5
 call fetchvalue
-call [rel value]
+call [rel fetched]
 jmp scroll
 ;_______________________________
 
@@ -299,68 +320,20 @@ jump:
 
 add esi,5
 call fetchvalue
-jmp [rel value]
+jmp [rel fetched]
 ;_______________________________
-
-
-;______________________________
-fetchanscii:
-mov qword [rel anscii],0
-
-lea rdi,[rel anscii]
-mov ecx,8
-.continue:
-lodsb
-cmp al,0x61
-jb .return
-cmp al,0x7a
-ja .return
-stosb
-loop .continue
-
-.return:
-ret
-;__________________________________
-anscii:dq 0
-
-
-
-
-
-;____________________________________
-cmdtoaddr:
-mov qword [rel address],0
-
-mov rax,[rel anscii]
-mov esi,0x4000
-.continue2:
-cmp esi,0x5000
-jae .return
-cmp [esi],rax
-je .find
-add esi,0x10
-jmp .continue2
-
-.find:
-mov rax,[esi+8]
-mov [rel address],rax
-
-.return:
-ret
-;__________________________________________
-address:dq 0
 
 
 ;________________________________
 fetchvalue:
-mov qword [rel value],0
+mov qword [rel fetched],0
 mov ecx,16
 .part:
 
 lodsb                ;get one char
 
-cmp al,0x30
-jb .finish
+cmp al,0x30          ;<0x30,error
+jb notfound
 cmp al,0x39          ;>0x39,maybe a~f
 ja .atof
 sub al,0x30          ;now its certainly 0~9
@@ -368,20 +341,23 @@ jmp .generate
 
 .atof:
 cmp al,0x61          ;[0x40,0x60],error
-jb .finish
+jb notfound
 cmp al,0x66          ;>0x66,error
-ja .finish
+ja notfound
 sub al,0x57          ;now its certainly a~f
 
 .generate:
-shl qword [rel value],4
-add byte [rel value],al
+add byte [rel fetched],al
+cmp byte [esi],0x20
+je .finish
+shl qword [rel fetched],4
+
 loop .part
 
 .finish:
 ret
 ;_______________________________-
-value:dq 0
+fetched:dq 0
 
 
 
@@ -399,8 +375,7 @@ mov dword [rel looptimes],0
     ;add edi,eax
     imul eax,[rel looptimes]
     add edi,eax
-    ;lea ebx,[rel line0]
-    mov ebx,0x6000
+    lea ebx,[rel line0]
     mov eax,[rel looptimes]
     shl eax,7
     add ebx,eax
@@ -431,3 +406,6 @@ looptimes:dd 0
 
 linex128:dq 0
 length:dq 8
+line0:		db "[   /]$ "
+		times 120 db ' '
+line1:times 0x30*128 db ' '

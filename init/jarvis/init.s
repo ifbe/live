@@ -71,13 +71,13 @@ sti
 ;_______________________________________
 
 ;initahci
-call endofjarvis		;ahci(0x1000)
+call endofjarvis		;ahci@(0x4000+0x2000)
 
 ;initxhci
-call endofjarvis+0x2000		;xhci(0x1000)
+call endofjarvis+0x2000		;xhci@(0x4000+0x2000+0x2000)
 
 ;initdisk
-call endofjarvis+0x5000		;disk(0x4000)
+call endofjarvis+0x6000		;disk@(0x4000+0x2000+0x2000+0x4000)
 ;__________________________________
 
 
@@ -92,11 +92,11 @@ call endofjarvis+0x5000		;disk(0x4000)
     mov qword [rel addr],0x40000         ;r14 memory pointer
     mov qword [rel offset],0x420         ;r15 offset pointer
 
+;清空keyboard buffer
     mov edi,0x800
     mov ecx,0x100
     xor rax,rax
     rep stosq
-
     mov rax,"input"
     mov [0xfe0],rax
     mov rax,0x800
@@ -106,6 +106,12 @@ call endofjarvis+0x5000		;disk(0x4000)
     mov rax,0x800
     mov [0xff8],rax
 
+;清空keyboard buffer
+    mov edi,0x6000
+    mov rax,"[   /]$ "
+    stosq
+
+;准备进入正式程序
     lea rax,[rel function1]
     mov [rel screenwhat],rax
     lea rax,[rel menu]

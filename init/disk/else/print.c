@@ -13,7 +13,7 @@ void point(int x,int y,int color)
 void anscii(int x,int y,char ch)
 {
     int i,j;
-    unsigned long long source=0x6000;
+    unsigned long long source=0x5000;
     char temp;
     char* p;
 
@@ -63,27 +63,26 @@ void say(char* p,...)
 		x++;
 	}
 
-	if(first!=0)
-	{
-	        int i=0;
-		char ch;
-		int signal=0;
+	if(first==0) return;
 
-	        for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
+        int i=0;
+	char ch;
+	int signal=0;
 
-	        for(i=0;i<16;i++)
-	        {
-	        	ch=( first >> (60-4*i) ) & 0xf;
-			if(ch != 0) signal++;
-			else if(signal) signal++;
+        for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
 
-			if(signal !=0)
-			{
-				ch+=0x30;
-				if(ch>0x39) ch+=0x7;
-	        		anscii(x+signal-1,screeny,ch);
-				journal[y*64+x+signal-1]=ch;
-			}
-	        }
-	}
+        for(i=0;i<16;i++)
+        {
+        	ch=( first >> (60-4*i) ) & 0xf;
+		if(ch != 0) signal++;
+		else if(signal) signal++;
+
+		if(signal !=0)
+		{
+			ch+=0x30;
+			if(ch>0x39) ch+=0x7;
+        		anscii(x+signal-1,screeny,ch);
+			journal[y*64+x+signal-1]=ch;
+		}
+        }
 }
