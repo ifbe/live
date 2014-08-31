@@ -13,7 +13,23 @@ void blank2zero(QWORD* name)
                 temp = ( (*name)>>(i*8) )&0xff;
 		if(temp == 0x20)
                 {
-                        *name -= (QWORD)0x20<<(i*8);
+                        *name -= ((QWORD)0x20)<<(i*8);
+                }
+        }
+
+}
+
+
+void zero2blank(QWORD* name)
+{
+        int i;
+	QWORD temp;
+        for(i=0;i<8;i++)
+        {
+                temp = ( (*name)>>(i*8) )&0xff;
+		if(temp == 0)
+                {
+                        *name += ((QWORD)0x20)<<(i*8);
                 }
         }
 

@@ -95,6 +95,7 @@ void fat16_cd(QWORD name)
 	QWORD p=indexbuffer;
 	int i;
 
+	zero2blank(&name);
 	small2capital(&name);
 
 	if( (name&0xff) != 0x2f)
@@ -134,6 +135,7 @@ void fat16_cd(QWORD name)
 
 void fat16_load(QWORD name)
 {
+	zero2blank(&name);
 	small2capital(&name);
 	QWORD p=indexbuffer;
 	for(;p<(indexbuffer+0x40000);p+=0x20)
@@ -216,6 +218,7 @@ void fat32_cd(QWORD name)
 	QWORD p=indexbuffer;
 	int i;
 
+	zero2blank(&name);
 	small2capital(&name);
 
 	//搜索
@@ -257,6 +260,7 @@ void fat32_cd(QWORD name)
 
 void fat32_load(QWORD name)
 {
+	zero2blank(&name);
 	small2capital(&name);
 	QWORD p=indexbuffer;
 	for(;p<indexbuffer+clustersize*0x200;p+=0x20)

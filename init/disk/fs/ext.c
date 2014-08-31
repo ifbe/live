@@ -254,7 +254,7 @@ void ext_cd(QWORD name)
 			}
 			if(number == 0)
 			{
-				say("not found",0);
+				say("not found:",name);
 				return;
 			}
 		}

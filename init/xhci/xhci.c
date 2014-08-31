@@ -672,24 +672,8 @@ struct setup{
 static struct setup packet;
 void controltransfer()
 {
-	//we should analyse the setuppacket
-	if(packet.bmrequesttype==0)
-	{
-	//setup stage
-	trb.addr=packet.addr;
-	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
-	trb.d1=(packet.wlength<<16)+packet.windex;
-	trb.d2=8;
-	trb.d3=0x41+(2<<10);
-	writetrb();
-
-	//status stage
-	trb.d0=trb.d1=trb.d2=0;
-	trb.d3=0x21+(4<<10)+(1<<16);	//in
-	writetrb();
-	}
-	else
-	{
+if(packet.bmrequesttype>=0x80)
+{
 	//setup stage
 	trb.addr=packet.addr;
 	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
@@ -709,7 +693,22 @@ void controltransfer()
 	trb.d0=trb.d1=trb.d2=0;
 	trb.d3=0x21+(4<<10);
 	writetrb();
-	}
+}
+else
+{
+	//setup stage
+	trb.addr=packet.addr;
+	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
+	trb.d1=(packet.wlength<<16)+packet.windex;
+	trb.d2=8;
+	trb.d3=0x41+(2<<10);
+	writetrb();
+
+	//status stage
+	trb.d0=trb.d1=trb.d2=0;
+	trb.d3=0x21+(4<<10)+(1<<16);	//in
+	writetrb();
+}
 }
 
 
@@ -1115,22 +1114,37 @@ void checkport(portnum)
 	packet.windex=0;
 	packet.wlength=0x9;
 	packet.addr=controladdr;
-	packet.data=buffer+0x20;
+	packet.data=buffer+0x100;
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	packet.wlength=*(WORD*)(buffer+0x102);
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explaindescriptor(buffer+0x100);
+
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x300;
+	packet.windex=0;
+	packet.wlength=0xff;
+	packet.addr=controladdr;
+	packet.data=buffer+0x200;
 	controltransfer();
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
-	packet.bmrequesttype=0x80;
-	packet.brequest=6;
-	packet.wvalue=0x200;
-	packet.windex=0;
-	packet.wlength=*(WORD*)(buffer+0x22);
-	packet.addr=controladdr;
-	packet.data=buffer+0x20;
-	controltransfer();
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	explaindescriptor(buffer+0x20);
+	packet.windex=*(WORD*)(buffer+0x202);
+	DWORD temp=1;
+	for(;temp<8;temp++)		//所有字符串描述符
+	{
+		packet.wvalue=0x300+temp;
+		packet.data=buffer+0x200+temp*0x40;
+		controltransfer();
+		ring(slot,1);
+		if(waitevent(0x20)<0) goto failed;
+	}
 	//--------------------------------------------
 
 
@@ -1148,7 +1162,7 @@ void checkport(portnum)
 	writecontext();
 
 	context.dci=4;			//ep1.1 context
-	context.d0=0x30000;
+	context.d0=0x40000;
 	context.d1=0x8003e;
 	context.d2=intaddr+1;
 	context.d3=0;
@@ -1233,7 +1247,7 @@ void initxhci()
 	//port
 	probeport();
 
-	say("xhci done",0);
+	say("",0);
 }
 
 

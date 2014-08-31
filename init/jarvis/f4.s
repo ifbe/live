@@ -311,8 +311,8 @@ lea rdi,[rel anscii]
 mov ecx,8
 .continue:
 lodsb
-cmp al,0x61
-jb .return
+cmp al,0x20
+jbe .return
 cmp al,0x7a
 ja .return
 stosb
