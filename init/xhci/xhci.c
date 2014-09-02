@@ -2,23 +2,19 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
-
 #define xhcihome 0x300000
 
 #define ersthome xhcihome+0
-#define eventhome xhcihome+0x10000
+#define dcbahome xhcihome+0x10000
+#define eventringhome xhcihome+0x20000
+#define cmdringhome xhcihome+0x30000
 
-#define crcrhome xhcihome+0x40000
-
-#define contexthome xhcihome+0x80000
-#define scratchpadhome xhcihome+0x90000
-#define bufferhome xhcihome+0xa0000
-#define hidbufferhome xhcihome+0xb0000
-
-#define inputhome xhcihome+0xc0000
-#define outputhome xhcihome+0xd0000
-#define controlhome xhcihome+0xe0000
-#define inthome xhcihome+0xf0000
+#define slothome xhcihome+0x40000	//+0:		in context
+					//+1000:	out context
+					//+2000:	ep0 ring
+					//+3000:	e1.1 ring
+					//+4000:	ep0 buffer
+					//+5000:	ep1.1 buffer
 
 
 static QWORD portaddr=0;
@@ -27,8 +23,8 @@ static QWORD memaddr=0;
 static QWORD msixtable=0;
 static QWORD pendingtable=0;
 
-static QWORD operational;
-static QWORD doorbell;
+volatile static QWORD operational;
+volatile static QWORD doorbell;
 static QWORD runtime;
 static QWORD contextsize;
 
@@ -172,7 +168,7 @@ say("{",0);
 		}
 		default:
 		{
-			say("    ?:",kind);
+			say("    unknown kind:",kind);
 		}
 	}
 	
@@ -320,7 +316,7 @@ failed:
 
 
 
-void probexhci()
+int probexhci()
 {
 //基本信息
 say("base information",0);
@@ -389,7 +385,7 @@ say("{",0);
 	{
 		if(psz == 0){
 			say("psz:",psz);
-			return;
+			return -1;
 		}
 		if(psz == 1) break;
 
@@ -435,37 +431,32 @@ say("1.stop&reset:",0);
 		usbstatus=*(DWORD*)(operational+4);
 		if( (usbstatus&0x1) == 0)	//HCH位为0，即正在运行
 		{
-			say("    error:not stop",0);
-			return;
+			say("    not stop",0);
+			return -2;
 		}
 	}
 
-	//关掉中断
-	usbcommand=*(DWORD*)operational;
-	*(DWORD*)operational=usbcommand&0xfffffffb;
-
 	//按下复位按钮
 	usbcommand=*(DWORD*)operational;
-	*(DWORD*)operational=usbcommand&0xfffffffd;
+	*(DWORD*)operational=usbcommand|2;
 
 	//等一会
-	QWORD wait2=0xffffff;
+	QWORD wait2=0xfffffff;
 	for(;wait2>0;wait2--) asm("nop");
 
-	//复位成功了吗
-	usbcommand=*(DWORD*)operational;
-	if( (usbcommand&0x2) ==2)
+	usbcommand=*(DWORD*)(operational);
+	if((usbcommand&0x2) == 2)
 	{
-		say("    error:reset failed:",usbcommand);
-		return;
+		say("    reset failed:",usbcommand);
+		return -3;
 	}
 
 	//controller not ready=1就是没准备好
 	usbstatus=*(DWORD*)(operational+4);
 	if( (usbstatus&0x800) == 0x800 )
 	{
-		say("    error:controller not ready:",usbstatus);
-		return;
+		say("    controller not ready:",usbstatus);
+		return -4;
 	}
 
 	//好像第一步成功了
@@ -488,21 +479,21 @@ say("2.maxslot&dcbaa&crcr:",0);
 	say("    maxslot:",*(DWORD*)(operational+0x38) );
 
 	//dcbaa
-	*(DWORD*)(operational+0x30)=contexthome;
+	*(DWORD*)(operational+0x30)=dcbahome;
 	*(DWORD*)(operational+0x34)=0;
 	say("    dcbaa:",*(DWORD*)(operational+0x30) );
 
 	//scratchpad
-	//*(DWORD*)contexthome=scratchpadhome;
-	//say("    scratchpad:",scratchpadhome);
+	//*(DWORD*)dcbahome=dcbahome+0x8000;
+	//say("    scratchpad:",dcbahome+0x8000);
 
 	//command linktrb:lastone point to firstone
-	*(QWORD*)(crcrhome+255*0x10)=crcrhome;
-	*(QWORD*)(crcrhome+255*0x10+8)=0;
-	*(QWORD*)(crcrhome+255*0x10+0xc)=(6<<10)+2;
+	*(QWORD*)(cmdringhome+255*0x10)=cmdringhome;
+	*(QWORD*)(cmdringhome+255*0x10+8)=0;
+	*(QWORD*)(cmdringhome+255*0x10+0xc)=(6<<10)+2;
 
 	//crcr
-	*(DWORD*)(operational+0x18)=crcrhome+1;
+	*(DWORD*)(operational+0x18)=cmdringhome+1;
 	*(DWORD*)(operational+0x1c)=0;
 	say("    crcr:",*(DWORD*)(operational+0x18));
 
@@ -519,6 +510,7 @@ say("3.interrupt:",0);
 
 	int20();
 
+	//----------------------if(msix)--------------------------
 	//msixtable[0].addr
 	*(DWORD*)msixtable=0xfee00000;
 	*(DWORD*)(msixtable+4)=0;
@@ -530,6 +522,9 @@ say("3.interrupt:",0);
 	*(DWORD*)(msixtable+0xc)=msixcontrol&0xfffffffe;
 	say("    msixcontrol:",*(DWORD*)(msixtable+0xc));
 
+	//----------------------if(msi)--------------------------
+	//----------------------if(intx)--------------------------
+
 
 
 
@@ -539,7 +534,7 @@ say("4.eventring:",0);
 
 	//-------------define event ring-----------
 	//build the "event ring segment table"
-	*(DWORD*)(ersthome)=eventhome;
+	*(DWORD*)(ersthome)=eventringhome;
 	*(DWORD*)(ersthome+0x8)=0x100;
 
 	//ERSTSZ
@@ -550,7 +545,7 @@ say("4.eventring:",0);
 	*(DWORD*)(runtime+0x34)=0;	//这一行必须有
 
 	//ERDP
-	*(DWORD*)(runtime+0x38)=eventhome;
+	*(DWORD*)(runtime+0x38)=eventringhome;
 	*(DWORD*)(runtime+0x3c)=0;	//这一行也必须有
 
 	//enable EWE|HSEIE|INTE(0x400|0x8|0x4) in USBCMD
@@ -584,6 +579,7 @@ say("5.turnon",0);
 	say("    status:",*(DWORD*)(operational+4));
 
 say("}",0);
+return 0;
 }
 
 
@@ -600,12 +596,12 @@ void clear(QWORD addr,QWORD size)
 
 
 //直接在command ring上写TRB（1个TRB=4个DWORD）,然后处理enqueue指针，最后ring
-static QWORD commandenqueue=crcrhome;
+static QWORD commandenqueue=cmdringhome;
 static DWORD commandcycle=1;
 void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 {
 	DWORD* pointer=(DWORD*)commandenqueue;
-	say("command ring@",commandenqueue);
+	//say("command ring@",commandenqueue);
 
 	//写ring
 	pointer[0]=d0;
@@ -636,7 +632,7 @@ void writetrb()
 	//得到这次往哪儿写
 	QWORD temp=*(QWORD*)(trb.addr+0xff0);
 	DWORD* pointer=(DWORD*)(trb.addr+temp);
-	say("transfer ring@",&pointer[0]);
+	//say("transfer ring@",&pointer[0]);
 
 	//下次往哪儿写
 	temp+=0x10;
@@ -741,7 +737,7 @@ void writecontext()
 
 
 
-volatile static QWORD eventsignal=0;
+volatile static QWORD eventsignal;
 volatile static QWORD eventaddr;
 int waitevent(QWORD trbtype)
 {
@@ -749,27 +745,28 @@ int waitevent(QWORD trbtype)
 	DWORD* p;
 	while(1)
 	{
-		if(timeout>0xffffffff){
+		timeout++;
+		if(timeout>0xfffffff){
 			say("    timeout!",0);
 			return -1;
 		}
-		if(eventsignal==0){
-			timeout++;
-			continue;
-		}
 
-		p=(DWORD*)eventaddr;
-		if( ( (p[3]>>10)&0x3f) == trbtype)
+		if(eventsignal!=0)
 		{
-			if( (p[2]>>24) != 1)
+			eventsignal=0;
+
+			p=(DWORD*)eventaddr;
+			if( ( (p[3]>>10)&0x3f) == trbtype)
 			{
-				say("    error code:",p[2]>>24);
-				return -2;
-			}
-			else
-			{
-				eventsignal=0;
-				return 1;
+				if( (p[2]>>24) != 1)
+				{
+					say("    error:",p[2]>>24);
+					return -2;
+				}
+				else
+				{
+					return 1;
+				}
 			}
 		}
 	}
@@ -976,14 +973,14 @@ void checkport(portnum)
 
 
 	//-------------slot initialization----------------
-	QWORD buffer=bufferhome+slot*0x1000;
-	QWORD hidbuffer=hidbufferhome+slot*0x1000;
-	QWORD inputaddr=inputhome+slot*0x1000;
-	QWORD outputaddr=outputhome+slot*0x1000;
-	QWORD controladdr=controlhome+slot*0x1000;
-	QWORD intaddr=inthome+slot*0x1000;
+	QWORD inputaddr=slothome+slot*0x8000;
+	QWORD outputaddr=slothome+slot*0x8000+0x1000;
+	QWORD controladdr=slothome+slot*0x8000+0x2000;
+	QWORD intaddr=slothome+slot*0x8000+0x3000;
+	QWORD buffer=slothome+slot*0x8000+0x4000;
+	QWORD hidbuffer=slothome+slot*0x8000+0x5000;
 
-	say("2.initing slot",0);
+	say("2.initing structure",0);
 	say("    buffer:",buffer);
 	say("    hidbuffer:",hidbuffer);
 	say("    inputaddr:",inputaddr);
@@ -992,13 +989,7 @@ void checkport(portnum)
 	say("    intaddr:",intaddr);
 
 	//1)clear context
-	clear(buffer,0x1000);
-	clear(hidbuffer,0x1000);
-	clear(inputaddr,0x1000);
-	clear(outputaddr,0x1000);
-	clear(controladdr,0x1000);
-	clear(intaddr,0x1000);
-
+	clear(slothome+slot*0x8000,0x8000);
 	//construct input
 	context.addr=inputaddr;
 	context.dci=0;			//input context
@@ -1010,7 +1001,7 @@ void checkport(portnum)
 	writecontext();
 
 	context.dci=1;			//slot context
-        context.d0=(1<<27)+(speed<<20);
+        context.d0=(3<<27)+(speed<<20);
 	context.d1=portnum<<16;
 	writecontext();
 
@@ -1023,16 +1014,23 @@ void checkport(portnum)
 	writecontext();
 
 	//output context地址填入对应dcbaa
-	*(DWORD*)(contexthome+slot*8)=outputaddr;
-	*(DWORD*)(contexthome+slot*8+4)=0;
-	//----------------------------------
+	*(DWORD*)(dcbahome+slot*8)=outputaddr;
+	*(DWORD*)(dcbahome+slot*8+4)=0;
+	//------------------------------------
 
 
 
 
-	//-----------address device(bsr=0)-----------------
+	//-----------address device-----------------
+	say("2.initing slot",0);
+	say("    address device",0);
 	command(inputaddr,0,0, (slot<<24)+(11<<10)+commandcycle );
+
+	if(waitevent(0x21)<0){
+	say("    address device(bsr=1)",0);
+	command(inputaddr,0,0, (slot<<24)+(11<<10)+(1<<9)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
+	}
 
 	DWORD slotstate=(*(DWORD*)(outputaddr+0xc))>>27; //if2,addressed
 	DWORD epstate=(*(DWORD*)(outputaddr+0x20))&0x3;
@@ -1043,14 +1041,8 @@ void checkport(portnum)
 		say("    ep0 wrong",0);
 		goto failed;
 	}
-	//---------------------------------------------
 
-
-
-
-	//-----------------change packetsize------------------
-	say("3.adjust input",0);
-
+	//change packetsize if needed
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x100;
@@ -1181,7 +1173,6 @@ void checkport(portnum)
 		goto failed;
 	}
 
-
 	//set configuration:0x0000,0000,0001,09,00
 	packet.bmrequesttype=0;
 	packet.brequest=9;
@@ -1193,13 +1184,29 @@ void checkport(portnum)
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	say("    device configured",0);
+	//------------------------------------
 
+
+	//----------prepare ep1.1 ring-------------
+	//[0,3f0)第一段正常trb
 	trb.addr=intaddr;
-	trb.d0=hidbuffer;
 	trb.d1=0;
 	trb.d2=6;
 	trb.d3=0x25+(1<<10);
+	for(temp=0;temp<0x3f;temp++)
+	{
+		trb.d0=hidbuffer+temp*0x10;
+		writetrb();
+	}
+	//[3f0,400)第一段结尾link trb
+	trb.addr=intaddr;
+	trb.d0=intaddr;
+	trb.d1=0;
+	trb.d2=6;
+	trb.d3=1+(6<<10);
 	writetrb();
+
+	//敲门铃，开始执行
 	ring(slot,3);
 	//------------------------------------------
 
@@ -1218,8 +1225,8 @@ void probeport()
 	QWORD portnum;
 	DWORD portsc;
 
-	command(0,0,0, (1<<24)+(10<<10)+commandcycle );
-	if(waitevent(0x21)<0) return;
+	//command(0,0,0, (1<<24)+(10<<10)+commandcycle );
+	//if(waitevent(0x21)<0) return;
 
 	for(portnum=1;portnum<=portcount;portnum++)
 	{
@@ -1235,18 +1242,21 @@ void initxhci()
 	//clear home
 	clear(xhcihome,0x100000);
 
-	//pci部分
+	//find pci address
         findaddr();
-        if(portaddr==0) return;
+        if(portaddr==0) goto end;
+
+	//pci部分
         probepci();
-        if(memaddr==0) return;
+        if(memaddr==0) goto end;
 
 	//xhci
-	probexhci();
+	if(probexhci()<0) goto end;
 
 	//port
 	probeport();
 
+end:
 	say("",0);
 }
 
@@ -1258,26 +1268,23 @@ void realisr20()
 shout("interrupt20",0);
 shout("{",0);
 
-QWORD status=*(DWORD*)(operational+4);
-shout("    status:",0);
-if( (status&0x8) == 0x8)
-{
-	//清理EINT
-	*(DWORD*)(operational+4)=status|0x8;
+//QWORD status=*(DWORD*)(operational+4);
+//shout("    status:",0);
+//if( (status&0x8) == 0x8)
+//*(DWORD*)(operational+4)=status|0x8;
 
-	//检查IMAN.IP
-	DWORD iman=*(DWORD*)(runtime+0x20);
-	shout("    IMAN:",iman);
+//检查IMAN.IP
+//	DWORD iman=*(DWORD*)(runtime+0x20);
+//	shout("    IMAN:",iman);
 
 	//检查ERDP.EHB
 	DWORD erdp=*(DWORD*)(runtime+0x38);
 	shout("    ERDP:",erdp);
 
-	//if( (erdp&0x8) == 0x8)
-	//{
-	//取一条event,看看是啥情况
+	if((erdp&0x8) != 0x8)	goto theend;
+
 	QWORD pointer=erdp&0xfffffffffffffff0;
-	eventsignal=0xffff;
+	eventsignal=1;
 	eventaddr=pointer;
 
 	QWORD trbtype=*(DWORD*)(pointer+0xc);
@@ -1286,24 +1293,6 @@ if( (status&0x8) == 0x8)
 
 	switch(trbtype)
 	{
-/*
-		case 0x20:{
-			QWORD endpoint=((*(DWORD*)(eventaddr+0xc))>>16)&0x1f;
-			shout("    endpoint:",endpoint);
-			if(endpoint==3)
-			{
-				QWORD hidbuffer=hidbufferhome+0x1000;
-				QWORD offset=*(DWORD*)(hidbuffer+0xff0) +8;
-
-				if(offset>0xf00) offset=0;
-				*(DWORD*)(hidbuffer+0xff0)=offset;
-
-				writetrb(1,3,	hidbuffer+offset,0,6,	0x25+(1<<10));
-				ring(1,3);
-			}
-			break;
-		}
-*/
 		case 0x22:{		//设备插入拔出
 
 			//哪个端口改变了
@@ -1324,10 +1313,17 @@ if( (status&0x8) == 0x8)
 		}
 	}
 
-	*(DWORD*)(runtime+0x38)=erdp+0x10;
-	*(DWORD*)(runtime+0x3c)=0;
-	//}
-}
+	erdp=(erdp+0x10)|8;
+	if(erdp>=eventringhome+0x1008)
+	{
+		say("reload......",erdp);
+		clear(eventringhome,0x1000);
+		erdp=eventringhome+8;
+	}
 
+	*(DWORD*)(runtime+0x38)=erdp;
+	*(DWORD*)(runtime+0x3c)=0;
+
+theend:
 shout("}",0);
 }
