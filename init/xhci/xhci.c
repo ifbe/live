@@ -675,19 +675,19 @@ if(packet.bmrequesttype>=0x80)
 	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
 	trb.d1=(packet.wlength<<16)+packet.windex;
 	trb.d2=8;
-	trb.d3=0x30041+(2<<10);
+	trb.d3=(3<<16)+(2<<10)+(1<<6)+1;
 	writetrb();
 
 	//data stage
 	trb.d0=packet.data;
 	trb.d1=0;
 	trb.d2=packet.wlength;
-	trb.d3=0x10001+(3<<10);
+	trb.d3=(1<<16)+(3<<10)+1;
 	writetrb();
 
 	//status stage
 	trb.d0=trb.d1=trb.d2=0;
-	trb.d3=0x21+(4<<10);
+	trb.d3=(4<<10)+(1<<5)+1;
 	writetrb();
 }
 else
@@ -697,12 +697,12 @@ else
 	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
 	trb.d1=(packet.wlength<<16)+packet.windex;
 	trb.d2=8;
-	trb.d3=0x41+(2<<10);
+	trb.d3=(2<<10)+(1<<6)+1;
 	writetrb();
 
 	//status stage
 	trb.d0=trb.d1=trb.d2=0;
-	trb.d3=0x21+(4<<10)+(1<<16);	//in
+	trb.d3=(1<<16)+(4<<10)+(1<<5)+1;	//in
 	writetrb();
 }
 }
@@ -776,7 +776,9 @@ int waitevent(QWORD trbtype)
 
 
 //以下是提取自descriptor的最重要信息，每次只被这个函数更新,就像人记笔记......
-//
+static QWORD classcode;
+static QWORD interfaceclass;
+static QWORD interval;
 void explaindescriptor(QWORD addr)
 {
 	DWORD type=*(BYTE*)(addr+1);
@@ -786,10 +788,16 @@ void explaindescriptor(QWORD addr)
 
 	if(type==1)	//设备描述符
 	{
+	//这是第一个被读取的描述符，所以几个变量在这里清零最好
+	//classcode=0;	//这个就不必了，马上就变掉
+	interfaceclass=0;
+	interval=0;
+
 	say("    blength:",*(BYTE*)addr);
 	say("    bdescriptortype:",*(BYTE*)(addr+1));
 	say("    bcdusb:",*(WORD*)(addr+2));
-	say("    bdeviceclass:",*(BYTE*)(addr+4));
+	classcode=*(BYTE*)(addr+4);
+	say("    bdeviceclass:",classcode);
 	say("    bdevicesubclass:",*(BYTE*)(addr+5));
 	say("    bdeviceprotocol:",*(BYTE*)(addr+6));
 	say("    bmaxpacketsize0:",*(BYTE*)(addr+7));
@@ -837,7 +845,8 @@ void explaindescriptor(QWORD addr)
 	say("    binterfacenumber:",*(BYTE*)(addr+2));
 	say("    balternatesetting:",*(BYTE*)(addr+3));
 	say("    bnumendpoints:",*(BYTE*)(addr+4));
-	say("    binterfaceclass:",*(BYTE*)(addr+5));
+	interfaceclass=*(BYTE*)(addr+5);
+	say("    binterfaceclass:",interfaceclass);
 	say("    binterfacesubclass:",*(BYTE*)(addr+6));
 	say("    binterfaceprotol:",*(BYTE*)(addr+7));
 	say("    iinterface:",*(BYTE*)(addr+8));
@@ -860,7 +869,8 @@ void explaindescriptor(QWORD addr)
 	else say("    interrupt",0);
 
 	say("    wmaxpacketsize:",*(WORD*)(addr+4));
-	say("    binterval:",*(BYTE*)(addr+6));
+	interval=*(BYTE*)(addr+6);
+	say("    binterval:",interval);
 	}
 
 /*
@@ -926,11 +936,7 @@ void checkport(portnum)
 
 	//-----------we only know these for now-----------
 	say("0.information:",0);
-	if( (portsc>>16) >0 )
-	{
-		*(DWORD*)(portbase+portnum*0x10-0x10)=portsc;
-	}
-	portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+	say("    portsc(before):",portsc);
 	
 
 	if( (portnum>=usb3start) && (portnum<usb3start+usb3count) )
@@ -939,15 +945,23 @@ void checkport(portnum)
 	}
 	if( (portnum>=usb2start) && (portnum<usb2start+usb2count) )
 	{
-		say("    2.0,resetting",0);
+		say("    2.0(must reset twice,why?)",0);
+
 		*(DWORD*)(portbase+portnum*0x10-0x10)=portsc|0x10;
 		waitevent(0x22);
 		portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+		say("    status(reset1):",portsc);
+
+		*(DWORD*)(portbase+portnum*0x10-0x10)=portsc|0x10;
+		waitevent(0x22);
+		portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+		say("    status(reset2):",portsc);
 	}
 
+	portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
+	say("    status(after):",portsc);
 	DWORD pls=(portsc>>5)&0xf;
 	DWORD speed=(portsc>>10)&0xf;
-	say("    status:",portsc);
 	say("    pls:",pls);
 	say("    speed:",speed);
 	//----------------------------------------
@@ -962,7 +976,7 @@ void checkport(portnum)
 	if(waitevent(0x21)<0) goto failed;
 
 	QWORD slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
-	if(slot>=0x10){
+	if(slot>=0x18){
 		say("    bad slotnum",slot);
 		goto failed;
 	}
@@ -1007,7 +1021,7 @@ void checkport(portnum)
 
 	context.dci=2;			//ep0 context
 	context.d0=0;
-	context.d1=(64<<16)|(4<<3)|6;
+	context.d1=(64<<16)+(4<<3)+6;
 	context.d2=controladdr+1;
 	context.d3=0;
 	context.d4=0x40;
@@ -1022,19 +1036,15 @@ void checkport(portnum)
 
 
 	//-----------address device-----------------
-	say("2.initing slot",0);
+	say("3.initing slot",0);
+
+
 	say("    address device",0);
 	command(inputaddr,0,0, (slot<<24)+(11<<10)+commandcycle );
-
-	if(waitevent(0x21)<0){
-	say("    address device(bsr=1)",0);
-	command(inputaddr,0,0, (slot<<24)+(11<<10)+(1<<9)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
-	}
 
 	DWORD slotstate=(*(DWORD*)(outputaddr+0xc))>>27; //if2,addressed
 	DWORD epstate=(*(DWORD*)(outputaddr+0x20))&0x3;
-
 	if(slotstate==2) say("    slot addressed!",0);
 	else say("    slot state:",slotstate);
 	if(epstate==0){
@@ -1042,7 +1052,7 @@ void checkport(portnum)
 		goto failed;
 	}
 
-	//change packetsize if needed
+	//first read(to obtain maxsize)
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x100;
@@ -1054,26 +1064,24 @@ void checkport(portnum)
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
-	//change input
 	DWORD packetsize=*(BYTE*)(buffer+7);
+	say("    got packetsize:",packetsize);
+
+	//evaluate
 	context.addr=inputaddr;
 	context.dci=2;			//ep0 context
 	context.d0=0;
-	context.d1=(packetsize<<16)|(4<<3)|6;
+	context.d1=(packetsize<<16)+(4<<3)+6;
 	context.d2=controladdr+1;
 	context.d3=0;
 	context.d4=0x40;
 	writecontext();
-	say("    got packetsize:",packetsize);
 
-	//evaluate
 	command(inputaddr,0,0, (slot<<24)+(13<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
-
 	slotstate=(*(DWORD*)(outputaddr+0xc))>>27; //if2,addressed
 	epstate=(*(DWORD*)(outputaddr+0x20))&0x3;
-
 	if(slotstate==2) say("    slot evaluated!",0);
 	else say("    slot state:",slotstate);
 	if(epstate==0){
@@ -1088,6 +1096,8 @@ void checkport(portnum)
 	//------------------get descriptor-----------------
 	say("4.now we know everything:",0);
 
+
+	//[buffer]:device descriptor
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x100;
@@ -1100,6 +1110,8 @@ void checkport(portnum)
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer);
 
+
+	//[buffer+0x100]:configure descriptor
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x200;
@@ -1116,6 +1128,8 @@ void checkport(portnum)
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer+0x100);
 
+
+	//[buffer+0x200]:string descriptors
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x300;
@@ -1137,6 +1151,16 @@ void checkport(portnum)
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 	}
+
+	//这一步得到的最重要信息
+	say("important infomation:",0);
+	say("    classcode:",classcode);
+	say("    interfaceclass:",interfaceclass);
+	say("    interval:",interval);
+
+	//现在只管hid设备
+	if(classcode != 0) goto failed;
+	if(interfaceclass != 3) goto failed;
 	//--------------------------------------------
 
 
@@ -1144,6 +1168,9 @@ void checkport(portnum)
 
 	//---------------configure------------------
 	say("5.configure:",0);
+
+
+	//change input context&ep1.1 context
 	context.addr=inputaddr;
 	context.dci=0;			//input context
         context.d0=0;
@@ -1154,13 +1181,15 @@ void checkport(portnum)
 	writecontext();
 
 	context.dci=4;			//ep1.1 context
-	context.d0=0x40000;
-	context.d1=0x8003e;
+	context.d0=interval<<16;
+	context.d1=(8<<16)+(7<<3)+(3<<1);
 	context.d2=intaddr+1;
 	context.d3=0;
 	context.d4=0x80008;
 	writecontext();
 
+
+	//ok,sent command
 	command(inputaddr,0,0, (slot<<24)+(12<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
@@ -1172,6 +1201,7 @@ void checkport(portnum)
 		say("    ep3 wrong",0);
 		goto failed;
 	}
+
 
 	//set configuration:0x0000,0000,0001,09,00
 	packet.bmrequesttype=0;
@@ -1198,7 +1228,7 @@ void checkport(portnum)
 		trb.d0=hidbuffer+temp*0x10;
 		writetrb();
 	}
-	//[3f0,400)第一段结尾link trb
+	//[3f0,400)第一段结尾link trb指向[0,3f0)
 	trb.addr=intaddr;
 	trb.d0=intaddr;
 	trb.d1=0;
@@ -1224,9 +1254,6 @@ void probeport()
 {
 	QWORD portnum;
 	DWORD portsc;
-
-	//command(0,0,0, (1<<24)+(10<<10)+commandcycle );
-	//if(waitevent(0x21)<0) return;
 
 	for(portnum=1;portnum<=portcount;portnum++)
 	{
@@ -1256,7 +1283,7 @@ void initxhci()
 	//port
 	probeport();
 
-end:
+end:		//就一行空白
 	say("",0);
 }
 
@@ -1268,35 +1295,24 @@ void realisr20()
 shout("interrupt20",0);
 shout("{",0);
 
-//QWORD status=*(DWORD*)(operational+4);
-//shout("    status:",0);
-//if( (status&0x8) == 0x8)
-//*(DWORD*)(operational+4)=status|0x8;
-
-//检查IMAN.IP
-//	DWORD iman=*(DWORD*)(runtime+0x20);
-//	shout("    IMAN:",iman);
-
 	//检查ERDP.EHB
 	DWORD erdp=*(DWORD*)(runtime+0x38);
-	shout("    ERDP:",erdp);
-
 	if((erdp&0x8) != 0x8)	goto theend;
 
-	QWORD pointer=erdp&0xfffffffffffffff0;
+	//告诉waitevent函数,中断来了
 	eventsignal=1;
-	eventaddr=pointer;
+	eventaddr=erdp&0xfffffffffffffff0;
 
-	QWORD trbtype=*(DWORD*)(pointer+0xc);
+	//trb种类
+	QWORD trbtype=*(DWORD*)(eventaddr+0xc);
 	trbtype=(trbtype>>10)&0x3f;
 	shout("    trbtype:",trbtype);
-
 	switch(trbtype)
 	{
 		case 0x22:{		//设备插入拔出
 
 			//哪个端口改变了
-			QWORD portid=(*(DWORD*)pointer) >> 24;
+			QWORD portid=(*(DWORD*)eventaddr) >> 24;
 			shout("    port id:",portid);
 
 			QWORD portaddr=portbase+portid*0x10-0x10;
@@ -1304,15 +1320,16 @@ shout("{",0);
 
 			//到改变的地方看看
 			QWORD portsc=*(DWORD*)portaddr;
-			shout("    port status:",portsc);
+			shout("    status:",portsc);
 
-			//告诉主控，收到变化,bit17写1
+			//告诉主控，收到变化,bit17写1(bit1不能写)
 			*(DWORD*)portaddr=portsc&0xfffffffd;
 
 			break;
 		}
 	}
 
+	//dequeue pointer update
 	erdp=(erdp+0x10)|8;
 	if(erdp>=eventringhome+0x1008)
 	{
