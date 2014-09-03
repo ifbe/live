@@ -779,6 +779,7 @@ int waitevent(QWORD trbtype)
 static QWORD classcode;
 static QWORD interfaceclass;
 static QWORD interval;
+static QWORD reportsize;
 void explaindescriptor(QWORD addr)
 {
 	DWORD type=*(BYTE*)(addr+1);
@@ -831,13 +832,6 @@ void explaindescriptor(QWORD addr)
 		explaindescriptor(addr+offset);
 	}
 	}
-/*
-	if(type==3)	//字符串描述符
-	{
-	say("    blength:",*(BYTE*)addr);
-	say("    bdescriptortype:",*(BYTE*)(addr+1));
-	}
-*/
 	if(type==4)	//接口描述符
 	{
 	say("    blength:",*(BYTE*)addr);
@@ -899,19 +893,96 @@ void explaindescriptor(QWORD addr)
 */
 	if(type==0x21)	//hid设备描述符
 	{
+	QWORD thistype;
+
 	say("    blength:",*(BYTE*)addr);
 	say("    bdescriptortype:",*(BYTE*)(addr+1));
 	say("    bcdhid:",*(WORD*)(addr+2));
 	say("    bcountrycode:",*(BYTE*)(addr+4));
 	say("    bnumdescriptor:",*(BYTE*)(addr+5));
-	say("    bdescriptortype:",*(BYTE*)(addr+6));
+
+	thistype=*(BYTE*)(addr+6);
+	if(thistype==0x22) reportsize=*(WORD*)(addr+7);
+	say("    bdescriptortype:",thistype);
 	say("    wdescriptorlength:",*(WORD*)(addr+7));
+
+	thistype=*(BYTE*)(addr+9);
+	if(thistype==0x22) reportsize=*(WORD*)(addr+10);
 	say("    bdescriptortype:",*(BYTE*)(addr+9));
 	say("    wdescriptorlength:",*(WORD*)(addr+10));
-
 	}
-	//if(type==0x21)	//hid报告描述符
-	//if(type==0x21)	//hid物理描述符
+}
+
+
+
+
+void explainhidreport(QWORD addr)
+{
+say("	@",addr);
+
+BYTE* p=(BYTE*)addr;	
+int i=0;
+
+while(1)
+{
+	switch(p[i])
+	{
+		case 5:{
+		say("    usage page:",p[i+1]);
+		break;
+		}
+		case 9:{
+		say("    usage:",p[i+1]);
+		break;
+		}
+		case 0xa1:{
+		say("    collection:",p[i+1]);
+		break;
+		}
+		case 0x19:{
+		say("    usage minimum:",p[i+1]);
+		break;
+		}
+		case 0x29:{
+		say("    usage maximum:",p[i+1]);
+		break;
+		}
+		case 0x15:{
+		say("    logical maximum:",p[i+1]);
+		break;
+		}
+		case 0x25:{
+		say("    logical maximum:",p[i+1]);
+		break;
+		}
+		case 0x95:{
+		say("    report count:",p[i+1]);
+		break;
+		}
+		case 0x75:{
+		say("    report size:",p[i+1]);
+		break;
+		}
+		case 0x81:{
+		say("    input:",p[i+1]);
+		break;
+		}
+		case 0xc0:{
+		say("    finish",0);
+		return;
+		}
+		case 0:{
+		say("    abort",0);
+		return;
+		}
+		default:{
+		say("    unknown@",&p[i]);
+		break;
+		}
+	}
+
+	i+=2;
+}
 }
 
 
@@ -1151,23 +1222,54 @@ void checkport(portnum)
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 	}
-
-	//这一步得到的最重要信息
-	say("important infomation:",0);
-	say("    classcode:",classcode);
-	say("    interfaceclass:",interfaceclass);
-	say("    interval:",interval);
-
-	//现在只管hid设备
-	if(classcode != 0) goto failed;
-	if(interfaceclass != 3) goto failed;
+	say("string descriptors@",buffer+0x200);
 	//--------------------------------------------
 
 
 
 
 	//---------------configure------------------
-	say("5.configure:",0);
+	//上一步得到的最重要信息
+	say("important infomation:",0);
+	say("    classcode:",classcode);
+	say("    interfaceclass:",interfaceclass);
+	say("    interval:",interval);
+	say("    reportsize:",reportsize);
+
+	//现在只管hid设备
+	if(classcode != 0) goto failed;
+	if(interfaceclass != 3) goto failed;
+
+	say("5.hid!:",0);
+
+	packet.bmrequesttype=0x81;
+	packet.brequest=6;
+	packet.wvalue=0x2200;
+	packet.windex=0;
+	packet.wlength=reportsize;
+	packet.addr=controladdr;
+	packet.data=buffer+0x400;
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explainhidreport(buffer+0x400);
+	//get report
+	//packet.bmrequesttype=0xa1;
+	//packet.brequest=1;
+	//packet.windex=0;
+	//packet.wlength=6;
+	//packet.addr=controladdr;
+	//for(temp=0;temp<4;temp++)		//所有字符串描述符
+	//{
+	//	packet.wvalue=(temp+1)*0x100;
+	//	packet.data=buffer+0x400+temp*0x40;
+	//	controltransfer();
+	//	ring(slot,1);
+	//	if(waitevent(0x20)<0) goto failed;
+	//}
+	//explaindescriptor(buffer+0x400);
+
+
 
 
 	//change input context&ep1.1 context
