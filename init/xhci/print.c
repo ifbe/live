@@ -96,9 +96,10 @@ void shout(char* p,...)
         int x=0;
         int y=*(int*)0x7fff8;
 	int screeny=y%48;
-	for(x=0;x<40;x++) anscii(x,screeny,0x20);
 
-	for(x=0;x<0x20;x++) journal[y*64+x]=0x2e;
+	for(x=0;x<40;x++) anscii(x,screeny,0x20);
+	//for(x=0;x<0x20;x++) journal[y*64+x]=0x2e;
+	x=0x20;
 
         if(y>=0xffe | y<0){
                 y=0;

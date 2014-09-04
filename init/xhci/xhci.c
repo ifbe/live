@@ -922,9 +922,75 @@ say("	@",addr);
 
 BYTE* p=(BYTE*)addr;	
 int i=0;
+BYTE bsize;
+BYTE btype;
+BYTE btag;
 
 while(1)
 {
+	//哪些不正常情况跳出循环
+	if(p[i]==0) break;
+	if(p[i]==0xfe)
+	{
+		say("    cannot understand long item",0);
+		break;
+	}
+
+	//变量
+	bsize=p[i]&0x3;
+	btype=(p[i]>>2)&0x3;
+	btag=(p[i]>>4)&0xf;
+
+	//看看这一块数据什么意思
+	if(btype==0)
+	{
+		if(btag==8) say("main.input:",p[i+1]);
+		else if(btag==9) say("main.output:",p[i+1]);
+		else if(btag==0xa) say("main.collection:",p[i+1]);
+		else if(btag==0xb) say("main.feature",0);
+		else if(btag==0xc) say("main.endcollection",0);
+		else say("unknown tag:",btag);
+	}
+	if(btype==1)
+	{
+		if(btag==0) say("global.usagepage:",p[i+1]);
+		else if(btag==1) say("global.logicalminimum:",p[i+1]);
+		else if(btag==2) say("global.logicalmaximum:",p[i+1]);
+		else if(btag==3) say("global.physicalminimum:",p[i+1]);
+		else if(btag==4) say("global.physicalmaximum:",p[i+1]);
+		else if(btag==5) say("global.unitexponent:",p[i+1]);
+		else if(btag==6) say("global.unit:",p[i+1]);
+		else if(btag==7) say("global.reportsize:",p[i+1]);
+		else if(btag==8) say("global.reportid:",p[i+1]);
+		else if(btag==9) say("global.reportcount:",p[i+1]);
+		else if(btag==0xa) say("global.push:",p[i+1]);
+		else if(btag==0xb) say("global.pop:",p[i+1]);
+		else say("unknown tag:",btag);
+	}
+	if(btype==2)
+	{
+		if(btag==0) say("    local.usage:",p[i+1]);
+		else if(btag==1) say("    local.usageminimum:",p[i+1]);
+		else if(btag==2) say("    local.usagemaximum:",p[i+1]);
+		else if(btag==3) say("    local.desinatorindex:",p[i+1]);
+		else if(btag==4) say("    local.desinatorminimum:",p[i+1]);
+		else if(btag==5) say("    local.desinatormaximum:",p[i+1]);
+		else if(btag==7) say("    local.stringindex:",p[i+1]);
+		else if(btag==8) say("    local.stringminimum:",p[i+1]);
+		else if(btag==9) say("    local.stringmaximum:",p[i+1]);
+		else if(btag==0xa) say("    local.delimiter:",p[i+1]);
+		else say("unknown tag:",btag);
+	}
+
+	//准备下一个循环
+	i+=1;
+	if(bsize==3) i+=4;
+	else i+=bsize;
+}
+}
+
+
+/*
 	switch(p[i])
 	{
 		case 5:{
@@ -971,21 +1037,12 @@ while(1)
 		say("    finish",0);
 		return;
 		}
-		case 0:{
-		say("    abort",0);
-		return;
-		}
 		default:{
 		say("    unknown@",&p[i]);
 		break;
 		}
 	}
-
-	i+=2;
-}
-}
-
-
+*/
 
 
 void checkport(portnum)
