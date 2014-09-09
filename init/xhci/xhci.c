@@ -18,10 +18,7 @@
 
 
 static QWORD portaddr=0;
-
 static QWORD memaddr=0;
-static QWORD msixtable=0;
-static QWORD pendingtable=0;
 
 volatile static QWORD operational;
 volatile static QWORD doorbell;
@@ -79,7 +76,7 @@ say("{",0);
 
 	DWORD offset;
 	DWORD temp;
-	DWORD kind;
+	DWORD type;
 	DWORD next;
 
 	out32(0xcf8,portaddr+0x34);
@@ -89,90 +86,119 @@ say("{",0);
 	{
 	out32(0xcf8,portaddr+offset);
 	temp=in32(0xcfc);
-	kind=temp&0xff;
+	type=temp&0xff;
 	next=(temp>>8)&0xff;
 
-	say("    @",offset);
-	switch(kind)
+	switch(type)
 	{
 		case 0x5:
 		{
 			out32(0xcf8,portaddr+offset);
 			temp=in32(0xcfc);
-			if( (temp&0x800000) !=0 )
+			if( (temp&0x800000) ==0 )
 			{
-				say("    32bit msi:",kind);
-				//out32(0xcf8,portaddr+offset+4);
-				//out32(0xcfc,0xfee00000);
-				//out32(0xcf8,portaddr+offset+8);
-				//out32(0xcfc,0x20);
-				//out32(0xcf8,portaddr+offset);
-				//out32(0xcfc,temp|0x10000);
-	
-				//out32(0xcf8,portaddr+offset+4);
-				//say("    addr:",in32(0xcfc));
-				//out32(0xcf8,portaddr+offset+8);
-				//say("    data:",in32(0xcfc)&0xffff);
-				//out32(0xcf8,portaddr+offset);
-				//say("    control:",in32(0xcfc)>>16);
+			say("32bit msi@",offset);
+
+			//before
+			out32(0xcf8,portaddr+offset);
+			say("    control:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+4);
+			say("    addr:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+8);
+			say("    data:",in32(0xcfc));
+
+			//do something
+			out32(0xcf8,portaddr+offset+8);
+			out32(0xcfc,0x20);
+			out32(0xcf8,portaddr+offset+4);
+			out32(0xcfc,0xfee00000);
+			out32(0xcf8,portaddr+offset);
+			out32(0xcfc,temp|0x10000);
+
+			//after
+			out32(0xcf8,portaddr+offset);
+			say("    control:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+4);
+			say("    addr:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+8);
+			say("    data:",in32(0xcfc));
 			}
 			else
 			{
-				say("    64bit msi:",kind);
-				//out32(0xcf8,portaddr+offset+8);
-				//out32(0xcfc,0xfee00000);
-				//out32(0xcf8,portaddr+offset+0x10);
-				//out32(0xcfc,0x20);
-				//out32(0xcf8,portaddr+offset);
-				//out32(0xcfc,temp|0x10000);
-	
-				//out32(0xcf8,portaddr+offset+8);
-				//say("    addr:",in32(0xcfc));
-				//out32(0xcf8,portaddr+offset+0x10);
-				//say("    data:",in32(0xcfc)&0xffff);
-				//out32(0xcf8,portaddr+offset);
-				//say("    control:",in32(0xcfc)>>16);
+			say("64bit msi@",offset);
+
+			out32(0xcf8,portaddr+offset);
+			say("    control:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+4);
+			say("    addr:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+0xc);
+			say("    data:",in32(0xcfc));
+
+			out32(0xcf8,portaddr+offset+0xc);
+			out32(0xcfc,0x20);
+			out32(0xcf8,portaddr+offset+4);
+			out32(0xcfc,0xfee00000);
+			out32(0xcf8,portaddr+offset);
+			out32(0xcfc,temp|0x10000);
+
+			out32(0xcf8,portaddr+offset);
+			say("    control:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+4);
+			say("    addr:",in32(0xcfc));
+			out32(0xcf8,portaddr+offset+0xc);
+			say("    data:",in32(0xcfc));
 			}
-	
 			break;
 		}
+
 		case 0x11:
 		{
-			say("    msix:",kind);
-	
-			//read bar0
+			say("msix@",offset);
+break;
+			DWORD msixcontrol;
+			DWORD* msixtable;
+			DWORD* pendingtable;
+
+			//get mmio addr,msixtable addr,pendingtable addr
 			out32(0xcf8,portaddr+0x10);
 			memaddr=in32(0xcfc)&0xfffffff0;
-	
-			//table offset
-			out32(0xcf8,portaddr+offset+4);
-			msixtable=memaddr+in32(0xcfc);
-			say("    msix table:",msixtable);
-	
-			//pba offset
+
 			out32(0xcf8,portaddr+offset+8);
-			pendingtable=memaddr+in32(0xcfc);
-			say("    pending table:",pendingtable);
-	
-			//messagecontrol
+			pendingtable=(DWORD*)( memaddr+in32(0xcfc) );
+			out32(0xcf8,portaddr+offset+4);
+			msixtable=(DWORD*)( memaddr+in32(0xcfc) );
 			out32(0xcf8,portaddr+offset);
-			temp=in32(0xcfc)|0x80000000;
+			msixcontrol=in32(0xcfc);
+			out32(0xcf8,portaddr+offset);
+			out32(0xcfc,msixcontrol|0x80000000);
+			out32(0xcf8,portaddr+offset);
+			msixcontrol=in32(0xcfc);
 
-			out32(0xcf8,portaddr+offset);
-			out32(0xcfc,temp);
+			say("    msix control:",msixcontrol);
+			say("    msix table@",msixtable);
+			say("    pending table@",pendingtable);
 
-			out32(0xcf8,portaddr+offset);
-			say("    control:",in32(0xcfc)>>16);
-	
+			//msixtable[0],addrlow,addrhigh,vector,control
+			msixtable[0]=0xfee00000;
+			msixtable[1]=0;
+			msixtable[2]=0x20;
+			msixtable[3]=msixtable[3]&0xfffffffe;
+
+			say("    @0:",msixtable[0]);
+			say("    @4:",msixtable[1]);
+			say("    @8:",msixtable[2]);
+			say("    @c:",msixtable[3]);
+
 			break;
 		}
+
 		default:
 		{
-			say("    unknown kind:",kind);
+			say("unknown type:",type);
 		}
 	}
 	
-	if(kind == 0) break;	//当前capability类型为0，结束
+	if(type == 0) break;	//当前capability类型为0，结束
 	if(next < 0x40) break;	//下一capability位置错误，结束
 	
 	offset=next;
@@ -289,11 +315,11 @@ void explainxecp(QWORD addr)
 	{
 		say("    @",addr);
 		temp=*(DWORD*)addr;
-		BYTE kind=temp&0xff;
+		BYTE type=temp&0xff;
 		QWORD next=(temp>>6)&0x3fc;
 
-		say("    cap:",kind);
-		switch(kind)
+		say("    cap:",type);
+		switch(type)
 		{
 			case 1:{
 				if( ownership(addr) < 0 ) goto failed;
@@ -376,8 +402,6 @@ say("{",0);
 	QWORD crcr=*(DWORD*)(operational+0x18);
 	QWORD dcbaa=*(DWORD*)(operational+0x30);
 	QWORD config=*(DWORD*)(operational+0x38);
-	QWORD msixcontrol=*(DWORD*)(msixtable+0xc);
-	QWORD msixpending=*(DWORD*)pendingtable;
 
 	//蛋疼的计算pagesize
 	QWORD psz=*(DWORD*)(operational+8);
@@ -399,8 +423,6 @@ say("{",0);
 	say("    crcr:",crcr);
 	say("    dcbaa:",dcbaa);
 	say("    config:",config);
-	say("    msixcontrol:",msixcontrol);
-	say("    msixpending:",msixpending);
 
 
 say("}",0);
@@ -511,17 +533,6 @@ say("3.interrupt:",0);
 	int20();
 
 	//----------------------if(msix)--------------------------
-	//msixtable[0].addr
-	*(DWORD*)msixtable=0xfee00000;
-	*(DWORD*)(msixtable+4)=0;
-	//msixtable[0].data
-	*(DWORD*)(msixtable+8)=0x20;
-
-	//msixtable[0].control,enable
-	msixcontrol=*(DWORD*)(msixtable+0xc);
-	*(DWORD*)(msixtable+0xc)=msixcontrol&0xfffffffe;
-	say("    msixcontrol:",*(DWORD*)(msixtable+0xc));
-
 	//----------------------if(msi)--------------------------
 	//----------------------if(intx)--------------------------
 

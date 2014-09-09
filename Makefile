@@ -97,6 +97,11 @@ exttest:
 copy:
 	make -s image
 	sudo cp init/init /mnt/efi/live/init
+everything:
+	make -s fat
+	make -s ntfs
+	make -s ext
+	make -s copy
 push:
 	make -s clean
 	make clean -s -C demo
