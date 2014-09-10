@@ -1057,6 +1057,143 @@ while(1)
 */
 
 
+void hid(QWORD slot)
+{
+	say("it is hid device:",0);
+
+	//只要传递slot号，就能得到我们手动分配的内存
+	QWORD inputaddr=slothome+slot*0x8000;
+	QWORD outputaddr=slothome+slot*0x8000+0x1000;
+	QWORD controladdr=slothome+slot*0x8000+0x2000;
+	QWORD intaddr=slothome+slot*0x8000+0x3000;
+	QWORD buffer=slothome+slot*0x8000+0x4000;
+	QWORD hidbuffer=slothome+slot*0x8000+0x5000;
+
+	packet.bmrequesttype=0x81;
+	packet.brequest=6;
+	packet.wvalue=0x2200;
+	packet.windex=0;
+	packet.wlength=reportsize;
+	packet.addr=controladdr;
+	packet.data=buffer+0x400;
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explainhidreport(buffer+0x400);
+	//get report
+	//packet.bmrequesttype=0xa1;
+	//packet.brequest=1;
+	//packet.windex=0;
+	//packet.wlength=6;
+	//packet.addr=controladdr;
+	//for(temp=0;temp<4;temp++)		//所有字符串描述符
+	//{
+	//	packet.wvalue=(temp+1)*0x100;
+	//	packet.data=buffer+0x400+temp*0x40;
+	//	controltransfer();
+	//	ring(slot,1);
+	//	if(waitevent(0x20)<0) goto failed;
+	//}
+	//explaindescriptor(buffer+0x400);
+
+
+
+
+	//change input context&ep1.1 context
+	context.addr=inputaddr;
+	context.dci=0;			//input context
+        context.d0=0;
+	context.d1=9;
+	context.d2=0;
+	context.d3=0;
+	context.d4=0;
+	writecontext();
+
+	if(interval<=2) interval=3;
+	context.dci=4;			//ep1.1 context
+	context.d0=interval<<16;
+	context.d1=(8<<16)+(7<<3)+(3<<1);
+	context.d2=intaddr+1;
+	context.d3=0;
+	context.d4=0x80008;
+	writecontext();
+
+
+	//ok,sent command
+	command(inputaddr,0,0, (slot<<24)+(12<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
+	DWORD slotstate=(*(DWORD*)(outputaddr+0xc))>>27;
+	DWORD epstate=(*(DWORD*)(outputaddr+0x60))&0x3;
+	if(slotstate==3) say("    slot configured!",0);
+	else say("    slot state:",slotstate);
+	if(epstate==0){
+		say("    ep3 wrong",0);
+		goto failed;
+	}
+
+
+	//set configuration:0x0000,0000,0001,09,00
+	packet.bmrequesttype=0;
+	packet.brequest=9;
+	packet.wvalue=1;
+	packet.windex=0;
+	packet.wlength=0;
+	packet.addr=controladdr;
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	say("    device configured",0);
+	//------------------------------------
+
+
+	//----------prepare ep1.1 ring-------------
+	//[0,3f0)第一段正常trb
+	QWORD temp;
+	trb.addr=intaddr;
+	trb.d1=0;
+	trb.d2=6;
+	trb.d3=0x25+(1<<10);
+	for(temp=0;temp<0x3f;temp++)
+	{
+		trb.d0=hidbuffer+temp*0x10;
+		writetrb();
+	}
+	//[3f0,400)第一段结尾link trb指向[0,3f0)
+	trb.addr=intaddr;
+	trb.d0=intaddr;
+	trb.d1=0;
+	trb.d2=6;
+	trb.d3=1+(6<<10);
+	writetrb();
+
+	//敲门铃，开始执行
+	ring(slot,3);
+	//------------------------------------------
+
+
+	//正常结束-------------------
+	return;
+	//--------------------------------
+
+
+
+
+failed:
+say("failed",0);
+}
+
+
+
+
+void hub(QWORD slot)
+{
+	say("it is a hub",0);
+}
+
+
+
+
 void checkport(portnum)
 {
 	DWORD portsc=*(DWORD*)(portbase+portnum*0x10-0x10);
@@ -1298,120 +1435,17 @@ void checkport(portnum)
 
 
 	//---------------configure------------------
-	//上一步得到的最重要信息
+	//上一步得到基础信息
 	say("important infomation:",0);
 	say("    classcode:",classcode);
 	say("    interfaceclass:",interfaceclass);
 	say("    interval:",interval);
 	say("    reportsize:",reportsize);
 
-	//现在只管hid设备
-	if(classcode != 0) goto failed;
-	if(interfaceclass != 3) goto failed;
-
-	say("5.hid!:",0);
-
-	packet.bmrequesttype=0x81;
-	packet.brequest=6;
-	packet.wvalue=0x2200;
-	packet.windex=0;
-	packet.wlength=reportsize;
-	packet.addr=controladdr;
-	packet.data=buffer+0x400;
-	controltransfer();
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	explainhidreport(buffer+0x400);
-	//get report
-	//packet.bmrequesttype=0xa1;
-	//packet.brequest=1;
-	//packet.windex=0;
-	//packet.wlength=6;
-	//packet.addr=controladdr;
-	//for(temp=0;temp<4;temp++)		//所有字符串描述符
-	//{
-	//	packet.wvalue=(temp+1)*0x100;
-	//	packet.data=buffer+0x400+temp*0x40;
-	//	controltransfer();
-	//	ring(slot,1);
-	//	if(waitevent(0x20)<0) goto failed;
-	//}
-	//explaindescriptor(buffer+0x400);
-
-
-
-
-	//change input context&ep1.1 context
-	context.addr=inputaddr;
-	context.dci=0;			//input context
-        context.d0=0;
-	context.d1=9;
-	context.d2=0;
-	context.d3=0;
-	context.d4=0;
-	writecontext();
-
-	if(interval<=2) interval=3;
-	context.dci=4;			//ep1.1 context
-	context.d0=interval<<16;
-	context.d1=(8<<16)+(7<<3)+(3<<1);
-	context.d2=intaddr+1;
-	context.d3=0;
-	context.d4=0x80008;
-	writecontext();
-
-
-	//ok,sent command
-	command(inputaddr,0,0, (slot<<24)+(12<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
-
-	slotstate=(*(DWORD*)(outputaddr+0xc))>>27;
-	epstate=(*(DWORD*)(outputaddr+0x60))&0x3;
-	if(slotstate==3) say("    slot configured!",0);
-	else say("    slot state:",slotstate);
-	if(epstate==0){
-		say("    ep3 wrong",0);
-		goto failed;
-	}
-
-
-	//set configuration:0x0000,0000,0001,09,00
-	packet.bmrequesttype=0;
-	packet.brequest=9;
-	packet.wvalue=1;
-	packet.windex=0;
-	packet.wlength=0;
-	packet.addr=controladdr;
-	controltransfer();
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	say("    device configured",0);
-	//------------------------------------
-
-
-	//----------prepare ep1.1 ring-------------
-	//[0,3f0)第一段正常trb
-	trb.addr=intaddr;
-	trb.d1=0;
-	trb.d2=6;
-	trb.d3=0x25+(1<<10);
-	for(temp=0;temp<0x3f;temp++)
-	{
-		trb.d0=hidbuffer+temp*0x10;
-		writetrb();
-	}
-	//[3f0,400)第一段结尾link trb指向[0,3f0)
-	trb.addr=intaddr;
-	trb.d0=intaddr;
-	trb.d1=0;
-	trb.d2=6;
-	trb.d3=1+(6<<10);
-	writetrb();
-
-	//敲门铃，开始执行
-	ring(slot,3);
-	//------------------------------------------
-
+	//下面就是每个不同设备自己的驱动了
+	if(classcode==0&&interfaceclass==3) hid(slot);
+	else if(classcode==9&&interfaceclass==9) hub(slot);
+	else say("unknown device",0);
 
 
 
@@ -1464,7 +1498,7 @@ end:		//就一行空白
 
 explainevent(QWORD addr)
 {
-shout("event@",eventaddr);
+shout("event@",addr);
         //trb种类
         QWORD trbtype=*(DWORD*)(addr+0xc);
         trbtype=(trbtype>>10)&0x3f;
@@ -1512,7 +1546,6 @@ shout("{",0);
                 temp+=0x10;
                 if(temp>=eventringhome+0x1000)
                 {
-                        say("reload......",erdp);
                         temp=eventringhome;
                 }
                 if( ((*(DWORD*)(temp+0xc))&0x1) != pcs) break;
