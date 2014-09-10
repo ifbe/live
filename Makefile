@@ -49,19 +49,6 @@ qemutest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live
-newtest:
-	make -s image
-	#qemu-kvm 1.6.2 is wierd,but below 2.x.x is ok!
-	sudo /opt/qemu/bin/qemu-system-x86_64 \
-	-monitor stdio \
-	-smp 2 \
-	-m 512 \
-	-device usb-ehci,id=ehci \
-	-device nec-usb-xhci,id=xhci \
-	-device usb-tablet,bus=xhci.0,port=4 \
-	-device ahci,id=ahci \
-	-device ide-drive,drive=disk,bus=ahci.0 \
-	-drive id=disk,if=none,file=live
 usbtest:
 	sudo qemu-kvm \
 	-smp 2 \

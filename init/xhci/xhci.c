@@ -211,14 +211,15 @@ say("}",0);
 
 QWORD probepci()
 {
-	//disable pin interrupt
+	//disable pin interrupt+enable bus mastering
+	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
         out32(0xcf8,portaddr+0x4);
-        DWORD temp=in32(0xcfc)|(1<<10);
+        DWORD temp=in32(0xcfc)|(1<<10)|(1<<2);
         out32(0xcf8,portaddr+0x4);
         out32(0xcfc,temp);
 
-        //out32(0xcf8,portaddr+0x4);
-        //say("pci status and command:",(QWORD)in32(0xcfc));
+        out32(0xcf8,portaddr+0x4);
+        say("pci status and command:",(QWORD)in32(0xcfc));
 
 	//deal with capability list
 	explaincapability();
@@ -582,7 +583,7 @@ say("5.turnon",0);
 	*(DWORD*)operational = (*(DWORD*)operational) | 0x1;
 
 	//wait for 100ms?
-	QWORD wait3=0xffffff;
+	QWORD wait3=0xfffffff;
 	while(wait3--)asm("nop");
 
 	//
@@ -1288,7 +1289,7 @@ void checkport(portnum)
 		packet.data=buffer+0x200+temp*0x40;
 		controltransfer();
 		ring(slot,1);
-		if(waitevent(0x20)<0) goto failed;
+		waitevent(0x20);	//不用管成功失败
 	}
 	say("string descriptors@",buffer+0x200);
 	//--------------------------------------------
@@ -1350,6 +1351,7 @@ void checkport(portnum)
 	context.d4=0;
 	writecontext();
 
+	if(interval<=2) interval=3;
 	context.dci=4;			//ep1.1 context
 	context.d0=interval<<16;
 	context.d1=(8<<16)+(7<<3)+(3<<1);
@@ -1460,56 +1462,65 @@ end:		//就一行空白
 
 
 
+explainevent(QWORD addr)
+{
+shout("event@",eventaddr);
+        //trb种类
+        QWORD trbtype=*(DWORD*)(addr+0xc);
+        trbtype=(trbtype>>10)&0x3f;
+        shout("    trbtype:",trbtype);
+
+        switch(trbtype)
+        {
+                case 0x22:{             //设备插入拔出
+
+                        //哪个端口改变了
+                        QWORD portid=(*(DWORD*)addr) >> 24;
+                        shout("    port id:",portid);
+
+                        QWORD portaddr=portbase+portid*0x10-0x10;
+                        shout("    port addr:",portaddr);
+
+                        //到改变的地方看看
+                        QWORD portsc=*(DWORD*)portaddr;
+                        shout("    status:",portsc);
+
+                        //告诉主控，收到变化,bit17写1(bit1不能写)
+                        *(DWORD*)portaddr=portsc&0xfffffffd;
+
+                        break;
+                }
+        }
+}
 void realisr20()
 {
-shout("interrupt20",0);
+shout("int20",0);
 shout("{",0);
+        //检查ERDP.EHB
+        DWORD erdp=*(DWORD*)(runtime+0x38);
+        //告诉waitevent函数,中断来了
+        eventsignal=1;
+        eventaddr=erdp&0xfffffffffffffff0;
 
-	//检查ERDP.EHB
-	DWORD erdp=*(DWORD*)(runtime+0x38);
-	if((erdp&0x8) != 0x8)	goto theend;
+        QWORD temp=eventaddr;
+        QWORD pcs=(*(DWORD*)(temp+0xc))&0x1;
+        while(1)
+        {
+                explainevent(temp);
 
-	//告诉waitevent函数,中断来了
-	eventsignal=1;
-	eventaddr=erdp&0xfffffffffffffff0;
+                //dequeue pointer update
+                temp+=0x10;
+                if(temp>=eventringhome+0x1000)
+                {
+                        say("reload......",erdp);
+                        temp=eventringhome;
+                }
+                if( ((*(DWORD*)(temp+0xc))&0x1) != pcs) break;
+        }
 
-	//trb种类
-	QWORD trbtype=*(DWORD*)(eventaddr+0xc);
-	trbtype=(trbtype>>10)&0x3f;
-	shout("    trbtype:",trbtype);
-	switch(trbtype)
-	{
-		case 0x22:{		//设备插入拔出
-
-			//哪个端口改变了
-			QWORD portid=(*(DWORD*)eventaddr) >> 24;
-			shout("    port id:",portid);
-
-			QWORD portaddr=portbase+portid*0x10-0x10;
-			shout("    port addr:",portaddr);
-
-			//到改变的地方看看
-			QWORD portsc=*(DWORD*)portaddr;
-			shout("    status:",portsc);
-
-			//告诉主控，收到变化,bit17写1(bit1不能写)
-			*(DWORD*)portaddr=portsc&0xfffffffd;
-
-			break;
-		}
-	}
-
-	//dequeue pointer update
-	erdp=(erdp+0x10)|8;
-	if(erdp>=eventringhome+0x1008)
-	{
-		say("reload......",erdp);
-		clear(eventringhome,0x1000);
-		erdp=eventringhome+8;
-	}
-
-	*(DWORD*)(runtime+0x38)=erdp;
-	*(DWORD*)(runtime+0x3c)=0;
+        //下一次主控把event写到哪儿
+        *(DWORD*)(runtime+0x38)=temp|8;
+        *(DWORD*)(runtime+0x3c)=0;
 
 theend:
 shout("}",0);

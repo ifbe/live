@@ -44,12 +44,12 @@ static inline unsigned int in32( unsigned short port )
 unsigned int probepci(QWORD addr)
 {
 	out32(0xcf8,addr+0x4);
-	unsigned int temp=in32(0xcfc)|(1<<10);
+	unsigned int temp=in32(0xcfc)|(1<<10)|(1<<2);
 	out32(0xcf8,addr+0x4);
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	//say("pci status and command:",(QWORD)in32(0xcfc));
+	say("pci status and command:",(QWORD)in32(0xcfc));
 
 	out32(0xcf8,addr+0x24);
 	addr=in32(0xcfc)&0xfffffff0;
