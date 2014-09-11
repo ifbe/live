@@ -9,6 +9,7 @@
 				;put vesa info in [3000,3fff]
 
 ;[+200,3ff]
+;%include "1th/text.s"	;set screen mode with bios(real mode)
 %include "1th/1024x768.s"	;set screen mode with bios(real mode)
 
 ;[+400,+5ff]:

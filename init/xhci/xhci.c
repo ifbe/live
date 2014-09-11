@@ -928,18 +928,16 @@ void explaindescriptor(QWORD addr)
 
 
 
-void explainhidreport(QWORD addr)
+void explainhid(QWORD addr)
 {
-say("	@",addr);
-
 BYTE* p=(BYTE*)addr;	
 int i=0;
 BYTE bsize;
 BYTE btype;
 BYTE btag;
 
-while(1)
-{
+	while(1)
+	{
 	//哪些不正常情况跳出循环
 	if(p[i]==0) break;
 	if(p[i]==0xfe)
@@ -998,10 +996,8 @@ while(1)
 	i+=1;
 	if(bsize==3) i+=4;
 	else i+=bsize;
+	}
 }
-}
-
-
 /*
 	switch(p[i])
 	{
@@ -1055,11 +1051,10 @@ while(1)
 		}
 	}
 */
-
-
 void hid(QWORD slot)
 {
 	say("it is hid device:",0);
+	say("{",0);
 
 	//只要传递slot号，就能得到我们手动分配的内存
 	QWORD inputaddr=slothome+slot*0x8000;
@@ -1069,6 +1064,7 @@ void hid(QWORD slot)
 	QWORD buffer=slothome+slot*0x8000+0x4000;
 	QWORD hidbuffer=slothome+slot*0x8000+0x5000;
 
+	say("hid descriptor@",buffer+0x400);
 	packet.bmrequesttype=0x81;
 	packet.brequest=6;
 	packet.wvalue=0x2200;
@@ -1079,7 +1075,7 @@ void hid(QWORD slot)
 	controltransfer();
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
-	explainhidreport(buffer+0x400);
+	explainhid(buffer+0x400);
 	//get report
 	//packet.bmrequesttype=0xa1;
 	//packet.brequest=1;
@@ -1173,6 +1169,7 @@ void hid(QWORD slot)
 
 
 	//正常结束-------------------
+	say("}",0);
 	return;
 	//--------------------------------
 
@@ -1180,15 +1177,48 @@ void hid(QWORD slot)
 
 
 failed:
-say("failed",0);
+say("}",0);
 }
 
 
 
 
+void explainhub(QWORD addr)
+{
+
+}
 void hub(QWORD slot)
 {
-	say("it is a hub",0);
+say("it is a hub",0);
+say("{",0);
+	//只要传递slot号，就能得到我们手动分配的内存
+	QWORD inputaddr=slothome+slot*0x8000;
+	QWORD outputaddr=slothome+slot*0x8000+0x1000;
+	QWORD controladdr=slothome+slot*0x8000+0x2000;
+	QWORD intaddr=slothome+slot*0x8000+0x3000;
+	QWORD buffer=slothome+slot*0x8000+0x4000;
+
+	say("hub descriptor@",buffer+0x400);
+	packet.bmrequesttype=0xa1;
+	packet.brequest=6;
+	packet.wvalue=0x2900;
+	packet.windex=0;
+	packet.wlength=7;
+	packet.addr=controladdr;
+	packet.data=buffer+0x400;
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explainhub(buffer+0x400);
+
+	say("}",0);
+	return;
+
+
+
+
+failed:
+say("}",0);
 }
 
 
@@ -1375,6 +1405,7 @@ void checkport(portnum)
 
 
 	//[buffer]:device descriptor
+	say("device descriptors@",buffer);
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x100;
@@ -1389,6 +1420,7 @@ void checkport(portnum)
 
 
 	//[buffer+0x100]:configure descriptor
+	say("configure descriptors@",buffer+0x100);
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x200;
@@ -1407,6 +1439,7 @@ void checkport(portnum)
 
 
 	//[buffer+0x200]:string descriptors
+	say("string descriptors@",buffer+0x200);
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x300;
@@ -1428,7 +1461,6 @@ void checkport(portnum)
 		ring(slot,1);
 		waitevent(0x20);	//不用管成功失败
 	}
-	say("string descriptors@",buffer+0x200);
 	//--------------------------------------------
 
 
@@ -1442,10 +1474,15 @@ void checkport(portnum)
 	say("    interval:",interval);
 	say("    reportsize:",reportsize);
 
+	say("}",0);
+
 	//下面就是每个不同设备自己的驱动了
 	if(classcode==0&&interfaceclass==3) hid(slot);
 	else if(classcode==9&&interfaceclass==9) hub(slot);
 	else say("unknown device",0);
+
+	//到这里正常结束
+	return;
 
 
 

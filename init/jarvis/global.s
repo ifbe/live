@@ -16,6 +16,10 @@ f4:
 	lea rax,[rel function4]
 	mov [rel screenwhat],rax
 	jmp console
+f5:
+	lea rax,[rel function5]
+	mov [rel screenwhat],rax
+	jmp fallback
 ;___________________________________________
 
 

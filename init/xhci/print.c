@@ -46,7 +46,7 @@ void say(char* p,...)
         int x=0;
         int y=*(int*)0x7fff8;
 	int screeny=y%48;
-	for(x=0;x<0x40;x++) anscii(x,screeny,0x20);
+	//for(x=0;x<0x40;x++) anscii(x,screeny,0x20);
 
 	x=0;
 
@@ -58,7 +58,7 @@ void say(char* p,...)
 
         while(*p!='\0')
         {
-                anscii(x,screeny,*p);
+                //anscii(x,screeny,*p);
                 journal[y*64+x]=*p;
                 p++;
                 x++;
@@ -70,7 +70,7 @@ void say(char* p,...)
         char ch;
         int signal=0;
 
-        for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
+        //for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
 
         for(i=0;i<16;i++)
         {
@@ -82,7 +82,7 @@ void say(char* p,...)
                 {
                         ch+=0x30;
                         if(ch>0x39) ch+=0x7;
-                        anscii(x+signal-1,screeny,ch);
+                        //anscii(x+signal-1,screeny,ch);
                         journal[y*64+x+signal-1]=ch;
                 }
         }
@@ -97,8 +97,8 @@ void shout(char* p,...)
         int y=*(int*)0x7fff8;
 	int screeny=y%48;
 
-	for(x=0x20;x<0x40;x++) anscii(x,screeny,0x20);
-	//for(x=0;x<0x40;x++) journal[y*64+x]=0;
+	//for(x=0x20;x<0x40;x++) anscii(x,screeny,0x20);
+	for(x=0;x<0x40;x++) journal[y*64+x]=0;
 	x=0x20;
 
         if(y>=0xffe | y<0){
@@ -109,7 +109,7 @@ void shout(char* p,...)
 
         while(*p!='\0')
         {
-                anscii(x,screeny,*p);
+                //anscii(x,screeny,*p);
                 journal[y*64+x]=*p;
                 p++;
                 x++;
@@ -121,7 +121,7 @@ void shout(char* p,...)
         char ch;
         int signal=0;
 
-        for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
+        //for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
 
         for(i=0;i<16;i++)
         {
@@ -133,7 +133,7 @@ void shout(char* p,...)
                 {
                         ch+=0x30;
                         if(ch>0x39) ch+=0x7;
-                        anscii(x+signal-1,screeny,ch);
+                        //anscii(x+signal-1,screeny,ch);
                         journal[y*64+x+signal-1]=ch;
                 }
         }

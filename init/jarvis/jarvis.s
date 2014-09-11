@@ -8,6 +8,7 @@
 %include "f2.s"
 %include "f3.s"
 %include "f4.s"
+%include "f5.s"
 
 ;))))))))))))))))))))    endof part2    )))))))))))))
 
