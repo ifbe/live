@@ -1204,6 +1204,7 @@ say("{",0);
 	QWORD intaddr=slothome+slot*0x8000+0x3000;
 	QWORD buffer=slothome+slot*0x8000+0x4000;
 
+	//得到hub描述符
 	say("hub descriptor@",buffer+0x400);
 	packet.bmrequesttype=0xa0;
 	packet.brequest=6;
@@ -1216,6 +1217,41 @@ say("{",0);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer+0x400);
+
+	//初始化hub
+	//上电？
+
+/*
+	//reset port
+	say("reset ports",0);
+	packet.bmrequesttype=0x20;	//host2dev|class|rt_other
+	packet.brequest=6;		//set feathre
+	packet.wvalue=0x2900;		//f_port_reset
+	packet.windex=0;		//port+1
+	packet.wlength=0;		//0
+	packet.addr=controladdr;
+	packet.data=0;
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+*/
+
+	//wait 100ms
+
+/*
+	//get current status
+	say("reset ports",0);
+	packet.bmrequesttype=0xa0;	//devhost|class|rt_other
+	packet.brequest=6;		//req_get_status
+	packet.wvalue=0;		//0
+	packet.windex=0;		//port+1
+	packet.wlength=4;		//0
+	packet.addr=controladdr;
+	packet.data=0;			//某个地址
+	controltransfer();
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+*/
 
 	say("}",0);
 	return;
