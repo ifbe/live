@@ -795,7 +795,7 @@ static QWORD reportsize;
 void explaindescriptor(QWORD addr)
 {
 	DWORD type=*(BYTE*)(addr+1);
-	if(	(type==0)|((type>7)&(type<0x21))|(type>0x23)	) return;
+	if(	(type==0)|((type>7)&(type<0x21))|(type>0x29)	) return;
 
 	say("	@",addr);
 
@@ -923,6 +923,16 @@ void explaindescriptor(QWORD addr)
 	say("    bdescriptortype:",*(BYTE*)(addr+9));
 	say("    wdescriptorlength:",*(WORD*)(addr+10));
 	}
+        if(type==0x29)
+        {
+        say("    blength:",*(BYTE*)addr);
+        say("    bdescriptortype:",*(BYTE*)(addr+1));
+        say("    bnumberofport:",*(BYTE*)(addr+2));
+        say("    whubcharacteristics:",*(BYTE*)(addr+3));
+        say("    bpowerontopowergood:",*(BYTE*)(addr+5));
+        say("    bhubcontrolcurrent:",*(BYTE*)(addr+6));
+        say("    bremoveandpowermask:",*(BYTE*)(addr+7));
+        }
 }
 
 
@@ -1183,10 +1193,6 @@ say("}",0);
 
 
 
-void explainhub(QWORD addr)
-{
-
-}
 void hub(QWORD slot)
 {
 say("it is a hub",0);
@@ -1199,17 +1205,17 @@ say("{",0);
 	QWORD buffer=slothome+slot*0x8000+0x4000;
 
 	say("hub descriptor@",buffer+0x400);
-	packet.bmrequesttype=0xa1;
+	packet.bmrequesttype=0xa0;
 	packet.brequest=6;
 	packet.wvalue=0x2900;
 	packet.windex=0;
-	packet.wlength=7;
+	packet.wlength=8;
 	packet.addr=controladdr;
 	packet.data=buffer+0x400;
 	controltransfer();
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
-	explainhub(buffer+0x400);
+	explaindescriptor(buffer+0x400);
 
 	say("}",0);
 	return;
@@ -1360,6 +1366,7 @@ void checkport(portnum)
 	}
 
 	//first read(to obtain maxsize)
+	say("    getting packetsize",0);
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x100;
@@ -1375,6 +1382,7 @@ void checkport(portnum)
 	say("    got packetsize:",packetsize);
 
 	//evaluate
+        say("    evaluating:",0);
 	context.addr=inputaddr;
 	context.dci=2;			//ep0 context
 	context.d0=0;
@@ -1420,7 +1428,7 @@ void checkport(portnum)
 
 
 	//[buffer+0x100]:configure descriptor
-	say("configure descriptors@",buffer+0x100);
+	say("configure descriptor@",buffer+0x100);
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x200;
@@ -1431,6 +1439,7 @@ void checkport(portnum)
 	controltransfer();
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
+	say("configure descriptor(all)@",buffer+0x100);
 	packet.wlength=*(WORD*)(buffer+0x102);
 	controltransfer();
 	ring(slot,1);
@@ -1453,7 +1462,7 @@ void checkport(portnum)
 
 	packet.windex=*(WORD*)(buffer+0x202);
 	DWORD temp=1;
-	for(;temp<8;temp++)		//所有字符串描述符
+	for(;temp<2;temp++)		//所有字符串描述符
 	{
 		packet.wvalue=0x300+temp;
 		packet.data=buffer+0x200+temp*0x40;
@@ -1543,6 +1552,14 @@ shout("event@",addr);
 
         switch(trbtype)
         {
+                case 0x20:{
+                        shout("    transfer complete:",*(DWORD*)addr);
+                        break;
+                }
+                case 0x21:{
+                        shout("    command complete:",*(DWORD*)addr);
+                        break;
+                }
                 case 0x22:{             //设备插入拔出
 
                         //哪个端口改变了
