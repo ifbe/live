@@ -29,7 +29,7 @@
 %include "6th/apic.s"		;init apic to well known state
 
 ;[+800,+fff]:
-%include "8th/exception.s"	;set 32 default exception handler
+%include "7th/exception.s"	;set 32 default exception handler
 
 ;[+1000,+1fff]:
 %include "anscii.s"		;anscii pixel table

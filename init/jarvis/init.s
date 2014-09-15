@@ -79,10 +79,10 @@ call endofjarvis		;ahci@0x4000
 call endofjarvis+0x2000		;xhci@0x6000
 
 ;initusb
-;call endofjarvis+0x6000	;usb@0x8000
+call endofjarvis+0x4000		;usb@0x8000
 
 ;initdisk
-call endofjarvis+0x6000		;disk@0xc000
+call endofjarvis+0x8000		;disk@0xc000
 ;__________________________________
 
 

@@ -1,0 +1,4 @@
+void start()
+{
+	initusb();
+}
