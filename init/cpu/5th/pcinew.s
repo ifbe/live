@@ -47,6 +47,6 @@ pcienew:
     jmp endofpci
 
 paddingofpci:
-times 0x200-(paddingofpci-startofpci) db 0
+times 0x100-(paddingofpci-startofpci) db 0
 
 endofpci:

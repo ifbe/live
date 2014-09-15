@@ -1,2 +1,2 @@
 incbin "temp.bin"
-times 0x4000-($-$$) db 0
+times 0x6000-($-$$) db 0

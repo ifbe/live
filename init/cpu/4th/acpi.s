@@ -6,7 +6,8 @@ startofacpi:
 ;变:rax,rbp,cx,*0x4008=RSD PTR 
 ;_________look for rsd ptr from e0000~ffff0__________
     mov rax,"RSD PTR "
-    mov [0x4000],rax
+    mov edi,0x4000
+    stosq
     mov rbp,0xe0000
     mov cx,0x2000
 rsdptr:
@@ -26,7 +27,8 @@ rsdptr:
 ;变:*0x4000=&rsdp
 ;____________________________________
 findrsdptr:
-    mov [0x4008],rbp       ;rsdptr
+    mov rax,rbp       ;rsdptr
+    stosq
     cmp byte [rbp+0xf],0x00 ;不是0就是xsdt
     jne xsdt
 
@@ -38,9 +40,9 @@ findrsdptr:
 ;_______________________________
 rsdt:
     mov eax,"RSDT"
-    mov [0x4010],eax
+    stosq
     mov eax,[rbp+0x10]
-    mov [0x4018],eax        ;rsdt
+    stosq
     mov cl,[eax+4]
     sub cl,0x24
     add eax,0x24
@@ -66,9 +68,9 @@ rsdt:
 ;____________________________________
 xsdt:
     mov eax,"XSDT"
-    mov [0x4010],eax
+    stosq
     mov rax,[rbp+0x18]
-    mov [0x4018],rax        ;xsdt
+    stosq
     mov cl,[rax+4]
     sub cl,0x24
     add eax,0x24
@@ -134,7 +136,7 @@ find_S5_:
     jmp endofacpi
 
 paddingofacpi:
-times 0x200-(paddingofacpi-startofacpi) db 0
+times 0x100-(paddingofacpi-startofacpi) db 0
 
 
 endofacpi:

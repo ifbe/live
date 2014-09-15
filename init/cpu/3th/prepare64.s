@@ -66,6 +66,6 @@ pagedirectory:
 
 
 paddingofprepare64:
-times 0x200-(paddingofprepare64-startofprepare64) db 0
+times 0x100-(paddingofprepare64-startofprepare64) db 0
 
 endofprepare64:

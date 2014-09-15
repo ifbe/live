@@ -141,6 +141,6 @@ listresolution:
 
 
 paddingof16:
-times 0x200-(paddingof16-startof16) db 0
+times 0x100-(paddingof16-startof16) db 0
 
 endof16:

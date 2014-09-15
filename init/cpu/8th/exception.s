@@ -120,7 +120,7 @@ mov edi,0x5000
 mov ecx,0x2000
 rep movsb
 
-call endofexception+0x2000	;+4000
+call endofcpu
 
 sleep:hlt
 jmp sleep
@@ -536,56 +536,9 @@ ret
 ;__________________________________________________
 
 
-ALIGN 16
-buffer:
-dq 0,"rax"
-dq 0,"rcx"
-dq 0,"rdx"
-dq 0,"rbx"
-dq 0,"rsp"
-dq 0,"rbp"
-dq 0,"rsi"
-dq 0,"rdi"
 
-dq 0,"r8"
-dq 0,"r9"
-dq 0,"r10"
-dq 0,"r11"
-dq 0,"r12"
-dq 0,"r13"
-dq 0,"r14"
-dq 0,"r15"
-
-dq 0,"cr0"
-dq 0,"i'm dead"
-dq 0,"cr2"
-dq 0,"cr3"
-dq 0,"cr4"
-dq 0,"cr8"
-dq 0,"i'm dead"
-dq 0,"i'm dead"
-
-dq 0,"dr0"
-dq 0,"dr1"
-dq 0,"dr2"
-dq 0,"dr3"
-killer:
-dq 0,"killer"
-reason:
-dq 0,"reason"
-dq 0,"dr6"
-dq 0,"dr7"
-
-dq 0,"[rsp]"
-dq 0,"[rsp+8]"
-dq 0,"[rsp+16]"
-dq 0,"[rsp+24]"
-dq 0,"[rsp+32]"
-dq 0,"[rsp+40]"
-dq 0,"[rsp+48]"
-dq 0,"[rsp+56]"
 
 padding:
-times 0x1000-(padding-startofexception) db 0
+times 0x800-(padding-startofexception) db 0
 
 endofexception:

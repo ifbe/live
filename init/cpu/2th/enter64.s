@@ -124,7 +124,7 @@ where:				;
 
 
 paddingofenter64:
-times 0x200-(paddingofenter64-startofenter64) db 0
+times 0x100-(paddingofenter64-startofenter64) db 0
 
 
 endofenter64:
