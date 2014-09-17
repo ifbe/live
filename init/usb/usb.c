@@ -20,18 +20,10 @@
 //routestring:上层hub在哪
 //port:本设备连在上层hub的哪个port
 void hub(QWORD routestring,QWORD port,QWORD slot);
-void device(QWORD routestring,QWORD port);
 
-volatile static QWORD doorbell;
 static QWORD runtime;
-static QWORD contextsize;
-
 static QWORD portbase;
 static QWORD portcount;
-static QWORD usb3start;
-static QWORD usb3count;
-static QWORD usb2start;
-static QWORD usb2count;
 
 
 
@@ -42,6 +34,15 @@ void clear(QWORD addr,QWORD size)
 	BYTE* pointer=(BYTE*)addr;
 	int i;
 	for(i=0;i<size;i++) pointer[i]=0;
+}
+
+
+
+
+volatile static QWORD doorbell;
+void ring(int slot,int endpoint)
+{
+	*(DWORD*)(doorbell+4*slot)=endpoint;
 }
 
 
@@ -65,7 +66,7 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 	commandenqueue+=0x10;
 
 	//处理完了，敲门铃
-	*(DWORD*)doorbell=0;
+	ring(0,0);
 }
 
 
@@ -97,13 +98,6 @@ void writetrb()
 	pointer[3]=trb.d3;
 }
 
-
-
-
-void ring(int slot,int endpoint)
-{
-	*(DWORD*)(doorbell+4*slot)=endpoint;
-}
 
 
 
@@ -175,6 +169,7 @@ struct context{		//传参太麻烦...
 	DWORD d7;
 };
 static struct context context;
+static QWORD contextsize;
 void writecontext()
 {
 	DWORD* pointer=(DWORD*)(context.addr+context.dci*contextsize);
@@ -229,50 +224,60 @@ int waitevent(QWORD trbtype)
 
 //以下是提取自descriptor的最重要信息，每次只被这个函数更新,就像人记笔记......
 static QWORD classcode;
+static QWORD deviceprotocol;
 static QWORD interfaceclass;
 static QWORD interval;
 static QWORD reportsize;
 void explaindescriptor(QWORD addr)
 {
-	DWORD type=*(BYTE*)(addr+1);
-	if(	(type==0)|((type>7)&(type<0x21))|(type>0x29)	) return;
+DWORD type=*(BYTE*)(addr+1);
+if(	(type==0)|((type>7)&(type<0x21))|(type>0x29)	) return;
 
-	say("	@",addr);
-
-	if(type==1)	//设备描述符
-	{
+switch(type)
+{
+case 1:	//设备描述符
+{
 	//这是第一个被读取的描述符，所以几个变量在这里清零最好
 	//classcode=0;	//这个就不必了，马上就变掉
 	interfaceclass=0;
 	interval=0;
 
-	say("    blength:",*(BYTE*)addr);
-	say("    device:",*(BYTE*)(addr+1));
-	say("    bcdusb:",*(WORD*)(addr+2));
-	classcode=*(BYTE*)(addr+4);
-	say("    bclass:",classcode);
-	say("    bsubclass:",*(BYTE*)(addr+5));
-	say("    bprotocol:",*(BYTE*)(addr+6));
-	say("    bpacketsize:",*(BYTE*)(addr+7));
-	say("    vendor:",*(WORD*)(addr+8));
-	say("    product:",*(WORD*)(addr+0xa));
-	say("    bcddevice:",*(WORD*)(addr+0xc));
-	say("    imanufacturer:",*(BYTE*)(addr+0xe));
-	say("    iproduct:",*(BYTE*)(addr+0xf));
-	say("    iserial:",*(BYTE*)(addr+0x10));
-	say("    bnumconf:",*(BYTE*)(addr+0x11));
-	}
+say("device@",addr);
+say("{",0);
 
-	if(type==2)	//配置描述符
-	{
-	say("    blength:",*(BYTE*)addr);
-	say("    conf:",*(BYTE*)(addr+1));
-	say("    wlength:",*(WORD*)(addr+2));
-	say("    bnuminterface:",*(BYTE*)(addr+4));
-	say("    bvalue:",*(BYTE*)(addr+5));
-	say("    i:",*(BYTE*)(addr+6));
-	say("    bmattributes:",*(BYTE*)(addr+7));
-	say("    bmaxpower:",*(BYTE*)(addr+8));
+	say("blength:",*(BYTE*)addr);
+	say("type:",*(BYTE*)(addr+1));
+	say("bcdusb:",*(WORD*)(addr+2));
+	classcode=*(BYTE*)(addr+4);
+	say("bclass:",classcode);
+	say("bsubclass:",*(BYTE*)(addr+5));
+	deviceprotocol=*(BYTE*)(addr+6);
+	say("bprotocol:",deviceprotocol);
+	say("bpacketsize:",*(BYTE*)(addr+7));
+	say("vendor:",*(WORD*)(addr+8));
+	say("product:",*(WORD*)(addr+0xa));
+	say("bcddevice:",*(WORD*)(addr+0xc));
+	say("imanufacturer:",*(BYTE*)(addr+0xe));
+	say("iproduct:",*(BYTE*)(addr+0xf));
+	say("iserial:",*(BYTE*)(addr+0x10));
+	say("bnumconf:",*(BYTE*)(addr+0x11));
+say("}",0);
+break;
+}
+case 2:	//配置描述符
+{
+say("conf@",addr);
+say("{",0);
+
+	say("blength:",*(BYTE*)addr);
+	say("type:",*(BYTE*)(addr+1));
+	say("wlength:",*(WORD*)(addr+2));
+	say("bnuminterface:",*(BYTE*)(addr+4));
+	say("bvalue:",*(BYTE*)(addr+5));
+	say("i:",*(BYTE*)(addr+6));
+	say("bmattributes:",*(BYTE*)(addr+7));
+	say("bmaxpower:",*(BYTE*)(addr+8));
+say("}",0);
 
 	DWORD totallength=*(WORD*)(addr+2);
 	DWORD offset=0;
@@ -283,41 +288,53 @@ void explaindescriptor(QWORD addr)
 		offset+=*(BYTE*)(addr+offset);
 		explaindescriptor(addr+offset);
 	}
-	}
-	if(type==4)	//接口描述符
-	{
-	say("    length:",*(BYTE*)addr);
-	say("    interface:",*(BYTE*)(addr+1));
-	say("    binterfacenum:",*(BYTE*)(addr+2));
-	say("    balternatesetting:",*(BYTE*)(addr+3));
-	say("    bnumendpoint:",*(BYTE*)(addr+4));
-	interfaceclass=*(BYTE*)(addr+5);
-	say("    bclass:",interfaceclass);
-	say("    bsubclass:",*(BYTE*)(addr+6));
-	say("    bprotol:",*(BYTE*)(addr+7));
-	say("    i:",*(BYTE*)(addr+8));
-	}
 
-	if(type==5)	//端点描述符
-	{
-	say("    blength:",*(BYTE*)addr);
-	say("    endpoint:",*(BYTE*)(addr+1));
+break;
+}
+case 4:	//接口描述符
+{
+say("interface@",addr);
+say("{",0);
+
+	say("length:",*(BYTE*)addr);
+	say("type:",*(BYTE*)(addr+1));
+	say("binterfacenum:",*(BYTE*)(addr+2));
+	say("balternatesetting:",*(BYTE*)(addr+3));
+	say("bnumendpoint:",*(BYTE*)(addr+4));
+	interfaceclass=*(BYTE*)(addr+5);
+	say("bclass:",interfaceclass);
+	say("bsubclass:",*(BYTE*)(addr+6));
+	say("bprotol:",*(BYTE*)(addr+7));
+	say("i:",*(BYTE*)(addr+8));
+say("}",0);
+break;
+}
+case 5:	//端点描述符
+{
+say("endpoint@",addr);
+say("{",0);
+
+	say("blength:",*(BYTE*)addr);
+	say("type:",*(BYTE*)(addr+1));
 
 	BYTE endpoint=*(BYTE*)(addr+2);
-	say("    endpoint:",endpoint&0xf);
-	if(endpoint>0x80){say("    in",0);}
-	else{say("    out",0);}
+	say("endpoint:",endpoint&0xf);
+	if(endpoint>0x80){say("in",0);}
+	else{say("out",0);}
 
 	BYTE eptype=*(BYTE*)(addr+3);
-	if(eptype==0) say("    control",0);
-	else if(eptype==1) say("    isochronous",0);
-	else if(eptype==2) say("    bulk",0);
-	else say("    interrupt",0);
+	if(eptype==0) say("control",0);
+	else if(eptype==1) say("isochronous",0);
+	else if(eptype==2) say("bulk",0);
+	else say("interrupt",0);
 
-	say("    wmaxpacketsize:",*(WORD*)(addr+4));
+	say("wmaxpacketsize:",*(WORD*)(addr+4));
 	interval=*(BYTE*)(addr+6);
-	say("    binterval:",interval);
-	}
+	say("binterval:",interval);
+
+say("}",0);
+break;
+}
 
 /*
 	if(type==6)	//设备限定描述符
@@ -343,36 +360,53 @@ void explaindescriptor(QWORD addr)
 	say("    bmaxpower:",*(BYTE*)(addr+8));
 	}
 */
-	if(type==0x21)	//hid设备描述符
-	{
+case 0x21:	//hid设备描述符
+{
+say("hid@",addr);
+say("{",0);
+
 	QWORD thistype;
 
-	say("    blength:",*(BYTE*)addr);
-	say("    hid:",*(BYTE*)(addr+1));
-	say("    bcdhid:",*(WORD*)(addr+2));
-	say("    bcountrycode:",*(BYTE*)(addr+4));
-	say("    bnumdescriptor:",*(BYTE*)(addr+5));
+	say("blength:",*(BYTE*)addr);
+	say("type:",*(BYTE*)(addr+1));
+	say("bcdhid:",*(WORD*)(addr+2));
+	say("bcountrycode:",*(BYTE*)(addr+4));
+	say("bnumdescriptor:",*(BYTE*)(addr+5));
 
 	thistype=*(BYTE*)(addr+6);
 	if(thistype==0x22) reportsize=*(WORD*)(addr+7);
-	say("    btype:",thistype);
-	say("    wlength:",*(WORD*)(addr+7));
+	say("btype:",thistype);
+	say("wlength:",*(WORD*)(addr+7));
 
 	thistype=*(BYTE*)(addr+9);
 	if(thistype==0x22) reportsize=*(WORD*)(addr+10);
-	say("    btype:",*(BYTE*)(addr+9));
-	say("    wlength:",*(WORD*)(addr+10));
-	}
-        if(type==0x29)
-        {
-        say("    blength:",*(BYTE*)addr);
-        say("    hub:",*(BYTE*)(addr+1));
-        say("    bnumberofport:",*(BYTE*)(addr+2));
-        say("    whubcharacteristics:",*(BYTE*)(addr+3));
-        say("    bpowerontopowergood:",*(BYTE*)(addr+5));
-        say("    bhubcontrolcurrent:",*(BYTE*)(addr+6));
-        say("    bremoveandpowermask:",*(BYTE*)(addr+7));
-        }
+	say("btype:",*(BYTE*)(addr+9));
+	say("wlength:",*(WORD*)(addr+10));
+say("}",0);
+break;
+}
+case 0x29:
+{
+say("hub@",addr);
+say("{",0);
+
+        say("blength:",*(BYTE*)addr);
+        say("type:",*(BYTE*)(addr+1));
+        say("bnumberofport:",*(BYTE*)(addr+2));
+	WORD hubcharacteristics=*(BYTE*)(addr+3);
+        say("    power mode:",hubcharacteristics&0x3);
+        say("    compound device:",(hubcharacteristics>>2)&0x1);
+        say("    overcurrent protect:",(hubcharacteristics>>3)&0x3);
+        say("    TT thinktime:",(hubcharacteristics>>5)&0x3);
+        say("    port indicator:",(hubcharacteristics>>7)&0x1);
+        say("bpowerontopowergood:",*(BYTE*)(addr+5));
+        say("bhubcontrolcurrent:",*(BYTE*)(addr+6));
+        say("bremoveandpowermask:",*(BYTE*)(addr+7));
+say("}",0);
+break;
+}
+
+}
 }
 
 
@@ -512,12 +546,13 @@ void hid(QWORD slot)
 	say("{",0);
 
 	//只要传递slot号，就能得到我们手动分配的内存
-	QWORD inputcontext=slothome+slot*0x8000;
-	QWORD outputcontext=slothome+slot*0x8000+0x1000;
-	QWORD controladdr=slothome+slot*0x8000+0x2000;
-	QWORD intaddr=slothome+slot*0x8000+0x3000;
-	QWORD buffer=slothome+slot*0x8000+0x4000;
-	QWORD hidbuffer=slothome+slot*0x8000+0x5000;
+	QWORD slotdata=slothome+slot*0x8000;
+	QWORD inputcontext=slotdata;
+	QWORD outputcontext=slotdata+0x1000;
+	QWORD controladdr=slotdata+0x2000;
+	QWORD intaddr=slotdata+0x3000;
+	QWORD buffer=slotdata+0x4000;
+	QWORD hidbuffer=slotdata+0x5000;
 
 	say("hid descriptor@",buffer+0x400);
 	packet.bmrequesttype=0x81;
@@ -551,6 +586,7 @@ void hid(QWORD slot)
 
 
 	//change input context&ep1.1 context
+	say("configure",0);
 	context.addr=inputcontext;
 	context.dci=0;			//input context
         context.d0=0;
@@ -639,56 +675,10 @@ say("}",0);
 
 
 //routestring:设备的上级hub位置，port:设备自己所在hub内部port号
-void device(QWORD routestring,QWORD port)
+void device(QWORD routestring,QWORD port,DWORD speed)
 {
-	DWORD speed;		//第一步得到这个，给context用
-	if(routestring==0)	//this device is under roothub port
-	{
-		DWORD portsc=*(DWORD*)(portbase+port*0x10-0x10);
-		if( (portsc&0x1) != 0x1){
-			say("nothing in port:",port);
-			return;
-		}
-
-		say("port:",port);
-		say("{",0);
-
-		say("    portsc(before):",portsc);
-	
-
-		if( (port>=usb3start) && (port<usb3start+usb3count) )
-		{
-			say("    3.0",0);
-		}
-		if( (port>=usb2start) && (port<usb2start+usb2count) )
-		{
-			say("    2.0(must reset twice,why?)",0);
-
-			*(DWORD*)(portbase+port*0x10-0x10)=portsc|0x10;
-			waitevent(0x22);
-			portsc=*(DWORD*)(portbase+port*0x10-0x10);
-			say("    status(reset1):",portsc);
-
-			*(DWORD*)(portbase+port*0x10-0x10)=portsc|0x10;
-			waitevent(0x22);
-			portsc=*(DWORD*)(portbase+port*0x10-0x10);
-			say("    status(reset2):",portsc);
-		}
-
-		portsc=*(DWORD*)(portbase+port*0x10-0x10);
-		say("    status(after):",portsc);
-		DWORD pls=(portsc>>5)&0xf;
-		speed=(portsc>>10)&0xf;
-		say("    pls:",pls);
-		say("    speed:",speed);
-	}
-	else		//this device is under normal hub
-	{
-
-	}
-	//----------------------------------------
-
-
+	say("device",0);
+	say("{",0);
 
 
 	//---------------obtain slot------------------
@@ -736,7 +726,7 @@ void device(QWORD routestring,QWORD port)
 	writecontext();
 
 	context.dci=1;			//slot context
-        context.d0=(3<<27)+(speed<<20);
+        context.d0=(3<<27)+(speed<<20)+routestring;
 	context.d1=port<<16;
 	writecontext();
 
@@ -890,8 +880,6 @@ void device(QWORD routestring,QWORD port)
 	say("    interval:",interval);
 	say("    reportsize:",reportsize);
 
-	say("}",0);
-
 	//已经知道设备是什么
 	if(classcode==0&&interfaceclass==3)
 	{
@@ -907,6 +895,7 @@ void device(QWORD routestring,QWORD port)
 	}
 
 	//到这里正常结束
+	say("}",0);
 	return;
 
 
@@ -921,28 +910,73 @@ void device(QWORD routestring,QWORD port)
 //有routestring和port就能得到设备物理位置，有slot就能得到hc眼中的虚拟位置
 void hub(QWORD routestring,QWORD port,QWORD slot)
 {
-//如果这个是roothub,slot没有被分配好，为0
-	if(slot==0)
-	{
-		say("root hub",0);
+QWORD childport;
+DWORD speed;		//第一步得到这个，给context用
 
-		for(port=1;port<=portcount;port++)
-		{
-			device(0,port);
-		}
-		return;
+
+
+
+//如果这个是roothub,slot没有被分配好，为0
+//用xhci spec里面的root port reset等办法处理port,得到port信息
+if(slot==0)
+{
+say("root hub",0);
+
+for(childport=1;childport<=portcount;childport++)
+{
+	DWORD portsc=*(DWORD*)(portbase+childport*0x10-0x10);
+	//本port里面没有设备
+	if( (portsc&0x1) != 0x1){
+		say("nothing in port:",childport);
+		continue;
 	}
 
+	//本port里面有设备
+	say("port:",childport);
+	say("{",0);
+
+	QWORD* memory=(QWORD*)(slothome);
+	say("    @",&memory[childport]);
+	say("    usb",memory[childport]);
+
+	say("    status(before):",portsc);
+
+	*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
+	waitevent(0x22);
+	portsc=*(DWORD*)(portbase+childport*0x10-0x10);
+	say("    status(reset1):",portsc);
+
+	*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
+	waitevent(0x22);
+	portsc=*(DWORD*)(portbase+childport*0x10-0x10);
+	say("    status(reset2):",portsc);
+
+	DWORD linkstate=(portsc>>5)&0xf;
+	speed=(portsc>>10)&0xf;
+	say("    linkstate:",linkstate);
+	say("    speed:",speed);
+
+	say("}",0);
+
+	device(routestring,childport,speed);
+}
+return;
+}
 
 
-//如果非roothub，那么它本身是个设备，基本初始化后本函数被使用，已经有了slot
+
+//如果非roothub，那么它本身是个设备，基本初始化后已经被分配了slot
 //只要传递slot号，就能得到我们手动分配的内存
-	say("normal hub",0);
+
+	if(deviceprotocol==0) say("hub(no TT)",0);
+	if(deviceprotocol==1) say("hub(single TT)",0);
+	if(deviceprotocol==2) say("hub(multi TT)",0);
 	say("{",0);
 	QWORD slotdata=slothome+slot*0x8000;
 	QWORD inputcontext=slotdata;
 	QWORD outputcontext=slotdata+0x1000;
 	QWORD controladdr=slotdata+0x2000;
+	QWORD intaddr=slotdata+0x3000;
 	QWORD buffer=slotdata+0x4000;
 	QWORD hubbuffer=slotdata+0x5000;
 
@@ -970,24 +1004,15 @@ void hub(QWORD routestring,QWORD port,QWORD slot)
 
 
 
-
+/*
 	//-------------这是一个hub,修改部分context---------------
-        say("2.change&evaluate:",0);
+	say("2.change&evaluate:",0);
 
 	//slot context
 	DWORD* tempaddr=(DWORD*)(inputcontext+contextsize);
-        tempaddr[0]|=(1<<26);		//is hub
+	tempaddr[0]|=(1<<26);		//is hub
 	tempaddr[1]|=(count<<24);	//howmany hub this hub has
-/*
-	context.d2=(ttt<<16)+(ttportnum<<8)+(tthubslot);
-
-	//ep0 context
-	context.d0=0;
-	context.d1=(packetsize<<16)+(4<<3)+6;
-	context.d2=controladdr+1;
-	context.d3=0;
-	context.d4=0x40;
-*/
+	tempaddr[2]|=0;		//(ttt<<16)+(ttportnum<<8)+(tthubslot);
 
 	command(inputcontext,0,0, (slot<<24)+(13<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
@@ -995,13 +1020,76 @@ void hub(QWORD routestring,QWORD port,QWORD slot)
 	DWORD slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
 	if(slotstate==2) say("    slot evaluated!",0);
 	else say("    slot state:",slotstate);
+*/
 
+
+
+
+	//change input context&ep1.1 context
+	say("configure",0);
+	context.addr=inputcontext;
+	context.dci=0;			//input context
+        context.d0=0;
+	context.d1=9;
+	context.d2=0;
+	context.d3=0;
+	context.d4=0;
+	writecontext();
+
+	if( (interval<=2)|(interval==0xff) ) interval=3;
+	context.dci=4;			//ep1.1 context
+	context.d0=interval<<16;
+	context.d1=(8<<16)+(7<<3)+(3<<1);
+	context.d2=intaddr+1;
+	context.d3=0;
+	context.d4=0x80008;
+	writecontext();
+
+
+	//ok,sent command
+	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
+	DWORD slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
+	DWORD epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
+	if(slotstate==3) say("    slot configured!",0);
+	else say("    slot state:",slotstate);
+	if(epstate==0){
+		say("    ep3 wrong",0);
+		goto failed;
+	}
+
+
+
+
+	//----------prepare ep1.1 ring-------------
+	//[0,3f0)第一段正常trb
+	QWORD temp;
+	trb.addr=intaddr;
+	trb.d1=0;
+	trb.d2=6;
+	trb.d3=0x25+(1<<10);
+	for(temp=0;temp<0x3f;temp++)
+	{
+		trb.d0=hubbuffer+temp*0x10;
+		writetrb();
+	}
+	//[3f0,400)第一段结尾link trb指向[0,3f0)
+	trb.addr=intaddr;
+	trb.d0=intaddr;
+	trb.d1=0;
+	trb.d2=6;
+	trb.d3=1+(6<<10);
+	writetrb();
+
+	//敲门铃，开始执行
+	ring(slot,3);
+	//------------------------------------------
 
 
 
 
 	//------------------set port feathre-------------
-	QWORD childport;
 	say("3.childports",0);
 
 	say("    resetting",0);
@@ -1022,7 +1110,7 @@ void hub(QWORD routestring,QWORD port,QWORD slot)
 	//wait 100ms
 
 	//get current status
-	say("    getting statu:",0);
+	say("    getting status:",0);
 	packet.bmrequesttype=0xa3;	//devhost|class|rt_other
 	packet.brequest=0;		//req_get_status
 	packet.wvalue=0;		//0
@@ -1042,7 +1130,8 @@ void hub(QWORD routestring,QWORD port,QWORD slot)
 		if( (status&1) == 0 ) say("nothing in port:",childport);
 		else
 		{
-			say("port:",0);
+			say("port:",childport);
+			say("{",0);
 			say("    status:",status);
 
 			QWORD speed=(status>>9)&1;
@@ -1050,14 +1139,11 @@ void hub(QWORD routestring,QWORD port,QWORD slot)
 			if(speed==3) say("    wrong speed",0);
 			if(speed==0) say("    full speed",0);
 			if(speed==2) say("    high speed",0);
+			say("}",0);
 
+			device(port,childport,speed);
 		}
 	}
-
-
-
-
-	say("4.device under one hub:",0);
 
 
 
@@ -1075,27 +1161,70 @@ say("}",0);
 
 
 
+int preparevariety()
+{
+	QWORD xhciaddr;
+	DWORD temp;
+        QWORD* memory;
+	int i;
+
+	//找xhci在哪里
+	memory=(QWORD*)0x4000;
+	for(i=0;i<0x200;i++)
+	{
+		if(memory[i]==0x69636878){
+			xhciaddr=memory[i+1];
+			break;
+		}
+	}
+	if(i>=0x1ff) return -1;
+
+	say("xhci@",xhciaddr);
+	say("{",0);
+
+	//读几个变量
+	doorbell=xhciaddr+(*(DWORD*)(xhciaddr+0x14));
+        say("doorbell@",doorbell);
+
+        runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
+	say("runtime@",runtime);
+
+	temp=(*(DWORD*)xhciaddr) & 0xffff;	//caplength
+	temp+=xhciaddr;				//operational
+	portbase=temp+0x400;
+	say("portbase@",portbase);
+
+	temp=*(DWORD*)(xhciaddr+4);		//hcsparams1
+	portcount=temp>>24;
+	say("portcount:",portcount);
+
+	temp=*(DWORD*)(xhciaddr+0x10);		//capparams
+	contextsize=0x20;
+	if((temp&0x4) == 0x4) contextsize*=2;
+        say("contextsize:",contextsize);
+
+	say("}",0);
+	return 1;	//success
+}
+
+
+
+
 void initusb()
 {
-	//得到变量
-        QWORD* memory=(QWORD*)slothome;
-
-        doorbell=memory[0];
-	runtime=memory[1];
-        contextsize=memory[2];
-        portbase=memory[4];
-        portcount=memory[5];
-        usb3start=memory[6];
-        usb3count=memory[7];
-        usb2start=memory[8];
-        usb2count=memory[9];
-
 	//
+	if(preparevariety()<0) return;
+
+	//干掉原来的isr，用下面的新的
 	int20();
 
 	//从根开始
 	hub(0,0,0);
 }
+
+
+
+
 explainevent(QWORD addr)
 {
 shout("event@",addr);

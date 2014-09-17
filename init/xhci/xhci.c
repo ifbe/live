@@ -20,17 +20,7 @@ static QWORD portaddr=0;
 static QWORD memaddr=0;
 
 volatile static QWORD operational;
-volatile static QWORD doorbell;
 static QWORD runtime;
-static QWORD contextsize;
-
-static QWORD portbase;
-static QWORD portcount;
-static QWORD usb3start;
-static QWORD usb3count;
-static QWORD usb2start;
-static QWORD usb2count;
-
 
 
 
@@ -229,7 +219,7 @@ QWORD probepci()
         say("xhci@",memaddr);
 
         int i=0;
-        QWORD* table=(QWORD*)0x5000;
+        QWORD* table=(QWORD*)0x4000;
         for(i=0;i<0x200;i+=2)
         {
                 if(table[i]==0){
@@ -259,13 +249,13 @@ int ownership(QWORD addr)
 	temp&=0x1000000;
 	if(temp == 0x1000000)
 	{
-		say("    grabing ownership",0);
+		say("grabing ownership",0);
 
 		temp=*(DWORD*)addr;
 		temp&=0x10000;
 		if(temp == 0)
 		{
-			say("    bios gone",0);
+			say("bios gone",0);
 			return 0;
 		}
 	}
@@ -275,30 +265,32 @@ int ownership(QWORD addr)
 }
 void supportedprotocol(QWORD addr)
 {
+	QWORD* memory=(QWORD*)(slothome);
+	int i;
 	QWORD first=(*(DWORD*)addr) >> 16;
 	QWORD third=*(DWORD*)(addr+8);
+	QWORD start=third & 0xff;
+	QWORD count=(third>>8) & 0xff;
 
-	if(first>=0x300)	//usb3
+
+	if(first>=0x100)	//usb1
 	{
-		usb3start=third & 0xff;
-		usb3count=(third>>8) & 0xff;
-
-		say("    usb3:",first);
-		say("    firstport:",usb3start);
-		say("    count:",usb3count);
+		say("    usb1:port",start);
+		for(i=start;i<start+count;i++) memory[i]=1;
 	}
 	else if(first>=0x200)	//usb2
 	{
-		usb2start=third & 0xff;
-		usb2count=(third>>8) & 0xff;
-
-		say("    usb2:",first);
-		say("    firstport:",usb2start);
-		say("    count:",usb2count);
+		say("    usb2:port",start);
+		for(i=start;i<start+count;i++) memory[i]=2;
+	}
+	else if(first>=0x300)	//usb3
+	{
+		say("    usb3:port",start);
+		for(i=start;i<start+count;i++) memory[i]=2;
 	}
 	else
 	{
-		say("usb1?",0);
+		say("    usb?",0);
 	}
 }
 
@@ -313,12 +305,12 @@ void explainxecp(QWORD addr)
 	say("{",0);
 	while(1)
 	{
-		say("    @",addr);
+		say("@",addr);
 		temp=*(DWORD*)addr;
 		BYTE type=temp&0xff;
 		QWORD next=(temp>>6)&0x3fc;
 
-		say("    cap:",type);
+		say("cap:",type);
 		switch(type)
 		{
 			case 1:{
@@ -357,13 +349,7 @@ say("{",0);
 	QWORD capparams=*(DWORD*)(memaddr+0x10);
 
 	operational=memaddr+caplength;
-	doorbell=memaddr+(*(DWORD*)(memaddr+0x14));
 	runtime=memaddr+(*(DWORD*)(memaddr+0x18));
-	portbase=operational+0x400;
-	portcount=hcsparams1>>24;
-
-	if( (capparams&0x4) == 0x4){contextsize=0x40;}
-	else{contextsize=0x20;}
 
 	say("    version:",version);
 	say("    caplength:",caplength);
@@ -372,13 +358,9 @@ say("{",0);
 	say("    hcsparams2:",hcsparams2);
 	say("    hcsparams3:",hcsparams3);
 	say("    capparams:",capparams);
-	say("    contextsize:",contextsize);
 
 	say("    operational@",operational);
-	say("    doorbell@",doorbell);
 	say("    runtime@",runtime);
-	say("    portbase@",portbase);
-	say("    portcount:",portcount);
 
 say("}",0);
 
@@ -621,18 +603,6 @@ void initxhci()
 
 	//xhci
 	if(probexhci()<0) goto end;
-
-	//important varieties for usb function
-	QWORD* memory=(QWORD*)slothome;
-	memory[0]=doorbell;
-	memory[1]=runtime;
-	memory[2]=contextsize;
-	memory[4]=portbase;
-	memory[5]=portcount;
-	memory[6]=usb3start;
-	memory[7]=usb3count;
-	memory[8]=usb2start;
-	memory[9]=usb2count;
 
 end:		//就一行空白
 	say("",0);
