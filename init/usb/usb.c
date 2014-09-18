@@ -19,7 +19,7 @@
 //设备分两种，一种是hub，一种是设备
 //routestring:上层hub在哪
 //port:本设备连在上层hub的哪个port
-void hub(QWORD routestring,QWORD port,QWORD slot);
+void hub(QWORD rootport,QWORD routestring,QWORD slot);
 
 static QWORD runtime;
 static QWORD portbase;
@@ -675,7 +675,7 @@ say("}",0);
 
 
 //routestring:设备的上级hub位置，port:设备自己所在hub内部port号
-void device(QWORD routestring,QWORD port,DWORD speed)
+void device(QWORD rootport,QWORD routestring,DWORD speed)
 {
 	say("device",0);
 	say("{",0);
@@ -727,7 +727,7 @@ void device(QWORD routestring,QWORD port,DWORD speed)
 
 	context.dci=1;			//slot context
         context.d0=(3<<27)+(speed<<20)+routestring;
-	context.d1=port<<16;
+	context.d1=rootport<<16;
 	writecontext();
 
 	context.dci=2;			//ep0 context
@@ -887,7 +887,7 @@ void device(QWORD routestring,QWORD port,DWORD speed)
 	}
 	else if(classcode==9&&interfaceclass==9)
 	{
-		hub(routestring,port,slot);	//这是个hub，交给设备驱动
+		hub(rootport,0,slot);	//这是个hub，交给设备驱动
 	}
 	else
 	{
@@ -908,7 +908,7 @@ void device(QWORD routestring,QWORD port,DWORD speed)
 
 
 //有routestring和port就能得到设备物理位置，有slot就能得到hc眼中的虚拟位置
-void hub(QWORD routestring,QWORD port,QWORD slot)
+void hub(QWORD rootport,QWORD routestring,QWORD slot)
 {
 QWORD childport;
 DWORD speed;		//第一步得到这个，给context用
@@ -958,7 +958,7 @@ for(childport=1;childport<=portcount;childport++)
 
 	say("}",0);
 
-	device(routestring,childport,speed);
+	device(childport,0,speed);
 }
 return;
 }
@@ -1141,7 +1141,7 @@ return;
 			if(speed==2) say("    high speed",0);
 			say("}",0);
 
-			device(port,childport,speed);
+			device(rootport,childport,speed);
 		}
 	}
 
