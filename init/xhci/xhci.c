@@ -272,25 +272,25 @@ void supportedprotocol(QWORD addr)
 	QWORD start=third & 0xff;
 	QWORD count=(third>>8) & 0xff;
 
-
-	if(first>=0x100)	//usb1
+	//say("first:",first);
+	if(first<0x100)		//[0,0xff]
+	{
+		say("    usb?",0);
+	}
+	else if(first<=0x200)	//[0x100,0x1ff]
 	{
 		say("    usb1:port",start);
 		for(i=start;i<start+count;i++) memory[i]=1;
 	}
-	else if(first>=0x200)	//usb2
+	else if(first<=0x300)	//[0x200,0x2ff]
 	{
 		say("    usb2:port",start);
 		for(i=start;i<start+count;i++) memory[i]=2;
 	}
-	else if(first>=0x300)	//usb3
+	else			//[0x300,0x3ff]
 	{
 		say("    usb3:port",start);
-		for(i=start;i<start+count;i++) memory[i]=2;
-	}
-	else
-	{
-		say("    usb?",0);
+		for(i=start;i<start+count;i++) memory[i]=3;
 	}
 }
 

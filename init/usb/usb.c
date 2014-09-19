@@ -1163,8 +1163,8 @@ say("}",0);
 
 int preparevariety()
 {
+	volatile DWORD temp;
 	QWORD xhciaddr;
-	DWORD temp;
         QWORD* memory;
 	int i;
 
@@ -1183,15 +1183,16 @@ int preparevariety()
 	say("{",0);
 
 	//读几个变量
-	doorbell=xhciaddr+(*(DWORD*)(xhciaddr+0x14));
+	temp=(*(DWORD*)(xhciaddr+0x14));
+	doorbell=xhciaddr+temp;
         say("doorbell@",doorbell);
 
-        runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
+	temp=(*(DWORD*)(xhciaddr+0x18));
+        runtime=xhciaddr+temp;
 	say("runtime@",runtime);
 
 	temp=(*(DWORD*)xhciaddr) & 0xffff;	//caplength
-	temp+=xhciaddr;				//operational
-	portbase=temp+0x400;
+	portbase=xhciaddr+temp+0x400;
 	say("portbase@",portbase);
 
 	temp=*(DWORD*)(xhciaddr+4);		//hcsparams1
