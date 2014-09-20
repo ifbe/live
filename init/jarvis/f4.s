@@ -220,8 +220,8 @@ explainrbx:		;care about 32bit only,because......
 clear:
 ;lea edi,[rel line0]
 mov edi,0x6000
-mov al,0x20
 mov ecx,128*0x30
+xor rax,rax
 rep stosb
 ;lea edi,[rel line0]
 mov edi,0x6000

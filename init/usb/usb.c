@@ -911,45 +911,38 @@ DWORD speed;		//第一步得到这个，给context用
 //用xhci spec里面的root port reset等办法处理port,得到port信息
 if(slot==0)
 {
-say("root hub",0);
-
 for(childport=1;childport<=portcount;childport++)
 {
+say("root port:",childport);
+say("{",0);
 	DWORD portsc=*(DWORD*)(portbase+childport*0x10-0x10);
-	//本port里面没有设备
-	if( (portsc&0x1) != 0x1){
-		say("nothing in port:",childport);
-		continue;
+	say("portsc:",portsc);
+	if( (portsc&0x1) == 0x1)
+	{
+		QWORD* memory=(QWORD*)(slothome);
+		say("usb version:",memory[childport]);
+
+		*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
+		waitevent(0x22);
+		portsc=*(DWORD*)(portbase+childport*0x10-0x10);
+		say("status(reset1):",portsc);
+
+		*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
+		waitevent(0x22);
+		portsc=*(DWORD*)(portbase+childport*0x10-0x10);
+		say("status(reset2):",portsc);
+
+		DWORD linkstate=(portsc>>5)&0xf;
+		speed=(portsc>>10)&0xf;
+		say("linkstate:",linkstate);
+		say("speed:",speed);
 	}
+say("}",0);
 
-	//本port里面有设备
-	say("port:",childport);
-	say("{",0);
-
-	QWORD* memory=(QWORD*)(slothome);
-	say("    @",&memory[childport]);
-	say("    usb",memory[childport]);
-
-	say("    status(before):",portsc);
-
-	*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
-	waitevent(0x22);
-	portsc=*(DWORD*)(portbase+childport*0x10-0x10);
-	say("    status(reset1):",portsc);
-
-	*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
-	waitevent(0x22);
-	portsc=*(DWORD*)(portbase+childport*0x10-0x10);
-	say("    status(reset2):",portsc);
-
-	DWORD linkstate=(portsc>>5)&0xf;
-	speed=(portsc>>10)&0xf;
-	say("    linkstate:",linkstate);
-	say("    speed:",speed);
-
-	say("}",0);
-
-	device(childport,0,speed);
+	if( (portsc&0x1) == 0x1)
+	{
+		device(childport,0,speed);
+	}
 }
 return;
 }
@@ -1082,7 +1075,7 @@ return;
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
-	say("5.ep1.1 ring:");
+	say("5.ep1.1 ring:",0);
 	QWORD temp;
 	trb.d1=0;
 	trb.d2=1;
@@ -1107,55 +1100,47 @@ return;
 
 
 	//------------------set port feathre-------------
-	say("childports:",0);
-
-	say("    resetting",0);
-	packet.bmrequesttype=0x23;	//host2dev|class|rt_other
-	packet.brequest=3;		//set feathre
-	packet.wvalue=0x4;		//f_port_reset
-	packet.wlength=0;		//0
-	packet.buffer=0;
 	for(childport=1;childport<=count;childport++)
 	{
+	say("port:",childport);
+	say("{",0);
+		say("resetting",0);
+		packet.bmrequesttype=0x23;	//host2dev|class|rt_other
+		packet.brequest=3;		//set feathre
+		packet.wvalue=0x4;		//f_port_reset
+		packet.wlength=0;		//0
+		packet.buffer=0;
 		packet.windex=childport;	//(??<<8)|(childport+1)
 		controltransfer(controladdr);
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
-	}
 
-	//wait 100ms
-
-	//get current status
-	say("    getting status:",0);
-	packet.bmrequesttype=0xa3;	//devhost|class|rt_other
-	packet.brequest=0;		//req_get_status
-	packet.wvalue=0;		//0
-	packet.wlength=4;		//0
-	for(childport=1;childport<=count;childport++)
-	{
+		say("getting status:",0);
+		packet.bmrequesttype=0xa3;	//devhost|class|rt_other
+		packet.brequest=0;		//req_get_status
+		packet.wvalue=0;		//0
+		packet.wlength=4;		//0
 		packet.windex=childport;	//childport+1
 		packet.buffer=hubbuffer+childport*4;	//某个地址
 		controltransfer(controladdr);
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
-	}
-	for(childport=1;childport<=count;childport++)
-	{
+
 		DWORD status=*(DWORD*)(hubbuffer+childport*4);
-		if( (status&1) == 0 ) say("nothing in port:",childport);
-		else
+		say("status:",status);
+		if( (status&1) == 1 )
 		{
-			say("port:",childport);
-			say("{",0);
-			say("    status:",status);
-
 			QWORD speed=(status>>9)&1;
-			if(speed==1) say("    low speed",0);
-			if(speed==3) say("    wrong speed",0);
-			if(speed==0) say("    full speed",0);
-			if(speed==2) say("    high speed",0);
-			say("}",0);
+			if(speed==1) say("low speed",0);
+			if(speed==3) say("wrong speed",0);
+			if(speed==0) say("full speed",0);
+			if(speed==2) say("high speed",0);
 
+		}
+	say("}",0);
+
+		if( (status&1) == 1 )
+		{
 			device(rootport,childport,speed);
 		}
 	}

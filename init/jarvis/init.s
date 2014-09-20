@@ -115,6 +115,9 @@ call endofjarvis+0x8000		;disk@0xc000
     mov edi,0x6000
     mov rax,"[   /]$ "
     stosq
+    mov ecx,128*0x30-8
+    xor rax,rax
+    rep stosb
 
 ;准备进入正式程序
     lea rax,[rel function1]
