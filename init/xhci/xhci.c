@@ -19,7 +19,6 @@
 static QWORD portaddr=0;
 static QWORD memaddr=0;
 
-volatile static QWORD operational;
 static QWORD runtime;
 
 
@@ -348,7 +347,7 @@ say("{",0);
 	QWORD hcsparams3=*(DWORD*)(memaddr+0xc);
 	QWORD capparams=*(DWORD*)(memaddr+0x10);
 
-	operational=memaddr+caplength;
+	volatile QWORD operational=memaddr+caplength;
 	runtime=memaddr+(*(DWORD*)(memaddr+0x18));
 
 	say("    version:",version);

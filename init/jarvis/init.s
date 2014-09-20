@@ -27,7 +27,7 @@ push rbx
 	mov ebx,[0xfe8]			;地址
 	mov [ebx],al
 	inc ebx
-	cmp ebx,0xfe0
+	cmp ebx,0xfc0
 	jb .newaddr
 	mov ebx,0x800
 	.newaddr:
@@ -93,11 +93,21 @@ call endofjarvis+0x8000		;disk@0xc000
 
 
 ;___________________________________________
-
+;准备1维位置和偏移
     mov qword [rel addr],0x40000         ;r14 memory pointer
     mov qword [rel offset],0x420         ;r15 offset pointer
 
-;清空keyboard buffer
+;准备二维xy坐标
+    mov rax,"x"
+    mov [0x4fc0],rax
+    mov rax,512			;x坐标
+    mov [0x4fc8],rax
+    mov rax,"y"
+    mov [0x4fd0],rax
+    mov rax,256			;y坐标
+    mov [0x4fd8],rax
+
+;清空input buffer
     mov edi,0x800
     mov ecx,0x100
     xor rax,rax
@@ -111,7 +121,7 @@ call endofjarvis+0x8000		;disk@0xc000
     mov rax,0x800
     mov [0xff8],rax
 
-;清空keyboard buffer
+;清空screen buffer
     mov edi,0x6000
     mov rax,"[   /]$ "
     stosq

@@ -1228,40 +1228,58 @@ void initusb()
 
 explainevent(QWORD addr)
 {
-shout("event@",addr);
         //trb种类
         QWORD trbtype=*(DWORD*)(addr+0xc);
         trbtype=(trbtype>>10)&0x3f;
-        shout("    trbtype:",trbtype);
 
         switch(trbtype)
         {
                 case 0x20:{
-                        shout("    transfer complete:",*(DWORD*)addr);
+			shout("event@",addr);
+			QWORD transfertrb=*(QWORD*)addr;
+                        shout("    transfer complete:",transfertrb);
+			QWORD slot=(*(QWORD*)(addr+0xc))>>24;
+			shout("    slot:",slot);
+			QWORD endpoint=( (*(QWORD*)(addr+0xc)) >> 16 )&0x3f;
+			shout("    endpoint:",endpoint);
+			if(endpoint!=1)
+			{
+				QWORD buffer=*(QWORD*)transfertrb;
+				shout("    buffer:",buffer);
+				QWORD report=*(QWORD*)buffer;
+				shout("    report:",report);
+			}
                         break;
                 }
                 case 0x21:{
+			shout("event@",addr);
                         shout("    command complete:",*(DWORD*)addr);
                         break;
                 }
                 case 0x22:{             //设备插入拔出
+			shout("event@",addr);
 
                         //哪个端口改变了
                         QWORD portid=(*(DWORD*)addr) >> 24;
-                        shout("    port id:",portid);
+                        shout("    port change:",portid);
 
                         QWORD portaddr=portbase+portid*0x10-0x10;
                         shout("    port addr:",portaddr);
 
                         //到改变的地方看看
                         QWORD portsc=*(DWORD*)portaddr;
-                        shout("    status:",portsc);
+                        shout("    portsc:",portsc);
 
                         //告诉主控，收到变化,bit17写1(bit1不能写)
                         *(DWORD*)portaddr=portsc&0xfffffffd;
 
                         break;
                 }
+		default:
+		{
+			shout("event@",addr);
+        		shout("    unknown trb:",trbtype);
+		}
         }
 }
 void realisr20()
@@ -1275,6 +1293,7 @@ shout("{",0);
         eventaddr=erdp&0xfffffffffffffff0;
 
         QWORD temp=eventaddr;
+	QWORD count=0;
         QWORD pcs=(*(DWORD*)(temp+0xc))&0x1;
         while(1)
         {
@@ -1286,6 +1305,10 @@ shout("{",0);
                 {
                         temp=eventringhome;
                 }
+
+		count++;
+		if(count>0x20) break;
+
                 if( ((*(DWORD*)(temp+0xc))&0x1) != pcs) break;
         }
 
@@ -1295,4 +1318,5 @@ shout("{",0);
 
 theend:
 shout("}",0);
+return;
 }
