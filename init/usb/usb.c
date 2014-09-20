@@ -73,24 +73,23 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 
 
 struct trb{
-	QWORD addr;
 	DWORD d0;
 	DWORD d1;
 	DWORD d2;
 	DWORD d3;
 };
 static struct trb trb;
-void writetrb()
+void writetrb(QWORD ringaddr)
 {
 	//得到这次往哪儿写
-	QWORD temp=*(QWORD*)(trb.addr+0xff0);
-	DWORD* pointer=(DWORD*)(trb.addr+temp);
+	QWORD temp=*(QWORD*)(ringaddr+0xff0);
+	DWORD* pointer=(DWORD*)(ringaddr+temp);
 	//say("transfer ring@",&pointer[0]);
 
 	//下次往哪儿写
 	temp+=0x10;
 	if(temp>0xf00)	temp=0;
-	*(QWORD*)(trb.addr+0xff0)=temp;
+	*(QWORD*)(ringaddr+0xff0)=temp;
 
 	pointer[0]=trb.d0;
 	pointer[1]=trb.d1;
@@ -108,48 +107,45 @@ struct setup{
 	WORD windex;		//	0
 	WORD wlength;		//	length
 
-	QWORD addr;
-	QWORD data;
+	QWORD buffer;
 };
 static struct setup packet;
-void controltransfer()
+void controltransfer(QWORD ringaddr)
 {
 if(packet.bmrequesttype>=0x80)
 {
 	//setup stage
-	trb.addr=packet.addr;
 	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
 	trb.d1=(packet.wlength<<16)+packet.windex;
 	trb.d2=8;
 	trb.d3=(3<<16)+(2<<10)+(1<<6)+1;
-	writetrb();
+	writetrb(ringaddr);
 
 	//data stage
-	trb.d0=packet.data;
+	trb.d0=packet.buffer;
 	trb.d1=0;
 	trb.d2=packet.wlength;
 	trb.d3=(1<<16)+(3<<10)+1;
-	writetrb();
+	writetrb(ringaddr);
 
 	//status stage
 	trb.d0=trb.d1=trb.d2=0;
 	trb.d3=(4<<10)+(1<<5)+1;
-	writetrb();
+	writetrb(ringaddr);
 }
 else
 {
 	//setup stage
-	trb.addr=packet.addr;
 	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
 	trb.d1=(packet.wlength<<16)+packet.windex;
 	trb.d2=8;
 	trb.d3=(2<<10)+(1<<6)+1;
-	writetrb();
+	writetrb(ringaddr);
 
 	//status stage
 	trb.d0=trb.d1=trb.d2=0;
 	trb.d3=(1<<16)+(4<<10)+(1<<5)+1;	//in
-	writetrb();
+	writetrb(ringaddr);
 }
 }
 
@@ -157,8 +153,6 @@ else
 
 
 struct context{		//传参太麻烦...
-	QWORD addr;	//目的context地址头
-	int dci;	//偏移多少个context(每个context0x20或者0x40字节)
 	DWORD d0;
 	DWORD d1;
 	DWORD d2;
@@ -170,9 +164,9 @@ struct context{		//传参太麻烦...
 };
 static struct context context;
 static QWORD contextsize;
-void writecontext()
+void writecontext(QWORD baseaddr,int dci)
 {
-	DWORD* pointer=(DWORD*)(context.addr+context.dci*contextsize);
+	DWORD* pointer=(DWORD*)(baseaddr+dci*contextsize);
 
 	pointer[0]=context.d0;
 	pointer[1]=context.d1;
@@ -283,7 +277,10 @@ say("conf@",addr);
 	i=*(BYTE*)(addr+0x6);
 	stringtoread[i]=1;
 	say("i:",i);
-	say("bmattributes:",*(BYTE*)(addr+7));
+	BYTE bmattribute=*(BYTE*)(addr+7);
+	say("bmattribute:",bmattribute);
+	if( (bmattribute&0x40) ==0x40 ) say("    self powered",0);
+	if( (bmattribute&0x20) ==0x20 ) say("    remote wake",0);
 	say("bmaxpower:",*(BYTE*)(addr+8));
 	say("",0);
 
@@ -325,15 +322,15 @@ say("endpoint@",addr);
 	say("type:",*(BYTE*)(addr+1));
 
 	BYTE endpoint=*(BYTE*)(addr+2);
-	say("endpoint:",endpoint&0xf);
-	if(endpoint>0x80){say("in",0);}
-	else{say("out",0);}
+	say("    endpoint:",endpoint&0xf);
+	if(endpoint>0x80){say("    in",0);}
+	else{say("    out",0);}
 
 	BYTE eptype=*(BYTE*)(addr+3);
-	if(eptype==0) say("control",0);
-	else if(eptype==1) say("isochronous",0);
-	else if(eptype==2) say("bulk",0);
-	else say("interrupt",0);
+	if(eptype==0) say("    control",0);
+	else if(eptype==1) say("    isochronous",0);
+	else if(eptype==2) say("    bulk",0);
+	else say("    interrupt",0);
 
 	say("wmaxpacketsize:",*(WORD*)(addr+4));
 	interval=*(BYTE*)(addr+6);
@@ -378,15 +375,15 @@ say("hid@",addr);
 	say("bcountrycode:",*(BYTE*)(addr+4));
 	say("bnumdescriptor:",*(BYTE*)(addr+5));
 
-	QWORD thistype=*(BYTE*)(addr+6);
-	if(thistype==0x22) reportsize=*(WORD*)(addr+7);
-	say("btype:",thistype);
+	say("btype:",*(BYTE*)(addr+6));
 	say("wlength:",*(WORD*)(addr+7));
-
-	thistype=*(BYTE*)(addr+9);
-	if(thistype==0x22) reportsize=*(WORD*)(addr+10);
 	say("btype:",*(BYTE*)(addr+9));
 	say("wlength:",*(WORD*)(addr+10));
+
+	QWORD thistype=*(BYTE*)(addr+6);
+	if(thistype==0x22) reportsize=*(WORD*)(addr+7);
+	thistype=*(BYTE*)(addr+9);
+	if(thistype==0x22) reportsize=*(WORD*)(addr+10);
 	say("",0);
 
 break;
@@ -568,9 +565,8 @@ void hid(QWORD slot)
 	packet.wvalue=0x2200;
 	packet.windex=0;
 	packet.wlength=reportsize;
-	packet.addr=controladdr;
-	packet.data=buffer+0x400;
-	controltransfer();
+	packet.buffer=buffer+0x400;
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explainhid(buffer+0x400);
@@ -579,24 +575,21 @@ void hid(QWORD slot)
 
 
 	//change input context&ep1.1 context
-	say("2.configure",0);
-	context.addr=inputcontext;
-	context.dci=0;			//input context
+	say("2.slot configure",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
 	context.d3=0;
 	context.d4=0;
-	writecontext();
+	writecontext(inputcontext,0);
 
 	if(interval<=2) interval=3;
-	context.dci=4;			//ep1.1 context
 	context.d0=interval<<16;
 	context.d1=(8<<16)+(7<<3)+(3<<1);
 	context.d2=intaddr+1;
 	context.d3=0;
 	context.d4=0x80008;
-	writecontext();
+	writecontext(inputcontext,4);		//ep1.1
 
 	//ok,sent command
 	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
@@ -604,7 +597,7 @@ void hid(QWORD slot)
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
 	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
-	if(slotstate==3) say("    slot configured!",0);
+	if(slotstate==3) say("    slot configured",0);
 	else say("    slot state:",slotstate);
 	if(epstate==0){
 		say("    ep3 wrong",0);
@@ -613,39 +606,49 @@ void hid(QWORD slot)
 
 
 	//set configuration:0x0000,0000,0001,09,00
+	say("3.device configure",0);
+
 	packet.bmrequesttype=0;
 	packet.brequest=9;
 	packet.wvalue=1;
 	packet.windex=0;
 	packet.wlength=0;
-	packet.addr=controladdr;
-	controltransfer();
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
-	say("    device configured",0);
+
+	packet.bmrequesttype=0x80;
+	packet.brequest=8;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=1;
+	packet.buffer=buffer+0x700;
+	controltransfer(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	say("    device configured:",*(BYTE*)(buffer+0x700));
 	//------------------------------------
 
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
-	say("3.ep1.1 ring",0);
 	QWORD temp;
-	trb.addr=intaddr;
+	say("4.ep1.1 ring",0);
 	trb.d1=0;
 	trb.d2=6;
 	trb.d3=0x25+(1<<10);
 	for(temp=0;temp<0x3f;temp++)
 	{
 		trb.d0=hidbuffer+temp*0x10;
-		writetrb();
+		writetrb(intaddr);
 	}
 	//[3f0,400)第一段结尾link trb指向[0,3f0)
-	trb.addr=intaddr;
 	trb.d0=intaddr;
 	trb.d1=0;
 	trb.d2=6;
 	trb.d3=1+(6<<10);
-	writetrb();
+	writetrb(intaddr);
 
 	//敲门铃，开始执行
 	ring(slot,3);
@@ -667,7 +670,7 @@ say("}",0);
 
 
 
-//routestring:设备的上级hub位置，port:设备自己所在hub内部port号
+//rootport:设备自己所在roothub port号,routestring:一层层地址
 void device(QWORD rootport,QWORD routestring,DWORD speed)
 {
 	say("device",0);
@@ -711,27 +714,23 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	//1)clear context
 	clear(slothome+slot*0x8000,0x8000);
 	//construct input
-	context.addr=inputcontext;
-	context.dci=0;			//input context
 	context.d0=0;
 	context.d1=3;
 	context.d2=0;
 	context.d3=0;
 	context.d4=0;
-	writecontext();
+	writecontext(inputcontext,0);
 
-	context.dci=1;			//slot context
         context.d0=(3<<27)+(speed<<20)+routestring;
 	context.d1=rootport<<16;
-	writecontext();
+	writecontext(inputcontext,1);	//slot context
 
-	context.dci=2;			//ep0 context
 	context.d0=0;
 	context.d1=(64<<16)+(4<<3)+6;
 	context.d2=controladdr+1;
 	context.d3=0;
 	context.d4=0x40;
-	writecontext();
+	writecontext(inputcontext,2);	//ep0
 
 	//output context地址填入对应dcbaa
 	*(DWORD*)(dcbahome+slot*8)=outputcontext;
@@ -765,9 +764,8 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.wvalue=0x100;
 	packet.windex=0;
 	packet.wlength=8;
-	packet.addr=controladdr;
-	packet.data=buffer;
-	controltransfer();
+	packet.buffer=buffer;
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
@@ -776,14 +774,12 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 
 	//evaluate
         say("    evaluating:",0);
-	context.addr=inputcontext;
-	context.dci=2;			//ep0 context
 	context.d0=0;
 	context.d1=(packetsize<<16)+(4<<3)+6;
 	context.d2=controladdr+1;
 	context.d3=0;
 	context.d4=0x40;
-	writecontext();
+	writecontext(inputcontext,2);	//ep0
 
 	command(inputcontext,0,0, (slot<<24)+(13<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
@@ -812,9 +808,8 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.wvalue=0x100;
 	packet.windex=0;
 	packet.wlength=0x12;
-	packet.addr=controladdr;
-	packet.data=buffer;
-	controltransfer();
+	packet.buffer=buffer;
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer);
@@ -827,14 +822,13 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.wvalue=0x200;
 	packet.windex=0;
 	packet.wlength=0x9;
-	packet.addr=controladdr;
-	packet.data=buffer+0x100;
-	controltransfer();
+	packet.buffer=buffer+0x100;
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	say("configure descriptor(all)@",buffer+0x100);
 	packet.wlength=*(WORD*)(buffer+0x102);
-	controltransfer();
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer+0x100);
@@ -847,9 +841,8 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.wvalue=0x300;
 	packet.windex=0;
 	packet.wlength=0xff;
-	packet.addr=controladdr;
-	packet.data=buffer+0x200;
-	controltransfer();
+	packet.buffer=buffer+0x200;
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
@@ -860,8 +853,8 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	if(stringtoread[temp]!=0)
 	{
 		packet.wvalue=0x300+temp;
-		packet.data=buffer+0x200+temp*0x40;
-		controltransfer();
+		packet.buffer=buffer+0x200+temp*0x40;
+		controltransfer(controladdr);
 		ring(slot,1);
 		waitevent(0x20);	//不用管成功失败
 	}
@@ -886,7 +879,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	}
 	else if(classcode==9&&interfaceclass==9)
 	{
-		hub(rootport,0,slot);	//这是个hub，交给设备驱动
+		hub(rootport,0,slot);	//交给设备驱动
 	}
 	else
 	{
@@ -992,9 +985,8 @@ return;
 	packet.wvalue=0x2900;
 	packet.windex=0;
 	packet.wlength=8;
-	packet.addr=controladdr;
-	packet.data=buffer+0x400;
-	controltransfer();
+	packet.buffer=buffer+0x400;
+	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer+0x400);
@@ -1028,24 +1020,21 @@ return;
 
 
 	//change input context&ep1.1 context
-	say("3.configure",0);
-	context.addr=inputcontext;
-	context.dci=0;			//input context
+	say("3.slot configure",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
 	context.d3=0;
 	context.d4=0;
-	writecontext();
+	writecontext(inputcontext,0);
 
 	if( (interval<=2)|(interval==0xff) ) interval=3;
-	context.dci=4;			//ep1.1 context
 	context.d0=interval<<16;
 	context.d1=(8<<16)+(7<<3)+(3<<1);
 	context.d2=intaddr+1;
 	context.d3=0;
 	context.d4=0x80008;
-	writecontext();
+	writecontext(inputcontext,4);		//ep1.1
 
 
 	//ok,sent command
@@ -1054,7 +1043,7 @@ return;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
 	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
-	if(slotstate==3) say("    slot configured!",0);
+	if(slotstate==3) say("    slot configured",0);
 	else say("    slot state:",slotstate);
 	if(epstate==0){
 		say("    ep3 wrong",0);
@@ -1064,26 +1053,51 @@ return;
 
 
 
+        //set configuration:0x0000,0000,0001,09,00
+	say("4.device configure",0);
+        packet.bmrequesttype=0;
+        packet.brequest=9;
+        packet.wvalue=1;
+        packet.windex=0;
+        packet.wlength=0;
+        controltransfer(controladdr);
+        ring(slot,1);
+        if(waitevent(0x20)<0) goto failed;
+
+	packet.bmrequesttype=0x80;
+	packet.brequest=8;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=1;
+	packet.buffer=buffer+0x700;
+	controltransfer(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	say("    device configured:",*(BYTE*)(buffer+0x700));
+        //------------------------------------
+
+
+
+
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
-	say("4.ep1.1 ring:");
+	say("5.ep1.1 ring:");
 	QWORD temp;
-	trb.addr=intaddr;
 	trb.d1=0;
-	trb.d2=6;
+	trb.d2=1;
 	trb.d3=0x25+(1<<10);
 	for(temp=0;temp<0x3f;temp++)
 	{
 		trb.d0=hubbuffer+temp*0x10;
-		writetrb();
+		writetrb(intaddr);
 	}
 	//[3f0,400)第一段结尾link trb指向[0,3f0)
-	trb.addr=intaddr;
 	trb.d0=intaddr;
 	trb.d1=0;
 	trb.d2=6;
 	trb.d3=1+(6<<10);
-	writetrb();
+	writetrb(intaddr);
 
 	//敲门铃，开始执行
 	ring(slot,3);
@@ -1093,19 +1107,18 @@ return;
 
 
 	//------------------set port feathre-------------
-	say("5.childports:",0);
+	say("childports:",0);
 
 	say("    resetting",0);
 	packet.bmrequesttype=0x23;	//host2dev|class|rt_other
 	packet.brequest=3;		//set feathre
 	packet.wvalue=0x4;		//f_port_reset
 	packet.wlength=0;		//0
-	packet.addr=controladdr;
-	packet.data=0;
+	packet.buffer=0;
 	for(childport=1;childport<=count;childport++)
 	{
 		packet.windex=childport;	//(??<<8)|(childport+1)
-		controltransfer();
+		controltransfer(controladdr);
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 	}
@@ -1118,12 +1131,11 @@ return;
 	packet.brequest=0;		//req_get_status
 	packet.wvalue=0;		//0
 	packet.wlength=4;		//0
-	packet.addr=controladdr;
 	for(childport=1;childport<=count;childport++)
 	{
 		packet.windex=childport;	//childport+1
-		packet.data=hubbuffer+childport*4;	//某个地址
-		controltransfer();
+		packet.buffer=hubbuffer+childport*4;	//某个地址
+		controltransfer(controladdr);
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 	}
