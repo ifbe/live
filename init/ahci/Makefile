@@ -3,7 +3,7 @@ c:
 	gcc -c -fPIC -O2 print.c
 	gcc -c -fPIC -O2 ahci.c
 	ld -T link.ld start.o print.o ahci.o -o temp.bin
-	nasm end.s -o temp
+	nasm size.s -o temp
 clean:
 	rm -f *.o
 	rm -f temp*

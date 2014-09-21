@@ -1,4 +1,6 @@
 c:
+	rm -rf build
+	mkdir build
 	gcc -c -fPIC -O2 start.c -o build/start.o
 	#sata
 	gcc -c -fPIC -O2 sata/identify.c -o build/identify.o
@@ -23,7 +25,7 @@ c:
 	build/parttable.o build/mount.o \
 	build/fat.o build/ntfs.o build/ext.o build/fs.o \
 	-o temp.bin
-	nasm else/16kb.s -o temp
+	nasm else/size.s -o temp
 clean:
-	rm -f build/*
+	rm -rf build
 	rm -f temp*

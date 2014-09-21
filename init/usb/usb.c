@@ -16,10 +16,11 @@
 					//+4000:	ep0 buffer
 					//+5000:	ep1.1 buffer
 
-//设备分两种，一种是hub，一种是设备
-//routestring:上层hub在哪
-//port:本设备连在上层hub的哪个port
-void hub(QWORD rootport,QWORD routestring,QWORD slot);
+//rootport:根port是哪一个
+//routestring:物理位置
+//比如:rootport=2,routestring=0x34
+//表示设备物理位置为:根hub的port2,第一层hub的port4,第二层hub的port3
+void device(QWORD rootport,QWORD routestring,DWORD speed);
 
 static QWORD runtime;
 static QWORD portbase;
@@ -606,7 +607,7 @@ void hid(QWORD slot)
 
 
 	//set configuration:0x0000,0000,0001,09,00
-	say("3.device configure",0);
+	say("3.set configuration",0);
 
 	packet.bmrequesttype=0;
 	packet.brequest=9;
@@ -670,234 +671,6 @@ say("}",0);
 
 
 
-//rootport:设备自己所在roothub port号,routestring:一层层地址
-void device(QWORD rootport,QWORD routestring,DWORD speed)
-{
-	say("device",0);
-	say("{",0);
-
-
-	//---------------obtain slot------------------
-	say("1.requesting slot",0);
-
-	command(0,0,0, (9<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
-
-	QWORD slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
-	if(slot>=0x18){
-		say("    bad slotnum",slot);
-		goto failed;
-	}
-	say("    obtained slot:",slot);
-	//-------------------------------------------
-
-
-
-
-	//-------------slot initialization----------------
-	QWORD slotdata=slothome+slot*0x8000;
-	QWORD inputcontext=slotdata;
-	QWORD outputcontext=slotdata+0x1000;
-	QWORD controladdr=slotdata+0x2000;
-	QWORD intaddr=slotdata+0x3000;
-	QWORD buffer=slotdata+0x4000;
-	QWORD hidbuffer=slotdata+0x5000;
-	DWORD slotstate;
-	DWORD epstate;
-
-	say("2.initing structure",0);
-	say("    inputcontext@",inputcontext);
-	say("    outputcontext@",outputcontext);
-	say("    ep0@",controladdr);
-	say("    ep1.1@",intaddr);
-
-	//1)clear context
-	clear(slothome+slot*0x8000,0x8000);
-	//construct input
-	context.d0=0;
-	context.d1=3;
-	context.d2=0;
-	context.d3=0;
-	context.d4=0;
-	writecontext(inputcontext,0);
-
-        context.d0=(3<<27)+(speed<<20)+routestring;
-	context.d1=rootport<<16;
-	writecontext(inputcontext,1);	//slot context
-
-	context.d0=0;
-	context.d1=(64<<16)+(4<<3)+6;
-	context.d2=controladdr+1;
-	context.d3=0;
-	context.d4=0x40;
-	writecontext(inputcontext,2);	//ep0
-
-	//output context地址填入对应dcbaa
-	*(DWORD*)(dcbahome+slot*8)=outputcontext;
-	*(DWORD*)(dcbahome+slot*8+4)=0;
-	//------------------------------------
-
-
-
-
-	//-----------address device-----------------
-	say("3.initing slot",0);
-
-
-	say("    address device",0);
-	command(inputcontext,0,0, (slot<<24)+(11<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
-
-	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
-	epstate=(*(DWORD*)(outputcontext+0x20))&0x3;
-	if(slotstate==2) say("    slot addressed!",0);
-	else say("    slot state:",slotstate);
-	if(epstate==0){
-		say("    ep0 wrong",0);
-		goto failed;
-	}
-
-	//first read(to obtain maxsize)
-	say("    getting packetsize",0);
-	packet.bmrequesttype=0x80;
-	packet.brequest=6;
-	packet.wvalue=0x100;
-	packet.windex=0;
-	packet.wlength=8;
-	packet.buffer=buffer;
-	controltransfer(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	DWORD packetsize=*(BYTE*)(buffer+7);
-	say("    got packetsize:",packetsize);
-
-	//evaluate
-        say("    evaluating:",0);
-	context.d0=0;
-	context.d1=(packetsize<<16)+(4<<3)+6;
-	context.d2=controladdr+1;
-	context.d3=0;
-	context.d4=0x40;
-	writecontext(inputcontext,2);	//ep0
-
-	command(inputcontext,0,0, (slot<<24)+(13<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
-
-	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
-	epstate=(*(DWORD*)(outputcontext+0x20))&0x3;
-	if(slotstate==2) say("    slot evaluated!",0);
-	else say("    slot state:",slotstate);
-	if(epstate==0){
-		say("    ep0 wrong",0);
-		goto failed;
-	}
-	//--------------------------------------------
-
-
-
-
-	//------------------get descriptor-----------------
-	say("4.now we know everything:",0);
-
-
-	//[buffer]:device descriptor
-	say("device descriptors@",buffer);
-	packet.bmrequesttype=0x80;
-	packet.brequest=6;
-	packet.wvalue=0x100;
-	packet.windex=0;
-	packet.wlength=0x12;
-	packet.buffer=buffer;
-	controltransfer(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	explaindescriptor(buffer);
-
-
-	//[buffer+0x100]:configure descriptor
-	say("configure descriptor@",buffer+0x100);
-	packet.bmrequesttype=0x80;
-	packet.brequest=6;
-	packet.wvalue=0x200;
-	packet.windex=0;
-	packet.wlength=0x9;
-	packet.buffer=buffer+0x100;
-	controltransfer(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	say("configure descriptor(all)@",buffer+0x100);
-	packet.wlength=*(WORD*)(buffer+0x102);
-	controltransfer(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	explaindescriptor(buffer+0x100);
-
-
-	//[buffer+0x200]:string descriptors
-	say("string descriptors@",buffer+0x200);
-	packet.bmrequesttype=0x80;
-	packet.brequest=6;
-	packet.wvalue=0x300;
-	packet.windex=0;
-	packet.wlength=0xff;
-	packet.buffer=buffer+0x200;
-	controltransfer(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	packet.windex=*(WORD*)(buffer+0x202);
-	DWORD temp=1;
-	for(;temp<8;temp++)		//所有字符串描述符
-	{
-	if(stringtoread[temp]!=0)
-	{
-		packet.wvalue=0x300+temp;
-		packet.buffer=buffer+0x200+temp*0x40;
-		controltransfer(controladdr);
-		ring(slot,1);
-		waitevent(0x20);	//不用管成功失败
-	}
-	}
-	//--------------------------------------------
-
-
-
-
-	//上一步得到基础信息
-	say("important infomation:",0);
-	say("    classcode:",classcode);
-	say("    interfaceclass:",interfaceclass);
-	say("    interval:",interval);
-	say("    reportsize:",reportsize);
-	say("}",0);
-
-	//已经知道设备是什么
-	if(classcode==0&&interfaceclass==3)
-	{
-		hid(slot);		//基础信息处理过了，交给设备驱动
-	}
-	else if(classcode==9&&interfaceclass==9)
-	{
-		hub(rootport,0,slot);	//交给设备驱动
-	}
-	else
-	{
-		say("unknown device",0);
-	}
-
-	//到这里正常结束
-	return;
-
-
-
-	failed:
-	say("}",0);
-}
-
-
-
-
 //有routestring和port就能得到设备物理位置，有slot就能得到hc眼中的虚拟位置
 void hub(QWORD rootport,QWORD routestring,QWORD slot)
 {
@@ -956,6 +729,8 @@ return;
 	if(deviceprotocol==1) say("hub(single TT)",0);
 	if(deviceprotocol==2) say("hub(multi TT)",0);
 	say("{",0);
+	say("rootport:",rootport);
+	say("routestring:",routestring);
 
 	QWORD slotdata=slothome+slot*0x8000;
 	say("0.slotdata@",slotdata);
@@ -972,7 +747,7 @@ return;
 
 
 	//----------------得到hub描述符-----------------
-	say("1.hub desc@",buffer+0x400);
+	say("1.hub descriptor...",0);
 	packet.bmrequesttype=0xa0;
 	packet.brequest=6;
 	packet.wvalue=0x2900;
@@ -993,7 +768,7 @@ return;
 
 
 	//-------------这是一个hub,修改部分context---------------
-	say("2.change&evaluate:",0);
+	say("2.change&evaluate...",0);
 
 	//slot context
 	DWORD* tempaddr=(DWORD*)(inputcontext+contextsize);
@@ -1005,15 +780,15 @@ return;
 	if(waitevent(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
-	if(slotstate==2) say("    slot evaluated!",0);
-	else say("    slot state:",slotstate);
+	if(slotstate==2) say("slot evaluated",0);
+	else say("slot state:",slotstate);
 
 
 
 
 
 	//change input context&ep1.1 context
-	say("3.slot configure",0);
+	say("3.slot configure...",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -1036,10 +811,10 @@ return;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
 	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
-	if(slotstate==3) say("    slot configured",0);
-	else say("    slot state:",slotstate);
+	if(slotstate==3) say("slot configured",0);
+	else say("slot state:",slotstate);
 	if(epstate==0){
-		say("    ep3 wrong",0);
+		say("ep3 wrong",0);
 		goto failed;
 	}
 
@@ -1047,7 +822,7 @@ return;
 
 
         //set configuration:0x0000,0000,0001,09,00
-	say("4.device configure",0);
+	say("4.set configuration...",0);
         packet.bmrequesttype=0;
         packet.brequest=9;
         packet.wvalue=1;
@@ -1062,12 +837,12 @@ return;
 	packet.wvalue=0;
 	packet.windex=0;
 	packet.wlength=1;
-	packet.buffer=buffer+0x700;
+	packet.buffer=buffer+0x500;
 	controltransfer(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
-	say("    device configured:",*(BYTE*)(buffer+0x700));
+	say("device configured:",*(BYTE*)(buffer+0x500));
         //------------------------------------
 
 
@@ -1104,7 +879,7 @@ return;
 	{
 	say("port:",childport);
 	say("{",0);
-		say("resetting",0);
+		say("resetting...",0);
 		packet.bmrequesttype=0x23;	//host2dev|class|rt_other
 		packet.brequest=3;		//set feathre
 		packet.wvalue=0x4;		//f_port_reset
@@ -1115,18 +890,18 @@ return;
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 
-		say("getting status:",0);
+		say("getting status...",0);
 		packet.bmrequesttype=0xa3;	//devhost|class|rt_other
 		packet.brequest=0;		//req_get_status
 		packet.wvalue=0;		//0
 		packet.wlength=4;		//0
 		packet.windex=childport;	//childport+1
-		packet.buffer=hubbuffer+childport*4;	//某个地址
+		packet.buffer=buffer+0x600;	//某个地址
 		controltransfer(controladdr);
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 
-		DWORD status=*(DWORD*)(hubbuffer+childport*4);
+		DWORD status=*(DWORD*)(buffer+0x600);
 		say("status:",status);
 		if( (status&1) == 1 )
 		{
@@ -1156,6 +931,238 @@ return;
 
 failed:
 say("}",0);
+}
+
+
+
+
+//rootport:设备自己所在roothub port号,routestring:一层层地址
+void device(QWORD rootport,QWORD routestring,DWORD speed)
+{
+	say("device",0);
+	say("{",0);
+	say("rootport:",rootport);
+	say("routestring:",routestring);
+
+
+	//---------------obtain slot------------------
+	say("1.requesting slot...",0);
+
+	command(0,0,0, (9<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
+	QWORD slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
+	if(slot>=0x18){
+		say("bad slotnum",slot);
+		goto failed;
+	}
+	say("obtained slot:",slot);
+	//-------------------------------------------
+
+
+
+
+	//-------------slot initialization----------------
+	QWORD slotdata=slothome+slot*0x8000;
+	QWORD inputcontext=slotdata;
+	QWORD outputcontext=slotdata+0x1000;
+	QWORD controladdr=slotdata+0x2000;
+	QWORD intaddr=slotdata+0x3000;
+	QWORD buffer=slotdata+0x4000;
+	QWORD hidbuffer=slotdata+0x5000;
+	DWORD slotstate;
+	DWORD epstate;
+
+	say("2.initing structure...",0);
+	say("    inputcontext@",inputcontext);
+	say("    outputcontext@",outputcontext);
+	say("    ep0@",controladdr);
+	say("    ep1.1@",intaddr);
+
+	//1)clear context
+	clear(slothome+slot*0x8000,0x8000);
+	//construct input
+	context.d0=0;
+	context.d1=3;
+	context.d2=0;
+	context.d3=0;
+	context.d4=0;
+	writecontext(inputcontext,0);
+
+        context.d0=(3<<27)+(speed<<20)+routestring;
+	context.d1=rootport<<16;
+	writecontext(inputcontext,1);	//slot context
+
+	context.d0=0;
+	context.d1=(64<<16)+(4<<3)+6;
+	context.d2=controladdr+1;
+	context.d3=0;
+	context.d4=0x40;
+	writecontext(inputcontext,2);	//ep0
+
+	//output context地址填入对应dcbaa
+	*(DWORD*)(dcbahome+slot*8)=outputcontext;
+	*(DWORD*)(dcbahome+slot*8+4)=0;
+	//------------------------------------
+
+
+
+
+	//-----------address device-----------------
+	say("3.initing slot...",0);
+
+
+	say("address command...",0);
+	command(inputcontext,0,0, (slot<<24)+(11<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
+	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
+	epstate=(*(DWORD*)(outputcontext+0x20))&0x3;
+	if(slotstate==2) say("slot addressed",0);
+	else say("slot state:",slotstate);
+	if(epstate==0){
+		say("ep0 wrong",0);
+		goto failed;
+	}
+
+	//first read(to obtain maxsize)
+	say("getting packetsize....",0);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x100;
+	packet.windex=0;
+	packet.wlength=8;
+	packet.buffer=buffer;
+	controltransfer(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	DWORD packetsize=*(BYTE*)(buffer+7);
+	say("got packetsize:",packetsize);
+
+	//evaluate
+        say("evaluating...",0);
+	context.d0=0;
+	context.d1=(packetsize<<16)+(4<<3)+6;
+	context.d2=controladdr+1;
+	context.d3=0;
+	context.d4=0x40;
+	writecontext(inputcontext,2);	//ep0
+
+	command(inputcontext,0,0, (slot<<24)+(13<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
+	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
+	epstate=(*(DWORD*)(outputcontext+0x20))&0x3;
+	if(slotstate==2) say("slot evaluated",0);
+	else say("slot state:",slotstate);
+	if(epstate==0){
+		say("ep0 wrong",0);
+		goto failed;
+	}
+	//--------------------------------------------
+
+
+
+
+	//------------------get descriptor-----------------
+	say("4.descriptors:",0);
+
+	//[buffer]:device descriptor
+	say("device descriptor...",0);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x100;
+	packet.windex=0;
+	packet.wlength=0x12;
+	packet.buffer=buffer;
+	controltransfer(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explaindescriptor(buffer);
+
+
+	//[buffer+0x100]:configure descriptor
+	say("configure descriptor...",0);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x200;
+	packet.windex=0;
+	packet.wlength=0x9;
+	packet.buffer=buffer+0x100;
+	controltransfer(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	packet.wlength=*(WORD*)(buffer+0x102);
+	controltransfer(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explaindescriptor(buffer+0x100);
+
+
+	//[buffer+0x200]:string descriptors
+	say("string descriptor...",0);
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x300;
+	packet.windex=0;
+	packet.wlength=0xff;
+	packet.buffer=buffer+0x200;
+	controltransfer(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	packet.windex=*(WORD*)(buffer+0x202);
+	DWORD temp=1;
+	for(;temp<8;temp++)		//所有字符串描述符
+	{
+	if(stringtoread[temp]!=0)
+	{
+		packet.wvalue=0x300+temp;
+		packet.buffer=buffer+0x200+temp*0x40;
+		controltransfer(controladdr);
+		ring(slot,1);
+		waitevent(0x20);	//不用管成功失败
+	}
+	}
+	//--------------------------------------------
+
+
+
+
+	//上一步得到基础信息
+	say("important infomation:",0);
+	say("    classcode:",classcode);
+	say("    interfaceclass:",interfaceclass);
+	say("    interval:",interval);
+	say("    reportsize:",reportsize);
+	say("}",0);
+
+
+
+
+	//已经知道设备是什么
+	if(classcode==0&&interfaceclass==3)
+	{
+		hid(slot);		//基础信息处理过了，交给设备驱动
+	}
+	else if(classcode==9&&interfaceclass==9)
+	{
+		hub(rootport,0,slot);	//交给设备驱动
+	}
+	else
+	{
+		say("unknown device",0);
+	}
+
+	//到这里正常结束
+	return;
+
+
+
+	failed:
+	say("}",0);
 }
 
 
@@ -1238,9 +1245,9 @@ explainevent(QWORD addr)
 			shout("event@",addr);
 			QWORD transfertrb=*(QWORD*)addr;
                         shout("    transfer complete:",transfertrb);
-			QWORD slot=(*(QWORD*)(addr+0xc))>>24;
+			QWORD slot=(*(DWORD*)(addr+0xc))>>24;
 			shout("    slot:",slot);
-			QWORD endpoint=( (*(QWORD*)(addr+0xc)) >> 16 )&0x3f;
+			QWORD endpoint=( (*(DWORD*)(addr+0xc)) >> 16 )&0x3f;
 			shout("    endpoint:",endpoint);
 			if(endpoint!=1)
 			{
@@ -1248,6 +1255,7 @@ explainevent(QWORD addr)
 				shout("    buffer:",buffer);
 				QWORD report=*(QWORD*)buffer;
 				shout("    report:",report);
+				ring(slot,endpoint);
 			}
                         break;
                 }
