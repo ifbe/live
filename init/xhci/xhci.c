@@ -16,15 +16,15 @@
 					//+4000:	ep0 buffer
 					//+5000:	ep1.1 buffer
 
-static QWORD portaddr=0;
-static QWORD memaddr=0;
+static QWORD xhciport=0;
+static QWORD xhciaddr=0;
 
 static QWORD runtime;
 
 
 
 
-void findaddr()
+void findxhci()
 {
         QWORD addr=0x4004;
         DWORD temp;
@@ -35,8 +35,8 @@ void findaddr()
                 if(temp==0x0c033000)
                 {
                         addr+=4;
-                        portaddr=*(DWORD*)addr;
-                        say("xhci(port)@",portaddr);
+                        xhciport=*(DWORD*)addr;
+                        say("xhci(port)@",xhciport);
                         return;
                 }
         }
@@ -67,12 +67,12 @@ say("{",0);
 	DWORD type;
 	DWORD next;
 
-	out32(0xcf8,portaddr+0x34);
+	out32(0xcf8,xhciport+0x34);
 	offset=in32(0xcfc)&0xff;
 
 	while(1)
 	{
-	out32(0xcf8,portaddr+offset);
+	out32(0xcf8,xhciport+offset);
 	temp=in32(0xcfc);
 	type=temp&0xff;
 	next=(temp>>8)&0xff;
@@ -81,59 +81,59 @@ say("{",0);
 	{
 		case 0x5:
 		{
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			temp=in32(0xcfc);
 			if( (temp&0x800000) ==0 )
 			{
 			say("32bit msi@",offset);
 
 			//before
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			say("    control:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+4);
+			out32(0xcf8,xhciport+offset+4);
 			say("    addr:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+8);
+			out32(0xcf8,xhciport+offset+8);
 			say("    data:",in32(0xcfc));
 
 			//do something
-			out32(0xcf8,portaddr+offset+8);
+			out32(0xcf8,xhciport+offset+8);
 			out32(0xcfc,0x20);
-			out32(0xcf8,portaddr+offset+4);
+			out32(0xcf8,xhciport+offset+4);
 			out32(0xcfc,0xfee00000);
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			out32(0xcfc,temp|0x10000);
 
 			//after
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			say("    control:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+4);
+			out32(0xcf8,xhciport+offset+4);
 			say("    addr:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+8);
+			out32(0xcf8,xhciport+offset+8);
 			say("    data:",in32(0xcfc));
 			}
 			else
 			{
 			say("64bit msi@",offset);
 
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			say("    control:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+4);
+			out32(0xcf8,xhciport+offset+4);
 			say("    addr:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+0xc);
+			out32(0xcf8,xhciport+offset+0xc);
 			say("    data:",in32(0xcfc));
 
-			out32(0xcf8,portaddr+offset+0xc);
+			out32(0xcf8,xhciport+offset+0xc);
 			out32(0xcfc,0x20);
-			out32(0xcf8,portaddr+offset+4);
+			out32(0xcf8,xhciport+offset+4);
 			out32(0xcfc,0xfee00000);
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			out32(0xcfc,temp|0x10000);
 
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			say("    control:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+4);
+			out32(0xcf8,xhciport+offset+4);
 			say("    addr:",in32(0xcfc));
-			out32(0xcf8,portaddr+offset+0xc);
+			out32(0xcf8,xhciport+offset+0xc);
 			say("    data:",in32(0xcfc));
 			}
 			break;
@@ -148,18 +148,18 @@ break;
 			DWORD* pendingtable;
 
 			//get mmio addr,msixtable addr,pendingtable addr
-			out32(0xcf8,portaddr+0x10);
-			memaddr=in32(0xcfc)&0xfffffff0;
+			out32(0xcf8,xhciport+0x10);
+			xhciaddr=in32(0xcfc)&0xfffffff0;
 
-			out32(0xcf8,portaddr+offset+8);
-			pendingtable=(DWORD*)( memaddr+in32(0xcfc) );
-			out32(0xcf8,portaddr+offset+4);
-			msixtable=(DWORD*)( memaddr+in32(0xcfc) );
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset+8);
+			pendingtable=(DWORD*)( xhciaddr+in32(0xcfc) );
+			out32(0xcf8,xhciport+offset+4);
+			msixtable=(DWORD*)( xhciaddr+in32(0xcfc) );
+			out32(0xcf8,xhciport+offset);
 			msixcontrol=in32(0xcfc);
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			out32(0xcfc,msixcontrol|0x80000000);
-			out32(0xcf8,portaddr+offset);
+			out32(0xcf8,xhciport+offset);
 			msixcontrol=in32(0xcfc);
 
 			say("    msix control:",msixcontrol);
@@ -201,21 +201,21 @@ QWORD probepci()
 {
 	//disable pin interrupt+enable bus mastering
 	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
-        out32(0xcf8,portaddr+0x4);
+        out32(0xcf8,xhciport+0x4);
         DWORD temp=in32(0xcfc)|(1<<10)|(1<<2);
-        out32(0xcf8,portaddr+0x4);
+        out32(0xcf8,xhciport+0x4);
         out32(0xcfc,temp);
 
-        out32(0xcf8,portaddr+0x4);
+        out32(0xcf8,xhciport+0x4);
         say("pci status and command:",(QWORD)in32(0xcfc));
 
 	//deal with capability list
 	explaincapability();
 
-	//get memaddr from bar0
-        out32(0xcf8,portaddr+0x10);
-        memaddr=in32(0xcfc)&0xfffffff0;
-        say("xhci@",memaddr);
+	//get xhciaddr from bar0
+        out32(0xcf8,xhciport+0x10);
+        xhciaddr=in32(0xcfc)&0xfffffff0;
+        say("xhci@",xhciaddr);
 
         int i=0;
         QWORD* table=(QWORD*)0x4000;
@@ -223,7 +223,7 @@ QWORD probepci()
         {
                 if(table[i]==0){
                         table[i]=0x69636878;
-                        table[i+1]=memaddr;
+                        table[i+1]=xhciaddr;
                         break;
                 }
         }
@@ -339,16 +339,16 @@ int probexhci()
 say("base information",0);
 say("{",0);
 
-	QWORD version=(*(DWORD*)memaddr) >> 16;
-	QWORD caplength=(*(DWORD*)memaddr) & 0xffff;
+	QWORD version=(*(DWORD*)xhciaddr) >> 16;
+	QWORD caplength=(*(DWORD*)xhciaddr) & 0xffff;
 
-	QWORD hcsparams1=*(DWORD*)(memaddr+4);
-	QWORD hcsparams2=*(DWORD*)(memaddr+8);
-	QWORD hcsparams3=*(DWORD*)(memaddr+0xc);
-	QWORD capparams=*(DWORD*)(memaddr+0x10);
+	QWORD hcsparams1=*(DWORD*)(xhciaddr+4);
+	QWORD hcsparams2=*(DWORD*)(xhciaddr+8);
+	QWORD hcsparams3=*(DWORD*)(xhciaddr+0xc);
+	QWORD capparams=*(DWORD*)(xhciaddr+0x10);
 
-	volatile QWORD operational=memaddr+caplength;
-	runtime=memaddr+(*(DWORD*)(memaddr+0x18));
+	volatile QWORD operational=xhciaddr+caplength;
+	runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
 
 	say("    version:",version);
 	say("    caplength:",caplength);
@@ -367,7 +367,7 @@ say("}",0);
 
 
 //mostly,grab ownership
-QWORD xecp=memaddr+( (capparams >> 16) << 2 );
+QWORD xecp=xhciaddr+( (capparams >> 16) << 2 );
 explainxecp(xecp);
 
 
@@ -478,7 +478,7 @@ say("1.stop&reset:",0);
 say("2.maxslot&dcbaa&crcr:",0);
 
 	//maxslot=deviceslots
-	*(DWORD*)(operational+0x38)=(*(DWORD*)(memaddr+4)) &0xff;
+	*(DWORD*)(operational+0x38)=(*(DWORD*)(xhciaddr+4)) &0xff;
 	say("    maxslot:",*(DWORD*)(operational+0x38) );
 
 	//dcbaa
@@ -593,12 +593,12 @@ void initxhci()
 	clear(xhcihome,0x100000);
 
 	//find pci address
-        findaddr();
-        if(portaddr==0) goto end;
+        findxhci();
+        if(xhciport==0) goto end;
 
 	//pci部分
         probepci();
-        if(memaddr==0) goto end;
+        if(xhciaddr==0) goto end;
 
 	//xhci
 	if(probexhci()<0) goto end;
