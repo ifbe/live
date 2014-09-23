@@ -2,6 +2,7 @@ bits 64
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F2----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;_________________________________________
 function2:
+
 cmp al,0x3b
 je f1
 cmp al,0x3c
@@ -36,17 +37,8 @@ jmp picture
 
 ;________________________________________
 picture:
-mov rsi,[rel jpegbase]		;图片
-mov edi,0x1000000
-mov ecx,1024*768
-cld
-rep movsd
 
-mov edi,0x1000000		;数字
-mov rbx,[rel jpegbase]
-call dumprbx
-
-	mov edi,0x1000000
+	mov edi,0x1400000
 
 	mov rbx,[0x4fd8]
 	cmp rbx,768
@@ -78,7 +70,19 @@ call dumprbx
 	add rdi,4096
 	loop .continue
 
-call writescreen
+
+	mov esi,[rel jpegbase]
+	mov edi,[0x3028]
+	mov bl,[0x3019]
+	shr bl,3
+	movzx ebx,bl
+	mov ecx,1024*768
+.continuescreen:
+	lodsd
+	mov [edi],eax
+	add edi,ebx
+	loop .continuescreen
+
 jmp forever
 ;_________________________________________
 jpegbase:dq 0x1400000

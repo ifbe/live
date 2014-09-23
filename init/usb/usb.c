@@ -111,7 +111,7 @@ struct setup{
 	QWORD buffer;
 };
 static struct setup packet;
-void controltransfer(QWORD ringaddr)
+void sendpacket(QWORD ringaddr)
 {
 if(packet.bmrequesttype>=0x80)
 {
@@ -567,7 +567,7 @@ void hid(QWORD slot)
 	packet.windex=0;
 	packet.wlength=reportsize;
 	packet.buffer=buffer+0x400;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explainhid(buffer+0x400);
@@ -576,7 +576,8 @@ void hid(QWORD slot)
 
 
 	//change input context&ep1.1 context
-	say("2.slot configure",0);
+	say("2.configure...",0);
+	say("slot...",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -584,7 +585,6 @@ void hid(QWORD slot)
 	context.d4=0;
 	writecontext(inputcontext,0);
 
-	if(interval<=2) interval=3;
 	context.d0=interval<<16;
 	context.d1=(8<<16)+(7<<3)+(3<<1);
 	context.d2=intaddr+1;
@@ -592,29 +592,28 @@ void hid(QWORD slot)
 	context.d4=0x80008;
 	writecontext(inputcontext,4);		//ep1.1
 
-	//ok,sent command
 	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
 	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
-	if(slotstate==3) say("    slot configured",0);
-	else say("    slot state:",slotstate);
+	if(slotstate==3) say("slot configured",0);
+	else say("slot state:",slotstate);
 	if(epstate==0){
-		say("    ep3 wrong",0);
+		say("ep3 wrong",0);
 		goto failed;
 	}
 
 
 	//set configuration:0x0000,0000,0001,09,00
-	say("3.set configuration",0);
+	say("deivce...",0);
 
 	packet.bmrequesttype=0;
 	packet.brequest=9;
 	packet.wvalue=1;
 	packet.windex=0;
 	packet.wlength=0;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
@@ -624,18 +623,20 @@ void hid(QWORD slot)
 	packet.windex=0;
 	packet.wlength=1;
 	packet.buffer=buffer+0x700;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
-	say("    device configured:",*(BYTE*)(buffer+0x700));
+	say("device configured:",*(BYTE*)(buffer+0x700));
 	//------------------------------------
+
+
 
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
 	QWORD temp;
-	say("4.ep1.1 ring",0);
+	say("3.ep1.1 ring",0);
 	trb.d1=0;
 	trb.d2=6;
 	trb.d3=0x25+(1<<10);
@@ -654,6 +655,25 @@ void hid(QWORD slot)
 	//敲门铃，开始执行
 	ring(slot,3);
 	//------------------------------------------
+
+
+
+
+	//-----------------------------------
+	say("get ep1.1 state...",0);
+	packet.bmrequesttype=0x80;
+	packet.brequest=0;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=2;
+	packet.buffer=buffer+0x600;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	say("ep1.1 state:",*(DWORD*)(buffer+0x600));
+	//-------------------------------------
+
+
 
 
 	//正常结束-------------------
@@ -754,7 +774,7 @@ return;
 	packet.windex=0;
 	packet.wlength=8;
 	packet.buffer=buffer+0x400;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer+0x400);
@@ -788,7 +808,8 @@ return;
 
 
 	//change input context&ep1.1 context
-	say("3.slot configure...",0);
+	say("3.configure...",0);
+	say("slot...",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -796,7 +817,6 @@ return;
 	context.d4=0;
 	writecontext(inputcontext,0);
 
-	if( (interval<=2)|(interval==0xff) ) interval=3;
 	context.d0=interval<<16;
 	context.d1=(8<<16)+(7<<3)+(3<<1);
 	context.d2=intaddr+1;
@@ -804,8 +824,6 @@ return;
 	context.d4=0x80008;
 	writecontext(inputcontext,4);		//ep1.1
 
-
-	//ok,sent command
 	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
@@ -822,13 +840,13 @@ return;
 
 
         //set configuration:0x0000,0000,0001,09,00
-	say("4.set configuration...",0);
+	say("device...",0);
         packet.bmrequesttype=0;
         packet.brequest=9;
         packet.wvalue=1;
         packet.windex=0;
         packet.wlength=0;
-        controltransfer(controladdr);
+        sendpacket(controladdr);
         ring(slot,1);
         if(waitevent(0x20)<0) goto failed;
 
@@ -838,7 +856,7 @@ return;
 	packet.windex=0;
 	packet.wlength=1;
 	packet.buffer=buffer+0x500;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
@@ -850,7 +868,7 @@ return;
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
-	say("5.ep1.1 ring:",0);
+	say("4.ep1.1 ring:",0);
 	QWORD temp;
 	trb.d1=0;
 	trb.d2=1;
@@ -874,6 +892,23 @@ return;
 
 
 
+	//-----------------------------------
+	say("get ep1.1 state...",0);
+	packet.bmrequesttype=0x82;
+	packet.brequest=0;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=2;
+	packet.buffer=buffer+0x600;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	say("ep1.1 state:",*(DWORD*)(buffer+0x600));
+	//-------------------------------------
+
+
+
+
 	//------------------set port feathre-------------
 	for(childport=1;childport<=count;childport++)
 	{
@@ -886,7 +921,7 @@ return;
 		packet.wlength=0;		//0
 		packet.buffer=0;
 		packet.windex=childport;	//(??<<8)|(childport+1)
-		controltransfer(controladdr);
+		sendpacket(controladdr);
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 
@@ -897,7 +932,7 @@ return;
 		packet.wlength=4;		//0
 		packet.windex=childport;	//childport+1
 		packet.buffer=buffer+0x600;	//某个地址
-		controltransfer(controladdr);
+		sendpacket(controladdr);
 		ring(slot,1);
 		if(waitevent(0x20)<0) goto failed;
 
@@ -906,10 +941,10 @@ return;
 		if( (status&1) == 1 )
 		{
 			QWORD speed=(status>>9)&1;
-			if(speed==1) say("low speed",0);
-			if(speed==3) say("wrong speed",0);
-			if(speed==0) say("full speed",0);
-			if(speed==2) say("high speed",0);
+			if(speed==1) say("low speed:",speed);
+			if(speed==3) say("wrong speed:",speed);
+			if(speed==0) say("full speed:",speed);
+			if(speed==2) say("high speed:",speed);
 
 		}
 	say("}",0);
@@ -980,7 +1015,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("    ep1.1@",intaddr);
 
 	//1)clear context
-	clear(slothome+slot*0x8000,0x8000);
+	clear(slotdata,0x8000);
 	//construct input
 	context.d0=0;
 	context.d1=3;
@@ -1033,7 +1068,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.windex=0;
 	packet.wlength=8;
 	packet.buffer=buffer;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
@@ -1076,7 +1111,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.windex=0;
 	packet.wlength=0x12;
 	packet.buffer=buffer;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer);
@@ -1090,12 +1125,12 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.windex=0;
 	packet.wlength=0x9;
 	packet.buffer=buffer+0x100;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
 	packet.wlength=*(WORD*)(buffer+0x102);
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 	explaindescriptor(buffer+0x100);
@@ -1109,7 +1144,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.windex=0;
 	packet.wlength=0xff;
 	packet.buffer=buffer+0x200;
-	controltransfer(controladdr);
+	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
@@ -1121,7 +1156,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	{
 		packet.wvalue=0x300+temp;
 		packet.buffer=buffer+0x200+temp*0x40;
-		controltransfer(controladdr);
+		sendpacket(controladdr);
 		ring(slot,1);
 		waitevent(0x20);	//不用管成功失败
 	}
@@ -1135,6 +1170,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("important infomation:",0);
 	say("    classcode:",classcode);
 	say("    interfaceclass:",interfaceclass);
+	if(speed<2) interval*=8;
 	say("    interval:",interval);
 	say("    reportsize:",reportsize);
 	say("}",0);
@@ -1235,33 +1271,38 @@ void initusb()
 
 explainevent(QWORD addr)
 {
-        //trb种类
-        QWORD trbtype=*(DWORD*)(addr+0xc);
-        trbtype=(trbtype>>10)&0x3f;
+	DWORD* p=(DWORD*)addr;
+	if( (p[2]>>24) != 1 )
+	{
+		shout("event@",addr);
+		shout("    error:",p[2]>>24);
+		return;
+	}
 
+        QWORD trbtype=(p[3]>>10)&0x3f;
         switch(trbtype)
         {
                 case 0x20:{
 			shout("event@",addr);
-			QWORD transfertrb=*(QWORD*)addr;
+			QWORD transfertrb=p[0];
                         shout("    transfer complete:",transfertrb);
-			QWORD slot=(*(DWORD*)(addr+0xc))>>24;
+			QWORD slot=p[3]>>24;
 			shout("    slot:",slot);
-			QWORD endpoint=( (*(DWORD*)(addr+0xc)) >> 16 )&0x3f;
+			QWORD endpoint=( p[3]>> 16 )&0x3f;
 			shout("    endpoint:",endpoint);
+
 			if(endpoint!=1)
 			{
 				QWORD buffer=*(QWORD*)transfertrb;
 				shout("    buffer:",buffer);
 				QWORD report=*(QWORD*)buffer;
 				shout("    report:",report);
-				ring(slot,endpoint);
 			}
                         break;
                 }
                 case 0x21:{
 			shout("event@",addr);
-                        shout("    command complete:",*(DWORD*)addr);
+                        shout("    command complete:",p[0]);
                         break;
                 }
                 case 0x22:{             //设备插入拔出
@@ -1285,8 +1326,7 @@ explainevent(QWORD addr)
                 }
 		default:
 		{
-			shout("event@",addr);
-        		shout("    unknown trb:",trbtype);
+        		shout("unknown type:",trbtype);
 		}
         }
 }

@@ -1,7 +1,15 @@
 bits 64
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>----console----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;取一只微小的蚂蚁，让它影响世界
+;这是最后一只?
+;是的：拍一张新世界的照片到屏幕上，而我回家睡觉
+;不是：再再来一次
+
+
+
 ;_______________________________________________
 function4:
+
 cmp al,0
 je console		;do nothing
 cmp al,0x3b
@@ -36,7 +44,7 @@ mov ebx,0x6000
 add ebx,[rel linex128]
 dec byte [rel length]
 add ebx,[rel length]
-mov byte [ebx],' '
+mov byte [ebx],0
 
 jmp console
 ;_________________________________________
@@ -389,14 +397,15 @@ value:dq 0
 
 ;___________________________________________
 console:
-mov edi,0x1000000
+mov edi,0x1c00000
 mov ecx,1024*750
 xor eax,eax
 rep stosd
 
+
 mov dword [rel looptimes],0
 .lines:
-    mov edi,0x1000000
+    mov edi,0x1c00000
     mov eax,4*1024*16
     ;add edi,eax
     imul eax,[rel looptimes]
@@ -414,12 +423,23 @@ mov dword [rel looptimes],0
     inc ebx
     dec cl
     jnz .continue
-
 inc byte [rel looptimes]
 cmp byte [rel looptimes],0x30
 jb .lines
 
-call writescreen
+
+    mov esi,0x1c00000
+    mov edi,[0x3028]
+    mov bl,[0x3019]
+    shr bl,3
+    movzx ebx,bl
+    mov ecx,1024*768
+.continuescreen:
+    lodsd
+    mov [edi],eax
+    add edi,ebx
+    loop .continuescreen
+
 jmp forever
 ;________________________________________
 looptimes:dd 0

@@ -2,6 +2,7 @@ bits 64
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F1-----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;___________________________
 function1:
+
 cmp al,0x3b
 je f1
 cmp al,0x3c
@@ -245,7 +246,19 @@ ramdump:
 
 call [rel hexoranscii]
 call [rel mouseormenu]
-call writescreen
+
+    mov esi,0x1000000
+    mov edi,[0x3028]
+    mov bl,[0x3019]
+    shr bl,3
+    movzx ebx,bl
+    mov ecx,1024*768
+.continue:
+    lodsd
+    mov [edi],eax
+    add edi,ebx
+    loop .continue
+
 
 jmp forever
 
