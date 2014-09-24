@@ -1,4 +1,6 @@
 all:
+	rm -rf demo
+	mkdir demo
 	make -s -C easiest
 	cp easiest/easiest demo/
 	make -s -C jpeg

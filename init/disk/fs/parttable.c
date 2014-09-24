@@ -74,23 +74,25 @@ QWORD explainmbr()
 }
 
 
-void parttable()
+void remember(QWORD cd,QWORD load)
 {
-	BYTE* memory=(BYTE*)0x120000;
+	QWORD* pointer=(QWORD*)0x4000;
 	int i;
-	for(i=0;i<0x8000;i++) memory[i]=0;
-
-        read(0x120000,0,getdisk(),64);
-        if( *(WORD*)0x1201fe !=0xAA55 ){say("bad disk",0);return;}
-
-	if(*(QWORD*)0x120200==0x5452415020494645) explaingpt();
-	else explainmbr();
-
-	automount();
+	for(i=0;i<0x200;i+=2)
+	{
+	if( (pointer[i]==0) | (pointer[i]==0x6463) )
+	{
+		pointer[i]=0x6463;
+		pointer[i+1]=cd;
+		pointer[i+2]=0x64616f6c;
+		pointer[i+3]=load;
+		break;
+	}
+	}
 }
 
 
-void mount(QWORD name)
+static void mount(QWORD name)
 {
 	blank2zero(&name);
 
@@ -114,4 +116,32 @@ void mount(QWORD name)
 	if(name == 0x746166) mountfat(offset);
 	if(name == 0x7366746e) mountntfs(offset);
 	if(name == 0x747865) mountext(offset);
+}
+
+
+void parttable()
+{
+	BYTE* memory=(BYTE*)0x120000;
+	int i;
+	for(i=0;i<0x8000;i++) memory[i]=0;
+
+        read(0x120000,0,getdisk(),64);
+        if( *(WORD*)0x1201fe !=0xAA55 ){say("bad disk",0);return;}
+
+	if(*(QWORD*)0x120200==0x5452415020494645) explaingpt();
+	else explainmbr();
+
+
+
+
+	QWORD* pointer=(QWORD*)0x4000;
+	for(i=0;i<0x200;i+=2)
+	{
+	if( (pointer[i]==0) | (pointer[i]==0x746e756f6d) )
+	{
+		pointer[i]=0x746e756f6d;		//"mount"
+		pointer[i+1]=(unsigned long long)mount;
+		break;
+	}
+	}
 }

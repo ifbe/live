@@ -96,9 +96,9 @@ jmp ramdump
 
 	.findit:
 	mov rdx,[rsi+8]
-	mov rsi,[rel input]
-	mov [rel sector],rsi
-	and rsi,0xfffffffffffffff8
+	mov rdi,[rel input]
+	mov [rel sector],rdi
+	and rdi,0xfffffffffffffff8
 	call rdx
 
 	mov rax,[rel input]

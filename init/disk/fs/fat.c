@@ -89,7 +89,7 @@ void fat16_root()
 }
 
 
-void fat16_cd(QWORD name)
+static void fat16_cd(QWORD name)
 {
 	QWORD directory=0;
 	QWORD p=indexbuffer;
@@ -133,7 +133,7 @@ void fat16_cd(QWORD name)
 }
 
 
-void fat16_load(QWORD name)
+static void fat16_load(QWORD name)
 {
 	zero2blank(&name);
 	small2capital(&name);
@@ -171,7 +171,7 @@ void fat16()
 	fat16_cd('/');
 
 	//保存函数地址
-	finishfat16();
+	remember((QWORD)fat16_cd,(QWORD)fat16_load);
 }
 
 
@@ -212,7 +212,7 @@ void fat32_root()
 }
 
 
-void fat32_cd(QWORD name)
+static void fat32_cd(QWORD name)
 {
 	QWORD directory=0;
 	QWORD p=indexbuffer;
@@ -258,7 +258,7 @@ void fat32_cd(QWORD name)
 }
 
 
-void fat32_load(QWORD name)
+static void fat32_load(QWORD name)
 {
 	zero2blank(&name);
 	small2capital(&name);
@@ -298,7 +298,7 @@ void fat32()
 	fat32_cd('/');
 
 	//保存函数地址
-	finishfat32();
+	remember((QWORD)fat32_cd,(QWORD)fat32_load);
 }
 
 

@@ -225,7 +225,7 @@ void table2raw(QWORD rsi)
 }
 
 
-void ext_cd(QWORD name)
+static void ext_cd(QWORD name)
 {
 	QWORD* table=(QWORD*)rawbuffer;
 	int i;
@@ -272,7 +272,7 @@ void ext_cd(QWORD name)
 }
 
 
-void ext_load(QWORD name)
+static void ext_load(QWORD name)
 {
 	QWORD* table=(QWORD*)rawbuffer;
 	int i;
@@ -330,6 +330,6 @@ int mountext(QWORD sector)
 	ext_cd('/');
 
 	//保存函数地址
-	finishext();
+	remember((QWORD)ext_cd,(QWORD)ext_load);
 	return 0;
 }

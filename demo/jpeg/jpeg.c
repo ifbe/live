@@ -78,61 +78,6 @@ void* mymalloc(int i)
 }
 
 
-void point(int x,int y,int z)
-{
-    long long* video=(long long*)0x3028;
-    long long base=*video;
-    char* p=(char*)0x3019;
-    char bpp=*p/8;
-
-    int* address;
-
-    address=(int*)(base+(y*1024+x)*bpp);
-    *address=z;
-}
-
-
-void print(int x,int y,char ch)
-{
-    int i,j;
-    long long rsi=0x6000;
-    char temp;
-    char* p;
-
-    rsi+=ch<<4;
-    x=8*x;
-    y=16*y;
-
-    for(i=0;i<16;i++)
-    {
-        p=(char*)rsi;
-        for(j=0;j<8;j++)
-        {
-            temp=*p;
-            temp=temp<<j;
-            temp&=0x80;
-            if(temp!=0){point(j+x,i+y,0);}
-            else{point(j+x,i+y,0x00ffff00);}
-
-        }
-    rsi++;
-    }
-}
-
-void print32(int x,int y,int z)
-{
-    char ch;
-    int i;
-
-    for(i=7;i>=0;i--)
-    {
-        ch=(char)(z&0x0000000f);
-        z=z>>4;
-        print(x+i,y,ch);
-    }
-}
-
-
 static inline unsigned char njClip(const int x) {
     return (x<0)?0:((x>0xff)?0xff:(unsigned char) x);
 }
@@ -596,12 +541,24 @@ int njDecode(const void* jpeg, const int size) {
     return nj.error;
 }
 
-
+void clear(unsigned long long from,int size)
+{
+	unsigned char* p=(unsigned char*)from;
+	int i;
+	for(i=0;i<size;i++) p[i]=0;
+}
 void main()
 {
     offset=0x800000;
-    int i=0x12345678;
-    i=njDecode((char*)(long long)where(),size());
-    print32(0,0,i);
+    clear((unsigned long long)&nj,sizeof(nj_context_t));
+
+    unsigned long long jpegbase=where();
+    int sz=size();
+    int i=njDecode((char*)jpegbase,sz);
+
+    print32(0,0,jpegbase);
+    print32(0,1,sz);
+    print32(0,2,i);
     picture();
+
 }

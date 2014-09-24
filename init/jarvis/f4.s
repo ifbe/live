@@ -268,24 +268,6 @@ jmp .continue
 
 
 
-;________________________
-load:
-cmp dword [0x7030],"load"
-jne notfound
-
-mov rdi,0x400000
-xor rax,rax
-mov ecx,0x40000
-rep stosd
-
-mov rdi,[rsi+5]
-call [0x7038]
-jmp scroll
-;______________________
-
-
-
-
 ;______________________________
 test:
 mov rax,0x400000

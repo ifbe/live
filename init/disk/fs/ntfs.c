@@ -410,7 +410,7 @@ void explainmft(QWORD data)
 }
 
 
-void ntfs_cd(QWORD name)
+static void ntfs_cd(QWORD name)
 {
 	//变量们
 	QWORD mftnumber;
@@ -469,7 +469,7 @@ void ntfs_cd(QWORD name)
 }
 
 
-void ntfs_load(QWORD name)
+static void ntfs_load(QWORD name)
 {
 	//变量们
 	QWORD mftnumber;
@@ -529,6 +529,6 @@ int mountntfs(QWORD sector)
 	ntfs_cd('/');
 
 	//保存函数地址
-	finishntfs();
+	remember((QWORD)ntfs_cd,(QWORD)ntfs_load);
 	return 0;
 }
