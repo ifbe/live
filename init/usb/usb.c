@@ -220,6 +220,8 @@ int waitevent(QWORD trbtype)
 //以下是提取自descriptor的最重要信息，每次只被这个函数更新,就像人记笔记......
 static QWORD classcode;
 static QWORD deviceprotocol;
+static QWORD vendor;
+static QWORD product;
 static QWORD interfaceclass;
 static QWORD interval;
 static QWORD reportsize;
@@ -244,24 +246,37 @@ say("device@",addr);
 	say("blength:",*(BYTE*)addr);
 	say("type:",*(BYTE*)(addr+1));
 	say("bcdusb:",*(WORD*)(addr+2));
-	classcode=*(BYTE*)(addr+4);
+
+	classcode=*(BYTE*)(addr+4);			//!
 	say("bclass:",classcode);
+
 	say("bsubclass:",*(BYTE*)(addr+5));
-	deviceprotocol=*(BYTE*)(addr+6);
+
+	deviceprotocol=*(BYTE*)(addr+6);		//!
 	say("bprotocol:",deviceprotocol);
+
 	say("bpacketsize:",*(BYTE*)(addr+7));
-	say("vendor:",*(WORD*)(addr+8));
-	say("product:",*(WORD*)(addr+0xa));
+
+	vendor=*(WORD*)(addr+8);			//!
+	say("vendor:",vendor);
+
+	product=*(WORD*)(addr+0xa);			//!
+	say("product:",product);
+
 	say("bcddevice:",*(WORD*)(addr+0xc));
+
 	i=*(BYTE*)(addr+0xe);
 	stringtoread[i]=1;
 	say("imanufacturer:",i);
+
 	i=*(BYTE*)(addr+0xf);
 	stringtoread[i]=1;
 	say("iproduct:",i);
+
 	i=*(BYTE*)(addr+0x10);
 	stringtoread[i]=1;
 	say("iserial:",i);
+
 	say("bnumconf:",*(BYTE*)(addr+0x11));
 	say("",0);
 
@@ -381,10 +396,7 @@ say("hid@",addr);
 	say("btype:",*(BYTE*)(addr+9));
 	say("wlength:",*(WORD*)(addr+10));
 
-	QWORD thistype=*(BYTE*)(addr+6);
-	if(thistype==0x22) reportsize=*(WORD*)(addr+7);
-	thistype=*(BYTE*)(addr+9);
-	if(thistype==0x22) reportsize=*(WORD*)(addr+10);
+	reportsize=*(WORD*)(addr+7);
 	say("",0);
 
 break;
@@ -576,8 +588,7 @@ void hid(QWORD slot)
 
 
 	//change input context&ep1.1 context
-	say("2.configure...",0);
-	say("slot...",0);
+	say("2.change input&configue slot...",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -603,11 +614,12 @@ void hid(QWORD slot)
 		say("ep3 wrong",0);
 		goto failed;
 	}
+	//-----------------------------------
 
 
-	//set configuration:0x0000,0000,0001,09,00
-	say("deivce...",0);
-
+	//--------------------------------------
+	say("3.device...",0);
+	say("set configuration...",0);
 	packet.bmrequesttype=0;
 	packet.brequest=9;
 	packet.wvalue=1;
@@ -617,29 +629,58 @@ void hid(QWORD slot)
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
+	say("get configuration...",0);
 	packet.bmrequesttype=0x80;
 	packet.brequest=8;
 	packet.wvalue=0;
 	packet.windex=0;
 	packet.wlength=1;
-	packet.buffer=buffer+0x700;
+	packet.buffer=buffer+0x500;
 	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
 
-	say("device configured:",*(BYTE*)(buffer+0x700));
+	say("configure:",*(BYTE*)(buffer+0x500));
 	//------------------------------------
 
+
+
+
+	//-------------------------------------
+
+	say("set interface...",0);
+	packet.bmrequesttype=0x1;
+	packet.brequest=0xb;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=0;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	say("get interface...",0);
+	packet.bmrequesttype=0x81;
+	packet.brequest=0xa;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=1;
+	packet.buffer=buffer+0x600;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	say("interface:",*(BYTE*)(buffer+0x600));
+	//-------------------------------------
 
 
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
 	QWORD temp;
-	say("3.ep1.1 ring",0);
+	say("4.ep1.1 ring",0);
 	trb.d1=0;
 	trb.d2=6;
-	trb.d3=0x25+(1<<10);
+	trb.d3=0x21+(1<<10);
 	for(temp=0;temp<0x3f;temp++)
 	{
 		trb.d0=hidbuffer+temp*0x10;
@@ -655,23 +696,6 @@ void hid(QWORD slot)
 	//敲门铃，开始执行
 	ring(slot,3);
 	//------------------------------------------
-
-
-
-
-	//-----------------------------------
-	say("get ep1.1 state...",0);
-	packet.bmrequesttype=0x80;
-	packet.brequest=0;
-	packet.wvalue=0;
-	packet.windex=0;
-	packet.wlength=2;
-	packet.buffer=buffer+0x600;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	say("ep1.1 state:",*(DWORD*)(buffer+0x600));
-	//-------------------------------------
 
 
 
@@ -695,7 +719,6 @@ say("}",0);
 void hub(QWORD rootport,QWORD routestring,QWORD slot)
 {
 QWORD childport;
-DWORD speed;		//第一步得到这个，给context用
 
 
 
@@ -725,16 +748,13 @@ say("{",0);
 		portsc=*(DWORD*)(portbase+childport*0x10-0x10);
 		say("status(reset2):",portsc);
 
-		DWORD linkstate=(portsc>>5)&0xf;
-		speed=(portsc>>10)&0xf;
-		say("linkstate:",linkstate);
-		say("speed:",speed);
+		say("linkstate:",(portsc>>5)&0xf);
 	}
 say("}",0);
 
 	if( (portsc&0x1) == 0x1)
 	{
-		device(childport,0,speed);
+		device(childport,0,(portsc>>10)&0xf);
 	}
 }
 return;
@@ -872,7 +892,7 @@ return;
 	QWORD temp;
 	trb.d1=0;
 	trb.d2=1;
-	trb.d3=0x25+(1<<10);
+	trb.d3=0x21+(1<<10);
 	for(temp=0;temp<0x3f;temp++)
 	{
 		trb.d0=hubbuffer+temp*0x10;
@@ -888,23 +908,6 @@ return;
 	//敲门铃，开始执行
 	ring(slot,3);
 	//------------------------------------------
-
-
-
-
-	//-----------------------------------
-	say("get ep1.1 state...",0);
-	packet.bmrequesttype=0x82;
-	packet.brequest=0;
-	packet.wvalue=0;
-	packet.windex=0;
-	packet.wlength=2;
-	packet.buffer=buffer+0x600;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	say("ep1.1 state:",*(DWORD*)(buffer+0x600));
-	//-------------------------------------
 
 
 
@@ -938,20 +941,12 @@ return;
 
 		DWORD status=*(DWORD*)(buffer+0x600);
 		say("status:",status);
-		if( (status&1) == 1 )
-		{
-			QWORD speed=(status>>9)&1;
-			if(speed==1) say("low speed:",speed);
-			if(speed==3) say("wrong speed:",speed);
-			if(speed==0) say("full speed:",speed);
-			if(speed==2) say("high speed:",speed);
 
-		}
 	say("}",0);
 
 		if( (status&1) == 1 )
 		{
-			device(rootport,childport,speed);
+			device(rootport,childport,(status>>9)&3);
 		}
 	}
 
@@ -976,8 +971,14 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 {
 	say("device",0);
 	say("{",0);
+
+	say("0.information:",0);
 	say("rootport:",rootport);
 	say("routestring:",routestring);
+	if(speed==0) say("full speed:",speed);
+	if(speed==1) say("low speed:",speed);
+	if(speed==2) say("high speed:",speed);
+	if(speed>=3) say("unknown speed:",speed);
 
 
 	//---------------obtain slot------------------
@@ -1168,11 +1169,29 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 
 	//上一步得到基础信息
 	say("important infomation:",0);
-	say("    classcode:",classcode);
-	say("    interfaceclass:",interfaceclass);
-	if(speed<2) interval*=8;
-	say("    interval:",interval);
-	say("    reportsize:",reportsize);
+	say("classcode:",classcode);
+	say("interfaceclass:",interfaceclass);
+	say("vendor:",vendor);
+	say("product:",product);
+
+	say("interval:",interval);
+	if( (speed==0)|(speed==1) )
+	{
+		if(interval == 1) interval=0;
+		if(interval == 2) interval=1;
+		if( (interval>=3) & (interval<=4) ) interval=2;
+		if( (interval>=5) & (interval<=8) ) interval=3;
+		if( (interval>=9) & (interval<=16) ) interval=4;
+		if( (interval>=17) & (interval<=32) ) interval=5;
+		if( (interval>=33) & (interval<=64) ) interval=6;
+		if( (interval>=65) & (interval<=128) ) interval=7;
+		if( (interval>=129) & (interval<256) ) interval=8;
+
+		if(speed==1) interval+=3;
+	}
+	say("fixed interval:",interval);
+
+
 	say("}",0);
 
 
