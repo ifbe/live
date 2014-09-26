@@ -80,18 +80,27 @@ mov [rel currentarg],eax		;esi=current argument
 
 mov esi,[rel currentarg]
 cmp dword [esi],"powe"		;if [esi]=="powe"
-jne skipturnoff
+jne skippoweroff
 cmp dword [esi+4],"roff"	;if [esi+4]=="roff"
-jne skipturnoff
+jne skippoweroff
 cmp byte [esi+8],0		;if [esi+8]=0x20
-je turnoff
-skipturnoff:
+je poweroff
+skippoweroff:
+
+mov esi,[rel currentarg]
+cmp dword [esi],"rebo"
+jne skipreboot
+cmp word [esi+4],"ot"
+jne skipreboot
+cmp byte [esi+6],0
+je reboot
+skipreboot:
 
 mov esi,[rel currentarg]
 cmp dword [esi],"exit"
 jne skipexit
 cmp byte [esi+4],0
-je turnoff
+je poweroff
 skipexit:
 
 

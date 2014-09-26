@@ -562,7 +562,7 @@ void hid(QWORD slot)
 
 	//只要传递slot号，就能得到我们手动分配的内存
 	QWORD slotdata=slothome+slot*0x8000;
-	say("0.slotdata@",slotdata);
+	say("0.data@",slotdata);
 	QWORD inputcontext=slotdata;
 	QWORD outputcontext=slotdata+0x1000;
 	QWORD controladdr=slotdata+0x2000;
@@ -572,23 +572,9 @@ void hid(QWORD slot)
 	DWORD slotstate;
 	DWORD epstate;
 
-	say("1.report desc@",buffer+0x400);
-	packet.bmrequesttype=0x81;
-	packet.brequest=6;
-	packet.wvalue=0x2200;
-	packet.windex=0;
-	packet.wlength=reportsize;
-	packet.buffer=buffer+0x400;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	explainhid(buffer+0x400);
-
-
-
 
 	//change input context&ep1.1 context
-	say("2.change input&configue slot...",0);
+	say("1.slot...",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -618,7 +604,7 @@ void hid(QWORD slot)
 
 
 	//--------------------------------------
-	say("3.device...",0);
+	say("2.device...",0);
 	say("set configuration...",0);
 	packet.bmrequesttype=0;
 	packet.brequest=9;
@@ -644,19 +630,47 @@ void hid(QWORD slot)
 	//------------------------------------
 
 
-
-
-	//-------------------------------------
-
-	say("set interface...",0);
-	packet.bmrequesttype=0x1;
-	packet.brequest=0xb;
+/*
+	//-------------------------------
+	say("set idle...",0);
+	packet.bmrequesttype=0x21;
+	packet.brequest=0xa;
 	packet.wvalue=0;
 	packet.windex=0;
 	packet.wlength=0;
 	sendpacket(controladdr);
 	ring(slot,1);
 	if(waitevent(0x20)<0) goto failed;
+
+	say("get idle...",0);
+	packet.bmrequesttype=0xa1;
+	packet.brequest=2;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=1;
+	packet.buffer=buffer+0x600;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	say("idle:",*(BYTE*)(buffer+0x600));
+	//--------------------------------------
+*/
+
+
+
+/*
+	//-------------------------------------
+	say("set interface...",0);
+	packet.bmrequesttype=0x1;
+	packet.brequest=0xb;
+	packet.wvalue=0;		//alternate setting
+	packet.windex=0;		//interface
+	packet.wlength=0;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
 
 	say("get interface...",0);
 	packet.bmrequesttype=0x81;
@@ -671,15 +685,33 @@ void hid(QWORD slot)
 
 	say("interface:",*(BYTE*)(buffer+0x600));
 	//-------------------------------------
+*/
+
+
+
+	say("3.report desc@",buffer+0x400);
+	packet.bmrequesttype=0x81;
+	packet.brequest=6;
+	packet.wvalue=0x2200;
+	packet.windex=0;
+	packet.wlength=reportsize;
+	packet.buffer=buffer+0x400;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explainhid(buffer+0x400);
+
+
+
 
 
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
 	QWORD temp;
-	say("4.ep1.1 ring",0);
+	say("4.ep1.1",0);
 	trb.d1=0;
-	trb.d2=6;
+	trb.d2=4;
 	trb.d3=0x21+(1<<10);
 	for(temp=0;temp<0x3f;temp++)
 	{
@@ -773,7 +805,7 @@ return;
 	say("routestring:",routestring);
 
 	QWORD slotdata=slothome+slot*0x8000;
-	say("0.slotdata@",slotdata);
+	say("0.data@",slotdata);
 	QWORD inputcontext=slotdata;
 	QWORD outputcontext=slotdata+0x1000;
 	QWORD controladdr=slotdata+0x2000;
@@ -808,7 +840,8 @@ return;
 
 
 	//-------------这是一个hub,修改部分context---------------
-	say("2.change&evaluate...",0);
+	say("2.slot...",0);
+	say("evaluate...",0);
 
 	//slot context
 	DWORD* tempaddr=(DWORD*)(inputcontext+contextsize);
@@ -828,8 +861,7 @@ return;
 
 
 	//change input context&ep1.1 context
-	say("3.configure...",0);
-	say("slot...",0);
+	say("configure...",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -861,6 +893,7 @@ return;
 
         //set configuration:0x0000,0000,0001,09,00
 	say("device...",0);
+	say("set configure...",0);
         packet.bmrequesttype=0;
         packet.brequest=9;
         packet.wvalue=1;
@@ -870,6 +903,7 @@ return;
         ring(slot,1);
         if(waitevent(0x20)<0) goto failed;
 
+	say("get configure...",0);
 	packet.bmrequesttype=0x80;
 	packet.brequest=8;
 	packet.wvalue=0;
@@ -1030,10 +1064,10 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	writecontext(inputcontext,1);	//slot context
 
 	context.d0=0;
-	context.d1=(64<<16)+(4<<3)+6;
+	context.d1=(8<<16)+(4<<3)+6;
 	context.d2=controladdr+1;
 	context.d3=0;
-	context.d4=0x40;
+	context.d4=0x8;
 	writecontext(inputcontext,2);	//ep0
 
 	//output context地址填入对应dcbaa
@@ -1177,19 +1211,17 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("interval:",interval);
 	if( (speed==0)|(speed==1) )
 	{
-		if(interval == 1) interval=0;
-		if(interval == 2) interval=1;
-		if( (interval>=3) & (interval<=4) ) interval=2;
-		if( (interval>=5) & (interval<=8) ) interval=3;
-		if( (interval>=9) & (interval<=16) ) interval=4;
-		if( (interval>=17) & (interval<=32) ) interval=5;
-		if( (interval>=33) & (interval<=64) ) interval=6;
-		if( (interval>=65) & (interval<=128) ) interval=7;
-		if( (interval>=129) & (interval<256) ) interval=8;
-
-		if(speed==1) interval+=3;
+		if(interval == 1) interval=3;
+		else if(interval == 2) interval=4;
+		else if( (interval>=3) & (interval<=4) ) interval=5;
+		else if( (interval>=5) & (interval<=8) ) interval=6;
+		else if( (interval>=9) & (interval<=16) ) interval=7;
+		else if( (interval>=17) & (interval<=32) ) interval=8;
+		else if( (interval>=33) & (interval<=64) ) interval=9;
+		else if( (interval>=65) & (interval<=128) ) interval=0xa;
+		else if( (interval>=129) & (interval<256) ) interval=0xb;
 	}
-	say("fixed interval:",interval);
+	say("fixed interval:",interval);		//[3,11]
 
 
 	say("}",0);
@@ -1291,14 +1323,9 @@ void initusb()
 explainevent(QWORD addr)
 {
 	DWORD* p=(DWORD*)addr;
-	if( (p[2]>>24) != 1 )
-	{
-		shout("event@",addr);
-		shout("    error:",p[2]>>24);
-		return;
-	}
 
-        QWORD trbtype=(p[3]>>10)&0x3f;
+        DWORD trbtype=(p[3]>>10)&0x3f;
+	DWORD completecode=p[2]>>24;
         switch(trbtype)
         {
                 case 0x20:{
@@ -1309,7 +1336,11 @@ explainevent(QWORD addr)
 			shout("    slot:",slot);
 			QWORD endpoint=( p[3]>> 16 )&0x3f;
 			shout("    endpoint:",endpoint);
-
+			if(completecode!=1)
+			{
+				shout("    error:",completecode);
+				break;
+			}
 			if(endpoint!=1)
 			{
 				QWORD buffer=*(QWORD*)transfertrb;

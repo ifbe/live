@@ -67,7 +67,7 @@ je changememory
 cmp byte [rel chosen],6
 je changeview
 cmp byte [rel chosen],7
-je turnoff
+je poweroff
 jmp ramdump
 
 	;____________________________________
