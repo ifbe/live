@@ -73,34 +73,6 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 
 
 
-struct trb{
-	DWORD d0;
-	DWORD d1;
-	DWORD d2;
-	DWORD d3;
-};
-static struct trb trb;
-void writetrb(QWORD ringaddr)
-{
-	//得到这次往哪儿写
-	QWORD temp=*(QWORD*)(ringaddr+0xff0);
-	DWORD* pointer=(DWORD*)(ringaddr+temp);
-	//say("transfer ring@",&pointer[0]);
-
-	//下次往哪儿写
-	temp+=0x10;
-	if(temp>0xf00)	temp=0;
-	*(QWORD*)(ringaddr+0xff0)=temp;
-
-	pointer[0]=trb.d0;
-	pointer[1]=trb.d1;
-	pointer[2]=trb.d2;
-	pointer[3]=trb.d3;
-}
-
-
-
-
 struct setup{
 	BYTE bmrequesttype;	//	0x80
 	BYTE brequest;		//	0x6
@@ -113,41 +85,50 @@ struct setup{
 static struct setup packet;
 void sendpacket(QWORD ringaddr)
 {
-if(packet.bmrequesttype>=0x80)
-{
+	//得到这次往哪儿写
+	QWORD temp=*(QWORD*)(ringaddr+0xff0);
+	DWORD* p=(DWORD*)(ringaddr+temp);
+
+	if(packet.bmrequesttype>=0x80)
+	{
 	//setup stage
-	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
-	trb.d1=(packet.wlength<<16)+packet.windex;
-	trb.d2=8;
-	trb.d3=(3<<16)+(2<<10)+(1<<6)+1;
-	writetrb(ringaddr);
+	p[0]=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
+	p[1]=(packet.wlength<<16)+packet.windex;
+	p[2]=8;
+	p[3]=(3<<16)+(2<<10)+(1<<6)+1;
 
 	//data stage
-	trb.d0=packet.buffer;
-	trb.d1=0;
-	trb.d2=packet.wlength;
-	trb.d3=(1<<16)+(3<<10)+1;
-	writetrb(ringaddr);
+	p[4]=packet.buffer;
+	p[5]=0;
+	p[6]=packet.wlength;
+	p[7]=(1<<16)+(3<<10)+1;
 
 	//status stage
-	trb.d0=trb.d1=trb.d2=0;
-	trb.d3=(4<<10)+(1<<5)+1;
-	writetrb(ringaddr);
-}
-else
-{
+	p[8]=p[9]=p[0xa]=0;
+	p[0xb]=(4<<10)+(1<<5)+1;
+
+	//下次往哪儿写
+	temp+=0x30;
+	if(temp>0xf00)	temp=0;
+	*(QWORD*)(ringaddr+0xff0)=temp;
+	}
+	else
+	{
 	//setup stage
-	trb.d0=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
-	trb.d1=(packet.wlength<<16)+packet.windex;
-	trb.d2=8;
-	trb.d3=(2<<10)+(1<<6)+1;
-	writetrb(ringaddr);
+	p[0]=(packet.wvalue<<16)+(packet.brequest<<8)+packet.bmrequesttype;
+	p[1]=(packet.wlength<<16)+packet.windex;
+	p[2]=8;
+	p[3]=(2<<10)+(1<<6)+1;
 
 	//status stage
-	trb.d0=trb.d1=trb.d2=0;
-	trb.d3=(1<<16)+(4<<10)+(1<<5)+1;	//in
-	writetrb(ringaddr);
-}
+	p[4]=p[5]=p[6]=0;
+	p[7]=(1<<16)+(4<<10)+(1<<5)+1;	//in
+
+	//下次往哪儿写
+	temp+=0x20;
+	if(temp>0xf00)	temp=0;
+	*(QWORD*)(ringaddr+0xff0)=temp;
+	}
 }
 
 
@@ -427,8 +408,10 @@ break;
 
 
 
+static QWORD reportbyte;
 void explainhid(QWORD addr)
 {
+reportbyte=0;
 BYTE* p=(BYTE*)addr;	
 int i=0;
 BYTE bsize;
@@ -441,7 +424,7 @@ BYTE btag;
 	if(p[i]==0) break;
 	if(p[i]==0xfe)
 	{
-		say("    cannot understand long item",0);
+		say("long item!",0);
 		break;
 	}
 
@@ -497,59 +480,6 @@ BYTE btag;
 	else i+=bsize;
 	}
 }
-/*
-	switch(p[i])
-	{
-		case 5:{
-		say("    usage page:",p[i+1]);
-		break;
-		}
-		case 9:{
-		say("    usage:",p[i+1]);
-		break;
-		}
-		case 0xa1:{
-		say("    collection:",p[i+1]);
-		break;
-		}
-		case 0x19:{
-		say("    usage min:",p[i+1]);
-		break;
-		}
-		case 0x29:{
-		say("    usage max:",p[i+1]);
-		break;
-		}
-		case 0x15:{
-		say("    logical max:",p[i+1]);
-		break;
-		}
-		case 0x25:{
-		say("    logical max:",p[i+1]);
-		break;
-		}
-		case 0x95:{
-		say("    report count:",p[i+1]);
-		break;
-		}
-		case 0x75:{
-		say("    report size:",p[i+1]);
-		break;
-		}
-		case 0x81:{
-		say("    input:",p[i+1]);
-		break;
-		}
-		case 0xc0:{
-		say("    finish",0);
-		return;
-		}
-		default:{
-		say("    unknown@",&p[i]);
-		break;
-		}
-	}
-*/
 
 
 
@@ -557,8 +487,7 @@ BYTE btag;
 //键盘鼠标，该干嘛干嘛
 void hid(QWORD slot)
 {
-	say("it is hid device:",0);
-	say("{",0);
+	say("hid!",0);
 
 	//只要传递slot号，就能得到我们手动分配的内存
 	QWORD slotdata=slothome+slot*0x8000;
@@ -702,28 +631,27 @@ void hid(QWORD slot)
 	explainhid(buffer+0x400);
 
 
+	say("report bytes:",reportbyte);
 
 
 
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
-	QWORD temp;
 	say("4.ep1.1",0);
-	trb.d1=0;
-	trb.d2=4;
-	trb.d3=0x21+(1<<10);
-	for(temp=0;temp<0x3f;temp++)
+	DWORD* temp=(DWORD*)intaddr;
+	int i=0;
+	for(i=0;i<0x3fc;i+=4)		//0xff0/4=0x3fc
 	{
-		trb.d0=hidbuffer+temp*0x10;
-		writetrb(intaddr);
+		temp[i]=hidbuffer+i*4;
+		temp[i+1]=0;
+		temp[i+2]=6;
+		temp[i+3]=0x25+(1<<10);
 	}
-	//[3f0,400)第一段结尾link trb指向[0,3f0)
-	trb.d0=intaddr;
-	trb.d1=0;
-	trb.d2=6;
-	trb.d3=1+(6<<10);
-	writetrb(intaddr);
+	temp[i]=intaddr;
+	temp[i+1]=0;
+	temp[i+2]=0;
+	temp[i+3]=1+(6<<10);
 
 	//敲门铃，开始执行
 	ring(slot,3);
@@ -732,16 +660,16 @@ void hid(QWORD slot)
 
 
 
-	//正常结束-------------------
-	say("}",0);
-	return;
-	//--------------------------------
-
-
-
-
 failed:
-say("}",0);
+	return;
+}
+
+
+
+
+void pl2303(QWORD slot)
+{
+	say("pl2303!",0);
 }
 
 
@@ -797,12 +725,9 @@ return;
 //如果非roothub，那么它本身是个设备，基本初始化后已经被分配了slot
 //只要传递slot号，就能得到我们手动分配的内存
 
-	if(deviceprotocol==0) say("hub(no TT)",0);
-	if(deviceprotocol==1) say("hub(single TT)",0);
-	if(deviceprotocol==2) say("hub(multi TT)",0);
-	say("{",0);
-	say("rootport:",rootport);
-	say("routestring:",routestring);
+	if(deviceprotocol==0) say("no TT hub!",0);
+	if(deviceprotocol==1) say("single TT hub!",0);
+	if(deviceprotocol==2) say("multi TT hub!",0);
 
 	QWORD slotdata=slothome+slot*0x8000;
 	say("0.data@",slotdata);
@@ -921,23 +846,20 @@ return;
 
 
 	//----------prepare ep1.1 ring-------------
-	//[0,3f0)第一段正常trb
 	say("4.ep1.1 ring:",0);
-	QWORD temp;
-	trb.d1=0;
-	trb.d2=1;
-	trb.d3=0x21+(1<<10);
-	for(temp=0;temp<0x3f;temp++)
+	DWORD* temp=(DWORD*)intaddr;
+	int i=0;
+	for(i=0;i<0x3fc;i+=4)		//0xff0/4=0x3fc
 	{
-		trb.d0=hubbuffer+temp*0x10;
-		writetrb(intaddr);
+		temp[i]=hubbuffer+i*4;
+		temp[i+1]=0;
+		temp[i+2]=1;
+		temp[i+3]=0x21+(1<<10);
 	}
-	//[3f0,400)第一段结尾link trb指向[0,3f0)
-	trb.d0=intaddr;
-	trb.d1=0;
-	trb.d2=6;
-	trb.d3=1+(6<<10);
-	writetrb(intaddr);
+	temp[i]=intaddr;
+	temp[i+1]=0;
+	temp[i+2]=0;
+	temp[i+3]=1+(6<<10);
 
 	//敲门铃，开始执行
 	ring(slot,3);
@@ -949,7 +871,7 @@ return;
 	//------------------set port feathre-------------
 	for(childport=1;childport<=count;childport++)
 	{
-	say("port:",childport);
+	say("child port:",childport);
 	say("{",0);
 		say("resetting...",0);
 		packet.bmrequesttype=0x23;	//host2dev|class|rt_other
@@ -980,21 +902,15 @@ return;
 
 		if( (status&1) == 1 )
 		{
-			device(rootport,childport,(status>>9)&3);
+			device(rootport,childport,1+(status>>9)&3);
 		}
 	}
 
 
 
 
-	say("}",0);
-	return;
-
-
-
-
 failed:
-say("}",0);
+	return;
 }
 
 
@@ -1006,17 +922,9 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("device",0);
 	say("{",0);
 
-	say("0.information:",0);
-	say("rootport:",rootport);
-	say("routestring:",routestring);
-	if(speed==0) say("full speed:",speed);
-	if(speed==1) say("low speed:",speed);
-	if(speed==2) say("high speed:",speed);
-	if(speed>=3) say("unknown speed:",speed);
-
 
 	//---------------obtain slot------------------
-	say("1.requesting slot...",0);
+	say("1.enable slot...",0);
 
 	command(0,0,0, (9<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
@@ -1082,7 +990,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("3.initing slot...",0);
 
 
-	say("address command...",0);
+	say("address...",0);
 	command(inputcontext,0,0, (slot<<24)+(11<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
@@ -1197,19 +1105,27 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	}
 	}
 	//--------------------------------------------
+	say("",0);
 
 
 
 
 	//上一步得到基础信息
-	say("important infomation:",0);
+	say("slot:",slot);
+	say("rootport:",rootport);
+	say("routestring:",routestring);
 	say("classcode:",classcode);
 	say("interfaceclass:",interfaceclass);
 	say("vendor:",vendor);
 	say("product:",product);
 
+	if(speed==0) say("undefined speed:",speed);
+	if(speed==1) say("full speed:",speed);
+	if(speed==2) say("low speed:",speed);
+	if(speed==3) say("high speed:",speed);
+	if(speed==4) say("super speed:",speed);
 	say("interval:",interval);
-	if( (speed==0)|(speed==1) )
+	if( (speed==1)|(speed==2) )
 	{
 		if(interval == 1) interval=3;
 		else if(interval == 2) interval=4;
@@ -1224,28 +1140,26 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("fixed interval:",interval);		//[3,11]
 
 
-	say("}",0);
 
 
-
-
-	//已经知道设备是什么
-	if(classcode==0&&interfaceclass==3)
+	//----------------各种设备的分割线---------------
+	say("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",0);
+	if(classcode==9&&interfaceclass==9)
 	{
-		hid(slot);		//基础信息处理过了，交给设备驱动
+		hub(rootport,0,slot);	//交给hub驱动
 	}
-	else if(classcode==9&&interfaceclass==9)
+	else if(classcode==0&&interfaceclass==3)
 	{
-		hub(rootport,0,slot);	//交给设备驱动
+		hid(slot);
+	}
+	else if(vendor==0x67b&&product==0x2303)
+	{
+		pl2303(slot);
 	}
 	else
 	{
 		say("unknown device",0);
 	}
-
-	//到这里正常结束
-	return;
-
 
 
 	failed:
@@ -1396,12 +1310,12 @@ shout("{",0);
         while(1)
         {
                 explainevent(temp);
-
-                //dequeue pointer update
                 temp+=0x10;
+
                 if(temp>=eventringhome+0x1000)
                 {
                         temp=eventringhome;
+			break;
                 }
 
 		count++;
