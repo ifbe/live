@@ -203,10 +203,15 @@ static QWORD classcode;
 static QWORD deviceprotocol;
 static QWORD vendor;
 static QWORD product;
+
 static QWORD interfaceclass;
+static QWORD interfacesubclass;
+static QWORD interfaceprotocol;
+static BYTE stringtoread[8];
+
+static QWORD wmaxpacket;
 static QWORD interval;
 static QWORD reportsize;
-static BYTE stringtoread[8];
 void explaindescriptor(QWORD addr)
 {
 DWORD type=*(BYTE*)(addr+1);
@@ -219,9 +224,13 @@ case 1:	//设备描述符
 {
 	//这是第一个被读取的描述符，所以几个变量在这里清零最好
 	//classcode=0;	//这个就不必了，马上就变掉
-	interfaceclass=0;
-	interval=0;
 	for(i=0;i<8;i++) stringtoread[i]=0;
+	interfaceclass=0;
+	interfacesubclass=0;
+	interfaceprotocol=0;
+	wmaxpacket=0;
+	interval=0;
+	reportsize=0;
 
 say("device@",addr);
 	say("blength:",*(BYTE*)addr);
@@ -301,10 +310,14 @@ say("interface@",addr);
 	say("binterfacenum:",*(BYTE*)(addr+2));
 	say("balternatesetting:",*(BYTE*)(addr+3));
 	say("bnumendpoint:",*(BYTE*)(addr+4));
+
 	interfaceclass=*(BYTE*)(addr+5);
 	say("bclass:",interfaceclass);
-	say("bsubclass:",*(BYTE*)(addr+6));
-	say("bprotol:",*(BYTE*)(addr+7));
+	interfacesubclass=*(BYTE*)(addr+6);
+	say("bsubclass:",interfacesubclass);
+	interfaceprotocol=*(BYTE*)(addr+7);
+	say("bprotol:",interfaceprotocol);
+
 	i=*(BYTE*)(addr+0x8);
 	stringtoread[i]=1;
 	say("i:",i);
@@ -329,7 +342,8 @@ say("endpoint@",addr);
 	else if(eptype==2) say("    bulk",0);
 	else say("    interrupt",0);
 
-	say("wmaxpacketsize:",*(WORD*)(addr+4));
+	wmaxpacket=*(WORD*)(addr+4);
+	say("wmaxpacket:",wmaxpacket);
 	interval=*(BYTE*)(addr+6);
 	say("binterval:",interval);
 	say("",0);
@@ -512,7 +526,8 @@ void hid(QWORD slot)
 	writecontext(inputcontext,0);
 
 	context.d0=interval<<16;
-	context.d1=(8<<16)+(7<<3)+(3<<1);
+	//context.d1=(64<<16)+(7<<3)+(3<<1);
+	context.d1=(wmaxpacket<<16)+(7<<3)+(3<<1);
 	context.d2=intaddr+1;
 	context.d3=0;
 	context.d4=0x80008;
@@ -645,7 +660,7 @@ void hid(QWORD slot)
 	{
 		temp[i]=hidbuffer+i*4;
 		temp[i+1]=0;
-		temp[i+2]=6;
+		temp[i+2]=wmaxpacket;
 		temp[i+3]=0x25+(1<<10);
 	}
 	temp[i]=intaddr;
@@ -795,7 +810,7 @@ return;
 	writecontext(inputcontext,0);
 
 	context.d0=interval<<16;
-	context.d1=(8<<16)+(7<<3)+(3<<1);
+	context.d1=(wmaxpacket<<16)+(7<<3)+(3<<1);
 	context.d2=intaddr+1;
 	context.d3=0;
 	context.d4=0x80008;
@@ -1116,8 +1131,11 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("routestring:",routestring);
 	say("classcode:",classcode);
 	say("interfaceclass:",interfaceclass);
+	say("interfacesubclass:",interfacesubclass);
+	say("interfaceprotocol:",interfaceprotocol);
 	say("vendor:",vendor);
 	say("product:",product);
+	say("wmaxpacket:",wmaxpacket);
 
 	if(speed==0) say("undefined speed:",speed);
 	if(speed==1) say("full speed:",speed);
@@ -1144,6 +1162,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 
 	//----------------各种设备的分割线---------------
 	say("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",0);
+
 	if(classcode==9&&interfaceclass==9)
 	{
 		hub(rootport,0,slot);	//交给hub驱动

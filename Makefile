@@ -37,26 +37,6 @@ ext:
 	sudo umount /dev/nbd0p1
 	sudo qemu-nbd -d /dev/nbd0
 	sudo rmmod nbd
-qemutest:
-	make -s image
-	sudo qemu-kvm \
-	-monitor stdio \
-	-smp 2 \
-	-m 512 \
-	-device usb-ehci,id=ehci \
-	-device nec-usb-xhci,id=xhci \
-	-device usb-tablet,bus=xhci.0,port=1 \
-	-device ahci,id=ahci \
-	-device ide-drive,drive=disk,bus=ahci.0 \
-	-drive id=disk,if=none,file=live
-usbtest:
-	sudo qemu-kvm \
-	-smp 2 \
-	-m 512 \
-	-device nec-usb-xhci,id=xhci \
-	-device ahci,id=ahci \
-	-device ide-drive,drive=disk,bus=ahci.0 \
-	-drive id=disk,if=none,file=/dev/sdb
 fattest:
 	sudo qemu-kvm \
 	-smp 2 \
@@ -81,6 +61,67 @@ exttest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/ext.vhd
+flashdrivetest:
+	sudo qemu-kvm \
+	-smp 2 \
+	-m 512 \
+	-device usb-ehci,id=ehci \
+	-device nec-usb-xhci,id=xhci \
+	-device usb-tablet,bus=xhci.0,port=1 \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=/dev/sdb
+qemutest:
+	make -s image
+	sudo qemu-kvm \
+	-monitor stdio \
+	-smp 2 \
+	-m 512 \
+	-device usb-ehci,id=ehci \
+	-device nec-usb-xhci,id=xhci \
+	-device usb-tablet,bus=xhci.0,port=1 \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=live
+#插上鼠标键盘，lsusb，根据结果改"hostbus=?,hostaddr=?"这一段
+hidtest:
+	make -s image
+	sudo qemu-kvm \
+	-monitor stdio \
+	-smp 2 \
+	-m 512 \
+	-device usb-ehci,id=ehci \
+	-device nec-usb-xhci,id=xhci \
+	-device usb-host,hostbus=3,hostaddr=24,bus=xhci.0,port=3 \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=live
+#插上pl2303，lsusb，根据结果改"hostbus=?,hostaddr=?"这一段
+pl2303test:
+	make -s image
+	sudo qemu-kvm \
+	-monitor stdio \
+	-smp 2 \
+	-m 512 \
+	-device usb-ehci,id=ehci \
+	-device nec-usb-xhci,id=xhci \
+	-device usb-host,hostbus=2,hostaddr=3,bus=xhci.0,port=3 \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=live
+#插上u盘，lsusb，根据结果改"hostbus=?,hostaddr=?"这一段
+massstoragetest:
+	make -s image
+	sudo qemu-kvm \
+	-monitor stdio \
+	-smp 2 \
+	-m 512 \
+	-device usb-ehci,id=ehci \
+	-device nec-usb-xhci,id=xhci \
+	-device usb-host,hostbus=2,hostaddr=4,bus=xhci.0,port=3 \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=live
 copy:
 	make -s image
 	sudo cp init/init /mnt/efi/live/init
