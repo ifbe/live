@@ -256,7 +256,7 @@ jmp console
 ls:
 
 call checkandchangeline		;get new edi
-mov esi,0x1c0000
+mov esi,0x4c0000
 xor ecx,ecx
 .continue:
 cmp dword [esi],0

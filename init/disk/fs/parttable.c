@@ -2,7 +2,8 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
-#define diskhome 0x100000
+#define diskhome 0x400000
+#define mbrbuffer diskhome+0x20000
 
 
 
@@ -23,7 +24,7 @@ QWORD explaingpt()
 {
 	say("gpt disk",0);
 	QWORD* our=(QWORD*)diskhome;
-	QWORD* raw=(QWORD*)(diskhome+0x20400);
+	QWORD* raw=(QWORD*)(mbrbuffer+0x400);
 	int i;
 	for(i=0;i<0x200;i++) our[i]=0;
 
@@ -67,7 +68,7 @@ QWORD explaingpt()
 QWORD explainmbr()
 {
 	say("mbr disk",0);
-	QWORD raw=diskhome+0x20000+0x1be;
+	QWORD raw=mbrbuffer+0x1be;
 	BYTE* our=(BYTE*)diskhome;
 	int i;
 	for(i=0;i<0x1000;i++) our[i]=0;
@@ -142,14 +143,14 @@ static void mount(QWORD name)
 
 void parttable()
 {
-	BYTE* memory=(BYTE*)(diskhome+20000);
+	BYTE* memory=(BYTE*)(mbrbuffer);
 	int i;
 	for(i=0;i<0x8000;i++) memory[i]=0;
 
-        read(diskhome+0x20000,0,getdisk(),64);
-        if(*(WORD*)(diskhome+0x20000+0x1fe)!=0xAA55){say("bad disk",0);return;}
+        read(mbrbuffer,0,getdisk(),64);
+        if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55){say("bad disk",0);return;}
 
-	if(*(QWORD*)(diskhome+0x20000+0x200)==0x5452415020494645) explaingpt();
+	if(*(QWORD*)(mbrbuffer+0x200)==0x5452415020494645) explaingpt();
 	else explainmbr();
 
 

@@ -2,10 +2,14 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
-#define inodebuffer 0x140000
-#define tablebuffer 0x180000
-#define rawbuffer 0x1c0000
-#define programhome 0x2000000
+
+#define diskhome 0x400000
+#define programhome 0x2000000		//读出文件放到哪儿
+
+#define pbrbuffer diskhome+0x30000
+#define inodebuffer diskhome+0x40000
+#define tablebuffer diskhome+0x80000
+#define rawbuffer diskhome+0xc0000
 
 
 static QWORD block0;
@@ -30,10 +34,10 @@ QWORD getinodeblock(QWORD groupnum)
 	sector+=groupnum/(0x200/0x20);
 
 	//肯定在这个扇区里面
-	read(0x138000,sector,getdisk(),1);
+	read(pbrbuffer+0x8000,sector,getdisk(),1);
 
 	//每0x20描述一个组，一个扇区里面偏移多少
-	addr=0x138000+8+(groupnum*0x20)%0x200;
+	addr=pbrbuffer+0x8000+8+(groupnum*0x20)%0x200;
 
 	//得到这一组inode表的block号
 	return *(DWORD*)addr;
@@ -228,7 +232,7 @@ void table2raw(QWORD rsi)
 
 static void ext_cd(QWORD name)
 {
-	QWORD* table=(QWORD*)rawbuffer;
+	QWORD* table=(QWORD*)(rawbuffer);	//一定要括号
 	int i;
 	QWORD number=0;
 
@@ -262,9 +266,9 @@ static void ext_cd(QWORD name)
 	}
 
 	//清理buffer
-	table=(QWORD*)tablebuffer;
+	table=(QWORD*)(tablebuffer);		//一定要括号
 	for(i=0;i<0x8000;i++) table[i]=0;
-	table=(QWORD*)rawbuffer;
+	table=(QWORD*)(rawbuffer);		//一定要括号
 	for(i=0;i<0x8000;i++) table[i]=0;
 
 	//开搞
@@ -275,7 +279,7 @@ static void ext_cd(QWORD name)
 
 static void ext_load(QWORD name)
 {
-	QWORD* table=(QWORD*)rawbuffer;
+	QWORD* table=(QWORD*)(rawbuffer);	//一定要括号
 	int i;
 	QWORD number=0;
 
@@ -306,20 +310,20 @@ int mountext(QWORD sector)
 	say("ext sector:",sector);
 
 	//读分区前8扇区，总共0x1000字节
-        read(0x130000,block0,getdisk(),0x8);	//0x1000
+        read(pbrbuffer,block0,getdisk(),0x8);	//0x1000
 
 	//检查magic值
-	if( *(WORD*)0x130438 != 0xef53 ) return;
+	if( *(WORD*)(pbrbuffer+0x438) != 0xef53 ) return;
 
 	//变量们
-	blocksize=*(DWORD*)0x130418;	//就不另开个temp变量了
+	blocksize=*(DWORD*)(pbrbuffer+0x418);	//就不另开个temp变量了
 	blocksize=( 1<<(blocksize+10) )/0x200;
 	say("sectorperblock:",blocksize);
-	groupsize=( *(DWORD*)0x130420 )*blocksize;
+	groupsize=( *(DWORD*)(pbrbuffer+0x420) )*blocksize;
 	say("sectorpergroup:",groupsize);
-	inodepergroup=*(DWORD*)0x130428;
+	inodepergroup=*(DWORD*)(pbrbuffer+0x428);
 	say("inodepergroup:",inodepergroup);
-	inodesize=*(WORD*)0x130458;
+	inodesize=*(WORD*)(pbrbuffer+0x458);
 	say("byteperinode:",inodesize);
 
 	//inode table缓存

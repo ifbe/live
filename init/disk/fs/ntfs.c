@@ -2,10 +2,14 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
-#define mftbuffer 0x140000
-#define indexbuffer 0x180000
-#define rawbuffer 0x1c0000
+
+#define diskhome 0x400000
 #define programhome 0x2000000
+
+#define pbrbuffer diskhome+0x30000
+#define mftbuffer diskhome+0x40000
+#define indexbuffer diskhome+0x80000
+#define rawbuffer diskhome+0xc0000
 
 
 static QWORD ntfssector;
@@ -145,11 +149,11 @@ void checkmftcache(QWORD mftnum)
 	if(cachecurrent == cacheblock) return;
 
 	//开始找那一块地址并且读取
-	QWORD offset=0x138000 + ( *(WORD*)0x138014 );
+	QWORD offset=pbrbuffer+0x8000 + ( *(WORD*)(pbrbuffer+0x8014) );
 	DWORD property;
 	while(1)
 	{
-		if(offset > 0x138400) break;
+		if(offset > pbrbuffer+0x8400) break;
 		property= *(DWORD*)offset;
 
 		if(property == 0xffffffff)
@@ -415,7 +419,7 @@ static void ntfs_cd(QWORD name)
 {
 	//变量们
 	QWORD mftnumber;
-	QWORD* addr=(QWORD*)rawbuffer;
+	QWORD* addr=(QWORD*)(rawbuffer);
 	int i;
 
 	//传进来的名字处理一下
@@ -457,9 +461,9 @@ static void ntfs_cd(QWORD name)
 	}
 
 	//清理indexbuffer,rawbuffer
-	addr=(QWORD*)indexbuffer;
+	addr=(QWORD*)(indexbuffer);
 	for(i=0;i<0x800;i++) addr[i]=0;		//clear [180000,1bfff8]
-	addr=(QWORD*)rawbuffer;
+	addr=(QWORD*)(rawbuffer);
 	for(i=0;i<0x800;i++) addr[i]=0;	//clear [1c0000,1ffff8]
 
 	//当前位置
@@ -474,7 +478,7 @@ static void ntfs_load(QWORD name)
 {
 	//变量们
 	QWORD mftnumber;
-	QWORD* addr=(QWORD*)rawbuffer;
+	QWORD* addr=(QWORD*)(rawbuffer);
 	int i;
 
 	//处理名字
@@ -504,24 +508,24 @@ static void ntfs_load(QWORD name)
 int mountntfs(QWORD sector)
 {
 	//读PBR，失败就返回
-        read(0x130000,sector,getdisk(),1);
-	if( *(DWORD*)0x130003 != 0x5346544e ) return -1;
+        read(pbrbuffer,sector,getdisk(),1);
+	if( *(DWORD*)(pbrbuffer+3) != 0x5346544e ) return -1;
 
 	//记下PBR地址
 	ntfssector=sector;
 	say("ntfs sector:",sector);
 
 	//变量
-	clustersize=(QWORD)( *(BYTE*)0x13000d );
+	clustersize=(QWORD)( *(BYTE*)(pbrbuffer+0xd) );
 	say("clustersize:",clustersize);
-	mftcluster= *(QWORD*)0x130030;
+	mftcluster= *(QWORD*)(pbrbuffer+0x30);
 	say("mftcluster:",mftcluster);
-	QWORD indexsize=clustersize * (QWORD)( *(BYTE*)0x130044 );
+	QWORD indexsize=clustersize * (QWORD)( *(BYTE*)(pbrbuffer+0x44) );
 	say("indexsize:",indexsize);
 	say("",0);
 
 	//保存开头几个mft
-        read(0x138000,ntfssector+mftcluster*clustersize,getdisk(),0x20);
+        read(pbrbuffer+0x8000,ntfssector+mftcluster*clustersize,getdisk(),0x20);
 	cachecurrent=0xffff;		//no mft cache yet
 
 	//cd /
