@@ -19,17 +19,11 @@
 ;[+300,+3ff]:
 %include "3th/prepare64.s"	;reload cr3,access to 16GB ram garanteed
 
-;[+400,+4ff]:
-%include "4th/acpi.s"		;put acpi info in [4000,4fff]
-
-;[+500,+5ff]:
-%include "5th/pciold.s"		;put pci info in [5000,5fff]
-
-;[+600,+7ff]:
-%include "6th/apic.s"		;init apic to well known state
+;[+400,+7ff]:
+%include "4th/apic.s"		;init apic to well known state
 
 ;[+800,+fff]:
-%include "7th/exception.s"	;set 32 default exception handler
+%include "5th/exception.s"	;set 32 default exception handler
 
 ;[+1000,+1fff]:
 %include "anscii.s"		;anscii pixel table

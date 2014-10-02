@@ -199,7 +199,7 @@ jmp endofioapic
 
 
 paddingofioapic:
-times 0x200-(paddingofioapic-startoflocalapic) db 0
+times 0x400-(paddingofioapic-startoflocalapic) db 0
 
 
 endofioapic:

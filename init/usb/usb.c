@@ -516,8 +516,26 @@ void hid(QWORD slot)
 	DWORD epstate;
 
 
+	say("1.report desc@",buffer+0x400);
+	packet.bmrequesttype=0x81;
+	packet.brequest=6;
+	packet.wvalue=0x2200;
+	packet.windex=0;
+	packet.wlength=reportsize;
+	packet.buffer=buffer+0x400;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+	explainhid(buffer+0x400);
+
+
+	say("report bytes:",reportbyte);
+
+
+
+
 	//change input context&ep1.1 context
-	say("1.slot...",0);
+	say("2.configure ep1.1...",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -547,113 +565,11 @@ void hid(QWORD slot)
 	//-----------------------------------
 
 
-	//--------------------------------------
-	say("2.device...",0);
-	say("set configuration...",0);
-	packet.bmrequesttype=0;
-	packet.brequest=9;
-	packet.wvalue=1;
-	packet.windex=0;
-	packet.wlength=0;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	say("get configuration...",0);
-	packet.bmrequesttype=0x80;
-	packet.brequest=8;
-	packet.wvalue=0;
-	packet.windex=0;
-	packet.wlength=1;
-	packet.buffer=buffer+0x500;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	say("configure:",*(BYTE*)(buffer+0x500));
-	//------------------------------------
-
-
-/*
-	//-------------------------------
-	say("set idle...",0);
-	packet.bmrequesttype=0x21;
-	packet.brequest=0xa;
-	packet.wvalue=0;
-	packet.windex=0;
-	packet.wlength=0;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	say("get idle...",0);
-	packet.bmrequesttype=0xa1;
-	packet.brequest=2;
-	packet.wvalue=0;
-	packet.windex=0;
-	packet.wlength=1;
-	packet.buffer=buffer+0x600;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	say("idle:",*(BYTE*)(buffer+0x600));
-	//--------------------------------------
-*/
-
-
-
-/*
-	//-------------------------------------
-	say("set interface...",0);
-	packet.bmrequesttype=0x1;
-	packet.brequest=0xb;
-	packet.wvalue=0;		//alternate setting
-	packet.windex=0;		//interface
-	packet.wlength=0;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-
-	say("get interface...",0);
-	packet.bmrequesttype=0x81;
-	packet.brequest=0xa;
-	packet.wvalue=0;
-	packet.windex=0;
-	packet.wlength=1;
-	packet.buffer=buffer+0x600;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	say("interface:",*(BYTE*)(buffer+0x600));
-	//-------------------------------------
-*/
-
-
-
-	say("3.report desc@",buffer+0x400);
-	packet.bmrequesttype=0x81;
-	packet.brequest=6;
-	packet.wvalue=0x2200;
-	packet.windex=0;
-	packet.wlength=reportsize;
-	packet.buffer=buffer+0x400;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-	explainhid(buffer+0x400);
-
-
-	say("report bytes:",reportbyte);
-
-
 
 
 	//----------prepare ep1.1 ring-------------
 	//[0,3f0)第一段正常trb
-	say("4.ep1.1",0);
+	say("3.ep1.1",0);
 	DWORD* temp=(DWORD*)intaddr;
 	int i=0;
 	for(i=0;i<0x3fc;i+=4)		//0xff0/4=0x3fc
@@ -684,7 +600,90 @@ failed:
 
 void pl2303(QWORD slot)
 {
-	say("pl2303!",0);
+	say("pl2303",0);
+}
+
+
+
+
+void egalaxytouch(QWORD slot)
+{
+	say("egalaxy touch",0);
+
+	//只要传递slot号，就能得到我们手动分配的内存
+	QWORD slotdata=slothome+slot*0x8000;
+	say("0.data@",slotdata);
+	QWORD inputcontext=slotdata;
+	QWORD outputcontext=slotdata+0x1000;
+	QWORD controladdr=slotdata+0x2000;
+	QWORD intaddr=slotdata+0x3000;
+	QWORD buffer=slotdata+0x4000;
+	QWORD hidbuffer=slotdata+0x5000;
+	DWORD slotstate;
+	DWORD epstate;
+
+
+
+
+	//change input context&ep1.1 context
+	say("2.configure ep1.1...",0);
+        context.d0=0;
+	context.d1=9;
+	context.d2=0;
+	context.d3=0;
+	context.d4=0;
+	writecontext(inputcontext,0);
+
+	context.d0=interval<<16;
+	//context.d1=(64<<16)+(7<<3)+(3<<1);
+	context.d1=(wmaxpacket<<16)+(7<<3)+(3<<1);
+	context.d2=intaddr+1;
+	context.d3=0;
+	context.d4=0x80008;
+	writecontext(inputcontext,4);		//ep1.1
+
+	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
+	if(waitevent(0x21)<0) goto failed;
+
+	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
+	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
+	if(slotstate==3) say("slot configured",0);
+	else say("slot state:",slotstate);
+	if(epstate==0){
+		say("ep3 wrong",0);
+		goto failed;
+	}
+	//-----------------------------------
+
+
+
+
+	//----------prepare ep1.1 ring-------------
+	//[0,3f0)第一段正常trb
+	say("3.ep1.1",0);
+	DWORD* temp=(DWORD*)intaddr;
+	int i=0;
+	for(i=0;i<0x3fc;i+=4)		//0xff0/4=0x3fc
+	{
+		temp[i]=hidbuffer+i*4;
+		temp[i+1]=0;
+		temp[i+2]=wmaxpacket;
+		temp[i+3]=0x25+(1<<10);
+	}
+	temp[i]=intaddr;
+	temp[i+1]=0;
+	temp[i+2]=0;
+	temp[i+3]=1+(6<<10);
+
+	//敲门铃，开始执行
+	ring(slot,3);
+	//------------------------------------------
+
+
+
+
+failed:
+	return;
 }
 
 
@@ -780,8 +779,7 @@ return;
 
 
 	//-------------这是一个hub,修改部分context---------------
-	say("2.slot...",0);
-	say("evaluate...",0);
+	say("2.evaluate...",0);
 
 	//slot context
 	DWORD* tempaddr=(DWORD*)(inputcontext+contextsize);
@@ -801,7 +799,7 @@ return;
 
 
 	//change input context&ep1.1 context
-	say("configure...",0);
+	say("3.configure ep1.1..",0);
         context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -827,35 +825,6 @@ return;
 		say("ep3 wrong",0);
 		goto failed;
 	}
-
-
-
-
-        //set configuration:0x0000,0000,0001,09,00
-	say("device...",0);
-	say("set configure...",0);
-        packet.bmrequesttype=0;
-        packet.brequest=9;
-        packet.wvalue=1;
-        packet.windex=0;
-        packet.wlength=0;
-        sendpacket(controladdr);
-        ring(slot,1);
-        if(waitevent(0x20)<0) goto failed;
-
-	say("get configure...",0);
-	packet.bmrequesttype=0x80;
-	packet.brequest=8;
-	packet.wvalue=0;
-	packet.windex=0;
-	packet.wlength=1;
-	packet.buffer=buffer+0x500;
-	sendpacket(controladdr);
-	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
-
-	say("device configured:",*(BYTE*)(buffer+0x500));
-        //------------------------------------
 
 
 
@@ -1002,10 +971,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 
 
 	//-----------address device-----------------
-	say("3.initing slot...",0);
-
-
-	say("address...",0);
+	say("2.address device...",0);
 	command(inputcontext,0,0, (slot<<24)+(11<<10)+commandcycle );
 	if(waitevent(0x21)<0) goto failed;
 
@@ -1059,7 +1025,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 
 
 	//------------------get descriptor-----------------
-	say("4.descriptors:",0);
+	say("3.descriptors:",0);
 
 	//[buffer]:device descriptor
 	say("device descriptor...",0);
@@ -1120,6 +1086,36 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	}
 	}
 	//--------------------------------------------
+
+
+
+
+	//--------------------------------------
+	say("4.set configuration...",0);
+	packet.bmrequesttype=0;
+	packet.brequest=9;
+	packet.wvalue=1;
+	packet.windex=0;
+	packet.wlength=0;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	say("get configuration...",0);
+	packet.bmrequesttype=0x80;
+	packet.brequest=8;
+	packet.wvalue=0;
+	packet.windex=0;
+	packet.wlength=1;
+	packet.buffer=buffer+0x500;
+	sendpacket(controladdr);
+	ring(slot,1);
+	if(waitevent(0x20)<0) goto failed;
+
+	say("configure:",*(BYTE*)(buffer+0x500));
+	//------------------------------------
+
+
 	say("",0);
 
 
@@ -1161,7 +1157,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 
 
 	//----------------各种设备的分割线---------------
-	say("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",0);
+	say("--------------------------------",0);
 
 	if(classcode==9&&interfaceclass==9)
 	{
@@ -1174,6 +1170,10 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	else if(vendor==0x67b&&product==0x2303)
 	{
 		pl2303(slot);
+	}
+	else if(vendor==0xeef&&product<=2)
+	{
+		egalaxytouch(slot);
 	}
 	else
 	{
@@ -1269,7 +1269,7 @@ explainevent(QWORD addr)
 			shout("    slot:",slot);
 			QWORD endpoint=( p[3]>> 16 )&0x3f;
 			shout("    endpoint:",endpoint);
-			if(completecode!=1)
+			if( (completecode!=1)&&(completecode!=0xd) )
 			{
 				shout("    error:",completecode);
 				break;

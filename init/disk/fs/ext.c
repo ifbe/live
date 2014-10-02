@@ -5,6 +5,7 @@
 #define inodebuffer 0x140000
 #define tablebuffer 0x180000
 #define rawbuffer 0x1c0000
+#define programhome 0x2000000
 
 
 static QWORD block0;
@@ -295,7 +296,7 @@ static void ext_load(QWORD name)
 		return;
 	}
 
-	explaininode(0x400000,number);
+	explaininode(programhome,number);
 }
 
 

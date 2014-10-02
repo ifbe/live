@@ -279,7 +279,7 @@ jmp .continue
 
 ;______________________________
 test:
-mov rax,0x400000
+mov rax,0x2000000
 call rax
 jmp scroll
 ;______________________________

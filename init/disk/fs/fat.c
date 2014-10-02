@@ -5,6 +5,7 @@
 #define fatbuffer 0x140000
 #define indexbuffer 0x180000
 #define rawbuffer 0x1c0000
+#define programhome 0x2000000
 
 static QWORD fat0;
 static QWORD fatsize;
@@ -149,7 +150,7 @@ static void fat16_load(QWORD name)
 	}
 
 	QWORD file=(QWORD)(*(WORD*)(p+0x1a));	//fat16,only 16bit
-	fat16_data(0x400000,file);
+	fat16_data(programhome,file);
 }
 
 
@@ -276,7 +277,7 @@ static void fat32_load(QWORD name)
 	QWORD file=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	file+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
 
-	fat32_data(0x400000,file);
+	fat32_data(programhome,file);
 }
 
 

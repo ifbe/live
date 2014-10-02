@@ -92,7 +92,7 @@ hidtest:
 	-m 512 \
 	-device usb-ehci,id=ehci \
 	-device nec-usb-xhci,id=xhci \
-	-device usb-host,hostbus=3,hostaddr=24,bus=xhci.0,port=3 \
+	-device usb-host,hostbus=2,hostaddr=6,bus=xhci.0,port=3 \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live

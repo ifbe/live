@@ -5,6 +5,7 @@
 #define mftbuffer 0x140000
 #define indexbuffer 0x180000
 #define rawbuffer 0x1c0000
+#define programhome 0x2000000
 
 
 static QWORD ntfssector;
@@ -211,7 +212,7 @@ void explain80(QWORD addr)	//file data
 		say("resident80",0);
 		DWORD length = *(DWORD*)(addr+0x10);
 		BYTE* rsi=(BYTE*)(addr + (QWORD)(*(DWORD*)(addr+0x14)) );
-		BYTE* rdi=(BYTE*)0x400000;
+		BYTE* rdi=(BYTE*)programhome;
 		int i;
 		for(i=0;i<length;i++) rdi[i]=rsi[i];
 
@@ -220,7 +221,7 @@ void explain80(QWORD addr)	//file data
 	else
 	{
 		say("non resident80",0);
-		datarun(0x400000 , addr + (*(QWORD*)(addr+0x20)) );
+		datarun(programhome , addr + (*(QWORD*)(addr+0x20)) );
 	}
 }
 

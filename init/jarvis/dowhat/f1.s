@@ -104,7 +104,7 @@ jmp ramdump
 	mov rax,[rel input]
 	and rax,0x7
 	shl rax,9
-	add rax,0x400000
+	add rax,0x2000000
 	mov [rel addr],rax
 	mov qword [rel input],0
 	jmp ramdump

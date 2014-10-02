@@ -2,73 +2,94 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
+#define diskhome 0x100000
 
 
+
+
+//从磁盘读出来的数据在[+0x400,+0x4400]=0x80个*每个0x80
+//[+0,+0xf]:类型guid			raw[0],raw[1]
+//[+0x10,+0x1f]:分区guid		raw[2],raw[3]
+//[+0x20,+0x27]:起始lba			raw[4]
+//[+0x28,+0x2f]:末尾lba			raw[5]
+//[+0x30,+0x37]:属性标签		raw[6]
+//[+0x38,+0x7f]:名字			raw[7]~raw[0xf]
+//翻译之后的在[diskhome,diskhome+0x800]
+//[+0,0x7]:起始lba			our[0]
+//[+0x8,0xf]:末尾lba			our[1]
+//[+0x10,0x17]:分区类型anscii		our[2]
+//[0x18,0x3f]:空
 QWORD explaingpt()
 {
 	say("gpt disk",0);
-	BYTE* memory=(BYTE*)0x128000;
+	QWORD* our=(QWORD*)diskhome;
+	QWORD* raw=(QWORD*)(diskhome+0x20400);
 	int i;
-	for(i=0;i<0x8000;i++) memory[i]=0;
+	for(i=0;i<0x200;i++) our[i]=0;
 
-	QWORD offset;
-	BYTE* addr=(BYTE*)0x128000;
-	for(offset=0x120400;offset<0x124400;offset+=0x80)    //find esp
+	for(i=0;i<0x80;i++)
 	{
-		if( *(QWORD*)offset==0x4433b9e5ebd0a0a2 ){
-		if( *(QWORD*)(offset+8)==0xc79926b7b668c087 ){
-			*(QWORD*)addr=0x7366746e;
-			*(QWORD*)(addr+8)=*(QWORD*)(offset+0x20);
-			addr+=0x10;
+		our[8*i]=raw[0x10*i+4];
+		our[8*i+1]=raw[0x10*i+5];
+		if(raw[0x10*i]==0x4433b9e5ebd0a0a2)
+		{
+			if(raw[0x10*i+1]==0xc79926b7b668c087)
+				our[8*i+2]=0x7366746e;
 		}
+		else if(raw[0x10*i]==0x11d2f81fc12a7328)
+		{
+			if(raw[0x10*i+1]==0x3bc93ec9a0004bba)
+				our[8*i+2]=0x746166;
 		}
-		else if( *(QWORD*)offset==0x11d2f81fc12a7328 ){
-		if( *(QWORD*)(offset+8)==0x3bc93ec9a0004bba ){
-			*(QWORD*)addr=0x746166;
-			*(QWORD*)(addr+8)=*(QWORD*)(offset+0x20);
-			addr+=0x10;
-		}
-		}
-		else if( *(QWORD*)offset==0x477284830fc63daf ){
-		if( *(QWORD*)(offset+8)==0xe47d47d8693d798e ){
-			*(QWORD*)addr=0x747865;
-			*(QWORD*)(addr+8)=*(QWORD*)(offset+0x20);
-			addr+=0x10;
-		}
+		else if(raw[0x10*i]==0x477284830fc63daf)
+		{
+			if(raw[0x10*i+1]==0xe47d47d8693d798e)
+				our[8*i+2]=0x747865;
 		}
 	}
 }
 
 
+
+
+//从磁盘读出来的数据在[+0,+0xf]=4个*每个0x10
+//[+0]:活动标记
+//[+0x1,+0x3]:开始磁头柱面扇区
+//[+0x4]:分区类型
+//[+0x5,+0x7]:结束磁头柱面扇区
+//[+0x8,+0xb]:起始lba
+//[+0xc,+0xf]:大小
+//翻译之后的在[diskhome,diskhome+0x800]
+//[+0,0x7]:起始lba			our[0]
+//[+0x8,0xf]:末尾lba			our[1]
+//[+0x10,0x17]:分区类型anscii		our[2]
+//[0x18,0x3f]:空
 QWORD explainmbr()
 {
 	say("mbr disk",0);
-	BYTE* memory=(BYTE*)0x128000;
+	QWORD raw=diskhome+0x20000+0x1be;
+	BYTE* our=(BYTE*)diskhome;
 	int i;
-	for(i=0;i<0x8000;i++) memory[i]=0;
+	for(i=0;i<0x1000;i++) our[i]=0;
 
-	QWORD offset;
-	BYTE* addr=(BYTE*)0x128000;
-	for(offset=0x1201be;offset<0x1201fe;offset+=0x10)    //find fat?
+	for(i=0;i<4;i++)
 	{
-		BYTE temp=*(BYTE*)(offset+4);
+		*(QWORD*)(our+0x40*i)=*(DWORD*)(raw+0x10*i+8);
+		*(QWORD*)(our+0x40*i+8)=*(DWORD*)(raw+0x10*i+0xc);
+
+
+		BYTE temp=*(BYTE*)(raw+0x10*i+4);
 		if( temp==0x4 | temp==0x6 | temp==0xb )
 		{
-			*(QWORD*)addr=0x746166;
-			*(QWORD*)(addr+8)=(QWORD)(*(DWORD*)(offset+8));
-			addr+=0x10;
+			*(QWORD*)(our+0x40*i+0x10)=0x746166;
 		}
 		else if( temp==0x7 )
 		{
-			*(QWORD*)addr=0x7366746e;
-			*(QWORD*)(addr+8)=(QWORD)(*(DWORD*)(offset+8));
-			addr+=0x10;
+			*(QWORD*)(our+0x40*i+0x10)=0x7366746e;
 		}
 		else if( temp==0x83 )
 		{
-			*(QWORD*)addr=0x747865;
-			*(QWORD*)(addr+8)=(QWORD)(*(DWORD*)(offset+8));
-			addr+=0x10;
+			*(QWORD*)(our+0x40*i+0x10)=0x747865;
 		}
 	}
 }
@@ -96,18 +117,18 @@ static void mount(QWORD name)
 {
 	blank2zero(&name);
 
-	QWORD* memory=(QWORD*)0x128000;
+	QWORD* memory=(QWORD*)diskhome;
 	QWORD offset=0;
 	int i;
-	for(i=0;i<0x100;i+=2)
+	for(i=0;i<0x80;i+=8)
 	{
-		if(memory[i] == name)
+		if(memory[i+2] == name)
 		{
-			offset=memory[i+1];
+			offset=memory[i];
 			break;	
 		}
 	}
-	if(i==0x100)
+	if(i>=0x80)
 	{
 		say("partition not found",0);
 		return;
@@ -121,14 +142,14 @@ static void mount(QWORD name)
 
 void parttable()
 {
-	BYTE* memory=(BYTE*)0x120000;
+	BYTE* memory=(BYTE*)(diskhome+20000);
 	int i;
 	for(i=0;i<0x8000;i++) memory[i]=0;
 
-        read(0x120000,0,getdisk(),64);
-        if( *(WORD*)0x1201fe !=0xAA55 ){say("bad disk",0);return;}
+        read(diskhome+0x20000,0,getdisk(),64);
+        if(*(WORD*)(diskhome+0x20000+0x1fe)!=0xAA55){say("bad disk",0);return;}
 
-	if(*(QWORD*)0x120200==0x5452415020494645) explaingpt();
+	if(*(QWORD*)(diskhome+0x20000+0x200)==0x5452415020494645) explaingpt();
 	else explainmbr();
 
 

@@ -1,8 +1,9 @@
+#define programhome 0x2000000
 static void directidentify()
 {
-	identify(0x400000,getdisk());
+	identify(programhome,getdisk());
 
-	unsigned char* p=(unsigned char*)0x400000;
+	unsigned char* p=(unsigned char*)programhome;
 	unsigned char temp;
 	int i;
 	for(i=0;i<0x100;i+=2)
@@ -17,7 +18,7 @@ static void directidentify()
 static void directread(unsigned long long sector)
 {
 	int result;
-	result=read(0x400000,sector,getdisk(),8);
+	result=read(programhome,sector,getdisk(),8);
 	if(result>=0) say("read sector:",sector);
 	else say("something wrong:",sector);
 }
