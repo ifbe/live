@@ -5,7 +5,6 @@ dq "[800,fff]:  keyboard buffer                                    "
 dq "[1000,1fff]:idt                                                "
 dq "[2000,2fff]:memory info                                        "
 dq "[3000,3fff]:vesa info                                          "
-dq "[4000,4fff]:acpi info+pci info                                 "
 dq "[5000,5fff]:anscii pixel table+transform table                 "
 dq "[6000,7fff]:console buffer                                     "
 
@@ -20,8 +19,13 @@ dq "[98000,9fff8]:stack                                            "
 
 dq "[a0000,fffff]:you can not use this                             "
 
-dq "[100000,1fffff]:filesystem data                                "
-dq "[200000,2fffff]:ahci                                           "
-dq "[300000,3fffff]:xhci                                           "
+dq "[100000,10ffff]:(/acpi)explained acpi table                    "
+dq "[110000,11ffff]:(/pci)explained pci table                      "
+dq "[120000,12ffff]:(/usb)explained usb table                      "
+dq "[180000,1fffff]:(/bin)function address in memory               "
+
+dq "[200000,2fffff]:ahci driver need buffer                        "
+dq "[300000,3fffff]:xhci driver need buffer                        "
+dq "[400000,4fffff]:file system driver need buffer                 "
 
 dq "[400000,7fffff]:loaded program                                 "

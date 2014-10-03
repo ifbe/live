@@ -1,21 +1,29 @@
 #include "ahci.h"
 #define ahcihome 0x200000
 
-//找到就返回ahci的pci地址，否则返回0
-//全部设备信息我放在0x5000了，非本环境自己枚举
+
+//全部设备信息我放在0x110000了，格式如下:(非本环境自己处理这一步)
+//[0,7]:(vendorid<<16)+deviceid
+//[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
+//[0x10,0x17]:portaddress of the device
+//[0x18,0x1f]:ansciiname of the device
+//本函数作用是：
+//1.返回要驱动的设备的portaddress
+//2.填上[0x18,0x1f],(为了工整好看)
 unsigned int findaddr()
 {
-	QWORD addr=0x4004;
+	QWORD* addr=(QWORD*)0x110000;
+	int i;
 	unsigned int temp;
-	for(;addr<0x5000;addr+=0x10)
+	for(i=0;i<0x80;i++)		//每个0x40
 	{
-		temp=*(DWORD*)addr;
+		temp=addr[8*i+1];
 		temp&=0xffffff00;
 		if(temp==0x01060100)
 		{
-			addr+=4;
-			temp=*(DWORD*)addr;
-			say("ahci(port)@",(QWORD)temp);
+			temp=addr[8*i+2];
+			addr[8*i+3]=0x69636861;
+
 			return temp;
 		}
 	}
@@ -43,6 +51,8 @@ static inline unsigned int in32( unsigned short port )
 //出：内存地址
 unsigned int probepci(QWORD addr)
 {
+	say("ahci(port)@",addr);
+
 	out32(0xcf8,addr+0x4);
 	unsigned int temp=in32(0xcfc)|(1<<10)|(1<<2);
 	out32(0xcf8,addr+0x4);
@@ -53,18 +63,7 @@ unsigned int probepci(QWORD addr)
 
 	out32(0xcf8,addr+0x24);
 	addr=in32(0xcfc)&0xfffffff0;
-	say("ahci@",addr);
 
-	int i=0;
-	QWORD* table=(QWORD*)0x4000;
-	for(i=0;i<0x200;i+=2)
-	{
-		if(table[i]==0){
-			table[i]=0x69636861;
-			table[i+1]=addr;
-			break;
-		}
-	}
 	return addr;
 }
 
@@ -73,6 +72,8 @@ unsigned int probepci(QWORD addr)
 
 void probeahci(QWORD addr)
 {
+	say("ahci@",addr);
+
 	HBA_MEM* abar=(HBA_MEM*)addr;
 	abar->ghc|=0x80000000;
 	abar->ghc&=0xfffffffd;

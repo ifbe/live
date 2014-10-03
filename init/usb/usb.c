@@ -1195,16 +1195,8 @@ int preparevariety()
         QWORD* memory;
 	int i;
 
-	//找xhci在哪里
-	memory=(QWORD*)0x4000;
-	for(i=0;i<0x200;i++)
-	{
-		if(memory[i]==0x69636878){
-			xhciaddr=memory[i+1];
-			break;
-		}
-	}
-	if(i>=0x1ff) return -1;
+	xhciaddr=*(QWORD*)(xhcihome+8);		//xhci地址我放在这儿了
+	if(xhciaddr==0) return -1;
 
 	say("xhci@",xhciaddr);
 	say("{",0);

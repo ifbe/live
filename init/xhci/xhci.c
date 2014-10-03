@@ -4,9 +4,9 @@
 #define QWORD unsigned long long
 #define xhcihome 0x300000
 
-#define ersthome xhcihome+0
 #define dcbahome xhcihome+0x10000
 #define eventringhome xhcihome+0x20000
+#define ersthome xhcihome+0x28000
 #define cmdringhome xhcihome+0x30000
 
 #define slothome xhcihome+0x40000	//+0:		in context
@@ -24,19 +24,28 @@ static QWORD runtime;
 
 
 
+//全部设备信息我放在0x110000了，格式如下:(非本环境自己处理这一步)
+//[0,7]:(vendorid<<16)+deviceid
+//[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
+//[0x10,0x17]:portaddress of the device
+//[0x18,0x1f]:ansciiname of the device
+//本函数作用是：
+//1.返回要驱动的设备的portaddress
+//2.填上[0x18,0x1f],(为了工整好看)
 void findxhci()
 {
-        QWORD addr=0x4004;
+        QWORD* addr=(QWORD*)0x110000;
+	int i;
         DWORD temp;
-        for(;addr<0x5000;addr+=0x10)
+        for(i=0;i<0x80;i++)
         {
-                temp=*(DWORD*)addr;
+                temp=addr[8*i+1];
                 temp&=0xffffff00;
                 if(temp==0x0c033000)
                 {
-                        addr+=4;
-                        xhciport=*(DWORD*)addr;
-                        say("xhci(port)@",xhciport);
+                        xhciport=addr[8*i+2];
+                        addr[8*i+3]=0x69636878;
+
                         return;
                 }
         }
@@ -199,6 +208,8 @@ say("}",0);
 
 QWORD probepci()
 {
+	say("xhci(port)@",xhciport);
+
 	//disable pin interrupt+enable bus mastering
 	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
         out32(0xcf8,xhciport+0x4);
@@ -215,18 +226,6 @@ QWORD probepci()
 	//get xhciaddr from bar0
         out32(0xcf8,xhciport+0x10);
         xhciaddr=in32(0xcfc)&0xfffffff0;
-        say("xhci@",xhciaddr);
-
-        int i=0;
-        QWORD* table=(QWORD*)0x4000;
-        for(i=0;i<0x200;i+=2)
-        {
-                if(table[i]==0){
-                        table[i]=0x69636878;
-                        table[i+1]=xhciaddr;
-                        break;
-                }
-        }
 }
 
 
@@ -335,6 +334,10 @@ failed:
 
 int probexhci()
 {
+say("xhci@",xhciaddr);
+*(QWORD*)(xhcihome)=0x69636878;
+*(QWORD*)(xhcihome+8)=xhciaddr;
+
 //基本信息
 say("base information",0);
 say("{",0);
