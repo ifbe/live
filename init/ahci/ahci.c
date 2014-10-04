@@ -83,27 +83,6 @@ void probeahci(QWORD addr)
 }
 
 
-
-//first=挂在ahci上的设备名比如sata，second=它的地址
-//信息放在0x4000
-void savedisk(QWORD first,QWORD second)
-{
-	int i;
-	QWORD* pointer=(QWORD*)0x4000;
-	for(i=0;i<0x200;i+=2)
-	{
-		if( pointer[i] == 0 )
-		{
-			pointer[i]=first;
-			pointer[i+1]=second;
-			break;
-		}
-	}
-}
-
-
-
-
 //进：ahci内存地址
 //出：找到就返回第一个sata地址，否则0
 QWORD checkandsave(QWORD addr)

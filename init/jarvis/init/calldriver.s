@@ -1,6 +1,10 @@
 bits 64
 
 
+mov ecx,0x8000
+mov edi,0x40000
+xor rax,rax
+rep stosq
 ;_______________________________________
 				;cpu@0x0
 				;jarvis@0x2000
