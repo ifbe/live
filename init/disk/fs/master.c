@@ -2,6 +2,8 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
+
+#define programhome 0x2000000
 #define diskhome 0x400000
 #define mbrbuffer diskhome+0x20000
 
@@ -96,24 +98,6 @@ QWORD explainmbr()
 }
 
 
-void remember(QWORD cd,QWORD load)
-{
-	QWORD* pointer=(QWORD*)0x4000;
-	int i;
-	for(i=0;i<0x200;i+=2)
-	{
-	if( (pointer[i]==0) | (pointer[i]==0x6463) )
-	{
-		pointer[i]=0x6463;
-		pointer[i+1]=cd;
-		pointer[i+2]=0x64616f6c;
-		pointer[i+3]=load;
-		break;
-	}
-	}
-}
-
-
 static void mount(QWORD name)
 {
 	blank2zero(&name);
@@ -141,29 +125,47 @@ static void mount(QWORD name)
 }
 
 
-void parttable()
+static void directidentify()
+{
+        QWORD diskaddr=*(QWORD*)(0x200000+8);
+
+        identify(programhome,diskaddr);
+
+        BYTE* p=(BYTE*)programhome;
+        BYTE temp;
+        int i;
+        for(i=0;i<0x100;i+=2)
+        {
+                temp=p[i];
+                p[i]=p[i+1];
+                p[i+1]=temp;
+        }
+}
+
+
+static void directread(QWORD sector)
+{
+        QWORD diskaddr=*(QWORD*)(0x200000+8);
+        int result;
+        result=read(programhome,sector,diskaddr,8);
+        if(result>=0) say("read sector:",sector);
+        else say("something wrong:",sector);
+}
+
+
+void master()
 {
 	BYTE* memory=(BYTE*)(mbrbuffer);
 	int i;
 	for(i=0;i<0x8000;i++) memory[i]=0;
 
-        read(mbrbuffer,0,getdisk(),64);
+        read(mbrbuffer,0,*(QWORD*)(0x200000+8),64);
         if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55){say("bad disk",0);return;}
 
 	if(*(QWORD*)(mbrbuffer+0x200)==0x5452415020494645) explaingpt();
 	else explainmbr();
 
-
-
-
-	QWORD* pointer=(QWORD*)0x4000;
-	for(i=0;i<0x200;i+=2)
-	{
-	if( (pointer[i]==0) | (pointer[i]==0x746e756f6d) )
-	{
-		pointer[i]=0x746e756f6d;		//"mount"
-		pointer[i+1]=(unsigned long long)mount;
-		break;
-	}
-	}
+	remember(0x746e756f6d,(QWORD)mount);
+        remember(0x796669746e656469,(QWORD)directidentify);
+        remember(0x64616572,(QWORD)directread);
 }

@@ -1,5 +1,8 @@
 #include "ahci.h"
 #define ahcihome 0x200000
+#define receivefisbuffer ahcihome+0x10000
+#define cmdlistbuffer ahcihome+0x20000
+#define cmdtablebuffer ahcihome+0x30000
 
 
 //全部设备信息我放在0x110000了，格式如下:(非本环境自己处理这一步)
@@ -101,26 +104,6 @@ void savedisk(QWORD first,QWORD second)
 
 
 
-//从0x4000寻找sata
-//找到返回内存地址，找不到返回0
-QWORD getdisk()
-{
-	int i;
-	QWORD* pointer=(QWORD*)0x4000;
-	for(i=0;i<0x200;i+=2)
-	{
-		if( pointer[i] == 0x2020202061746173 )
-		{
-			return pointer[i+1];
-		}
-	}
-
-	return 0;		//only when there is no sata
-}
-
-
-
-
 //进：ahci内存地址
 //出：找到就返回第一个sata地址，否则0
 QWORD checkandsave(QWORD addr)
@@ -135,31 +118,42 @@ QWORD checkandsave(QWORD addr)
 		count++;
 	}
 
+	QWORD memory=ahcihome;
 	QWORD i = 0;
 	for(i=0;i<count;i++)
 	{
 	switch(abar->ports[i].sig)
 	{
 		case 0x00000101:{		//sata
-			savedisk(0x2020202061746173,addr+0x100+i*0x80);
-			break;
+			*(QWORD*)memory=0x61746173;
+			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
+			memory+=0x10;
+			break;			//继续for循环
 		}
 		case 0xeb140101:{		//atapi
-			savedisk(0x2020206970617461,addr+0x100+i*0x80);
+			*(QWORD*)memory=0x6970617461;
+			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
+			memory+=0x10;
 			break;
 		}
 		case 0xc33c0101:{		//enclosure....
-			savedisk(0x2e2e2e6f6c636e65,addr+0x100+i*0x80);
+			*(QWORD*)memory=0x2e2e2e6f6c636e65;
+			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
+			memory+=0x10;
 			break;
 		}
 		case 0x96690101:{		//port multiplier
-			savedisk(0x2e2e2e69746c756d,addr+0x100+i*0x80);
+			*(QWORD*)memory=0x2e2e2e69746c756d;
+			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
+			memory+=0x10;
 			break;
 		}
 	}
 	}
 
-	return getdisk();
+	QWORD temp=*(QWORD*)(ahcihome+8);
+	if(temp!=0) return temp;
+	else return 0;
 }
 
 
@@ -185,8 +179,8 @@ unsigned int findport(QWORD addr)
 
 	//something wrong,reset ports
 	int i;
-	char* p=(char*)ahcihome;
-	for(i=0;i<0x2000;i++) p[i]=0;
+	char* p=(char*)(receivefisbuffer);
+	for(i=0;i<0x10000;i++) p[i]=0;
 
 	DWORD pi = abar->pi;
 	int count=0;
@@ -198,7 +192,8 @@ unsigned int findport(QWORD addr)
 
 	for(i=0;i<count;i++)
 	{
-		abar->ports[i].fb = ahcihome+i*0x100;
+		//32个，每个拥有256B的buffer
+		abar->ports[i].fb = receivefisbuffer+i*0x100;
 		abar->ports[i].fbu = 0;
 		abar->ports[i].cmd |=0x10;
 		abar->ports[i].cmd |=0x2;
@@ -257,15 +252,18 @@ void disable(HBA_PORT *port)
 }
 void probeport(QWORD addr)
 {
+	char* p;
 	int i;
-	char* p=(char*)(ahcihome+0x8000);
-	for(i=0;i<0x6000;i++) p[i]=0;
+	p=(char*)(cmdlistbuffer);
+	for(i=0;i<0x10000;i++) p[i]=0;
+	p=(char*)(cmdtablebuffer);
+	for(i=0;i<0x10000;i++) p[i]=0;
 
 	HBA_PORT* port=(HBA_PORT*)addr;
 	disable(port);	// Stop command engine
 
 	//32*32=0x400
-	port->clb =ahcihome+0x8000;
+	port->clb =cmdlistbuffer;
 	port->clbu = 0;
  
 	//0x100*32=0x2000=8k
@@ -273,7 +271,7 @@ void probeport(QWORD addr)
 	for (i=0; i<32; i++)
 	{
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-		cmdheader[i].ctba=ahcihome+0x10000+(i<<8);
+		cmdheader[i].ctba=cmdtablebuffer+(i<<8);
 		cmdheader[i].ctbau = 0;
 	}
 	enable(port);	// Start command engine

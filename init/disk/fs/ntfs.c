@@ -12,6 +12,7 @@
 #define rawbuffer diskhome+0xc0000
 
 
+static QWORD diskaddr;
 static QWORD ntfssector;
 static QWORD cacheblock;
 static QWORD cachecurrent;
@@ -118,7 +119,7 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 				//本run结束-期待的块开始
 				temp2=(mftbuffer+0x40000-rdi)/0x200;
 
-				read(rdi,temp1,getdisk(),temp2);
+				read(rdi,temp1,diskaddr,temp2);
 
 				say("    lastpart:",temp1);
 				say("}",0);
@@ -132,7 +133,7 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 				//本run结束-期待的块开始
 				temp2=end-wishstart;
 
-				read(rdi,temp1,getdisk(),temp2);
+				read(rdi,temp1,diskaddr,temp2);
 				rdi+=temp2*0x200;
 				wishstart=end;
 			}
@@ -199,7 +200,7 @@ void datarun(QWORD rdi,QWORD runaddr)
 		runaddr= runaddr + 1 + (QWORD)(data & 0xf) + (QWORD)(data >> 4);
 
 		//读进内存
-		read(rdi,ntfssector+offset,getdisk(),count);
+		read(rdi,ntfssector+offset,diskaddr,count);
 		rdi+=count*0x200;
 	}
 
@@ -507,8 +508,10 @@ static void ntfs_load(QWORD name)
 
 int mountntfs(QWORD sector)
 {
+	diskaddr=*(QWORD*)(0x200000+8);
+
 	//读PBR，失败就返回
-        read(pbrbuffer,sector,getdisk(),1);
+        read(pbrbuffer,sector,diskaddr,1);
 	if( *(DWORD*)(pbrbuffer+3) != 0x5346544e ) return -1;
 
 	//记下PBR地址
@@ -525,7 +528,7 @@ int mountntfs(QWORD sector)
 	say("",0);
 
 	//保存开头几个mft
-        read(pbrbuffer+0x8000,ntfssector+mftcluster*clustersize,getdisk(),0x20);
+        read(pbrbuffer+0x8000,ntfssector+mftcluster*clustersize,diskaddr,0x20);
 	cachecurrent=0xffff;		//no mft cache yet
 
 	//cd /
@@ -534,6 +537,7 @@ int mountntfs(QWORD sector)
 	ntfs_cd('/');
 
 	//保存函数地址
-	remember((QWORD)ntfs_cd,(QWORD)ntfs_load);
+        remember(0x6463,(QWORD)ntfs_cd);
+        remember(0x64616f6c,(QWORD)ntfs_load);
 	return 0;
 }

@@ -56,8 +56,8 @@ rsdt:
     add eax,0x24
 .rsdttable:			;把每个表翻译到指定地方（di）
     mov esi,[eax]
-    mov [edi+8],esi
-    movsd
+    mov [edi+8],esi		;地址
+    movsd			;名字
     add edi,0xc
     add eax,0x4
     sub cl,4

@@ -136,7 +136,7 @@ je ls
 searchprogram:
 	mov esi,[rel currentarg]
 	call fetchanscii
-	call cmdtoaddr
+	call binaddr
 
 	mov esi,[rel currentarg]
 	.continue:
@@ -329,13 +329,13 @@ anscii:dq 0
 
 
 ;____________________________________
-cmdtoaddr:
+binaddr:
 mov qword [rel address],0
 
 mov rax,[rel anscii]
-mov esi,0x4000
+mov esi,0x180000			;/bin
 .continue2:
-cmp esi,0x5000
+cmp esi,0x200000
 jae .return
 cmp [esi],rax
 je .find

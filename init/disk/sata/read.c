@@ -68,7 +68,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1){
-		//say("error:no cmdslot",0);
+		say("error:no cmdslot",0);
 		return -1;
 	}
 	//say("cmdslot:",(QWORD)cmdslot);
@@ -85,7 +85,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 		spin++;
 	}
 	if (spin==1000000){
-		//say("error:port->tfd:",(QWORD)port->tfd);
+		say("error:port->tfd:",(QWORD)port->tfd);
 	}
  
 	port->ci = 1<<cmdslot;	// Issue command
@@ -99,7 +99,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 			break;
 		if (port->is & 0x40000000)	// Task file error
 		{
-			//say("port error 1",0);
+			say("port error 1",0);
 			return -2;
 		}
 	}

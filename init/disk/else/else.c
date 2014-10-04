@@ -49,21 +49,3 @@ void small2capital(QWORD* name)
                 }
         }
 }
-
-
-
-
-QWORD getdisk()
-{
-        int i;
-        QWORD* pointer=(QWORD*)0x4000;
-        for(i=0;i<0x200;i+=2)
-        {
-                if( pointer[i] == 0x2020202061746173 )
-                {
-                        return pointer[i+1];
-                }
-        }
-
-        return 0;               //only when there is no sata
-}

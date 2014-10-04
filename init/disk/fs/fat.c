@@ -11,6 +11,7 @@
 #define indexbuffer diskhome+0x80000
 #define rawbuffer diskhome+0xc0000
 
+static QWORD diskaddr;
 static QWORD fat0;
 static QWORD fatsize;
 static QWORD clustersize;
@@ -25,7 +26,7 @@ void checkfatcache()	//put cache in [0x140000]
 
 	QWORD i;
 	for(i=0;i<0x40;i++){
-		read(fatbuffer+i*0x1000,fat0+cacheblock*0x200+8*i,getdisk(),8);
+		read(fatbuffer+i*0x1000,fat0+cacheblock*0x200+8*i,diskaddr,8);
 	}
 	say("cacheblock:",cacheblock);
 	cachecurrent=cacheblock;
@@ -67,7 +68,7 @@ void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
 	{
-		read(rdi,cluster0+clustersize*source,getdisk(),clustersize);
+		read(rdi,cluster0+clustersize*source,diskaddr,clustersize);
 		rdi+=clustersize*0x200;
 
 		source=(QWORD)(*(WORD*)(fatbuffer+2*source));
@@ -88,7 +89,7 @@ void fat16_root()
 	int i;
 	for(i=0;i<0x80000;i++) memory[i]=0;
 	say("cd ",fat0+fatsize*2);
-	read(indexbuffer,fat0+fatsize*2,getdisk(),32);
+	read(indexbuffer,fat0+fatsize*2,diskaddr,32);
 	dir2raw();
 	say("",0);
 }
@@ -176,7 +177,9 @@ void fat16()
 	fat16_cd('/');
 
 	//保存函数地址
-	remember((QWORD)fat16_cd,(QWORD)fat16_load);
+        remember(0x6463,(QWORD)fat16_cd);
+        remember(0x64616f6c,(QWORD)fat16_load);
+
 }
 
 
@@ -187,7 +190,7 @@ void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
 	{
-		read(rdi,cluster0+clustersize*source,getdisk(),clustersize);
+		read(rdi,cluster0+clustersize*source,diskaddr,clustersize);
 		rdi+=clustersize*0x200;
 
 		cacheblock=source/0x10000;
@@ -211,7 +214,7 @@ void fat32_root()
 	for(i=0;i<0x80000;i++) memory[i]=0;
 
 	say("cd root:",cluster0+clustersize*2);
-	read(indexbuffer,cluster0+clustersize*2,getdisk(),32);
+	read(indexbuffer,cluster0+clustersize*2,diskaddr,32);
 	dir2raw();
 	say("",0);
 }
@@ -303,13 +306,17 @@ void fat32()
 	fat32_cd('/');
 
 	//保存函数地址
-	remember((QWORD)fat32_cd,(QWORD)fat32_load);
+        remember(0x6463,(QWORD)fat32_cd);
+        remember(0x64616f6c,(QWORD)fat32_load);
+
 }
 
 
 int mountfat(QWORD sector)
 {
-        read(pbrbuffer,sector,getdisk(),1); //pbr
+	diskaddr=*(QWORD*)(0x200000+8);
+
+        read(pbrbuffer,sector,diskaddr,1); //pbr
 
         if( *(WORD*)(pbrbuffer+0xb) !=0x200) {
                 say("not 512B per sector,bye!",0);

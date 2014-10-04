@@ -12,6 +12,7 @@
 #define rawbuffer diskhome+0xc0000
 
 
+static QWORD diskaddr;
 static QWORD block0;
 static QWORD blocksize;
 static QWORD groupsize;
@@ -34,7 +35,7 @@ QWORD getinodeblock(QWORD groupnum)
 	sector+=groupnum/(0x200/0x20);
 
 	//肯定在这个扇区里面
-	read(pbrbuffer+0x8000,sector,getdisk(),1);
+	read(pbrbuffer+0x8000,sector,diskaddr,1);
 
 	//每0x20描述一个组，一个扇区里面偏移多少
 	addr=pbrbuffer+0x8000+8+(groupnum*0x20)%0x200;
@@ -108,7 +109,7 @@ void checkinodecache(QWORD inode)
 		say("count:",count);
 
 		//read inode table
-	        read(rdi,where,getdisk(),count);
+	        read(rdi,where,diskaddr,count);
 
 		rdi+=count*0x200;
 		inode+=0x200/inodesize*count;
@@ -171,7 +172,7 @@ void explaininode(QWORD rdi,QWORD inode)
 
 			rsi+=12;
 
-		        read(rdi,temp1,getdisk(),temp2);
+		        read(rdi,temp1,diskaddr,temp2);
 			rdi+=0x200*blocksize;
 		}
 
@@ -193,7 +194,7 @@ void explaininode(QWORD rdi,QWORD inode)
 			temp=block0+(*(DWORD*)rsi)*blocksize;
 			say("sector:",temp);
 
-		        read(rdi,temp,getdisk(),blocksize);
+		        read(rdi,temp,diskaddr,blocksize);
 			rdi+=0x200*blocksize;
 		}
 
@@ -306,11 +307,13 @@ static void ext_load(QWORD name)
 
 int mountext(QWORD sector)
 {
+	diskaddr=*(QWORD*)(0x200000+8);
+
 	block0=sector;
 	say("ext sector:",sector);
 
 	//读分区前8扇区，总共0x1000字节
-        read(pbrbuffer,block0,getdisk(),0x8);	//0x1000
+        read(pbrbuffer,block0,diskaddr,0x8);	//0x1000
 
 	//检查magic值
 	if( *(WORD*)(pbrbuffer+0x438) != 0xef53 ) return;
@@ -335,6 +338,7 @@ int mountext(QWORD sector)
 	ext_cd('/');
 
 	//保存函数地址
-	remember((QWORD)ext_cd,(QWORD)ext_load);
+	remember(0x6463,(QWORD)ext_cd);
+	remember(0x64616f6c,(QWORD)ext_load);
 	return 0;
 }
