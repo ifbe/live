@@ -57,6 +57,102 @@ static inline unsigned int in32( unsigned short port )
                   : "=a"(ret) : "Nd"(port) );
     return ret;
 }
+void explaincapability()
+{
+say("pci cap:",0);
+say("{",0);
+
+        DWORD offset;
+        DWORD temp;
+        DWORD type;
+        DWORD next;
+
+        out32(0xcf8,portaddr+0x34);
+        offset=in32(0xcfc)&0xff;
+
+        while(1)
+        {
+        out32(0xcf8,portaddr+offset);
+        temp=in32(0xcfc);
+        type=temp&0xff;
+        next=(temp>>8)&0xff;
+
+        switch(type)
+        {
+                case 0x5:
+                {
+                        out32(0xcf8,portaddr+offset);
+                        temp=in32(0xcfc);
+                        if( (temp&0x800000) ==0 )
+                        {
+                        say("32bit msi@",offset);
+
+                        //before
+                        out32(0xcf8,portaddr+offset);
+                        say("    control:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+4);
+                        say("    addr:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+8);
+                        say("    data:",in32(0xcfc));
+
+                        out32(0xcf8,portaddr+offset+8);
+                        out32(0xcfc,0x21);
+                        out32(0xcf8,portaddr+offset+4);
+                        out32(0xcfc,0xfee00000);
+                        out32(0xcf8,portaddr+offset);
+                        out32(0xcfc,temp|0x10000);
+
+                        out32(0xcf8,portaddr+offset);
+                        say("    control:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+4);
+                        say("    addr:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+8);
+                        say("    data:",in32(0xcfc));
+                        }
+                        else
+                        {
+                        say("64bit msi@",offset);
+
+                        out32(0xcf8,portaddr+offset);
+                        say("    control:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+4);
+                        say("    addr:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+0xc);
+                        say("    data:",in32(0xcfc));
+
+                        out32(0xcf8,portaddr+offset+0xc);
+                        out32(0xcfc,0x21);
+                        out32(0xcf8,portaddr+offset+4);
+                        out32(0xcfc,0xfee00000);
+                        out32(0xcf8,portaddr+offset);
+                        out32(0xcfc,temp|0x10000);
+
+                        out32(0xcf8,portaddr+offset);
+                        say("    control:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+4);
+                        say("    addr:",in32(0xcfc));
+                        out32(0xcf8,portaddr+offset+0xc);
+                        say("    data:",in32(0xcfc));
+                        }
+
+	                break;
+		}
+        }
+        if(type == 0){
+		say("unknown",0);
+		break;    //当前capability类型为0，结束
+	}
+        if(next < 0x40){
+		say("no next",0);		//下一capability位置错误，结束
+		break;
+	}
+
+        offset=next;
+
+	}
+
+say("}",0);
+}
 void probepci()
 {
 	say("ethernet(port)@",portaddr);
@@ -71,6 +167,8 @@ void probepci()
 
 	out32(0xcf8,portaddr+0x10);
 	mmio=in32(0xcfc)&0xfffffff0;
+
+	explaincapability();
 }
 
 
@@ -195,6 +293,26 @@ struct TransDesc
     volatile u16 special;
 };
 */
+WORD checksum(WORD *buffer,int size)  
+{  
+	DWORD cksum=0;  
+	while(size>1)  
+	{  
+		cksum+=*buffer++;  
+		size-=2;  
+	}  
+	if(size)	//偶数跳过这一步
+	{  
+		cksum+=*(BYTE*)buffer;  
+	}      
+
+	//32位转换成16位
+	while (cksum>>16)  
+	{
+		cksum=(cksum>>16)+(cksum & 0xffff);  
+	}
+	return (WORD) (~cksum);  
+}  
 static void sendpacket()
 {
 	//包错了就return
@@ -206,33 +324,35 @@ static void sendpacket()
 
 
 
-	//[0,0xd]:mac头
+	//[0,0xd]:mac头，总共0xe=14B
 	*(QWORD*)buffer=0xffffffffffff;		//[0,5]:dst
 	*(QWORD*)(buffer+6)=macaddr;		//[6,0xb]src
-	*(WORD*)(buffer+12)=0x80;		//[0xc,0xd]:type
-	//[0xe,0x0x21]ip头
+	*(WORD*)(buffer+12)=0x0008;		//[0xc,0xd]:type
+	//[0xe,0x0x21]ip头,总共0x14=20B
 	*(BYTE*)(buffer+0xe)=0x45;		//[0xe]:(版本<<4)+报头长度
 	*(BYTE*)(buffer+0xf)=0;			//[0xf]:typeofsevice
-	*(WORD*)(buffer+0x10)=0x3c00;		//[0x10,0x11]:length
+	*(WORD*)(buffer+0x10)=0x4000;		//[0x10,0x11]:length
 	*(WORD*)(buffer+0x12)=0x233;		//[0x12,0x13]:identification
-	*(WORD*)(buffer+0x14)=0			//[0x14,0x15]:offset
+	*(WORD*)(buffer+0x14)=0;		//[0x14,0x15]:fragment offset
 	*(BYTE*)(buffer+0x16)=0x40;		//[0x16]:ttl
 	*(BYTE*)(buffer+0x17)=1;		//[0x17]:protocol
-	*(WORD*)(buffer+0x18)=			//[0x18,0x19]:checksum
-	*(DWORD*)(buffer+0x1a)=			//[0x1a,0x1d]:我的ip
-	*(DWORD*)(buffer+0x1e)=			//[0x1e,0x21]:目标ip
-	//[0x22,]:icmp头
+	*(WORD*)(buffer+0x18)=0;		//[0x18,0x19]:checksum先置0
+	*(DWORD*)(buffer+0x1a)=0x07cca8c0;	//[0x1a,0x1d]:src:192.168.204.1
+	*(DWORD*)(buffer+0x1e)=0x07c8c8c8;	//[0x1e,0x21]:dst
+	*(WORD*)(buffer+0x18)=checksum((WORD*)(buffer+0xe),20);
+	//[0x22,0x31]:icmp整体，0x10=16B
 	*(BYTE*)(buffer+0x22)=8;		//[0x22]:echo request
 	*(BYTE*)(buffer+0x23)=0;		//[0x23]:code
-	*(WORD*)(buffer+0x24)=;		//[0x24,0x25]:checksum
-	*(WORD*)(buffer+0x26)=;		//[0x26,0x27]:idetifer
-	*(WORD*)(buffer+0x28)=;		//[0x28,0x29]:sn
-	*(QWORD*)(buffer+0x2a)=;		//[0x2a,0x31]:timestamp
-	//data
+	*(WORD*)(buffer+0x24)=0;		//[0x24,0x25]:checksum
+	*(WORD*)(buffer+0x26)=(WORD)head;	//[0x26,0x27]:idetifer
+	*(WORD*)(buffer+0x28)=(WORD)head;	//[0x28,0x29]:sn
+	*(QWORD*)(buffer+0x2a)=0x123456;	//[0x2a,0x31]:timestamp
+	//64-20-16=28B				//没有data部分应该可以把
+	*(WORD*)(buffer+0x24)=checksum((WORD*)(buffer+0x22),44);
 
 
 	//填满desc
-	*(WORD*)(desc+8)=0x20;		//length
+	*(WORD*)(desc+8)=14+64;		//length
 	*(BYTE*)(desc+11)=(1<<3)|(1<<1)|1;	//reportstatus
 						//insert fcs/crc
 						//end of packet
