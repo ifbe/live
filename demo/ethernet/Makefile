@@ -1,8 +1,9 @@
 c:
 	gcc -c -fPIC -O2 start.c
-	gcc -c -fPIC -O2 print.c
 	gcc -c -fPIC -O2 ethernet.c
-	ld -T link.ld start.o print.o ethernet.o -o temp.bin
+	gcc -c -fPIC -O2 print.c
+	gcc -c -fPIC -O2 remember.c
+	ld -T link.ld start.o ethernet.o print.o remember.o -o temp.bin
 	nasm size.s -o ethernet
 test:
 	make -s c

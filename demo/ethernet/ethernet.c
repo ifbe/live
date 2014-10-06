@@ -11,6 +11,7 @@
 
 static QWORD portaddr;
 static QWORD mmio;
+static QWORD macaddr;
 
 
 
@@ -89,7 +90,6 @@ void ethernet()
 	say("ethernet@",mmio);
 
 	//---------------------macaddr-------------------
-	QWORD macaddr;
 	DWORD ral=*(DWORD*)(mmio+0x5400);	//receive address low
 	if(ral)
 	{
@@ -194,28 +194,83 @@ struct TransDesc
     volatile u8 css;
     volatile u16 special;
 };
-struct EthHeader
-{   
-    EthAddr dst;
-    EthAddr src;
-    u16 etherType;
-};
-struct EthPacket
-{
-	EthHeader *hdr;
-	u16 etherType;
-	u16 hdrLen;
-};
-static BYTE packet[6+6+2+2+2];
+*/
 static void sendpacket()
 {
 	//包错了就return
 
-	//发送
-	*(DWORD*)(mmio+0x3818)=0;
+	//txdesc
+	DWORD head=*(DWORD*)(mmio+0x3810);
+	QWORD desc=txdesc+0x10*head;
+	QWORD buffer=*(QWORD*)desc;
+
+
+
+	//[0,0xd]:mac头
+	*(QWORD*)buffer=0xffffffffffff;		//[0,5]:dst
+	*(QWORD*)(buffer+6)=macaddr;		//[6,0xb]src
+	*(WORD*)(buffer+12)=0x80;		//[0xc,0xd]:type
+	//[0xe,0x0x21]ip头
+	*(BYTE*)(buffer+0xe)=0x45;		//[0xe]:(版本<<4)+报头长度
+	*(BYTE*)(buffer+0xf)=0;			//[0xf]:typeofsevice
+	*(WORD*)(buffer+0x10)=0x3c00;		//[0x10,0x11]:length
+	*(WORD*)(buffer+0x12)=0x233;		//[0x12,0x13]:identification
+	*(WORD*)(buffer+0x14)=0			//[0x14,0x15]:offset
+	*(BYTE*)(buffer+0x16)=0x40;		//[0x16]:ttl
+	*(BYTE*)(buffer+0x17)=1;		//[0x17]:protocol
+	*(WORD*)(buffer+0x18)=			//[0x18,0x19]:checksum
+	*(DWORD*)(buffer+0x1a)=			//[0x1a,0x1d]:我的ip
+	*(DWORD*)(buffer+0x1e)=			//[0x1e,0x21]:目标ip
+	//[0x22,]:icmp头
+	*(BYTE*)(buffer+0x22)=8;		//[0x22]:echo request
+	*(BYTE*)(buffer+0x23)=0;		//[0x23]:code
+	*(WORD*)(buffer+0x24)=;		//[0x24,0x25]:checksum
+	*(WORD*)(buffer+0x26)=;		//[0x26,0x27]:idetifer
+	*(WORD*)(buffer+0x28)=;		//[0x28,0x29]:sn
+	*(QWORD*)(buffer+0x2a)=;		//[0x2a,0x31]:timestamp
+	//data
+
+
+	//填满desc
+	*(WORD*)(desc+8)=0x20;		//length
+	*(BYTE*)(desc+11)=(1<<3)|(1<<1)|1;	//reportstatus
+						//insert fcs/crc
+						//end of packet
+
+
+	//这玩意是头追尾巴，改了tail，head自动往下追不管软件的事
+	DWORD tail=*(DWORD*)(mmio+0x3818);
+	*(DWORD*)(mmio+0x3818)=(tail+1)%8;
+
+
+	//检查是否发送失败
+	QWORD timeout=0;
+	while(1)
+	{
+		timeout++;
+		if(timeout>0xfffffff)
+		{
+			say("fail",0);
+			return;
+		}
+
+		BYTE status=*(BYTE*)(desc+12);
+		if( (status&0x1) == 0x1 )
+		{
+			say("sent packet@",buffer);
+			return;
+		}
+	}
+}
+
+
+
+
+/*
+void explainpacket()
+{
 }
 */
-
 
 
 
@@ -223,7 +278,7 @@ void initethernet()
 {
 	//clear home
 	QWORD addr=ethhome;
-	for(;addr<ethhome+0x80000;addr++) *(BYTE*)addr=0;
+	for(;addr<ethhome+0x100000;addr++) *(BYTE*)addr=0;
 	portaddr=0;
 	mmio=0;
 
@@ -234,6 +289,8 @@ void initethernet()
 	if(mmio==0) return;
 
 	ethernet();
+
+	remember(0x646e6573,sendpacket);
 
 	say("",0);
 }
