@@ -66,3 +66,4 @@ clean:
 	make clean -s -C sketchpad
 	make clean -s -C btree
 	make clean -s -C mandelbrot
+	make clean -s -C ethernet

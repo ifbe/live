@@ -1,4 +1,4 @@
-init:
-	nasm init.s -o temp
+all:
+	nasm cpu.s -o cpu
 clean:
-	rm -f temp
+	rm -f cpu

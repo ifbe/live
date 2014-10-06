@@ -1,4 +1,4 @@
 void start()
 {
-	initahci();
+	initethernet();
 }
