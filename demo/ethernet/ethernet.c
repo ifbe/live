@@ -57,108 +57,14 @@ static inline unsigned int in32( unsigned short port )
                   : "=a"(ret) : "Nd"(port) );
     return ret;
 }
-void explaincapability()
-{
-say("pci cap:",0);
-say("{",0);
-
-        DWORD offset;
-        DWORD temp;
-        DWORD type;
-        DWORD next;
-
-        out32(0xcf8,portaddr+0x34);
-        offset=in32(0xcfc)&0xff;
-
-        while(1)
-        {
-        out32(0xcf8,portaddr+offset);
-        temp=in32(0xcfc);
-        type=temp&0xff;
-        next=(temp>>8)&0xff;
-
-        switch(type)
-        {
-                case 0x5:
-                {
-                        out32(0xcf8,portaddr+offset);
-                        temp=in32(0xcfc);
-                        if( (temp&0x800000) ==0 )
-                        {
-                        say("32bit msi@",offset);
-
-                        //before
-                        out32(0xcf8,portaddr+offset);
-                        say("    control:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+4);
-                        say("    addr:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+8);
-                        say("    data:",in32(0xcfc));
-
-                        out32(0xcf8,portaddr+offset+8);
-                        out32(0xcfc,0x21);
-                        out32(0xcf8,portaddr+offset+4);
-                        out32(0xcfc,0xfee00000);
-                        out32(0xcf8,portaddr+offset);
-                        out32(0xcfc,temp|0x10000);
-
-                        out32(0xcf8,portaddr+offset);
-                        say("    control:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+4);
-                        say("    addr:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+8);
-                        say("    data:",in32(0xcfc));
-                        }
-                        else
-                        {
-                        say("64bit msi@",offset);
-
-                        out32(0xcf8,portaddr+offset);
-                        say("    control:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+4);
-                        say("    addr:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+0xc);
-                        say("    data:",in32(0xcfc));
-
-                        out32(0xcf8,portaddr+offset+0xc);
-                        out32(0xcfc,0x21);
-                        out32(0xcf8,portaddr+offset+4);
-                        out32(0xcfc,0xfee00000);
-                        out32(0xcf8,portaddr+offset);
-                        out32(0xcfc,temp|0x10000);
-
-                        out32(0xcf8,portaddr+offset);
-                        say("    control:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+4);
-                        say("    addr:",in32(0xcfc));
-                        out32(0xcf8,portaddr+offset+0xc);
-                        say("    data:",in32(0xcfc));
-                        }
-
-	                break;
-		}
-        }
-        if(type == 0){
-		say("unknown",0);
-		break;    //当前capability类型为0，结束
-	}
-        if(next < 0x40){
-		say("no next",0);		//下一capability位置错误，结束
-		break;
-	}
-
-        offset=next;
-
-	}
-
-say("}",0);
-}
 void probepci()
 {
 	say("ethernet(port)@",portaddr);
 
 	out32(0xcf8,portaddr+0x4);
-	unsigned int temp=in32(0xcfc)|(1<<10)|(1<<2);
+	DWORD temp=in32(0xcfc);
+	temp|=1<<2;
+	temp&=~(DWORD)(1<<10);
 	out32(0xcf8,portaddr+0x4);
 	out32(0xcfc,temp);
 
@@ -168,7 +74,10 @@ void probepci()
 	out32(0xcf8,portaddr+0x10);
 	mmio=in32(0xcfc)&0xfffffff0;
 
-	explaincapability();
+	out32(0xcf8,portaddr+0x3c);
+	DWORD intwhat=in32(0xcfc);
+	say("interrupt line:",intwhat&0xff);
+	say("interrupt pin:",(intwhat>>8)&0xff);
 }
 
 
@@ -208,6 +117,13 @@ void ethernet()
 
 
 
+	//-----------------------------------
+	interrupt();
+	//--------------------------------------
+
+
+
+
 	//-----------------control-----------------
 	//set link up
 	*(DWORD*)(mmio+0)=(*(DWORD*)(mmio+0))|(1<<6);
@@ -215,6 +131,13 @@ void ethernet()
 	//clear multicast table array
 	QWORD i;
 	for(i=0;i<128;i++) *(DWORD*)(mmio+0x5200+4*i)=0;
+
+	//enable interrupt
+	*(DWORD*)(mmio+0xd0)=0xc7;	//ZLOX_E1000_REG_IMS_LSC	1<<2
+					//ZLOX_E1000_REG_IMS_RXO	1<<6
+					//ZLOX_E1000_REG_IMS_RXT	1<<7
+					//ZLOX_E1000_REG_IMS_TXQE	1<<1
+					//ZLOX_E1000_REG_IMS_TXDW	1
 
 	//read to clear "interrupt cause read"
 	say("icr:",*(DWORD*)(mmio+0xc0));
@@ -293,66 +216,22 @@ struct TransDesc
     volatile u16 special;
 };
 */
-WORD checksum(WORD *buffer,int size)  
-{  
-	DWORD cksum=0;  
-	while(size>1)  
-	{  
-		cksum+=*buffer++;  
-		size-=2;  
-	}  
-	if(size)	//偶数跳过这一步
-	{  
-		cksum+=*(BYTE*)buffer;  
-	}      
-
-	//32位转换成16位
-	while (cksum>>16)  
-	{
-		cksum=(cksum>>16)+(cksum & 0xffff);  
-	}
-	return (WORD) (~cksum);  
-}  
-static void sendpacket()
+static void sendpacket(QWORD addr,int size)
 {
 	//包错了就return
 
 	//txdesc
 	DWORD head=*(DWORD*)(mmio+0x3810);
 	QWORD desc=txdesc+0x10*head;
-	QWORD buffer=*(QWORD*)desc;
 
-
-
-	//[0,0xd]:mac头，总共0xe=14B
-	*(QWORD*)buffer=0xffffffffffff;		//[0,5]:dst
-	*(QWORD*)(buffer+6)=macaddr;		//[6,0xb]src
-	*(WORD*)(buffer+12)=0x0008;		//[0xc,0xd]:type
-	//[0xe,0x0x21]ip头,总共0x14=20B
-	*(BYTE*)(buffer+0xe)=0x45;		//[0xe]:(版本<<4)+报头长度
-	*(BYTE*)(buffer+0xf)=0;			//[0xf]:typeofsevice
-	*(WORD*)(buffer+0x10)=0x4000;		//[0x10,0x11]:length
-	*(WORD*)(buffer+0x12)=0x233;		//[0x12,0x13]:identification
-	*(WORD*)(buffer+0x14)=0;		//[0x14,0x15]:fragment offset
-	*(BYTE*)(buffer+0x16)=0x40;		//[0x16]:ttl
-	*(BYTE*)(buffer+0x17)=1;		//[0x17]:protocol
-	*(WORD*)(buffer+0x18)=0;		//[0x18,0x19]:checksum先置0
-	*(DWORD*)(buffer+0x1a)=0x07cca8c0;	//[0x1a,0x1d]:src:192.168.204.1
-	*(DWORD*)(buffer+0x1e)=0x07c8c8c8;	//[0x1e,0x21]:dst
-	*(WORD*)(buffer+0x18)=checksum((WORD*)(buffer+0xe),20);
-	//[0x22,0x31]:icmp整体，0x10=16B
-	*(BYTE*)(buffer+0x22)=8;		//[0x22]:echo request
-	*(BYTE*)(buffer+0x23)=0;		//[0x23]:code
-	*(WORD*)(buffer+0x24)=0;		//[0x24,0x25]:checksum
-	*(WORD*)(buffer+0x26)=(WORD)head;	//[0x26,0x27]:idetifer
-	*(WORD*)(buffer+0x28)=(WORD)head;	//[0x28,0x29]:sn
-	*(QWORD*)(buffer+0x2a)=0x123456;	//[0x2a,0x31]:timestamp
-	//64-20-16=28B				//没有data部分应该可以把
-	*(WORD*)(buffer+0x24)=checksum((WORD*)(buffer+0x22),44);
+	BYTE* to=(BYTE*)( *(QWORD*)desc );
+	BYTE* from=(BYTE*)(addr);
+	int i;
+	for(i=0;i<size;i++) to[i]=from[i];
 
 
 	//填满desc
-	*(WORD*)(desc+8)=14+64;		//length
+	*(WORD*)(desc+8)=size;			//length
 	*(BYTE*)(desc+11)=(1<<3)|(1<<1)|1;	//reportstatus
 						//insert fcs/crc
 						//end of packet
@@ -377,10 +256,131 @@ static void sendpacket()
 		BYTE status=*(BYTE*)(desc+12);
 		if( (status&0x1) == 0x1 )
 		{
-			say("sent packet@",buffer);
+			say("sent:",desc);
 			return;
 		}
 	}
+}
+
+
+
+
+WORD checksum(WORD *buffer,int size)  
+{  
+	DWORD cksum=0;  
+	while(size>1)  
+	{  
+		cksum+=*buffer++;  
+		size-=2;  
+	}  
+	if(size)	//偶数跳过这一步
+	{  
+		cksum+=*(BYTE*)buffer;  
+	}      
+
+	//32位转换成16位
+	while (cksum>>16)  
+	{
+		cksum=(cksum>>16)+(cksum & 0xffff);  
+	}
+	return (WORD) (~cksum);  
+}  
+
+
+
+
+struct arp
+{
+	BYTE macdst[6];		//[0,5]
+	BYTE macsrc[6];		//[6,0xb]
+	WORD type;		//[0xc,0xd]
+
+	WORD hwtype;		//[0xe,0xf]
+	WORD protocoltype;	//[0x10,0x11]
+	BYTE hwsize;		//[0x12]
+	BYTE protocolsize;	//[0x13]
+	WORD opcode;		//[0x14,0x15]
+	BYTE sendermac[6];	//[0x16,0x1b]
+	BYTE senderip[4];	//[0x1c,0x1f]
+	BYTE targetmac[6];	//[0x20,0x25]
+	BYTE targetip[4];	//[0x26,0x2b]
+};
+static struct arp arp;
+static void hi()
+{
+	*(QWORD*)(arp.macdst)=0xffffffffffff;
+	*(QWORD*)(arp.macsrc)=macaddr;
+	arp.type=0x0608;
+
+	arp.hwtype=0x0100;
+	arp.protocoltype=8;
+	arp.hwsize=6;
+	arp.protocolsize=4;
+	arp.opcode=0x0100;		//这是请求，回复是0x200
+	*(QWORD*)(arp.sendermac)=macaddr;
+	*(DWORD*)(arp.senderip)=0x17c8c8c8;		//200.200.200.23
+	*(QWORD*)(arp.targetmac)=0;
+	*(DWORD*)(arp.targetip)=0x01c8c8c8;
+
+
+	sendpacket((QWORD)(&arp),14+0x1e);
+}
+
+
+
+
+struct icmp
+{
+	BYTE macdst[6];		//[0,5]
+	BYTE macsrc[6];		//[6,0xb]
+	WORD type;		//[0xc,0xd]
+
+	BYTE iphead;		//[0xe]
+	BYTE tos;		//[0xf]
+	WORD length;		//[0x10,0x11]
+	WORD id;		//[0x12,0x13]
+	WORD fragoffset;	//[0x14,0x15]
+	BYTE ttl;		//[0x16]
+	BYTE protocol;		//[0x17]
+	WORD checksum;		//[0x18,0x19]
+	BYTE ipsrc[4];		//[0x1a,0x1d]
+	BYTE ipdst[4];		//[0x1e,0x21]
+
+	BYTE icmptype;		//[0x22]
+	BYTE code;		//[0x23]
+	WORD icmpchecksum;	//[0x24,0x25]
+	WORD identifer;		//[0x26,0x27]
+	WORD sn;		//[0x28,0x29]
+};
+static struct icmp icmp;
+static void ping()
+{
+	*(QWORD*)(icmp.macdst)=0xffffffffffff;
+	*(QWORD*)(icmp.macsrc)=macaddr;
+	icmp.type=0x0008;
+
+	icmp.iphead=0x45;
+	icmp.tos=0;
+	icmp.length=0x4000;
+	icmp.id=0x233;
+	icmp.fragoffset=0;
+	icmp.ttl=0x40;
+	icmp.protocol=1;
+	icmp.checksum=0;
+	*(DWORD*)(icmp.ipsrc)=0x17c8c8c8;		//200.200.200.23
+	*(DWORD*)(icmp.ipdst)=0x07c8c8c8;		//200.200.200.7
+	icmp.checksum=checksum((WORD*)(&(icmp.iphead)),20);
+
+	icmp.icmptype=8;		//echo request
+	icmp.code=0;
+	icmp.icmpchecksum=0;
+	icmp.identifer=233;
+	icmp.sn=233;
+	//64-20-16=28B			//没有data部分?
+	icmp.icmpchecksum=checksum((WORD*)(&(icmp.icmptype)),64-20);
+
+
+	sendpacket((QWORD)(&icmp),14+64);
 }
 
 
@@ -410,7 +410,17 @@ void initethernet()
 
 	ethernet();
 
-	remember(0x646e6573,sendpacket);
+	remember(0x676e6970,ping);
+	remember(0x6968,hi);
+	//remember(0x646e6573,sendpacket);
 
 	say("",0);
+}
+
+
+
+
+void realisr22()
+{
+	say("interrupt22!");
 }

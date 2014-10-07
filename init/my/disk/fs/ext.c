@@ -231,7 +231,7 @@ void table2raw(QWORD rsi)
 }
 
 
-static void ext_cd(QWORD name)
+static int ext_cd(QWORD name)
 {
 	QWORD* table=(QWORD*)(rawbuffer);	//一定要括号
 	int i;
@@ -261,7 +261,7 @@ static void ext_cd(QWORD name)
 			if(number == 0)
 			{
 				say("not found:",name);
-				return;
+				return -1;
 			}
 		}
 	}
@@ -275,6 +275,8 @@ static void ext_cd(QWORD name)
 	//开搞
 	explaininode(tablebuffer,number);
 	table2raw(tablebuffer);
+
+	return 1;
 }
 
 

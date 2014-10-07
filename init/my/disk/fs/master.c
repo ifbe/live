@@ -98,7 +98,7 @@ QWORD explainmbr()
 }
 
 
-static void mount(QWORD name)
+static int mount(QWORD name)
 {
 	blank2zero(&name);
 
@@ -116,12 +116,14 @@ static void mount(QWORD name)
 	if(i>=0x80)
 	{
 		say("partition not found",0);
-		return;
+		return -1;
 	}
 
 	if(name == 0x746166) mountfat(offset);
 	if(name == 0x7366746e) mountntfs(offset);
 	if(name == 0x747865) mountext(offset);
+
+	return 1;
 }
 
 
@@ -155,17 +157,42 @@ static void directread(QWORD sector)
 
 void master()
 {
+	//清理内存
 	BYTE* memory=(BYTE*)(mbrbuffer);
 	int i;
 	for(i=0;i<0x8000;i++) memory[i]=0;
 
+	//读mbr
         read(mbrbuffer,0,*(QWORD*)(0x200000+8),64);
-        if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55){say("bad disk",0);return;}
+        if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55){
+		say("bad disk",0);
+		return;
+	}
 
+	//解释分区表
 	if(*(QWORD*)(mbrbuffer+0x200)==0x5452415020494645) explaingpt();
 	else explainmbr();
 
+	//把操作函数的位置放进/bin
 	remember(0x746e756f6d,(QWORD)mount);
         remember(0x796669746e656469,(QWORD)directidentify);
         remember(0x64616572,(QWORD)directread);
+
+	//从/bin执行
+	//自动尝试3种分区，找到live文件夹，cd进去，全部失败就返回-1
+	int result;
+	//try fat
+	mount(0x746166);
+	result=use(0x6463,0x6576696c);	//cd live
+	if(result>=0) return;		//成功，滚
+
+	//try ntfs
+	mount(0x7366746e);
+	result=use(0x6463,0x6576696c);	//cd live
+	if(result>=0) return;		//成功，滚
+
+	//try ext
+	mount(0x747865);
+	result=use(0x6463,0x6576696c);	//cd live
+					//不管了，直接滚
 }

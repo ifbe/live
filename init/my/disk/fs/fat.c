@@ -95,7 +95,7 @@ void fat16_root()
 }
 
 
-static void fat16_cd(QWORD name)
+static int fat16_cd(QWORD name)
 {
 	QWORD directory=0;
 	QWORD p=indexbuffer;
@@ -116,7 +116,7 @@ static void fat16_cd(QWORD name)
 		if(p==indexbuffer+0x800)
 		{
 			say("directory not found",0);
-			return;
+			return -1;
 		}
 		directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
 	}
@@ -124,7 +124,7 @@ static void fat16_cd(QWORD name)
 	if(directory==0)
 	{
 		fat16_root();
-		return;
+		return 0;
 	}
 
 	//清理
@@ -136,6 +136,8 @@ static void fat16_cd(QWORD name)
 
 	//转换
 	dir2raw();
+
+	return 1;
 }
 
 
@@ -220,7 +222,7 @@ void fat32_root()
 }
 
 
-static void fat32_cd(QWORD name)
+static int fat32_cd(QWORD name)
 {
 	QWORD directory=0;
 	QWORD p=indexbuffer;
@@ -242,7 +244,7 @@ static void fat32_cd(QWORD name)
 		if(p==indexbuffer+clustersize*0x200)
 		{
 			say("directory not found!",p);
-			return;
+			return -1;
 		}
 		directory=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 		directory+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
@@ -251,7 +253,7 @@ static void fat32_cd(QWORD name)
 	if(directory==0)
 	{
 		fat32_root();
-		return;
+		return 0;
 	}
 
 	//清理
@@ -263,6 +265,8 @@ static void fat32_cd(QWORD name)
 
 	//转换
 	dir2raw();
+
+	return 1;
 }
 
 

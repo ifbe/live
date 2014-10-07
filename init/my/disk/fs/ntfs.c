@@ -416,7 +416,7 @@ void explainmft(QWORD data)
 }
 
 
-static void ntfs_cd(QWORD name)
+static int ntfs_cd(QWORD name)
 {
 	//变量们
 	QWORD mftnumber;
@@ -430,7 +430,7 @@ static void ntfs_cd(QWORD name)
 	switch(name)
 	{
 		case 0x2e:{	//	.
-			return;
+			return 0;
 		}
 		case 0x2e2e:{	//	..
 			if(ntfspwd>0) ntfspwd--;
@@ -456,7 +456,7 @@ static void ntfs_cd(QWORD name)
 			if(i==0x100)
 			{
 				say("directory not found",0);
-				return;
+				return -1;
 			}
 		}
 	}
@@ -472,6 +472,8 @@ static void ntfs_cd(QWORD name)
 
 	//开始change directory
 	explainmft(mftnumber);
+
+	return 1;
 }
 
 
