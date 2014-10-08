@@ -17,9 +17,8 @@ rep stosq
 
 
 ;_________look for rsd ptr from e0000~ffff0__________
-    mov rax,"RSD PTR "
     mov edi,0x100000
-    stosq
+    mov rax,"RSD PTR "
     mov rbp,0xe0000
     mov ecx,0x2000
 rsdptr:
@@ -36,6 +35,7 @@ rsdptr:
 
 ;________________rsdt/xsdt?_________________
 findrsdptr:
+    stosq
     mov rax,rbp       ;rsdptr
     stosq
     cmp byte [rbp+0xf],0x00 ;不是0就是xsdt
@@ -115,10 +115,15 @@ acpi:
     call explainapic
     .notmadt:
 
-    cmp dword [esi],"what"	;case else....
-    jne .notwhat
-    call explainelse
-    .notwhat:
+    cmp dword [esi],"MCFG"	;case mcfg
+    jne .notmcfg
+    call explainmcfg
+    .notmcfg:
+
+    cmp dword [esi],"DSDT"	;case dsdt....
+    jne .notdsdt
+    call explaindsdt
+    .notdsdt:
 
     add dword [rel saveaddr],0x10
     cmp dword [rel saveaddr],0x101000
@@ -227,57 +232,35 @@ analyse:
 
 
 
-explainelse:
-ret
+explainmcfg:
+    mov eax,"pcie"
+    stosq
+    mov esi,[esi+0x8]           ;["MCFG"-0x8]=mcfg address
+    mov eax,[esi+0x2c]          ;[mcfg+0x2c]=pcie base
+    stosq
+
+    ret
+
+
+
+
+explaindsdt:
+    mov esi,[esi+8]
+    mov eax,"_PRT"
+    mov ecx,0x10000
+
+.search_prt:
+    cmp [esi],eax
+    je .find_prt
+    inc esi
+    loop .search_prt
+    ret
+
+.find_prt:
+    stosq
+    mov eax,esi
+    stosq
+    ret
 
 
 endofacpi:
-
-
-
-
-;[0,3]:"$PIR"
-;[4,5]:version
-;[6,7]:tablesize
-;[8]:pci interrupt router's bus
-;[9]:pci interrupt router's devfunc
-;[0xa,0xb]:pci exclusive irqs
-;[0xc,0xf]:compatible pci interrupt router
-;[0x10,0x13]:miniport data
-;[0x14,1e]:0
-;[0x1f]:checksum
-;[0x20+0x10*slot,0x2f+0x10*slot]:pci slot entry
-
-;[0]:pci bus number
-;[1]:pci device number(upper 5bit)
-;[2]:link value for inta#
-;[3,0x4]:irq bitmap for inta#
-;[0x5]:link value for intb#
-;[0x6,0x7]:irq bitmap for intb#
-;[8]:link value for intc#
-;[9,0xa]:irq bitmap for intc#
-;[0xb]:link value for intd#
-;[0xc,0xd]:irq bitmap for intd#
-;[0xe]:slot number
-;[0xf]:reserved
-
-pciirqrouting:
-    ;上面的rdi没变
-    mov eax,"$PIR"
-    mov rbp,0xe0000
-    mov ecx,0x2000
-.searchtable:
-    cmp [rbp],eax
-    je .findtable
-    add rbp,0x10
-    loop .searchtable
-
-    jmp routingtabledone
-
-.findtable:
-    stosq
-    mov [rdi],rbp
-    add rdi,8
-
-
-routingtabledone:

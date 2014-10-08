@@ -14,9 +14,9 @@ mov edi,0x1220
 call isrinstall
 
 mov edi,0xfec00000
-mov dword [edi],0x10+16*0x1
+mov dword [edi],0x10+11*0x1		;5,9,10,11	;5,10,11
 mov dword [edi+0x10],0x22
-mov dword [edi],0x10+16*0x1+1
+mov dword [edi],0x10+11*0x1+1
 mov dword [edi+0x10],0
 
 pop rdi
