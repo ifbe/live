@@ -37,7 +37,7 @@ int use(QWORD funcname,QWORD arg1)
         {
         if(pointer[i]==funcname)
         {
-		func=(void (*)(QWORD))(pointer[i+1]);
+		func=(int (*)(QWORD))(pointer[i+1]);
                 break;
         }
         }

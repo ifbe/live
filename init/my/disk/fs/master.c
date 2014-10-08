@@ -184,15 +184,18 @@ void master()
 	//try fat
 	mount(0x746166);
 	result=use(0x6463,0x6576696c);	//cd live
+	say("fatresult:",result);
 	if(result>=0) return;		//成功，滚
 
 	//try ntfs
 	mount(0x7366746e);
 	result=use(0x6463,0x6576696c);	//cd live
+	say("ntfsresult:",result);
 	if(result>=0) return;		//成功，滚
 
 	//try ext
 	mount(0x747865);
 	result=use(0x6463,0x6576696c);	//cd live
+	say("extresult:",result);
 					//不管了，直接滚
 }
