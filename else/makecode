@@ -1,3 +1,0 @@
-mkdir purecode
-cp -r load purecode/bootloader
-cp -r init purecode/initer

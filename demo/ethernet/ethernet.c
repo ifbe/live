@@ -133,11 +133,7 @@ void ethernet()
 	for(i=0;i<128;i++) *(DWORD*)(mmio+0x5200+4*i)=0;
 
 	//enable interrupt
-	*(DWORD*)(mmio+0xd0)=0xc7;	//ZLOX_E1000_REG_IMS_LSC	1<<2
-					//ZLOX_E1000_REG_IMS_RXO	1<<6
-					//ZLOX_E1000_REG_IMS_RXT	1<<7
-					//ZLOX_E1000_REG_IMS_TXQE	1<<1
-					//ZLOX_E1000_REG_IMS_TXDW	1
+	*(DWORD*)(mmio+0xd0)=0x1f6dc;
 
 	//read to clear "interrupt cause read"
 	say("icr:",*(DWORD*)(mmio+0xc0));

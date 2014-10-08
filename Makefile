@@ -1,12 +1,31 @@
 image:
 	make -s clean
+	mkdir build
 	make -s -C load
-	make -s -C init
-	nasm else/link.s -o live
+	make -s -C cpu
+	make -s -C my
+	nasm else/init.s -o build/init
+	nasm else/img.s -o build/live
 clean:
 	make clean -s -C load
-	make clean -s -C init
-	rm -f live
+	make clean -s -C cpu
+	make clean -s -C my
+	make clean -s -C demo
+	rm -rf build
+#本Makefile生成的自己引导img虚拟硬盘
+qemutest:
+	make -s image
+	sudo qemu-kvm \
+	-monitor stdio \
+	-smp 2 \
+	-m 512 \
+	-device usb-ehci,id=ehci \
+	-device nec-usb-xhci,id=xhci \
+	-device usb-tablet,bus=xhci.0,port=1 \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=build/live
+#准备一个引导已经做好的fat.vhd虚拟硬盘,自己改位置和挂载点
 mountfat:
 	sudo modprobe nbd max_part=4
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/fat.vhd
@@ -19,7 +38,7 @@ umountfat:
 fat:
 	make -s image
 	make -s mountfat
-	sudo cp live /mnt/nbd/live/live
+	sudo cp build/live /mnt/nbd/live/live
 	make -s umountfat
 fattest:
 	sudo qemu-kvm \
@@ -30,6 +49,7 @@ fattest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/fat.vhd
+#准备一个引导已经做好的ntfs.vhd虚拟硬盘，自己改位置和挂载点
 mountntfs:
 	sudo modprobe nbd max_part=4
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/ntfs.vhd
@@ -42,7 +62,7 @@ umountntfs:
 ntfs:
 	make -s image
 	make -s mountntfs
-	sudo cp live /mnt/nbd/live/live
+	sudo cp build/live /mnt/nbd/live/live
 	make -s umountntfs
 ntfstest:
 	sudo qemu-kvm \
@@ -53,6 +73,7 @@ ntfstest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/ntfs.vhd
+#准备一个引导已经做好的ext.vhd虚拟硬盘，自己改位置和挂载点
 mountext:
 	sudo modprobe nbd max_part=4
 	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/ext.vhd
@@ -65,7 +86,7 @@ umountext:
 ext:
 	make -s image
 	make -s mountext
-	sudo cp init/init /mnt/nbd/live/init
+	sudo cp build/init /mnt/nbd/live/init
 	make -s umountext
 exttest:
 	sudo qemu-kvm \
@@ -76,6 +97,7 @@ exttest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/ext.vhd
+#准备一个引导已经做好的u盘，用qemu测试u盘启动，自己改/dev/sd?
 flashdrivetest:
 	sudo qemu-kvm \
 	-monitor stdio \
@@ -87,18 +109,6 @@ flashdrivetest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/dev/sdb
-qemutest:
-	make -s image
-	sudo qemu-kvm \
-	-monitor stdio \
-	-smp 2 \
-	-m 512 \
-	-device usb-ehci,id=ehci \
-	-device nec-usb-xhci,id=xhci \
-	-device usb-tablet,bus=xhci.0,port=1 \
-	-device ahci,id=ahci \
-	-device ide-drive,drive=disk,bus=ahci.0 \
-	-drive id=disk,if=none,file=live
 #插上鼠标键盘，lsusb，根据结果改"hostbus=?,hostaddr=?"这一段
 hidtest:
 	make -s image
@@ -138,9 +148,10 @@ massstoragetest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=live
+#下面是我自己的方便干活脚本，别管了
 copy:
 	make -s image
-	sudo cp init/init /mnt/efi/live/init
+	sudo cp build/init /mnt/efi/live/init
 everything:
 	make -s fat
 	make -s ntfs
@@ -148,7 +159,6 @@ everything:
 	make -s copy
 push:
 	make -s clean
-	make clean -s -C demo
 	git add --all .
 	git commit -a
 	git push
