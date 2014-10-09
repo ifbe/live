@@ -275,7 +275,7 @@ dumpanscii:
 mov rax,[rel addr]
 mov [rel ansciipointer],rax
 mov dword [rel ansciicount],0
-	ansciiline:
+.ansciiline:
 	mov edi,0x1000000			;locate destination
 	mov eax,[rel ansciicount]
 	imul eax,4*1024*16
@@ -283,7 +283,7 @@ mov dword [rel ansciicount],0
 	call dumpanscii64
 	inc byte [rel ansciicount]
 	cmp byte [rel ansciicount],0x30
-	jb ansciiline
+	jb .ansciiline
 ret
 ;______________________________________
 ansciipointer:dq 0
@@ -328,7 +328,7 @@ dumphex:
 mov rax,[rel addr]
 mov [rel hexpointer],rax
 mov dword [rel hexcount],0
-	hexline:
+.hexline:
 	mov edi,0x1000000			;locate destination
 	mov eax,[rel hexcount]
 	imul eax,4*1024*16
@@ -336,7 +336,7 @@ mov dword [rel hexcount],0
 	call dumphex64
 	inc byte [rel hexcount]
 	cmp byte [rel hexcount],0x30
-	jb hexline
+	jb .hexline
 ret
 ;______________________________________
 hexpointer:dq 0
@@ -358,10 +358,10 @@ mov [rel pcimust32],eax
   .dump:
   mov al,[rel pcimust32]
   shr al,4
-  call onlyhex
+  call character
   mov al,[rel pcimust32]
   and al,0xf
-  call onlyhex
+  call character
   shr dword [rel pcimust32],8
   dec ch
   cmp ch,0

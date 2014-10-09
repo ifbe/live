@@ -40,8 +40,7 @@ cmp byte [rel length],8
 jna console
 
 ;lea ebx,[rel line0]
-mov ebx,0x6000
-add ebx,[rel linex128]
+mov ebx,[rel currentaddr]
 dec byte [rel length]
 add ebx,[rel length]
 mov byte [ebx],0
@@ -59,9 +58,7 @@ jae console
 call scan2anscii
 
 record:
-;lea ebx,[rel line0]
-mov ebx,0x6000
-add ebx,[rel linex128]
+mov ebx,[rel currentaddr]
 add ebx,[rel length]
 mov [ebx],al
 inc byte [rel length]
@@ -72,13 +69,113 @@ jmp console
 ;___________________________________
 f4enter:
 
-;lea eax,[rel line0]
-mov eax,0x6000
-add eax,[rel linex128]
-add eax,8
-mov [rel currentarg],eax		;esi=current argument
+call explainarg
 
-mov esi,[rel currentarg]
+jmp searchinhere
+.notinhere:
+
+jmp searchinmemory
+.notinmemory:
+
+notfound:
+	call checkandchangeline
+	mov edi,[rel currentaddr]
+	mov dword [edi],"notf"
+	mov dword [edi+4],"ound"
+
+scroll:
+	call checkandchangeline
+	mov edi,[rel currentaddr]
+	mov dword [edi],"[   "
+	mov dword [edi+4],"/]$ "
+	mov dword [rel length],8
+	jmp console
+;_________________________________
+
+
+
+
+;举例：
+;进来时esi指向"   love     123456 "
+;出去时arg0="love"，[arg1]=123456，esi指向最后的空格
+;本行全空会执行上一次的指令
+;因为上一次取得的arg0和arg1没有被改变
+;______________________________________
+explainarg:
+	mov esi,[rel currentaddr]
+	add esi,8			;[   /]
+
+
+	;;;;;;;;;;;;吃掉esi指向的最开始的空格
+	mov ecx,8
+.eatspace0:
+	cmp byte [esi],0x20		;先检查
+	ja .ate0			;已经吃光了，下一步
+	inc esi				;吃一个空格
+	loop .eatspace0
+	jmp .return			;全是空格->出错了直接返回
+.ate0:
+
+
+	;;;;;;;;;;;;;现在esi指向l
+.fetcharg0:
+        mov qword [rel arg0],0		;先清理
+        mov qword [rel arg0+8],0	;先清理
+        lea rdi,[rel arg0]		;edi=目标地址
+        mov ecx,8
+.continue0:
+        lodsb				;取一个
+        cmp al,0x20
+        jbe .finisharg0			;小于0x20或者
+        cmp al,0x7a
+        ja .finisharg0			;大于0x80都是错，直接返回
+        stosb				;正常的话往目的地放
+        loop .continue0
+.finisharg0:
+
+
+	;;;;;;;;;;;;吃掉esi指向的中间的空格
+	mov ecx,8
+.eatspace1:
+	cmp byte [esi],0x20		;先检查
+	ja .ate1			;已经吃光了，下一步
+	inc esi				;吃一个空格
+	loop .eatspace1
+	jmp .return			;全是空格->出错了直接返回
+.ate1:
+
+
+
+	;;;;;;;;;;;现在esi指向1
+.fetcharg1:
+        mov qword [rel arg1],0		;先清理
+        mov qword [rel arg1+8],0	;先清理
+        lea rdi,[rel arg1]		;edi=目标地址
+        mov ecx,8
+.continue1:
+        lodsb				;取一个
+        cmp al,0x20
+        jbe .finisharg1			;小于0x20或者
+        cmp al,0x7a
+        ja .finisharg1			;大于0x80都是错，直接返回
+        stosb				;正常的话往目的地放
+        loop .continue1
+.finisharg1:
+
+
+.return:
+	ret
+;____________________________________________
+arg0:times 16 db 0		;本函数运行完的输出结果
+arg1:times 16 db 0
+
+
+
+
+;___________________________________
+searchinhere:
+
+lea esi,[rel arg0]
 cmp dword [esi],"powe"		;if [esi]=="powe"
 jne skippoweroff
 cmp dword [esi+4],"roff"	;if [esi+4]=="roff"
@@ -87,7 +184,7 @@ cmp byte [esi+8],0		;if [esi+8]=0x20
 je poweroff
 skippoweroff:
 
-mov esi,[rel currentarg]
+lea esi,[rel arg0]
 cmp dword [esi],"rebo"
 jne skipreboot
 cmp word [esi+4],"ot"
@@ -96,139 +193,116 @@ cmp byte [esi+6],0
 je reboot
 skipreboot:
 
-mov esi,[rel currentarg]
+lea esi,[rel arg0]
 cmp dword [esi],"exit"
 jne skipexit
 cmp byte [esi+4],0
 je poweroff
 skipexit:
 
-
-mov esi,[rel currentarg]
+lea esi,[rel arg0]
 cmp dword [esi],"clea"
 jne skipclear
 cmp byte [esi+4],'r'
 je clear
 skipclear:
 
-mov esi,[rel currentarg]
-cmp dword [esi],"test"
-je test
-
-mov esi,[rel currentarg]
-cmp dword [esi],"call"
-jne skipcast
-cmp byte [esi+4],0x20
-je cast
-skipcast:
-
-mov esi,[rel currentarg]
-cmp dword [esi],"jump"
-jne skipjump
-cmp byte [esi+4],0x20
-je jump
-skipjump:
-
-mov esi,[rel currentarg]
+lea esi,[rel arg0]
 cmp word [esi],"ls"
 je ls
 
-searchprogram:
-	mov esi,[rel currentarg]
-	call fetchanscii
-	call binaddr
+lea esi,[rel arg0]
+cmp dword [esi],"test"
+je test
 
-	mov esi,[rel currentarg]
-	.continue:
-	cmp byte [esi],0x20
-	jna .fetch
-	inc esi
-	jmp .continue
-	.fetch:
-	inc esi
-	call fetchanscii
+lea esi,[rel arg0]
+cmp dword [esi],"call"
+je cast
+
+lea esi,[rel arg0]
+cmp dword [esi],"jump"
+je jump
+
+jmp f4enter.notinhere
+;_____________________________________
+
+
+
+
+;找到就执行
+;____________________________________
+searchinmemory:
+	mov rax,[rel arg0]
+	mov esi,0x180000		;/bin
+.search:
+	cmp [esi],rax
+	je .find
+	add esi,0x10
+	cmp esi,0x200000
+	jb .search
+	jmp f4enter.notinmemory
+
+.find:
+	mov rbx,[esi+8]
+	mov [rel explainedarg0],rbx	;取得函数地址，保存在某处
 
 	call checkandchangeline
-	mov rbx,[rel address]
-	call explainrbx
-	mov rbx,[rel anscii]
-	call explainrbx
 
-	mov rax,[rel address]
-	cmp rax,0
-	je scroll
-	mov rdi,[rel anscii]
-	call rax
+	mov rbx,[rel explainedarg0]
+	call rbx2string
+	lea esi,[rel string]
+	mov edi,[rel currentaddr]
+	movsq
+	movsq
+
+	lea rsi,[rel arg1]
+	mov edi,[rel currentaddr]
+	add edi,16+8
+	movsq
+	movsq
+
+	mov rdi,[rel arg1]
+	call [rel explainedarg0]
+
 	jmp scroll
 
-notfound:
-	call checkandchangeline
-	mov dword [edi],"notf"
-	mov dword [edi+4],"ound"
-
-scroll:
-	call checkandchangeline
-	mov dword [edi],"[   "
-	mov dword [edi+4],"/]$ "
-	mov dword [rel length],8
-	jmp console
-;_________________________________
-currentarg:dq 0		;only this function use me
+.return:
+	jmp f4enter.notinmemory
+;__________________________________________
+explainedarg0:dq 0	;解释完是函数地址
 
 
 
 
-;_________________________________
-checkandchangeline:
-	cmp dword [rel linex128],0x80*47	;current=last?
-	jae .move
-
-	add dword [rel linex128],128		;no:line+1
-	jmp .return
-
-	.move:					;yes:move
-	push rsi
-	push rcx
-	;lea esi,[rel line1]
-	mov esi,0x6080
-	;lea edi,[rel line0]
-	mov edi,0x6000
-	mov ecx,128*0x30
-	cld
-	rep movsb
-	pop rcx
-	pop rsi
-
-	.return:
-	;lea edi,[rel line0]
-	mov edi,0x6000
-	add edi,[rel linex128]
-	ret					;now line=a blank line
-;____________________________________
-
-
-
-
-;_________________________________
-explainrbx:		;care about 32bit only,because......
-	add edi,8
-	rol rbx,32
-
-	mov ecx,8
-	.continue2:
-	rol rbx,4
-	mov al,bl
-	and al,0xf
-	add al,0x30
-	cmp al,0x3a
-	jb .done
-	add al,7
-	.done:
-	stosb
-	loop .continue2
-
-	ret
-;_______________________________
+;__________________________________
+test:
+.cleanmemory:
+	mov edi,0x2000000
+	mov ecx,0x2000
+	xor rax,rax
+	rep stosq
+.search:
+	mov esi,0x180000
+	.continue:
+	cmp dword [esi],"load"
+	je .load
+	add esi,0x10
+	cmp esi,0x200000
+	jb .continue
+	jmp notfound
+.load:
+	mov rdx,[esi+8]
+	mov rdi,[rel arg1]
+	call rdx
+.check:
+	cmp dword [0x2000000],0
+	je notfound
+.execute:
+	mov rax,0x2000000
+	call rax
+.return:
+	jmp scroll
+;__________________________________
 
 
 
@@ -244,7 +318,7 @@ rep stosb
 mov edi,0x6000
 mov rax,"[   /]$ "
 stosq
-mov dword [rel linex128],0
+mov dword [rel currentaddr],0x6000
 mov dword [rel length],8
 jmp console
 ;_______________________________________
@@ -254,135 +328,50 @@ jmp console
 
 ;_________________________
 ls:
-
-call checkandchangeline		;get new edi
-mov esi,0x4c0000
-xor ecx,ecx
+	call checkandchangeline		;get new edi
+	mov edi,[rel currentaddr]
+	mov esi,0x4c0000
+	xor ecx,ecx
 .continue:
-cmp dword [esi],0
-je scroll
-movsq
-add esi,0x18
-add edi,0x8
-inc ecx
+	cmp dword [esi],0
+	je scroll
+	movsq
+	add esi,0x18
+	add edi,0x8
+	inc ecx
 
-cmp ecx,0x200
-jae scroll
-test ecx,0x7
-jnz .continue
-call checkandchangeline
-jmp .continue
+	cmp ecx,0x200
+	jae scroll
+	test ecx,0x7
+	jnz .continue
+	call checkandchangeline
+	mov edi,[rel currentaddr]
+	jmp .continue
 ;_________________________
 
 
 
 
-;______________________________
-test:
-mov rax,0x2000000
-call rax
-jmp scroll
-;______________________________
-
-
 ;_______________________________
 cast:
 
-add esi,5
-call fetchvalue
+lea esi,[rel arg1]
+call string2data
 call [rel value]
 jmp scroll
 ;_______________________________
 
 
+
+
 ;_______________________________
 jump:
 
-add esi,5
-call fetchvalue
+lea esi,[rel arg1]
+call string2data
 jmp [rel value]
 ;_______________________________
 
-
-;______________________________
-fetchanscii:
-mov qword [rel anscii],0
-
-lea rdi,[rel anscii]
-mov ecx,8
-.continue:
-lodsb
-cmp al,0x20
-jbe .return
-cmp al,0x7a
-ja .return
-stosb
-loop .continue
-
-.return:
-ret
-;__________________________________
-anscii:dq 0
-
-
-
-
-
-;____________________________________
-binaddr:
-mov qword [rel address],0
-
-mov rax,[rel anscii]
-mov esi,0x180000			;/bin
-.continue2:
-cmp esi,0x200000
-jae .return
-cmp [esi],rax
-je .find
-add esi,0x10
-jmp .continue2
-
-.find:
-mov rax,[esi+8]
-mov [rel address],rax
-
-.return:
-ret
-;__________________________________________
-address:dq 0
-
-
-;________________________________
-fetchvalue:
-mov qword [rel value],0
-mov ecx,16
-.part:
-
-lodsb                ;get one char
-
-cmp al,0x30
-jb .finish
-cmp al,0x39          ;>0x39,maybe a~f
-ja .atof
-sub al,0x30          ;now its certainly 0~9
-jmp .generate
-
-.atof:
-cmp al,0x61          ;[0x40,0x60],error
-jb .finish
-cmp al,0x66          ;>0x66,error
-ja .finish
-sub al,0x57          ;now its certainly a~f
-
-.generate:
-shl qword [rel value],4
-add byte [rel value],al
-loop .part
-
-.finish:
-ret
-;_______________________________-
-value:dq 0
 
 
 
@@ -438,9 +427,27 @@ looptimes:dd 0
 
 
 
+;_________________________________
+checkandchangeline:
+	cmp dword [rel currentaddr],0x6000+0x80*47
+	jae .move
 
+	add dword [rel currentaddr],128		;no:line+1
+	jmp .return
 
+	.move:					;yes:move
+	push rsi
+	push rcx
+	mov esi,0x6080
+	mov edi,0x6000
+	mov ecx,128*0x30
+	cld
+	rep movsb
+	pop rcx
+	pop rsi
 
-
-linex128:dq 0
+	.return:
+	ret					;now line=a blank line
+;____________________________________
+currentaddr:dq 0
 length:dq 8

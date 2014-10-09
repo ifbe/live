@@ -5,7 +5,7 @@ bits 64
 
 ;________________________________
 scan2anscii:
-    mov esi,0x5800                 ;table
+    mov esi,0x5800          ;table
 .search:
     cmp [esi],al            ;先把al里的扫描码转换成anscii给al
     je .convert
@@ -26,58 +26,56 @@ scan2anscii:
 
 ;___________________________________
 scan2hex:
-cmp al,0xb
-je .return0
-cmp al,0x1e
-je .returna
-cmp al,0x30
-je .returnb
-cmp al,0x2e
-je .returnc
-cmp al,0x20
-je .returnd
-cmp al,0x12
-je .returne
-cmp al,0x21
-je .returnf
-cmp al,0xb
-ja .wrong
+	cmp al,0xb
+	je .return0
+	cmp al,0x1e
+	je .returna
+	cmp al,0x30
+	je .returnb
+	cmp al,0x2e
+	je .returnc
+	cmp al,0x20
+	je .returnd
+	cmp al,0x12
+	je .returne
+	cmp al,0x21
+	je .returnf
+	cmp al,0xb
+	ja .wrong
 
 .return:
-dec al
-ret
+	dec al
+	ret
 .wrong:
-mov al,0xff
-ret
+	mov al,0xff
+	ret
 .return0:
-xor al,al
-ret
+	xor al,al
+	ret
 .returna:
-mov al,0xa
-ret
+	mov al,0xa
+	ret
 .returnb:
-mov al,0xb
-ret
+	mov al,0xb
+	ret
 .returnc:
-mov al,0xc
-ret
+	mov al,0xc
+	ret
 .returnd:
-mov al,0xd
-ret
+	mov al,0xd
+	ret
 .returne:
-mov al,0xe
-ret
+	mov al,0xe
+	ret
 .returnf:
-mov al,0xf
-ret
-
+	mov al,0xf
+	ret
 ;__________________________________
 
 
 
 
 ;______________________________
-onlyhex:
 character:
     push rbx
     push rcx
@@ -158,34 +156,36 @@ char:
 
 
 
+;把一串字符直接显示到edi指定的屏幕位置
 ;_______________________________
 message:
-mov ecx,16
+	mov ecx,16
 .continue:
-push rcx
-push rsi
-lodsb
-cmp al,0x20
-ja .thisdone
-add edi,32
-jmp .notprint
+	push rcx
+	push rsi
+	lodsb
+	cmp al,0x20
+	ja .thisdone
+	add edi,32
+	jmp .notprint
 .thisdone:
-call char
+	call char
 .notprint:
-pop rsi
-pop rcx
-inc esi
-loop .continue
-ret
+	pop rsi
+	pop rcx
+	inc esi
+	loop .continue
+	ret
 ;______________________________
 
 
 
 
+;把rbx的值直接显示到edi指定的屏幕位置
 ;_________________________________
 dumprbx:
-mov ecx,16
-mov byte [rel firstnonzero],0
+	mov ecx,16
+	mov byte [rel firstnonzero],0
 .getaddress:
         rol rbx,4
         mov al,bl
@@ -205,14 +205,82 @@ mov byte [rel firstnonzero],0
 	.print:
         push rbx
         push rcx
-        call onlyhex
+        call character
         pop rcx
         pop rbx
 	loop .getaddress
 
-ret
+	ret
+
 	.notprint:
 	add edi,32
 	loop .getaddress
+
+	ret
 ;________________________________
 firstnonzero: db 0
+
+
+
+
+;rbx的值转成anscii串放在下面string:
+;___________________________________
+itoa:
+rbx2string:
+	mov qword [rel string],0
+	mov qword [rel string+8],0
+	lea edi,[rel string+0xf]
+	mov ecx,8		;只管低32位
+.continue:
+	mov al,bl
+	and al,0xf
+	add al,0x30
+	cmp al,0x3a
+	jb .skip
+	add al,0x7
+.skip:
+	shr rbx,4
+	mov [edi],al
+	dec edi
+	loop .continue
+
+.return:
+	ret
+;___________________________________
+string:db "0123456789abcdef"
+
+
+
+
+;esi指向的anscii串转成数字放在value:里
+;________________________________
+string2data:
+mov qword [rel value],0
+mov ecx,16
+.part:
+
+lodsb                ;get one char
+
+cmp al,0x30
+jb .finish
+cmp al,0x39          ;>0x39,maybe a~f
+ja .atof
+sub al,0x30          ;now its certainly 0~9
+jmp .generate
+
+.atof:
+cmp al,0x61          ;[0x40,0x60],error
+jb .finish
+cmp al,0x66          ;>0x66,error
+ja .finish
+sub al,0x57          ;now its certainly a~f
+
+.generate:
+shl qword [rel value],4
+add byte [rel value],al
+loop .part
+
+.finish:
+ret
+;_______________________________-
+value:dq 0

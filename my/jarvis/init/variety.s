@@ -31,6 +31,7 @@ bits 64
     mov [0xff8],rax
 
 ;清空screen buffer
+    mov qword [rel currentaddr],0x6000
     mov edi,0x6000
     mov rax,"[   /]$ "
     stosq

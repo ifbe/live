@@ -192,15 +192,6 @@ void ethernet()
 
 
 /*
-struct RecvDesc
-{   
-    volatile u64 addr;
-    volatile u16 len;
-    volatile u16 checksum;
-    volatile u8 status;
-    volatile u8 errors;
-    volatile u16 special;
-};
 struct TransDesc
 {
     volatile u64 addr;
@@ -416,7 +407,23 @@ void main()
 
 
 
+/*
+struct RecvDesc
+{   
+    volatile u64 addr;
+    volatile u16 len;
+    volatile u16 checksum;
+    volatile u8 status;
+    volatile u8 errors;
+    volatile u16 special;
+};
+*/
 void realisr22()
 {
-	say("interrupt22!");
+	say("interrupt22",0);
+	//DWORD tail=*(DWORD*)(mmio+0x2818);
+	//QWORD desc=rxdesc+0x10*tail;
+
+	//WORD length=*(BYTE*)(desc+8);
+	//shout("receive:",length);
 }
