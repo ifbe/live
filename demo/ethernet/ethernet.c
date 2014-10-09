@@ -421,15 +421,22 @@ struct RecvDesc
 void realisr22()
 {
 	DWORD tail=*(DWORD*)(mmio+0x2818);
-	DWORD current=(tail+1)%32;
-	QWORD desc=rxdesc+0x10*current;
-	shout("desc@",desc);
+	DWORD current=tail;
 
-	BYTE status=*(BYTE*)(desc+12);
-	*(BYTE*)(desc+12)=0;
-	shout("status:",status);
-	WORD length=*(WORD*)(desc+8);
-	shout("length:",length);
+	while(1)
+	{
+		current=(current+1)%32;
+		QWORD desc=rxdesc+0x10*current;
 
-	*(DWORD*)(mmio+0x2818)=current;	//tail
+		BYTE status=*(BYTE*)(desc+12);
+		shout("status:",status);
+		if( (status&0x1) == 0 ) break;
+
+		WORD length=*(WORD*)(desc+8);
+		shout("length:",length);
+
+		shout("icr:",*(DWORD*)(mmio+0xc0));
+		*(BYTE*)(desc+12)=0;
+		*(DWORD*)(mmio+0x2818)=current;	//tail
+	}
 }
