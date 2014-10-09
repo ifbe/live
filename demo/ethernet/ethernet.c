@@ -390,7 +390,7 @@ void explainpacket()
 
 
 
-void initethernet()
+void main()
 {
 	//clear home
 	QWORD addr=ethhome;

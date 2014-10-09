@@ -1,6 +1,13 @@
-ball2:
-	gcc -c start.c
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o \
+	ball2.o \
+	-o ball2
+library:
+	gcc -c lib/start.c
+main:
 	gcc -c -O2 ball2.c
-	ld -T link.ld start.o ball2.o -o ball2
 clean:
 	rm -f *.o ball2

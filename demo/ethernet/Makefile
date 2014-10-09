@@ -1,13 +1,18 @@
-c:
-	gcc -c -fPIC -O2 start.c
-	gcc -c -fPIC -O2 ethernet.c
-	gcc -c -fPIC -O2 print.c
-	gcc -c -fPIC -O2 remember.c
-	nasm -f elf64 interrupt.s
-	ld -T link.ld \
-	start.o ethernet.o print.o remember.o interrupt.o \
+binary:
+	make -s library
+	make -s c
+	ld -T link/link.ld \
+	start.o print.o remember.o interrupt.o \
+	ethernet.o  \
 	-o temp.bin
-	nasm size.s -o ethernet
+	nasm link/size.s -o ethernet
+library:
+	gcc -c -fPIC -O2 lib/start.c
+	gcc -c -fPIC -O2 lib/print.c
+	gcc -c -fPIC -O2 lib/remember.c
+	nasm -f elf64 lib/interrupt.s -o interrupt.o
+c:
+	gcc -c -fPIC -O2 ethernet.c
 test:
 	make -s c
 	make -C ../.. mountfat

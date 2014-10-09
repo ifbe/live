@@ -1,7 +1,14 @@
-brick:
-	gcc -c -O2 start.c
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o hlt.o \
+	brick.o \
+	-o brick
+library:
+	gcc -c -O2 lib/start.c
+	nasm -f elf64 lib/hlt.s -o hlt.o
+main:
 	gcc -c -O2 brick.c
-	nasm -f elf64 fuckgcc.s
-	ld -T link.ld start.o brick.o fuckgcc.o -o brick
 clean:
 	rm -f *.o brick

@@ -1,4 +1,4 @@
-;require init/[1,2+]
+;屏幕全白？
 [BITS 64]
     mov bl,[0x3019]        ;bitperpixel
     mov cl,3

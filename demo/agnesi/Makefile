@@ -1,7 +1,14 @@
+binary:
+	make -s library
+	make -s agnesi
+	ld -T link/link.ld \
+	start.o hlt.o \
+	agnesi.o \
+	-o agnesi
+library:
+	gcc -c -O2 lib/start.c
+	nasm -f elf64 lib/hlt.s -o hlt.o
 agnesi:
-	gcc -c -O2 start.c
 	gcc -c -O2 agnesi.c
-	nasm -f elf64 fuckgcc.s
-	ld -T link.ld start.o agnesi.o fuckgcc.o -o agnesi
 clean:
 	rm -f *.o agnesi

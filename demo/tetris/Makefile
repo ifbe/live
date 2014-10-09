@@ -1,7 +1,14 @@
-multitask:
-	gcc -c -O2 start.c
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o hlt.o \
+	tetris.o \
+	-o tetris
+library:
+	gcc -c -O2 lib/start.c
+	nasm -f elf64 lib/hlt.s -o hlt.o
+main:
 	gcc -c -O2 tetris.c
-	nasm -f elf64 fuckgcc.s
-	ld -T link.ld start.o tetris.o fuckgcc.o -o tetris
 clean:
 	rm -f *.o tetris

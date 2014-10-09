@@ -1,6 +1,13 @@
-clock:
-	nasm -f elf64 start.s
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o \
+	clock.o \
+	-o clock
+library:
+	nasm -f elf64 lib/start.s -o start.o
+main:
 	gcc -c -O2 clock.c
-	ld -T link.ld start.o clock.o -o clock
 clean:
 	rm -f *.o clock

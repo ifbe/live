@@ -56,7 +56,7 @@ void anscii(int x,int y,char ch)
 
 
 
-clock()
+main()
 {
 	unsigned char century=port(0x32);			//century
 	unsigned char year=port(9);				//year

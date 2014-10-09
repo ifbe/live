@@ -27,17 +27,3 @@ static inline unsigned int in32( unsigned short port )
                   : "=a"(ret) : "Nd"(port) );
     return ret;
 }
-
-void main()
-{
-    char in;
-    char* rdi=(char*)0xa0000;
-    while(in|=0x39)
-    {
-        in=in8(0x60);
-    }
-    for(;(signed64)rdi<0xaf9ff;rdi++){*rdi=0x8;}  //0x0~0xaf9f
-
-    hlt:asm("hlt");
-    goto hlt;
-}

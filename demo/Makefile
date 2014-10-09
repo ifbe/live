@@ -19,6 +19,10 @@ all:
 	cp agnesi/agnesi demo/
 	make -s -C brick
 	cp brick/brick demo/
+	make -s -C circle
+	cp circle/circle demo/
+	make -s -C color
+	cp color/color demo/
 	make -s -C flappybird
 	cp flappybird/bird demo/
 	make -s -C g
@@ -54,6 +58,8 @@ clean:
 	make clean -s -C 3d
 	make clean -s -C agnesi
 	make clean -s -C brick
+	make clean -s -C circle
+	make clean -s -C color
 	make clean -s -C flappybird
 	make clean -s -C g
 	make clean -s -C snake

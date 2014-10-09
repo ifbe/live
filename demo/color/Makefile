@@ -1,6 +1,13 @@
+binary:
+	make -s library
+	make -s color
+	ld -T link/link.ld \
+	start.o \
+	color.o \
+	-o color
+library:
+	gcc -c -O2 lib/start.c
 color:
-	gcc -c -O2 start.c
 	gcc -c -O2 color.c
-	ld -T link.ld start.o color.o -o color
 clean:
 	rm -f *.o color

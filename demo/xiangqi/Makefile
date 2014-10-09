@@ -1,6 +1,13 @@
-multitask:
-	gcc -c -O2 start.c
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o \
+	xiangqi.o \
+	-o xiangqi
+library:
+	gcc -c -O2 lib/start.c
+main:
 	gcc -c -O2 xiangqi.c
-	ld -T link.ld start.o xiangqi.o -o xiangqi
 clean:
 	rm -f *.o xiangqi

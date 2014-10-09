@@ -1,7 +1,14 @@
-jpeg:
-	nasm -f elf64 start.s
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o print.o \
+	jpeg.o \
+	-o jpeg
+library:
+	nasm -f elf64 lib/start.s -o start.o
+	gcc -c -fPIC -O2 lib/print.c
+main:
 	gcc -c -fPIC -O2 jpeg.c
-	gcc -c -fPIC -O2 print.c
-	ld -T link.ld start.o jpeg.o print.o -o jpeg
 clean:
 	rm -f *.o jpeg

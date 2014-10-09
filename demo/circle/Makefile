@@ -1,6 +1,13 @@
-circle:
-	gcc -c start.c
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o \
+	circle.o \
+	-o circle
+library:
+	gcc -c lib/start.c
+main:
 	gcc -c -O2 circle.c
-	ld -T link.ld start.o circle.o -o circle
 clean:
 	rm -f *.o circle

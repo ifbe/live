@@ -1,7 +1,14 @@
-btree:
-	gcc -c start.c
+binary:
+	make -s library
+	make -s main
+	ld -T link/link.ld \
+	start.o hlt.o \
+	btree.o \
+	-o btree
+library:
+	gcc -c lib/start.c
+	nasm -f elf64 lib/hlt.s -o hlt.o
+main:
 	gcc -c -O2 btree.c
-	nasm -f elf64 fuckgcc.s -o fuckgcc.o
-	ld -T link.ld start.o btree.o fuckgcc.o -o btree
 clean:
 	rm -f *.o btree
