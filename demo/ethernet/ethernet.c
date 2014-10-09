@@ -420,10 +420,16 @@ struct RecvDesc
 */
 void realisr22()
 {
-	say("interrupt22",0);
-	//DWORD tail=*(DWORD*)(mmio+0x2818);
-	//QWORD desc=rxdesc+0x10*tail;
+	DWORD tail=*(DWORD*)(mmio+0x2818);
+	DWORD current=(tail+1)%32;
+	QWORD desc=rxdesc+0x10*current;
+	shout("desc@",desc);
 
-	//WORD length=*(BYTE*)(desc+8);
-	//shout("receive:",length);
+	BYTE status=*(BYTE*)(desc+12);
+	*(BYTE*)(desc+12)=0;
+	shout("status:",status);
+	WORD length=*(WORD*)(desc+8);
+	shout("length:",length);
+
+	*(DWORD*)(mmio+0x2818)=current;	//tail
 }

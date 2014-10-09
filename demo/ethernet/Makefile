@@ -14,7 +14,7 @@ library:
 c:
 	gcc -c -fPIC -O2 ethernet.c
 test:
-	make -s c
+	make -s binary
 	make -C ../.. mountfat
 	sudo cp ethernet /mnt/nbd/live
 	make -C ../.. umountfat
