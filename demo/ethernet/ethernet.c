@@ -12,6 +12,7 @@
 static QWORD portaddr;
 static QWORD mmio;
 static QWORD macaddr;
+static DWORD ipaddr;
 
 
 
@@ -92,7 +93,7 @@ WORD eepromread(whichreg)
 		if( (p[0]&0x10) == 0x10 ) return (WORD)(p[0]>>8);
 	}
 }
-void ethernet()
+void e1000()
 {
 	say("ethernet@",mmio);
 
@@ -290,10 +291,10 @@ struct arp
 	BYTE sendermac[6];	//[0x16,0x1b]
 	BYTE senderip[4];	//[0x1c,0x1f]
 	BYTE targetmac[6];	//[0x20,0x25]
-	BYTE targetip[4];	//[0x26,0x2b]
+	BYTE targetip[4];	//[0x26,0x29]
 };
 static struct arp arp;
-static void hi()
+static void who(QWORD targetip)
 {
 	*(QWORD*)(arp.macdst)=0xffffffffffff;
 	*(QWORD*)(arp.macsrc)=macaddr;
@@ -305,12 +306,12 @@ static void hi()
 	arp.protocolsize=4;
 	arp.opcode=0x0100;		//这是请求，回复是0x200
 	*(QWORD*)(arp.sendermac)=macaddr;
-	*(DWORD*)(arp.senderip)=0x17c8c8c8;		//200.200.200.23
+	*(DWORD*)(arp.senderip)=ipaddr;		//200.200.200.23
 	*(QWORD*)(arp.targetmac)=0;
-	*(DWORD*)(arp.targetip)=0x01c8c8c8;
+	*(DWORD*)(arp.targetip)=targetip;
 
 
-	sendpacket((QWORD)(&arp),14+0x1e);
+	sendpacket((QWORD)(&arp),14+0x1c);
 }
 
 
@@ -340,7 +341,7 @@ struct icmp
 	WORD sn;		//[0x28,0x29]
 };
 static struct icmp icmp;
-static void ping()
+static void ping(QWORD targetip)
 {
 	*(QWORD*)(icmp.macdst)=0xffffffffffff;
 	*(QWORD*)(icmp.macsrc)=macaddr;
@@ -354,8 +355,8 @@ static void ping()
 	icmp.ttl=0x40;
 	icmp.protocol=1;
 	icmp.checksum=0;
-	*(DWORD*)(icmp.ipsrc)=0x17c8c8c8;		//200.200.200.23
-	*(DWORD*)(icmp.ipdst)=0x07c8c8c8;		//200.200.200.7
+	*(DWORD*)(icmp.ipsrc)=ipaddr;		//200.200.200.23
+	*(DWORD*)(icmp.ipdst)=targetip;		//200.200.200.7
 	icmp.checksum=checksum((WORD*)(&(icmp.iphead)),20);
 
 	icmp.icmptype=8;		//echo request
@@ -395,10 +396,11 @@ void main()
 	probepci();
 	if(mmio==0) return;
 
-	ethernet();
+	e1000();
+	ipaddr=0x17c8c8c8;
 
 	remember(0x676e6970,ping);
-	remember(0x6968,hi);
+	remember(0x6f6877,who);
 	//remember(0x646e6573,sendpacket);
 
 	say("",0);
@@ -418,25 +420,45 @@ struct RecvDesc
     volatile u16 special;
 };
 */
+void explainipv4(QWORD bufferaddr,QWORD length)
+{
+
+}
+void explainarp(QWORD bufferaddr,QWORD length)
+{
+	QWORD srcmac=( *(QWORD*)(bufferaddr+6) ) &0xffffffffffff;
+	shout("srcmac:",srcmac);
+}
+void explainpacket(QWORD bufferaddr,QWORD length)
+{
+shout("!!",0);
+	WORD type=*(WORD*)(bufferaddr+12);
+	type=( (type&0xff)<<8 )+(type>>8);	//高低位互换
+
+	switch(type)
+	{
+		case 0x0806:explainarp(bufferaddr,length);
+		case 0x0800:explainipv4(bufferaddr,length);
+	}
+}
 void realisr22()
 {
 	DWORD tail=*(DWORD*)(mmio+0x2818);
-	DWORD current=tail;
 
 	while(1)
 	{
-		current=(current+1)%32;
-		QWORD desc=rxdesc+0x10*current;
+		tail=(tail+1)%32;
+		QWORD desc=rxdesc+0x10*tail;
 
 		BYTE status=*(BYTE*)(desc+12);
-		shout("status:",status);
 		if( (status&0x1) == 0 ) break;
 
-		WORD length=*(WORD*)(desc+8);
-		shout("length:",length);
+		QWORD bufferaddr=*(QWORD*)(desc);
+		QWORD length=*(WORD*)(desc+8);
+		explainpacket(bufferaddr,length);
 
-		shout("icr:",*(DWORD*)(mmio+0xc0));
-		*(BYTE*)(desc+12)=0;
-		*(DWORD*)(mmio+0x2818)=current;	//tail
+		volatile DWORD dummy=*(DWORD*)(mmio+0xc0);//必须读，防止被优化
+		*(BYTE*)(desc+12)=0;			//status写0
+		*(DWORD*)(mmio+0x2818)=tail;		//更新tail
 	}
 }

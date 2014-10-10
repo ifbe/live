@@ -50,7 +50,7 @@ void say(char* p,...)
 
 	x=0;
 
-        if(y>=0xffe | y<0){
+        if(y>=0xfff | y<0){
                 y=0;
                 *(int*)0x7fff8=0;
         }
@@ -101,7 +101,7 @@ void shout(char* p,...)
 	for(x=0;x<0x40;x++) journal[y*64+x]=0;
 	x=0x20;
 
-        if(y>=0xffe | y<0){
+        if(y>=0xfff | y<0){
                 y=0;
                 *(int*)0x7fff8=0;
         }

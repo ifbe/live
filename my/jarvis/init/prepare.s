@@ -30,14 +30,38 @@ bits 64
     mov rax,0x800
     mov [0xff8],rax
 
-;清空screen buffer
-    mov qword [rel currentaddr],0x6000
-    mov edi,0x6000
+;清空/journal
+    mov ecx,0x8000
+    mov edi,0x40000
+    xor rax,rax
+    rep stosq
+    mov rax,"current"
+    mov [0x7fff0],rax
+
+;清空/console
+    mov qword [rel currentaddr],0x120000
+    mov edi,0x120000
     mov rax,"[   /]$ "
     stosq
     mov ecx,128*0x30-8
     xor rax,rax
     rep stosb
+
+;清空/bin
+    mov ecx,0x10000
+    mov edi,0x180000
+    xor rax,rax
+    rep stosq
+
+;ahci，xhci，usb,fs驱动
+    ;initahci
+    call endofjarvis                ;ahci@0x4000
+    ;initxhci
+    call endofjarvis+0x2000         ;xhci@0x6000
+    ;initusb
+    call endofjarvis+0x4000         ;usb@0x8000
+    ;initdisk
+    call endofjarvis+0x8000         ;disk@0xc000
 
 ;准备进入正式程序
     lea rax,[rel function4]

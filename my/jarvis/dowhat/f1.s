@@ -91,8 +91,8 @@ jmp ramdump
 	je .findit
 	add rsi,0x10
 	cmp rsi,0x5000
-	jae ramdump
-	jmp .continue
+	jb .continue
+	jmp ramdump
 
 	.findit:
 	mov rdx,[rsi+8]

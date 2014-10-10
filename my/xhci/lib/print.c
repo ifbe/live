@@ -46,11 +46,11 @@ void say(char* p,...)
         int x=0;
         int y=*(int*)0x7fff8;
 	int screeny=y%48;
-	//for(x=0;x<0x40;x++) anscii(x,screeny,0x20);
+	//for(x=0;x<0x40;x++) anscii(x,screeny,0x40);
 
 	x=0;
 
-        if(y>=0xffe | y<0){
+        if(y>=0x7ff | y<0){
                 y=0;
                 *(int*)0x7fff8=0;
         }
@@ -70,7 +70,7 @@ void say(char* p,...)
         char ch;
         int signal=0;
 
-        //for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
+        //for(i=0;i<16;i++) anscii(x+i,screeny,0x40);
 
         for(i=0;i<16;i++)
         {
@@ -97,11 +97,11 @@ void shout(char* p,...)
         int y=*(int*)0x7fff8;
 	int screeny=y%48;
 
-	//for(x=0x20;x<0x40;x++) anscii(x,screeny,0x20);
+	//for(x=0x40;x<0x40;x++) anscii(x,screeny,0x40);
 	for(x=0;x<0x40;x++) journal[y*64+x]=0;
 	x=0x20;
 
-        if(y>=0xffe | y<0){
+        if(y>=0xfff | y<0){
                 y=0;
                 *(int*)0x7fff8=0;
         }
@@ -121,7 +121,7 @@ void shout(char* p,...)
         char ch;
         int signal=0;
 
-        //for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
+        //for(i=0;i<16;i++) anscii(x+i,screeny,0x40);
 
         for(i=0;i<16;i++)
         {

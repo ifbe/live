@@ -49,7 +49,7 @@ void say(char* p,...)
 
 	x=0;
 
-	if(y>=0xffe | y<0){
+	if(y>=0xfff | y<0){
 		y=0;
 		*(int*)0x7fff8=0;
 	}

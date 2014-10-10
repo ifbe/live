@@ -2,8 +2,7 @@
 %include "init/acpi.s"
 %include "init/pciold.s"
 %include "init/isr.s"
-%include "init/calldriver.s"
-%include "init/variety.s"
+%include "init/prepare.s"
 
 
 

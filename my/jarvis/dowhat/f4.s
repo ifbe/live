@@ -1,9 +1,6 @@
 bits 64
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>----console----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-;取一只微小的蚂蚁，让它影响世界
-;这是最后一只?
-;是的：拍一张新世界的照片到屏幕上，而我回家睡觉
-;不是：再再来一次
+;[0x120000，0x12ffff]属于console，弄得好看一点
 
 
 
@@ -310,15 +307,15 @@ test:
 ;____________________________________
 clear:
 ;lea edi,[rel line0]
-mov edi,0x6000
+mov edi,0x120000
 mov ecx,128*0x30
 xor rax,rax
 rep stosb
 ;lea edi,[rel line0]
-mov edi,0x6000
+mov edi,0x120000
 mov rax,"[   /]$ "
 stosq
-mov dword [rel currentaddr],0x6000
+mov dword [rel currentaddr],0x120000
 mov dword [rel length],8
 jmp console
 ;_______________________________________
@@ -387,25 +384,27 @@ mov dword [rel looptimes],0
 .lines:
     mov edi,0x1c00000
     mov eax,4*1024*16
-    ;add edi,eax
     imul eax,[rel looptimes]
     add edi,eax
-    ;lea ebx,[rel line0]
-    mov ebx,0x6000
+
+    mov esi,0x120000
     mov eax,[rel looptimes]
     shl eax,7
-    add ebx,eax
+    add esi,eax
 
     mov cl,128
     .continue:
-    mov al,[ebx]
+    mov al,[esi]
+    push rsi
     call char
-    inc ebx
+    pop rsi
+    inc esi
     dec cl
     jnz .continue
-inc byte [rel looptimes]
-cmp byte [rel looptimes],0x30
-jb .lines
+
+    inc byte [rel looptimes]
+    cmp byte [rel looptimes],0x30
+    jb .lines
 
 
     mov esi,0x1c00000
@@ -429,7 +428,7 @@ looptimes:dd 0
 
 ;_________________________________
 checkandchangeline:
-	cmp dword [rel currentaddr],0x6000+0x80*47
+	cmp dword [rel currentaddr],0x120000+0x80*47
 	jae .move
 
 	add dword [rel currentaddr],128		;no:line+1
@@ -438,8 +437,8 @@ checkandchangeline:
 	.move:					;yes:move
 	push rsi
 	push rcx
-	mov esi,0x6080
-	mov edi,0x6000
+	mov esi,0x120080
+	mov edi,0x120000
 	mov ecx,128*0x30
 	cld
 	rep movsb
