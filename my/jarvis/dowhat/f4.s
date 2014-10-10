@@ -258,7 +258,7 @@ searchinmemory:
 	movsq
 	movsq
 
-	mov rdi,[rel arg1]
+	lea rdi,[rel arg1]
 	call [rel explainedarg0]
 
 	jmp scroll
@@ -289,7 +289,7 @@ test:
 	jmp notfound
 .load:
 	mov rdx,[esi+8]
-	mov rdi,[rel arg1]
+	lea rdi,[rel arg1]
 	call rdx
 .check:
 	cmp dword [0x2000000],0
@@ -306,15 +306,15 @@ test:
 
 ;____________________________________
 clear:
-;lea edi,[rel line0]
 mov edi,0x120000
 mov ecx,128*0x30
 xor rax,rax
 rep stosb
-;lea edi,[rel line0]
+
 mov edi,0x120000
 mov rax,"[   /]$ "
 stosq
+
 mov dword [rel currentaddr],0x120000
 mov dword [rel length],8
 jmp console

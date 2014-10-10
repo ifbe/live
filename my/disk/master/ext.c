@@ -231,13 +231,15 @@ void table2raw(QWORD rsi)
 }
 
 
-static int ext_cd(QWORD name)
+static int ext_cd(BYTE* addr)
 {
+	QWORD name;
 	QWORD* table=(QWORD*)(rawbuffer);	//一定要括号
 	int i;
 	QWORD number=0;
 
 	//传进来的名字处理一下
+	str2data(addr,&name);
 	blank2zero(&name);
 
 	//找inode
@@ -280,13 +282,15 @@ static int ext_cd(QWORD name)
 }
 
 
-static void ext_load(QWORD name)
+static void ext_load(BYTE* addr)
 {
+	QWORD name;
 	QWORD* table=(QWORD*)(rawbuffer);	//一定要括号
 	int i;
 	QWORD number=0;
 
 	//处理名字
+	str2data(addr,&name);
 	blank2zero(&name);
 
 	for(i=0;i<0x200;i+=4)
@@ -337,7 +341,7 @@ int mountext(QWORD sector)
 	say("",0);
 
 	//cd /
-	ext_cd('/');
+	ext_cd("/");
 
 	//保存函数地址
 	remember(0x6463,(QWORD)ext_cd);

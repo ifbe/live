@@ -49,3 +49,15 @@ void small2capital(QWORD* name)
                 }
         }
 }
+
+
+void str2data(BYTE* str,QWORD* data)
+{
+	int i;
+	*data=0;
+	for(i=0;i<8;i++)
+	{
+		if(str[i]<=0x20) break;
+		*data+=(str[i])<<(i*8);
+	}
+}

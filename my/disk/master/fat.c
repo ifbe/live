@@ -95,16 +95,24 @@ void fat16_root()
 }
 
 
-static int fat16_cd(QWORD name)
+static int fat16_cd(BYTE* addr)
 {
+	QWORD name=0;
 	QWORD directory=0;
 	QWORD p=indexbuffer;
 	int i;
 
+	str2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
+say("name:",name);
 
-	if( (name&0xff) != 0x2f)
+	if( (name&0xff) == 0x2f)
+	{
+		fat16_root();
+		return 0;
+	}
+	else
 	{
 		for(;p<indexbuffer+0x800;p+=0x20)
 		{
@@ -121,12 +129,6 @@ static int fat16_cd(QWORD name)
 		directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
 	}
 
-	if(directory==0)
-	{
-		fat16_root();
-		return 0;
-	}
-
 	//清理
 	BYTE* memory=(BYTE*)(indexbuffer);
 	for(i=0;i<0x80000;i++) memory[i]=0;
@@ -141,10 +143,13 @@ static int fat16_cd(QWORD name)
 }
 
 
-static void fat16_load(QWORD name)
+static void fat16_load(BYTE* addr)
 {
+	QWORD name=0;
+	str2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
+
 	QWORD p=indexbuffer;
 	for(;p<(indexbuffer+0x40000);p+=0x20)
 	{
@@ -176,7 +181,7 @@ void fat16()
 	say("",0);
 
 	checkfatcache();
-	fat16_cd('/');
+	fat16_cd("/");
 
 	//保存函数地址
         remember(0x6463,(QWORD)fat16_cd);
@@ -222,12 +227,14 @@ void fat32_root()
 }
 
 
-static int fat32_cd(QWORD name)
+static int fat32_cd(BYTE* addr)
 {
+	QWORD name=0;
 	QWORD directory=0;
 	QWORD p=indexbuffer;
 	int i;
 
+	str2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
 
@@ -270,10 +277,13 @@ static int fat32_cd(QWORD name)
 }
 
 
-static void fat32_load(QWORD name)
+static void fat32_load(BYTE* addr)
 {
+	QWORD name=0;
+	str2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
+
 	QWORD p=indexbuffer;
 	for(;p<indexbuffer+clustersize*0x200;p+=0x20)
 	{
@@ -307,7 +317,7 @@ void fat32()
 	say("",0);
 
 	checkfatcache();
-	fat32_cd('/');
+	fat32_cd("/");
 
 	//保存函数地址
         remember(0x6463,(QWORD)fat32_cd);

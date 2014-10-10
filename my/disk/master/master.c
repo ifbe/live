@@ -98,16 +98,16 @@ QWORD explainmbr()
 }
 
 
-static int mount(QWORD name)
+static int mount(BYTE* addr)
 {
-	blank2zero(&name);
+	QWORD name=*(DWORD*)addr;
 
 	QWORD* memory=(QWORD*)diskhome;
 	QWORD offset=0;
 	int i;
 	for(i=0;i<0x80;i+=8)
 	{
-		if(memory[i+2] == name)
+		if( name == memory[i+2] )
 		{
 			offset=memory[i];
 			break;	
@@ -182,17 +182,17 @@ void master()
 	//自动尝试3种分区，找到live文件夹，cd进去，全部失败就返回-1
 	int result;
 	//try fat
-	mount(0x746166);
-	result=use(0x6463,0x6576696c);	//cd live
+	mount("fat");
+	result=use(0x6463,"live");	//cd live
 	if(result>=0) return;		//成功，滚
 
 	//try ntfs
-	mount(0x7366746e);
-	result=use(0x6463,0x6576696c);	//cd live
+	mount("ntfs");
+	result=use(0x6463,"live");	//cd live
 	if(result>=0) return;		//成功，滚
 
 	//try ext
-	mount(0x747865);
-	result=use(0x6463,0x6576696c);	//cd live
+	mount("ext");
+	result=use(0x6463,"live");	//cd live
 					//不管了，直接滚
 }

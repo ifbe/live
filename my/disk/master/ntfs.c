@@ -416,14 +416,16 @@ void explainmft(QWORD data)
 }
 
 
-static int ntfs_cd(QWORD name)
+static int ntfs_cd(BYTE* addr)
 {
 	//变量们
+	QWORD name;
 	QWORD mftnumber;
-	QWORD* addr=(QWORD*)(rawbuffer);
+	QWORD* memory=(QWORD*)(rawbuffer);
 	int i;
 
 	//传进来的名字处理一下
+	str2data(addr,&name);
 	blank2zero(&name);
 
 	//几种特殊的名字
@@ -444,9 +446,9 @@ static int ntfs_cd(QWORD name)
 		default:{	//	其他名字
 			for(i=0;i<0x100;i+=4)
 			{
-				if(addr[i] ==name )
+				if(memory[i] ==name )
 				{
-					mftnumber=addr[i+2];
+					mftnumber=memory[i+2];
 					say("directory:",mftnumber);
 					if(ntfspwd<10) ntfspwd++;
 					pwd[ntfspwd]=mftnumber;
@@ -462,10 +464,10 @@ static int ntfs_cd(QWORD name)
 	}
 
 	//清理indexbuffer,rawbuffer
-	addr=(QWORD*)(indexbuffer);
-	for(i=0;i<0x800;i++) addr[i]=0;		//clear [180000,1bfff8]
-	addr=(QWORD*)(rawbuffer);
-	for(i=0;i<0x800;i++) addr[i]=0;	//clear [1c0000,1ffff8]
+	memory=(QWORD*)(indexbuffer);
+	for(i=0;i<0x800;i++) memory[i]=0;	//clear [180000,1bfff8]
+	memory=(QWORD*)(rawbuffer);
+	for(i=0;i<0x800;i++) memory[i]=0;	//clear [1c0000,1ffff8]
 
 	//当前位置
 	rawpointer=rawbuffer;
@@ -477,22 +479,24 @@ static int ntfs_cd(QWORD name)
 }
 
 
-static void ntfs_load(QWORD name)
+static void ntfs_load(BYTE* addr)
 {
 	//变量们
+	QWORD name=0;
 	QWORD mftnumber;
-	QWORD* addr=(QWORD*)(rawbuffer);
+	QWORD* memory=(QWORD*)(rawbuffer);
 	int i;
 
 	//处理名字
+	str2data(addr,&name);
 	blank2zero(&name);
 
 	//搜索
 	for(i=0;i<0x100;i+=4)
 	{
-		if(addr[i] ==name )
+		if(memory[i] ==name )
 		{
-			mftnumber=addr[i+2];
+			mftnumber=memory[i+2];
 			say("file:",mftnumber);
 			break;
 		}
@@ -536,7 +540,7 @@ int mountntfs(QWORD sector)
 	//cd /
 	pwd[0]=5;
 	ntfspwd=0;
-	ntfs_cd('/');
+	ntfs_cd("/");
 
 	//保存函数地址
         remember(0x6463,(QWORD)ntfs_cd);
