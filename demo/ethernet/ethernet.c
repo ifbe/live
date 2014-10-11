@@ -253,6 +253,87 @@ static void sendpacket(QWORD addr,int size)
 
 
 
+DWORD str2ip(BYTE* arg)
+{
+	DWORD first=0;
+	DWORD second=0;
+	DWORD third=0;
+	DWORD fourth=0;
+	DWORD retip=0;
+	DWORD i=0;
+
+	//第一个
+	while(arg[i]>'.')
+	{
+		if( (arg[i]>='0')&&(arg[i]<='9') )
+		{
+			first=first*10+arg[i]-0x30;
+		}
+		i++;
+	}
+	if(first==0)
+	{
+		print("error1",0);
+		return 0;
+	}
+	i++;
+
+	//第二个
+	while(arg[i]>'.')
+	{
+		if( (arg[i]>='0')&&(arg[i]<='9') )
+		{
+			second=second*10+arg[i]-0x30;
+		}
+		i++;
+	}
+	if(second==0)
+	{
+		print("error2",0);
+		return 0;
+	}
+	i++;
+
+	//第三个
+	while(arg[i]>'.')
+	{
+		if( (arg[i]>='0')&&(arg[i]<='9') )
+		{
+			third=third*10+arg[i]-0x30;
+		}
+		i++;
+	}
+	if(third==0)
+	{
+		print("error3",0);
+		return 0;
+	}
+	i++;
+
+	//第四个
+	while(arg[i]>'.')
+	{
+		if( (arg[i]>='0')&&(arg[i]<='9') )
+		{
+			fourth=fourth*10+arg[i]-0x30;
+		}
+		i++;
+	}
+	if(fourth==0)
+	{
+		print("error4",0);
+		return 0;
+	}
+	i++;
+
+	retip=first+(second<<8)+(third<<16)+(fourth<<24);
+	print("ip:",retip);
+	return retip;
+}
+
+
+
+
 WORD checksum(WORD *buffer,int size)  
 {  
 	DWORD cksum=0;  
@@ -294,8 +375,10 @@ struct arp
 	BYTE targetip[4];	//[0x26,0x29]
 };
 static struct arp arp;
-static void who(QWORD targetip)
+static void arprequest(BYTE* arg1)
 {
+	DWORD dstip=str2ip(arg1);
+
 	*(QWORD*)(arp.macdst)=0xffffffffffff;
 	*(QWORD*)(arp.macsrc)=macaddr;
 	arp.type=0x0608;
@@ -308,7 +391,7 @@ static void who(QWORD targetip)
 	*(QWORD*)(arp.sendermac)=macaddr;
 	*(DWORD*)(arp.senderip)=ipaddr;		//200.200.200.23
 	*(QWORD*)(arp.targetmac)=0;
-	*(DWORD*)(arp.targetip)=targetip;
+	*(DWORD*)(arp.targetip)=dstip;
 
 
 	sendpacket((QWORD)(&arp),14+0x1c);
@@ -339,24 +422,28 @@ struct icmp
 	WORD icmpchecksum;	//[0x24,0x25]
 	WORD identifer;		//[0x26,0x27]
 	WORD sn;		//[0x28,0x29]
+
+	BYTE timestamp[8];	//[0x2a,0x31]
+	BYTE data[0x30];	//[0x32,0x61]
 };
 static struct icmp icmp;
-static void ping(QWORD targetip)
+static void icmprequest(BYTE* arg1)
 {
+	DWORD dstip=str2ip(arg1);
 	*(QWORD*)(icmp.macdst)=0xffffffffffff;
 	*(QWORD*)(icmp.macsrc)=macaddr;
 	icmp.type=0x0008;
 
 	icmp.iphead=0x45;
 	icmp.tos=0;
-	icmp.length=0x4000;
+	icmp.length=(20+64)<<8;
 	icmp.id=0x233;
 	icmp.fragoffset=0;
 	icmp.ttl=0x40;
 	icmp.protocol=1;
 	icmp.checksum=0;
 	*(DWORD*)(icmp.ipsrc)=ipaddr;		//200.200.200.23
-	*(DWORD*)(icmp.ipdst)=targetip;		//200.200.200.7
+	*(DWORD*)(icmp.ipdst)=dstip;		//200.200.200.7
 	icmp.checksum=checksum((WORD*)(&(icmp.iphead)),20);
 
 	icmp.icmptype=8;		//echo request
@@ -364,11 +451,13 @@ static void ping(QWORD targetip)
 	icmp.icmpchecksum=0;
 	icmp.identifer=233;
 	icmp.sn=233;
-	//64-20-16=28B			//没有data部分?
-	icmp.icmpchecksum=checksum((WORD*)(&(icmp.icmptype)),64-20);
+
+	int i;
+	for(i=0;i<0x30;i++) icmp.data[i]=i;
+	icmp.icmpchecksum=checksum((WORD*)(&(icmp.icmptype)),0x40);
 
 
-	sendpacket((QWORD)(&icmp),14+64);
+	sendpacket((QWORD)(&icmp),14+20+0x40);
 }
 
 
@@ -399,12 +488,16 @@ void main()
 	e1000();
 	ipaddr=0x17c8c8c8;
 
-	remember(0x676e6970,ping);
-	remember(0x6f6877,who);
+	remember(0x676e6970,icmprequest);
+	remember(0x707261,arprequest);
 	//remember(0x646e6573,sendpacket);
 
 	say("",0);
 }
+
+
+
+
 
 
 
@@ -420,18 +513,84 @@ struct RecvDesc
     volatile u16 special;
 };
 */
+void explainicmp(QWORD bufferaddr,QWORD length)
+{
+	QWORD targetmac=( *(QWORD*)(bufferaddr) ) &0xffffffffffff;
+	if(targetmac!=macaddr) return;
+	DWORD targetip=*(DWORD*)(bufferaddr+0x1e);
+	if(targetip!=ipaddr) return;
+
+	QWORD sendermac=( *(QWORD*)(bufferaddr+6) ) &0xffffffffffff;
+	WORD id=*(DWORD*)(bufferaddr+0x12);
+	DWORD senderip=*(DWORD*)(bufferaddr+0x1a);
+
+	*(QWORD*)(icmp.macdst)=sendermac;
+	*(QWORD*)(icmp.macsrc)=macaddr;
+	icmp.type=0x0008;
+
+	icmp.iphead=0x45;
+	icmp.tos=0;
+	icmp.length=(20+64)<<8;
+	icmp.id=id;
+	icmp.fragoffset=0;
+	icmp.ttl=0x40;
+	icmp.protocol=1;
+	icmp.checksum=0;
+	*(DWORD*)(icmp.ipsrc)=ipaddr;		//200.200.200.23
+	*(DWORD*)(icmp.ipdst)=senderip;		//200.200.200.7
+	icmp.checksum=checksum((WORD*)(&(icmp.iphead)),20);
+
+	icmp.icmptype=0;		//echo request
+	icmp.code=0;
+	icmp.icmpchecksum=0;
+	WORD identifer=*(DWORD*)(bufferaddr+0x26);
+	icmp.identifer=identifer;
+	WORD sn=*(DWORD*)(bufferaddr+0x28);
+	icmp.sn=sn;
+	QWORD timestamp=*(QWORD*)(bufferaddr+0x2a);
+	*(QWORD*)(icmp.timestamp)=timestamp;
+	int i=0;
+	for(i=0;i<0x30;i++) icmp.data[i]=*(BYTE*)(bufferaddr+0x32+i);
+
+	icmp.icmpchecksum=checksum((WORD*)(&(icmp.icmptype)),64);
+
+	sendpacket((QWORD)(&icmp),14+20+64);
+}
 void explainipv4(QWORD bufferaddr,QWORD length)
 {
-
+	BYTE whatthis=*(BYTE*)(bufferaddr+0x22);
+	if(whatthis==8) explainicmp(bufferaddr,length);
 }
 void explainarp(QWORD bufferaddr,QWORD length)
 {
-	QWORD srcmac=( *(QWORD*)(bufferaddr+6) ) &0xffffffffffff;
-	shout("srcmac:",srcmac);
+	DWORD targetip=*(DWORD*)(bufferaddr+0x26);
+	shout("buf@",bufferaddr);
+	shout("targetip:",targetip);
+	if(targetip!=ipaddr) return;
+
+	QWORD sendermac=( *(QWORD*)(bufferaddr+6) ) &0xffffffffffff;
+	DWORD senderip=*(DWORD*)(bufferaddr+0x1c);
+	shout("senderip:",senderip);
+
+	*(QWORD*)(arp.macdst)=sendermac;
+	*(QWORD*)(arp.macsrc)=macaddr;
+	arp.type=0x0608;
+
+	arp.hwtype=0x0100;
+	arp.protocoltype=8;
+	arp.hwsize=6;
+	arp.protocolsize=4;
+	arp.opcode=0x0200;		//这是回复
+	*(QWORD*)(arp.sendermac)=macaddr;
+	*(DWORD*)(arp.senderip)=ipaddr;		//200.200.200.23
+	*(QWORD*)(arp.targetmac)=sendermac;
+	*(DWORD*)(arp.targetip)=senderip;
+
+
+	sendpacket((QWORD)(&arp),14+0x1c);
 }
 void explainpacket(QWORD bufferaddr,QWORD length)
 {
-shout("!!",0);
 	WORD type=*(WORD*)(bufferaddr+12);
 	type=( (type&0xff)<<8 )+(type>>8);	//高低位互换
 

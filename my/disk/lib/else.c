@@ -58,6 +58,6 @@ void str2data(BYTE* str,QWORD* data)
 	for(i=0;i<8;i++)
 	{
 		if(str[i]<=0x20) break;
-		*data+=(str[i])<<(i*8);
+		*data+=((QWORD)str[i])<<(i*8);
 	}
 }

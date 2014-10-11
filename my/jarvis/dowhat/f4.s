@@ -37,7 +37,8 @@ cmp byte [rel length],8
 jna console
 
 ;lea ebx,[rel line0]
-mov ebx,[rel currentaddr]
+mov ebx,[0x12fff8]
+add ebx,0x120000
 dec byte [rel length]
 add ebx,[rel length]
 mov byte [ebx],0
@@ -55,7 +56,8 @@ jae console
 call scan2anscii
 
 record:
-mov ebx,[rel currentaddr]
+mov ebx,[0x12fff8]
+add ebx,0x120000
 add ebx,[rel length]
 mov [ebx],al
 inc byte [rel length]
@@ -76,13 +78,15 @@ jmp searchinmemory
 
 notfound:
 	call checkandchangeline
-	mov edi,[rel currentaddr]
+	mov edi,[0x12fff8]
+	add edi,0x120000
 	mov dword [edi],"notf"
 	mov dword [edi+4],"ound"
 
 scroll:
 	call checkandchangeline
-	mov edi,[rel currentaddr]
+	mov edi,[0x12fff8]
+	add edi,0x120000
 	mov dword [edi],"[   "
 	mov dword [edi+4],"/]$ "
 	mov dword [rel length],8
@@ -99,8 +103,8 @@ scroll:
 ;因为上一次取得的arg0和arg1没有被改变
 ;______________________________________
 explainarg:
-	mov esi,[rel currentaddr]
-	add esi,8			;[   /]
+	mov esi,[0x12fff8]
+	add esi,0x120008			;[   /]
 
 
 	;;;;;;;;;;;;吃掉esi指向的最开始的空格
@@ -119,7 +123,7 @@ explainarg:
         mov qword [rel arg0],0		;先清理
         mov qword [rel arg0+8],0	;先清理
         lea rdi,[rel arg0]		;edi=目标地址
-        mov ecx,8
+        mov ecx,16
 .continue0:
         lodsb				;取一个
         cmp al,0x20
@@ -148,7 +152,7 @@ explainarg:
         mov qword [rel arg1],0		;先清理
         mov qword [rel arg1+8],0	;先清理
         lea rdi,[rel arg1]		;edi=目标地址
-        mov ecx,8
+        mov ecx,16
 .continue1:
         lodsb				;取一个
         cmp al,0x20
@@ -230,6 +234,9 @@ jmp f4enter.notinhere
 ;____________________________________
 searchinmemory:
 	mov rax,[rel arg0]
+	cmp rax,0x20
+	jb .return
+
 	mov esi,0x180000		;/bin
 .search:
 	cmp [esi],rax
@@ -248,13 +255,15 @@ searchinmemory:
 	mov rbx,[rel explainedarg0]
 	call rbx2string
 	lea esi,[rel string]
-	mov edi,[rel currentaddr]
+	mov edi,[0x12fff8]
+	add edi,0x120000
 	movsq
 	movsq
 
-	lea rsi,[rel arg1]
-	mov edi,[rel currentaddr]
+	mov edi,[0x12fff8]
+	add edi,0x120000
 	add edi,16+8
+	lea rsi,[rel arg1]
 	movsq
 	movsq
 
@@ -315,7 +324,7 @@ mov edi,0x120000
 mov rax,"[   /]$ "
 stosq
 
-mov dword [rel currentaddr],0x120000
+mov dword [0x12fff8],0
 mov dword [rel length],8
 jmp console
 ;_______________________________________
@@ -326,7 +335,8 @@ jmp console
 ;_________________________
 ls:
 	call checkandchangeline		;get new edi
-	mov edi,[rel currentaddr]
+	mov edi,[0x12fff8]
+	add edi,0x120000
 	mov esi,0x4c0000
 	xor ecx,ecx
 .continue:
@@ -342,7 +352,8 @@ ls:
 	test ecx,0x7
 	jnz .continue
 	call checkandchangeline
-	mov edi,[rel currentaddr]
+	mov edi,[0x12fff8]
+	add edi,0x120000
 	jmp .continue
 ;_________________________
 
@@ -368,6 +379,32 @@ lea esi,[rel arg1]
 call string2data
 jmp [rel value]
 ;_______________________________
+
+
+
+
+;_________________________________
+checkandchangeline:
+	cmp dword [0x12fff8],0x80*47
+	jae .move
+
+	add dword [0x12fff8],128		;no:line+1
+	jmp .return
+
+	.move:					;yes:move
+	push rsi
+	push rcx
+	mov esi,0x120080
+	mov edi,0x120000
+	mov ecx,128*0x30
+	cld
+	rep movsb
+	pop rcx
+	pop rsi
+
+	.return:
+	ret					;now line=a blank line
+;____________________________________
 
 
 
@@ -422,31 +459,4 @@ mov dword [rel looptimes],0
 jmp forever
 ;________________________________________
 looptimes:dd 0
-
-
-
-
-;_________________________________
-checkandchangeline:
-	cmp dword [rel currentaddr],0x120000+0x80*47
-	jae .move
-
-	add dword [rel currentaddr],128		;no:line+1
-	jmp .return
-
-	.move:					;yes:move
-	push rsi
-	push rcx
-	mov esi,0x120080
-	mov edi,0x120000
-	mov ecx,128*0x30
-	cld
-	rep movsb
-	pop rcx
-	pop rsi
-
-	.return:
-	ret					;now line=a blank line
-;____________________________________
-currentaddr:dq 0
 length:dq 8

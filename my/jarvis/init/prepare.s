@@ -39,13 +39,16 @@ bits 64
     mov [0x7fff0],rax
 
 ;清空/console
-    mov qword [rel currentaddr],0x120000
     mov edi,0x120000
     mov rax,"[   /]$ "
     stosq
     mov ecx,128*0x30-8
     xor rax,rax
     rep stosb
+
+    mov rax,"current"
+    mov [0x12fff0],rax
+    mov qword [0x12fff8],0
 
 ;清空/bin
     mov ecx,0x10000
