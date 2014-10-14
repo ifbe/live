@@ -1,30 +1,14 @@
 bits 64
 section .text
 
-global int20
-extern realisr20
-
-
-
-
-;________________________________
-int20:
-push rax
-push rdi
-	lea rax,[rel isr20]
-	mov edi,0x1200
-	call isrinstall
-pop rdi
-pop rax
-
-ret
-;_______________________________
+global installisr
+extern realisr
 
 
 
 
 ;_______________________________
-isr20:
+wrapper:
 
 ;preserve everything
 push rax
@@ -45,7 +29,7 @@ push r14
 push r15
 
 ;real
-call realisr20
+call realisr
 
 ;eoi
 mov rax,0xfee000b0
@@ -76,7 +60,11 @@ iretq
 
 
 ;________________________________
-isrinstall:
+installisr:
+push rdi
+push rax
+
+lea rax,[rel wrapper]
 stosw
 mov dword [edi],0x8e000008
 add edi,4
@@ -86,5 +74,8 @@ shr rax,16
 stosd
 xor eax,eax
 stosd
+
+pop rax
+pop rdi
 ret
 ;_________________________________

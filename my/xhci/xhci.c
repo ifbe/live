@@ -2,24 +2,16 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
+
 #define xhcihome 0x300000
-
-#define dcbahome xhcihome+0x10000
-#define eventringhome xhcihome+0x20000
-#define ersthome xhcihome+0x28000
+#define ersthome xhcihome+0x10000
+#define dcbahome xhcihome+0x20000
 #define cmdringhome xhcihome+0x30000
-
-#define slothome xhcihome+0x40000	//+0:		in context
-					//+1000:	out context
-					//+2000:	ep0 ring
-					//+3000:	e1.1 ring
-					//+4000:	ep0 buffer
-					//+5000:	ep1.1 buffer
+#define eventringhome xhcihome+0x40000
 
 static QWORD xhciport=0;
 static QWORD xhciaddr=0;
 
-static QWORD runtime;
 
 
 
@@ -263,7 +255,7 @@ int ownership(QWORD addr)
 }
 void supportedprotocol(QWORD addr)
 {
-	QWORD* memory=(QWORD*)(slothome);
+	QWORD* memory=(QWORD*)(xhcihome+0x40);
 	int i;
 	QWORD first=(*(DWORD*)addr) >> 16;
 	QWORD third=*(DWORD*)(addr+8);
@@ -351,7 +343,7 @@ say("{",0);
 	QWORD capparams=*(DWORD*)(xhciaddr+0x10);
 
 	volatile QWORD operational=xhciaddr+caplength;
-	runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
+	QWORD runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
 
 	say("    version:",version);
 	say("    caplength:",caplength);
@@ -494,9 +486,9 @@ say("2.maxslot&dcbaa&crcr:",0);
 	//say("    scratchpad:",dcbahome+0x8000);
 
 	//command linktrb:lastone point to firstone
-	*(QWORD*)(cmdringhome+255*0x10)=cmdringhome;
-	*(QWORD*)(cmdringhome+255*0x10+8)=0;
-	*(QWORD*)(cmdringhome+255*0x10+0xc)=(6<<10)+2;
+	*(QWORD*)(cmdringhome+0xff*0x10)=cmdringhome;
+	*(QWORD*)(cmdringhome+0xff*0x10+8)=0;
+	*(QWORD*)(cmdringhome+0xff*0x10+0xc)=(6<<10)+2;
 
 	//crcr
 	*(DWORD*)(operational+0x18)=cmdringhome+1;
@@ -514,7 +506,7 @@ say("2.maxslot&dcbaa&crcr:",0);
 //-------------------------------------------------
 say("3.interrupt:",0);
 
-	int20();
+	setupisr(xhciaddr);
 
 	//----------------------if(msix)--------------------------
 	//----------------------if(msi)--------------------------
@@ -608,29 +600,4 @@ void initxhci()
 
 end:		//就一行空白
 	say("",0);
-}
-
-
-
-
-void realisr20()
-{
-	shout("int20",0);
-        DWORD erdp=*(DWORD*)(runtime+0x38);
-
-        QWORD temp=erdp&0xfffffff0;
-        QWORD pcs=(*(DWORD*)(temp+0xc))&0x1;
-        while(1)
-        {
-                temp+=0x10;
-                if(temp>=eventringhome+0x1000)
-                {
-                        temp=eventringhome;
-                }
-                if( ((*(DWORD*)(temp+0xc))&0x1) != pcs) break;
-        }
-
-        *(DWORD*)(runtime+0x38)=temp|8;
-        *(DWORD*)(runtime+0x3c)=0;
-
 }

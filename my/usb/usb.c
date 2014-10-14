@@ -4,17 +4,18 @@
 #define QWORD unsigned long long
 #define xhcihome 0x300000
 
-#define ersthome xhcihome+0
-#define dcbahome xhcihome+0x10000
-#define eventringhome xhcihome+0x20000
+#define dcbahome xhcihome+0x20000
 #define cmdringhome xhcihome+0x30000
+#define hostevent xhcihome+0x80000
+#define deviceevent xhcihome+0xc0000
 
-#define slothome xhcihome+0x40000	//+0:		in context
-					//+1000:	out context
-					//+2000:	ep0 ring
-					//+3000:	e1.1 ring
-					//+4000:	ep0 buffer
-					//+5000:	ep1.1 buffer
+#define usbhome 0x500000
+				//+0:		in context
+				//+1000:	out context
+				//+2000:	ep0 ring
+				//+3000:	e1.1 ring
+				//+4000:	ep0 buffer
+				//+5000:	ep1.1 buffer
 
 //rootport:根port是哪一个
 //routestring:物理位置
@@ -22,7 +23,6 @@
 //表示设备物理位置为:根hub的port2,第一层hub的port4,第二层hub的port3
 void device(QWORD rootport,QWORD routestring,DWORD speed);
 
-static QWORD runtime;
 static QWORD portbase;
 static QWORD portcount;
 
@@ -30,7 +30,7 @@ static QWORD portcount;
 
 
 
-void clear(QWORD addr,QWORD size)
+void clean(QWORD addr,QWORD size)
 {
 	BYTE* pointer=(BYTE*)addr;
 	int i;
@@ -160,38 +160,55 @@ void writecontext(QWORD baseaddr,int dci)
 
 
 
-volatile static QWORD eventsignal;
-volatile static QWORD eventaddr;
-int waitevent(QWORD trbtype)
+static QWORD eventaddr;
+int waithost(QWORD wantedtype)
 {
-	QWORD timeout=0;
-	DWORD* p;
-	while(1)
-	{
-		timeout++;
-		if(timeout>0xfffffff){
-			say("    timeout!",0);
-			return -1;
-		}
+        QWORD timeout=0;
+        while(1)
+        {
+                timeout++;					//超时不管了
+                if(timeout>0xfffffff){
+                        say("    timeout!",0);
+                        return -1;
+                }
 
-		if(eventsignal!=0)
+		QWORD* enqueue=(QWORD*)(hostevent+0xfff0);
+		QWORD* dequeue=(QWORD*)(hostevent+0xfff8);
+
+		if(enqueue[0] == dequeue[0]) continue;		//空队，继续等
+
+		DWORD* p=(DWORD*)(hostevent+dequeue[0]);	//取得现在的
+		dequeue[0]=(0x10+dequeue[0])%0xfff0;		//这个取完了
+
+		QWORD type=(p[3]>>10)&0x3f;
+		if(type == wantedtype)				//正是想要的
 		{
-			eventsignal=0;
-
-			p=(DWORD*)eventaddr;
-			if( ( (p[3]>>10)&0x3f) == trbtype)
-			{
-				if( (p[2]>>24) != 1)
-				{
-					say("    error:",p[2]>>24);
-					return -2;
-				}
-				else
-				{
-					return 1;
-				}
-			}
+			eventaddr=(QWORD)p;
+			return 1;
 		}
+	}
+}
+int waitdevice(QWORD slot,QWORD endpoint)
+{
+        QWORD timeout=0;
+	QWORD queueaddr=deviceevent+slot*0x4000+endpoint*0x1000;
+	while(1)
+        {
+                timeout++;					//超时不管了
+                if(timeout>0xfffffff){
+                        say("    timeout!",0);
+                        return -1;
+                }
+
+		QWORD* enqueue=(QWORD*)(queueaddr+0xff0);
+		QWORD* dequeue=(QWORD*)(queueaddr+0xff8);
+
+		if(enqueue[0] == dequeue[0]) continue;		//空队，继续等
+
+		DWORD* p=(DWORD*)(queueaddr+dequeue[0]);	//取得现在的
+		dequeue[0]=(0x10+dequeue[0])%0xff0;		//这个取完了
+
+		return 1;
 	}
 }
 
@@ -504,7 +521,7 @@ void hid(QWORD slot)
 	say("hid!",0);
 
 	//只要传递slot号，就能得到我们手动分配的内存
-	QWORD slotdata=slothome+slot*0x8000;
+	QWORD slotdata=usbhome+slot*0x8000;
 	say("0.data@",slotdata);
 	QWORD inputcontext=slotdata;
 	QWORD outputcontext=slotdata+0x1000;
@@ -525,7 +542,7 @@ void hid(QWORD slot)
 	packet.buffer=buffer+0x400;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 	explainhid(buffer+0x400);
 
 
@@ -552,7 +569,7 @@ void hid(QWORD slot)
 	writecontext(inputcontext,4);		//ep1.1
 
 	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
+	if(waithost(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
 	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
@@ -611,7 +628,7 @@ void egalaxytouch(QWORD slot)
 	say("egalaxy touch",0);
 
 	//只要传递slot号，就能得到我们手动分配的内存
-	QWORD slotdata=slothome+slot*0x8000;
+	QWORD slotdata=usbhome+slot*0x8000;
 	say("0.data@",slotdata);
 	QWORD inputcontext=slotdata;
 	QWORD outputcontext=slotdata+0x1000;
@@ -643,7 +660,7 @@ void egalaxytouch(QWORD slot)
 	writecontext(inputcontext,4);		//ep1.1
 
 	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
+	if(waithost(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
 	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
@@ -709,16 +726,16 @@ say("{",0);
 	say("portsc:",portsc);
 	if( (portsc&0x1) == 0x1)
 	{
-		QWORD* memory=(QWORD*)(slothome);
+		QWORD* memory=(QWORD*)(usbhome);
 		say("usb version:",memory[childport]);
 
 		*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
-		waitevent(0x22);
+		waithost(0x22);
 		portsc=*(DWORD*)(portbase+childport*0x10-0x10);
 		say("status(reset1):",portsc);
 
 		*(DWORD*)(portbase+childport*0x10-0x10)=portsc|0x10;
-		waitevent(0x22);
+		waithost(0x22);
 		portsc=*(DWORD*)(portbase+childport*0x10-0x10);
 		say("status(reset2):",portsc);
 
@@ -743,7 +760,7 @@ return;
 	if(deviceprotocol==1) say("single TT hub!",0);
 	if(deviceprotocol==2) say("multi TT hub!",0);
 
-	QWORD slotdata=slothome+slot*0x8000;
+	QWORD slotdata=usbhome+slot*0x8000;
 	say("0.data@",slotdata);
 	QWORD inputcontext=slotdata;
 	QWORD outputcontext=slotdata+0x1000;
@@ -767,7 +784,7 @@ return;
 	packet.buffer=buffer+0x400;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 	explaindescriptor(buffer+0x400);
 
 	QWORD count=*(BYTE*)(buffer+0x402);
@@ -788,7 +805,7 @@ return;
 	tempaddr[2]|=0;		//(ttt<<16)+(ttportnum<<8)+(tthubslot);
 
 	command(inputcontext,0,0, (slot<<24)+(13<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
+	if(waithost(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
 	if(slotstate==2) say("slot evaluated",0);
@@ -815,7 +832,7 @@ return;
 	writecontext(inputcontext,4);		//ep1.1
 
 	command(inputcontext,0,0, (slot<<24)+(12<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
+	if(waithost(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27;
 	epstate=(*(DWORD*)(outputcontext+0x60))&0x3;
@@ -866,7 +883,7 @@ return;
 		packet.windex=childport;	//(??<<8)|(childport+1)
 		sendpacket(controladdr);
 		ring(slot,1);
-		if(waitevent(0x20)<0) goto failed;
+		if(waitdevice(slot,1)<0) goto failed;
 
 		say("getting status...",0);
 		packet.bmrequesttype=0xa3;	//devhost|class|rt_other
@@ -877,7 +894,7 @@ return;
 		packet.buffer=buffer+0x600;	//某个地址
 		sendpacket(controladdr);
 		ring(slot,1);
-		if(waitevent(0x20)<0) goto failed;
+		if(waitdevice(slot,1)<0) goto failed;
 
 		DWORD status=*(DWORD*)(buffer+0x600);
 		say("status:",status);
@@ -911,10 +928,10 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("1.enable slot...",0);
 
 	command(0,0,0, (9<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
+	if(waithost(0x21)<0) goto failed;
 
 	QWORD slot=(*(DWORD*)(eventaddr+0xc)) >> 24;
-	if(slot>=0x18){
+	if(slot>=0x10){
 		say("bad slotnum",slot);
 		goto failed;
 	}
@@ -925,7 +942,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 
 
 	//-------------slot initialization----------------
-	QWORD slotdata=slothome+slot*0x8000;
+	QWORD slotdata=usbhome+slot*0x8000;
 	QWORD inputcontext=slotdata;
 	QWORD outputcontext=slotdata+0x1000;
 	QWORD controladdr=slotdata+0x2000;
@@ -942,7 +959,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	say("    ep1.1@",intaddr);
 
 	//1)clear context
-	clear(slotdata,0x8000);
+	clean(slotdata,0x8000);
 	//construct input
 	context.d0=0;
 	context.d1=3;
@@ -973,7 +990,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	//-----------address device-----------------
 	say("2.address device...",0);
 	command(inputcontext,0,0, (slot<<24)+(11<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
+	if(waithost(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
 	epstate=(*(DWORD*)(outputcontext+0x20))&0x3;
@@ -994,7 +1011,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.buffer=buffer;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 
 	DWORD packetsize=*(BYTE*)(buffer+7);
 	say("got packetsize:",packetsize);
@@ -1009,7 +1026,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	writecontext(inputcontext,2);	//ep0
 
 	command(inputcontext,0,0, (slot<<24)+(13<<10)+commandcycle );
-	if(waitevent(0x21)<0) goto failed;
+	if(waithost(0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(outputcontext+0xc))>>27; //if2,addressed
 	epstate=(*(DWORD*)(outputcontext+0x20))&0x3;
@@ -1037,7 +1054,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.buffer=buffer;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 	explaindescriptor(buffer);
 
 
@@ -1051,12 +1068,12 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.buffer=buffer+0x100;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 
 	packet.wlength=*(WORD*)(buffer+0x102);
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 	explaindescriptor(buffer+0x100);
 
 
@@ -1070,7 +1087,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.buffer=buffer+0x200;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 
 	packet.windex=*(WORD*)(buffer+0x202);
 	DWORD temp=1;
@@ -1082,7 +1099,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 		packet.buffer=buffer+0x200+temp*0x40;
 		sendpacket(controladdr);
 		ring(slot,1);
-		waitevent(0x20);	//不用管成功失败
+		waitdevice(slot,1);	//不用管成功失败
 	}
 	}
 	//--------------------------------------------
@@ -1099,7 +1116,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.wlength=0;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 
 	say("get configuration...",0);
 	packet.bmrequesttype=0x80;
@@ -1110,7 +1127,7 @@ void device(QWORD rootport,QWORD routestring,DWORD speed)
 	packet.buffer=buffer+0x500;
 	sendpacket(controladdr);
 	ring(slot,1);
-	if(waitevent(0x20)<0) goto failed;
+	if(waitdevice(slot,1)<0) goto failed;
 
 	say("configure:",*(BYTE*)(buffer+0x500));
 	//------------------------------------
@@ -1206,10 +1223,6 @@ int preparevariety()
 	doorbell=xhciaddr+temp;
         say("doorbell@",doorbell);
 
-	temp=(*(DWORD*)(xhciaddr+0x18));
-        runtime=xhciaddr+temp;
-	say("runtime@",runtime);
-
 	temp=(*(DWORD*)xhciaddr) & 0xffff;	//caplength
 	portbase=xhciaddr+temp+0x400;
 	say("portbase@",portbase);
@@ -1232,114 +1245,8 @@ int preparevariety()
 
 void initusb()
 {
-	//
 	if(preparevariety()<0) return;
-
-	//干掉原来的isr，用下面的新的
-	int20();
 
 	//从根开始
 	hub(0,0,0);
-}
-
-
-
-
-explainevent(QWORD addr)
-{
-	DWORD* p=(DWORD*)addr;
-
-        DWORD trbtype=(p[3]>>10)&0x3f;
-	DWORD completecode=p[2]>>24;
-        switch(trbtype)
-        {
-                case 0x20:{
-			shout("event@",addr);
-			QWORD transfertrb=p[0];
-                        shout("    transfer complete:",transfertrb);
-			QWORD slot=p[3]>>24;
-			shout("    slot:",slot);
-			QWORD endpoint=( p[3]>> 16 )&0x3f;
-			shout("    endpoint:",endpoint);
-			if( (completecode!=1)&&(completecode!=0xd) )
-			{
-				shout("    error:",completecode);
-				break;
-			}
-			if(endpoint!=1)
-			{
-				QWORD buffer=*(QWORD*)transfertrb;
-				shout("    buffer:",buffer);
-				QWORD report=*(QWORD*)buffer;
-				shout("    report:",report);
-			}
-                        break;
-                }
-                case 0x21:{
-			shout("event@",addr);
-                        shout("    command complete:",p[0]);
-                        break;
-                }
-                case 0x22:{             //设备插入拔出
-			shout("event@",addr);
-
-                        //哪个端口改变了
-                        QWORD portid=(*(DWORD*)addr) >> 24;
-                        shout("    port change:",portid);
-
-                        QWORD portaddr=portbase+portid*0x10-0x10;
-                        shout("    port addr:",portaddr);
-
-                        //到改变的地方看看
-                        QWORD portsc=*(DWORD*)portaddr;
-                        shout("    portsc:",portsc);
-
-                        //告诉主控，收到变化,bit17写1(bit1不能写)
-                        *(DWORD*)portaddr=portsc&0xfffffffd;
-
-                        break;
-                }
-		default:
-		{
-        		shout("unknown type:",trbtype);
-		}
-        }
-}
-void realisr20()
-{
-shout("int20",0);
-shout("{",0);
-        //检查ERDP.EHB
-        DWORD erdp=*(DWORD*)(runtime+0x38);
-        //告诉waitevent函数,中断来了
-        eventsignal=1;
-        eventaddr=erdp&0xfffffffffffffff0;
-
-        QWORD temp=eventaddr;
-	QWORD count=0;
-        QWORD pcs=(*(DWORD*)(temp+0xc))&0x1;
-        while(1)
-        {
-                explainevent(temp);
-                temp+=0x10;
-
-                if(temp>=eventringhome+0x1000)
-                {
-                        temp=eventringhome;
-			break;
-                }
-
-		count++;
-		if(count>0x20) break;
-
-                if( ((*(DWORD*)(temp+0xc))&0x1) != pcs) break;
-        }
-
-        //下一次主控把event写到哪儿
-        *(DWORD*)(runtime+0x38)=temp|8;
-        *(DWORD*)(runtime+0x3c)=0;
-
-theend:
-shout("}",0);
-return;
 }
