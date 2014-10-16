@@ -39,7 +39,6 @@ struct context{		//传参太麻烦...
 
 static QWORD wmaxpacket;
 static QWORD interval;
-static QWORD reportsize;
 void explainconfig(QWORD addr)
 {
         say("conf@",addr);
@@ -55,32 +54,23 @@ void explainconfig(QWORD addr)
                 BYTE type=*(BYTE*)(addr+offset+1);
                 switch(type)
                 {
-                case 4:
-                {
+			case 4:
+			{
                         say("interface@",addr+offset);
                         break;
-                }
-                case 5:
-                {
+			}
+			case 5:
+			{
                         say("endpoint@",addr+offset);
                         wmaxpacket=*(WORD*)(addr+offset+4);
                         interval=*(BYTE*)(addr+offset+6);
                         break;
-                }
-                case 0x21:
-                {
-                        say("hid@",addr+offset);
-                        reportsize=*(WORD*)(addr+offset+7);
-                        break;
-                }
+			}
                 }
         }
 }
 
-
-
-
-void pl2303(QWORD speed,QWORD slot)
+void egalaxytouch(QWORD speed,QWORD slot)
 {
 	//只要传递slot号，就能得到我们手动分配的内存
 	QWORD slotcontext=usbhome+slot*0x8000;
@@ -113,7 +103,6 @@ void pl2303(QWORD speed,QWORD slot)
 
         explainconfig(data0+0x100);
         fixinterval(&interval,speed);
-
 
 
 	say("4.set configuration...",0);
@@ -193,7 +182,7 @@ failed:
 
 void main()
 {
-	say("pl2303",0);
+	say("egalaxy touch",0);
 
 	//lib.c可以看成一个小型机器，需要得到xhci的doorbell等变量来正常运行
 	if(preparevariety()<0) return;
@@ -203,9 +192,9 @@ void main()
         int i;
         for(i=0;i<0x200;i+=8)
         {
-                if(p[i]== 0x2303067b)        //classcode=0,interfaceclass=3
+                if((p[i]== 0x20eef)|(p[i]==0x10eef))
                 {
-                        pl2303(p[i+3],p[i+4]);
+                        egalaxytouch(p[i+3],p[i+4]);
                         break;
                 }
         }

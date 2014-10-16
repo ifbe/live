@@ -153,6 +153,7 @@ copy:
 	make -s image
 	sudo cp build/init /mnt/efi/live/init
 everything:
+	make -s image
 	make -s fat
 	make -s ntfs
 	make -s ext

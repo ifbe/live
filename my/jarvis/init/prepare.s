@@ -50,6 +50,12 @@ bits 64
     mov [0x12fff0],rax
     mov qword [0x12fff8],0
 
+;清空/usb
+    mov ecx,0x10000
+    mov edi,0x130000
+    xor rax,rax
+    rep stosq
+
 ;清空/bin
     mov ecx,0x10000
     mov edi,0x180000

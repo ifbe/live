@@ -1,4 +1,4 @@
 void start()
 {
-	usb();
+	main();
 }

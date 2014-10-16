@@ -1,4 +1,3 @@
-
 void point(int x,int y,int color)
 {
     unsigned long long* video=(unsigned long long*)0x3028;
@@ -42,15 +41,66 @@ void say(char* p,...)
 {
         register unsigned long long rsi asm("rsi");
 	unsigned long long first=rsi;
-        char* journal=(char*)0x40000;
-        int x=0;
-        int y=*(int*)0x7fff8;
+	char* journal=(char*)0x40000;
+	int x=0;
+	int y=*(int*)0x7fff8;
 	int screeny=y%48;
-	//for(x=0;x<0x40;x++) anscii(x,screeny,0x20);
+        //for(x=0;x<64;x++) anscii(x,screeny,0x20);
 
 	x=0;
 
-        if(y>=0xfff | y<0){
+	if(y>=0xffe | y<0){
+		y=0;
+		*(int*)0x7fff8=0;
+	}
+	else *(int*)0x7fff8=y+1;
+
+	while(*p!='\0')
+	{
+		//anscii(x,screeny,*p);
+		journal[y*64+x]=*p;
+		p++;
+		x++;
+	}
+
+	if(first!=0)
+	{
+	        int i=0;
+		char ch;
+		int signal=0;
+
+	        //for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
+
+	        for(i=0;i<16;i++)
+	        {
+	        	ch=( first >> (60-4*i) ) & 0xf;
+			if(ch != 0) signal++;
+			else if(signal) signal++;
+
+			if(signal !=0)
+			{
+				ch+=0x30;
+				if(ch>0x39) ch+=0x7;
+	        		//anscii(x+signal-1,screeny,ch);
+				journal[y*64+x+signal-1]=ch;
+			}
+	        }
+	}
+}
+void shout(char* p,...)
+{
+        register unsigned long long rsi asm("rsi");
+        unsigned long long first=rsi;
+        char* journal=(char*)0x40000;
+        int x=0;
+        int y=*(int*)0x7fff8;
+        int screeny=y%48;
+
+        //for(x=0x20;x<0x40;x++) anscii(x,screeny,0x20);
+        for(x=0;x<0x40;x++) journal[y*64+x]=0;
+        x=0x20;
+
+        if(y>=0xffe | y<0){
                 y=0;
                 *(int*)0x7fff8=0;
         }
@@ -71,7 +121,6 @@ void say(char* p,...)
         int signal=0;
 
         //for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
-
         for(i=0;i<16;i++)
         {
                 ch=( first >> (60-4*i) ) & 0xf;
@@ -88,54 +137,58 @@ void say(char* p,...)
         }
 
 }
-void shout(char* p,...)
+void print(char* p,...)
 {
         register unsigned long long rsi asm("rsi");
 	unsigned long long first=rsi;
-        char* journal=(char*)0x40000;
-        int x=0;
-        int y=*(int*)0x7fff8;
-	int screeny=y%48;
+	char* console=(char*)0x120000;
+	unsigned int x=0;
+	unsigned int y=0;
 
-	//for(x=0x20;x<0x40;x++) anscii(x,screeny,0x20);
-	for(x=0;x<0x40;x++) journal[y*64+x]=0;
-	x=0x20;
+	//终端换行
+	y=*(unsigned int*)0x12fff8;
+        if( y < 0x80*47 )
+	{
+		y+=128;
+		*(unsigned int*)0x12fff8=y;
+	}
+	else
+	{
+		char* source=(char*)0x120080;
+        	char* dest=(char*)0x120000;
+		int i;
+		for(i=0;i<128*0x30;i++)
+		{
+			dest[i]=source[i];
+		}
+	}
 
-        if(y>=0xfff | y<0){
-                y=0;
-                *(int*)0x7fff8=0;
-        }
-        else *(int*)0x7fff8=y+1;
+	while(*p!='\0')
+	{
+		console[y+x]=*p;
+		p++;
+		x++;
+	}
 
-        while(*p!='\0')
-        {
-                //anscii(x,screeny,*p);
-                journal[y*64+x]=*p;
-                p++;
-                x++;
-        }
+	if(first!=0)
+	{
+	        int i=0;
+		char ch;
+		int signal=0;
 
-        if(first==0) return;
+	        for(i=0;i<16;i++)
+	        {
+	        	ch=( first >> (60-4*i) ) & 0xf;
+			if(ch != 0) signal++;
+			else if(signal) signal++;
 
-        int i=0;
-        char ch;
-        int signal=0;
-
-        //for(i=0;i<16;i++) anscii(x+i,screeny,0x20);
-
-        for(i=0;i<16;i++)
-        {
-                ch=( first >> (60-4*i) ) & 0xf;
-                if(ch != 0) signal++;
-                else if(signal) signal++;
-
-                if(signal !=0)
-                {
-                        ch+=0x30;
-                        if(ch>0x39) ch+=0x7;
-                        //anscii(x+signal-1,screeny,ch);
-                        journal[y*64+x+signal-1]=ch;
-                }
-        }
-
+			if(signal !=0)
+			{
+				ch+=0x30;
+				if(ch>0x39) ch+=0x7;
+	        		//anscii(x+signal-1,screeny,ch);
+				console[y+x+signal-1]=ch;
+			}
+	        }
+	}
 }

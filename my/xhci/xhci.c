@@ -4,10 +4,11 @@
 #define QWORD unsigned long long
 
 #define xhcihome 0x300000
-#define ersthome xhcihome+0x10000
-#define dcbahome xhcihome+0x20000
-#define cmdringhome xhcihome+0x30000
+#define dcbahome xhcihome+0x10000
+#define cmdringhome xhcihome+0x20000
+#define cmdpointer xhcihome+0x30000
 #define eventringhome xhcihome+0x40000
+#define ersthome xhcihome+0x50000
 
 static QWORD xhciport=0;
 static QWORD xhciaddr=0;
@@ -572,7 +573,7 @@ return 0;
 
 
 
-void clear(QWORD addr,QWORD size)
+void clean(QWORD addr,QWORD size)
 {
 	BYTE* pointer=(BYTE*)addr;
 	int i;
@@ -584,8 +585,8 @@ void clear(QWORD addr,QWORD size)
 
 void initxhci()
 {
-	//clear home
-	clear(xhcihome,0x100000);
+	//clean home(1m)
+	clean(xhcihome,0x100000);
 
 	//find pci address
         findxhci();

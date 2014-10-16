@@ -81,19 +81,21 @@ void commandcomplete(QWORD addr)
 }
 void portchange(QWORD addr)
 {
-		//shout("event@",addr);
+		shout("event@",addr);
 
 		//哪个端口改变了
 		QWORD portid=(*(DWORD*)addr) >> 24;
 		QWORD portaddr=portbase+portid*0x10-0x10;
-		QWORD portsc=*(DWORD*)portaddr;
-
 		shout("    port change:",portid);
 		shout("    port addr:",portaddr);
+
+		QWORD portsc=*(DWORD*)portaddr;
 		shout("    portsc:",portsc);
 
 		//告诉主控，收到变化,bit17写1(bit1不能写)
 		*(DWORD*)portaddr=portsc&0xfffffffd;
+		portsc=*(DWORD*)portaddr;
+		shout("    portsc:",portsc);
 
 		store(addr);
 }
