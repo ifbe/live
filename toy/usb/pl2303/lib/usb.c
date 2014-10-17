@@ -221,7 +221,7 @@ int waitdevice(QWORD slot,QWORD endpoint)
 void fixinterval(QWORD* interval,QWORD speed)
 {
 	QWORD val=*interval;
-	say("val:",val);
+	say("interval:",val);
 	if( (speed==1)|(speed==2) )
 	{
 	if(val == 1) val=3;

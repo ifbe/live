@@ -1,5 +1,5 @@
 #define u64 long long
-int table[16][16];
+static int table[16][16];
 
 
 void point(int x,int y,int z)

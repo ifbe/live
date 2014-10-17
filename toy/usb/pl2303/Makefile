@@ -15,9 +15,9 @@ c:
 #插上pl2303，lsusb，根据结果改hostbus=，hostaddr=这一段
 test:
 	make -s binary
-	make -C ../.. mountfat
+	make -C ../../.. mountfat
 	sudo cp pl2303 /mnt/nbd/live
-	make -C ../.. umountfat
+	make -C ../../.. umountfat
 	lsusb
 	sudo qemu-kvm \
 	-monitor stdio \

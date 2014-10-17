@@ -39,7 +39,6 @@ struct context{		//传参太麻烦...
 
 static QWORD wmaxpacket;
 static QWORD interval;
-static QWORD reportsize;
 void explainconfig(QWORD addr)
 {
         say("conf@",addr);
@@ -65,12 +64,6 @@ void explainconfig(QWORD addr)
                         say("endpoint@",addr+offset);
                         wmaxpacket=*(WORD*)(addr+offset+4);
                         interval=*(BYTE*)(addr+offset+6);
-                        break;
-                }
-                case 0x21:
-                {
-                        say("hid@",addr+offset);
-                        reportsize=*(WORD*)(addr+offset+7);
                         break;
                 }
                 }
@@ -195,7 +188,7 @@ void main()
 {
 	say("pl2303",0);
 
-	//lib.c可以看成一个小型机器，需要得到xhci的doorbell等变量来正常运行
+	//lib/usb.c可以看成一个小型机器，需要得到xhci的doorbell等变量来正常运行
 	if(preparevariety()<0) return;
 
 	//从/usb里面找到设备，得到两个值：speed和slot
