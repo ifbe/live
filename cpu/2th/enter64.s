@@ -13,13 +13,22 @@ startofenter64:
     xor ax,ax
     mov es,ax
 
+    ;清空[0x600,0xfff]
+    mov di,0x600
+    mov cx,0xa00
+    xor eax, eax
+    cld
+    rep stosb
     ;清空[0x4000,0x6fff]
     mov di,0x4000
     mov cx,0x4000
     xor eax, eax
     cld
     rep stosb
+;_________________________________________________
 
+
+;______________________________________________
     mov word [0x6000],0x83
 
 ;&pd放入pdpt(0x91000)(9000:1000)

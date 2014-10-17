@@ -97,6 +97,30 @@ exttest:
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/ext.vhd
+#准备一个引导已经做好的bootmgr.vhd虚拟硬盘，自己改位置和挂载点
+mountbootmgr:
+	sudo modprobe nbd max_part=4
+	sudo qemu-nbd -c /dev/nbd0 /mnt/fuck/image/v/bootmgr.vhd
+	sudo partprobe /dev/nbd0
+	sudo mount -o rw /dev/nbd0p1 /mnt/nbd
+umountbootmgr:
+	sudo umount /dev/nbd0p1
+	sudo qemu-nbd -d /dev/nbd0
+	sudo rmmod nbd
+bootmgr:
+	make -s image
+	make -s mountbootmgr
+	sudo cp build/init /mnt/nbd/live/init
+	make -s umountbootmgr
+bootmgrtest:
+	sudo qemu-kvm \
+	-monitor stdio \
+	-smp 2 \
+	-m 512 \
+	-device nec-usb-xhci,id=xhci \
+	-device ahci,id=ahci \
+	-device ide-drive,drive=disk,bus=ahci.0 \
+	-drive id=disk,if=none,file=/mnt/fuck/image/v/bootmgr.vhd
 #准备一个引导已经做好的u盘，用qemu测试u盘启动，自己改/dev/sd?
 flashdrivetest:
 	sudo qemu-kvm \
