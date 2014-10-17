@@ -3,14 +3,14 @@ image:
 	mkdir build
 	make -s -C load
 	make -s -C cpu
-	make -s -C my
-	nasm else/init.s -o build/init
-	nasm else/img.s -o build/live
+	make -s -C kernel/my
+	nasm tool/image/init.s -o build/init
+	nasm tool/image/img.s -o build/live
 clean:
 	make clean -s -C load
 	make clean -s -C cpu
-	make clean -s -C my
-	make clean -s -C demo
+	make clean -s -C kernel/my
+	make clean -s -C toy
 	rm -rf build
 #本Makefile生成的自己引导img虚拟硬盘
 qemutest:
