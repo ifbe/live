@@ -4,10 +4,11 @@ binary:
 	ld -T link/link.ld \
 	start.o \
 	mandelbrot.o \
-	-o mandelbrot
+	-o mandelbrot.bin
 library:
 	gcc -c lib/start.c
 main:
 	gcc -c -O2 mandelbrot.c
 clean:
-	rm -f *.o mandelbrot
+	rm -f *.o
+	rm -f *.bin

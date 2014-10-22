@@ -3,12 +3,13 @@ binary:
 	make -s main
 	ld -T link/link.ld \
 	start.o hlt.o \
-	c.o \
-	-o ooxx
+	ooxx.o \
+	-o ooxx.bin
 library:
 	gcc -c -O2 lib/start.c
 	nasm -f elf64 lib/hlt.s -o hlt.o
 main:
-	gcc -c -O2 c.c
+	gcc -c -O2 ooxx.c
 clean:
-	rm -f *.o ooxx
+	rm -f *.o
+	rm -f *.bin

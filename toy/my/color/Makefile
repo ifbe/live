@@ -4,10 +4,11 @@ binary:
 	ld -T link/link.ld \
 	start.o \
 	color.o \
-	-o color
+	-o color.bin
 library:
 	gcc -c -O2 lib/start.c
 color:
 	gcc -c -O2 color.c
 clean:
-	rm -f *.o color
+	rm -f *.o
+	rm -f *.bin

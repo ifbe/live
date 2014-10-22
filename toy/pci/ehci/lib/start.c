@@ -1,4 +1,4 @@
 void start()
 {
-	initxhci();
+	initehci();
 }

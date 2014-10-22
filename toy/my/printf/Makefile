@@ -5,7 +5,7 @@ binary:
 	start.o print.o \
 	hello.o \
 	-o temp.bin
-	nasm link/size.s -o hello
+	nasm link/size.s -o hello.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c
 	gcc -c -fPIC -O2 lib/print.c
@@ -28,5 +28,4 @@ test:
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/fat.vhd
 clean:
 	rm -f *.o
-	rm -f temp*
-	rm -f hello
+	rm -f *.bin

@@ -63,11 +63,11 @@ times 0x10000-($-$$)db 0
 
 
 process1:
-incbin "temp1"
+incbin "temp1.bin"
 times 0x20000-($-$$)db 0
 
 process2:
-incbin "temp2"
+incbin "temp2.bin"
 times 0x30000-($-$$)db 0
 
 times 0x100000-($-$$)db 0

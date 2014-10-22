@@ -5,7 +5,7 @@ binary:
 	start.o print.o usb.o \
 	egalaxytouch.o \
 	-o temp.bin
-	nasm link/size.s -o touch
+	nasm link/size.s -o touch.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c
 	gcc -c -fPIC -O2 lib/print.c
@@ -16,7 +16,7 @@ c:
 test:
 	make -s binary
 	make -C ../../.. mountfat
-	sudo cp touch /mnt/nbd/live
+	sudo cp touch.bin /mnt/nbd/live/touch
 	make -C ../../.. umountfat
 	lsusb
 	sudo qemu-kvm \
@@ -32,5 +32,4 @@ test:
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/fat.vhd
 clean:
 	rm -f *.o
-	rm -f temp*
-	rm -f touch
+	rm -f *.bin

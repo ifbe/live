@@ -3,20 +3,20 @@ binary:
 	make -s c
 	ld -T link/link.ld \
 	start.o print.o remember.o interrupt.o \
-	ethernet.o  \
+	eth.o  \
 	-o temp.bin
-	nasm link/size.s -o ethernet
+	nasm link/size.s -o eth.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c
 	gcc -c -fPIC -O2 lib/print.c
 	gcc -c -fPIC -O2 lib/remember.c
 	nasm -f elf64 lib/interrupt.s -o interrupt.o
 c:
-	gcc -c -fPIC -O2 ethernet.c
+	gcc -c -fPIC -O2 eth.c
 test:
 	make -s binary
 	make -C ../.. mountfat
-	sudo cp ethernet /mnt/nbd/live
+	sudo cp eth.bin /mnt/nbd/live/eth
 	make -C ../.. umountfat
 	sudo qemu-kvm \
 	-monitor stdio \
@@ -30,5 +30,4 @@ test:
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/fat.vhd
 clean:
 	rm -f *.o
-	rm -f temp*
-	rm -f ethernet
+	rm -f *.bin

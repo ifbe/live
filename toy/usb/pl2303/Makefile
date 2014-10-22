@@ -5,7 +5,7 @@ binary:
 	start.o print.o usb.o \
 	pl2303.o \
 	-o temp.bin
-	nasm link/size.s -o pl2303
+	nasm link/size.s -o pl2303.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c
 	gcc -c -fPIC -O2 lib/print.c
@@ -16,7 +16,7 @@ c:
 test:
 	make -s binary
 	make -C ../../.. mountfat
-	sudo cp pl2303 /mnt/nbd/live
+	sudo cp pl2303.bin /mnt/nbd/live/pl2303
 	make -C ../../.. umountfat
 	lsusb
 	sudo qemu-kvm \
@@ -32,5 +32,4 @@ test:
 	-drive id=disk,if=none,file=/mnt/fuck/image/v/fat.vhd
 clean:
 	rm -f *.o
-	rm -f temp*
-	rm -f pl2303
+	rm -f *.bin
