@@ -17,7 +17,7 @@ static DWORD ipaddr;
 
 
 
-//全部设备信息我放在0x110000了，格式如下:(非本环境自己处理这一步)
+//全部设备信息我放在0x140000了，格式如下:(非本环境自己处理这一步)
 //[0,7]:(vendorid<<16)+deviceid
 //[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
 //[0x10,0x17]:portaddress of the device
@@ -27,7 +27,7 @@ static DWORD ipaddr;
 //2.填上[0x18,0x1f],(为了工整好看)
 void findport()
 {
-	QWORD* addr=(QWORD*)0x110000;
+	QWORD* addr=(QWORD*)0x140000;
 	int i;
 	unsigned int temp;
 	for(i=0;i<0x80;i++)		//每个0x40

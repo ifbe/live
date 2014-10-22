@@ -1,16 +1,11 @@
 image:
-	make -s clean
-	mkdir build
-	make -s -C load
-	make -s -C cpu
-	make -s -C kernel/my
-	nasm tool/generate/init.s -o build/init
-	nasm tool/generate/img.s -o build/live
+	make -s -C loader
+	make -s -C core
+	nasm script/img.s -o live
 clean:
-	make clean -s -C load
-	make clean -s -C cpu
-	make clean -s -C kernel/my
-	rm -rf build
+	make clean -s -C loader
+	make clean -s -C core
+	rm -f live
 #本Makefile生成的自己引导img虚拟硬盘
 qemutest:
 	make -s image
@@ -23,7 +18,7 @@ qemutest:
 	-device usb-tablet,bus=xhci.0,port=1 \
 	-device ahci,id=ahci \
 	-device ide-drive,drive=disk,bus=ahci.0 \
-	-drive id=disk,if=none,file=build/live
+	-drive id=disk,if=none,file=live
 #准备一个引导已经做好的fat.vhd虚拟硬盘,自己改位置和挂载点
 mountfat:
 	sudo modprobe nbd max_part=4
@@ -37,7 +32,7 @@ umountfat:
 fat:
 	make -s image
 	make -s mountfat
-	sudo cp build/live /mnt/nbd/live/live
+	sudo cp live /mnt/nbd/live/live
 	make -s umountfat
 fattest:
 	sudo qemu-kvm \
@@ -61,7 +56,7 @@ umountntfs:
 ntfs:
 	make -s image
 	make -s mountntfs
-	sudo cp build/live /mnt/nbd/live/live
+	sudo cp live /mnt/nbd/live/live
 	make -s umountntfs
 ntfstest:
 	sudo qemu-kvm \
@@ -85,7 +80,7 @@ umountext:
 ext:
 	make -s image
 	make -s mountext
-	sudo cp build/init /mnt/nbd/live/init
+	sudo cp core/init /mnt/nbd/live/init
 	make -s umountext
 exttest:
 	sudo qemu-kvm \
@@ -109,7 +104,7 @@ umountbootmgr:
 bootmgr:
 	make -s image
 	make -s mountbootmgr
-	sudo cp build/init /mnt/nbd/live/init
+	sudo cp core/init /mnt/nbd/live/init
 	make -s umountbootmgr
 bootmgrtest:
 	sudo qemu-kvm \
@@ -174,7 +169,7 @@ massstoragetest:
 #下面是我自己的方便干活脚本，别管了
 copy:
 	make -s image
-	sudo cp build/init /mnt/efi/live/init
+	sudo cp core/init /mnt/efi/live/init
 everything:
 	make -s image
 	make -s fat

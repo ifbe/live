@@ -14,6 +14,26 @@
 
 
 
+QWORD finddevice(QWORD vendor,QWORD product)
+{
+	//从/usb里面找到设备，得到两个值：speed和slot
+	QWORD value=vendor+(product<<16);
+        QWORD* p=(QWORD*)0x150000;
+        int i;
+        for(i=0;i<0x200;i+=8)
+        {
+                if(p[i]== value)
+                {
+			return (QWORD)&p[i];
+                        break;
+                }
+        }
+	return 0;
+}
+
+
+
+
 struct setup{
 	BYTE bmrequesttype;	//	0x80
 	BYTE brequest;		//	0x6
@@ -37,12 +57,113 @@ struct context{		//传参太麻烦...
 
 
 
+void explaindescriptor(QWORD addr)
+{
+        DWORD type=*(BYTE*)(addr+1);
+        if(     (type==0)|((type>7)&(type<0x21))|(type>0x29)    ) return;
+
+        volatile DWORD i;
+        switch(type)
+        {
+        case 1: //设备描述符
+        {
+                say("device@",addr);
+                say("blength:",*(BYTE*)addr);
+                say("type:",*(BYTE*)(addr+1));
+                say("bcdusb:",*(WORD*)(addr+2));
+                say("bclass:",*(BYTE*)(addr+4));
+                say("bsubclass:",*(BYTE*)(addr+5));
+                say("bprotocol:",*(BYTE*)(addr+6));
+                say("bpacketsize:",*(BYTE*)(addr+7));
+                say("vendor:",*(WORD*)(addr+8));
+                say("product:",*(WORD*)(addr+0xa));
+                say("bcddevice:",*(WORD*)(addr+0xc));
+                say("imanufacturer:",*(BYTE*)(addr+0xe));
+                say("iproduct:",*(BYTE*)(addr+0xf));
+                say("iserial:",*(BYTE*)(addr+0x10));
+                say("bnumconf:",*(BYTE*)(addr+0x11));
+
+                say("",0);
+                break;
+        }
+        case 2: //配置描述符
+        {
+                say("conf@",addr);
+                say("blength:",*(BYTE*)addr);
+                say("type:",*(BYTE*)(addr+1));
+                say("wlength:",*(WORD*)(addr+2));
+                say("bnuminterface:",*(BYTE*)(addr+4));
+                say("bvalue:",*(BYTE*)(addr+5));
+                say("i:",*(BYTE*)(addr+0x6));
+
+                BYTE bmattribute=*(BYTE*)(addr+7);
+                say("bmattribute:",bmattribute);
+                if( (bmattribute&0x40) ==0x40 ) say("    self powered",0);
+                if( (bmattribute&0x20) ==0x20 ) say("    remote wake",0);
+                say("bmaxpower:",*(BYTE*)(addr+8));
+
+                say("",0);
+                DWORD totallength=*(WORD*)(addr+2);
+                DWORD offset=0;
+                while(1)
+                {
+                        if(offset>totallength) break;
+                        if( *(BYTE*)(addr+offset) <8) break;
+                        offset+=*(BYTE*)(addr+offset);
+                        explaindescriptor(addr+offset);
+                }
+
+                break;
+        }
+        case 4: //接口描述符
+        {
+                say("interface@",addr);
+                say("length:",*(BYTE*)addr);
+                say("type:",*(BYTE*)(addr+1));
+                say("binterfacenum:",*(BYTE*)(addr+2));
+                say("balternatesetting:",*(BYTE*)(addr+3));
+                say("bnumendpoint:",*(BYTE*)(addr+4));
+                say("bclass:",*(BYTE*)(addr+5));
+                say("bsubclass:",*(BYTE*)(addr+6));
+                say("bprotol:",*(BYTE*)(addr+7));
+                say("i:",*(BYTE*)(addr+0x8));
+
+                say("",0);
+                break;
+        }
+        case 5: //端点描述符
+        {
+                say("endpoint@",addr);
+                say("blength:",*(BYTE*)addr);
+                say("type:",*(BYTE*)(addr+1));
+
+                BYTE endpoint=*(BYTE*)(addr+2);
+                say("    endpoint:",endpoint&0xf);
+                if(endpoint>0x80){say("    in",0);}
+                else{say("    out",0);}
+
+                BYTE eptype=*(BYTE*)(addr+3);
+                if(eptype==0) say("    control",0);
+                else if(eptype==1) say("    isochronous",0);
+                else if(eptype==2) say("    bulk",0);
+                else say("    interrupt",0);
+
+                say("wmaxpacket:",*(WORD*)(addr+4));
+                say("binterval:",*(BYTE*)(addr+6));
+
+                say("",0);
+                break;
+        }
+        }
+}
+
+
+
+
 static QWORD wmaxpacket;
 static QWORD interval;
 void explainconfig(QWORD addr)
 {
-        say("conf@",addr);
-
         DWORD totallength=*(WORD*)(addr+2);
         DWORD offset=0;
 
@@ -54,14 +175,8 @@ void explainconfig(QWORD addr)
                 BYTE type=*(BYTE*)(addr+offset+1);
                 switch(type)
                 {
-			case 4:
-			{
-                        say("interface@",addr+offset);
-                        break;
-			}
 			case 5:
 			{
-                        say("endpoint@",addr+offset);
                         wmaxpacket=*(WORD*)(addr+offset+4);
                         interval=*(BYTE*)(addr+offset+6);
                         break;
@@ -69,6 +184,9 @@ void explainconfig(QWORD addr)
                 }
         }
 }
+
+
+
 
 void egalaxytouch(QWORD speed,QWORD slot)
 {
@@ -83,6 +201,19 @@ void egalaxytouch(QWORD speed,QWORD slot)
 	DWORD epstate;
 	struct context context;
 	struct setup packet;
+
+        say("device desc@",data0);
+        packet.bmrequesttype=0x80;
+        packet.brequest=6;
+        packet.wvalue=0x100;
+        packet.windex=0;
+        packet.wlength=0x12;
+        packet.buffer=data0;
+        sendpacket(ep0,&packet);
+        ring(slot,1);
+        if(waitdevice(slot,1)<0) goto failed;
+
+        explaindescriptor(data0);
 
 
         say("config desc@",data0+0x100);
@@ -100,6 +231,8 @@ void egalaxytouch(QWORD speed,QWORD slot)
         sendpacket(ep0,&packet);
         ring(slot,1);
         if(waitdevice(slot,1)<0) goto failed;
+
+        explaindescriptor(data0+0x100);
 
         explainconfig(data0+0x100);
         fixinterval(&interval,speed);
@@ -187,16 +320,10 @@ void main()
 	//lib.c可以看成一个小型机器，需要得到xhci的doorbell等变量来正常运行
 	if(preparevariety()<0) return;
 
-	//从/usb里面找到设备，得到两个值：speed和slot
-        QWORD* p=(QWORD*)0x130000;
-        int i;
-        for(i=0;i<0x200;i+=8)
-        {
-                if((p[i]== 0x20eef)|(p[i]==0x10eef))
-                {
-                        egalaxytouch(p[i+3],p[i+4]);
-                        break;
-                }
-        }
+	QWORD addr;
+	addr=finddevice(0xeef,0x1);
+	if(addr<=0) addr=finddevice(0xeef,0x2);
+	if(addr<=0) return;
 
+	egalaxytouch(*(QWORD*)(addr+0x18),*(QWORD*)(addr+0x20));
 }
