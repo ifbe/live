@@ -5,5 +5,5 @@ incbin "cpu/cpu"
 times 0x2000-($-$$)db 0
 
 ;第二部分占据[0x2000,0xffff]
-incbin "kernel/my/my"
+incbin "kernel/my/my.bin"
 times 0x10000-($-$$)db 0

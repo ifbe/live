@@ -5,7 +5,7 @@ binary:
 	start.o print.o interrupt.o \
 	xhci.o ehci.o isr.o \
 	-o temp.bin
-	nasm link/size.s -o temp
+	nasm link/size.s -o xhci.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c
 	gcc -c -fPIC -O2 lib/print.c
@@ -16,4 +16,4 @@ main:
 	gcc -c -fPIC -O2 isr.c
 clean:
 	rm -f *.o
-	rm -f temp*
+	rm -f *.bin

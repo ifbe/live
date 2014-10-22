@@ -9,7 +9,7 @@ binary:
 	build/master.o \
 	build/fat.o build/ntfs.o build/ext.o \
 	-o temp.bin
-	nasm link/size.s -o temp
+	nasm link/size.s -o disk.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c -o build/start.o
 	gcc -c -fPIC -O2 lib/print.c -o build/print.o
@@ -24,4 +24,5 @@ main:
 	gcc -c -fPIC -O2 master/ext.c -o build/ext.o
 clean:
 	rm -rf build
-	rm -f temp*
+	rm -f *.bin
+	rm -f *.o
