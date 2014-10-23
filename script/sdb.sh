@@ -1,4 +1,4 @@
-#插上U盘，应该是sdb，不是的话自己改一下
+#插上的U盘应该是/dev/sdb，当然也有可能是sdc。。。自己改一下就行
 sudo qemu-kvm \
 -monitor stdio \
 -smp 2 \

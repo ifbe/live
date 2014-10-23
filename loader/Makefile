@@ -1,4 +1,4 @@
 load:
-	nasm fixedsector/fixed.s -o load
+	nasm fixedsector/fixed.s -o load.bin
 clean:
-	rm -f load
+	rm -f *.bin

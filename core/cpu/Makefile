@@ -1,4 +1,4 @@
 all:
-	nasm cpu.s -o cpu
+	nasm cpu.s -o cpu.bin
 clean:
-	rm -f cpu
+	rm -f *.bin
