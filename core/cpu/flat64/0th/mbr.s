@@ -1,22 +1,40 @@
 [ORG 0x7c00]              ; add to offsets
+startofmbr:
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    cli                    ; no interrupts
    xor ax, ax             ; make it zero
    mov ds,ax
    mov es,ax
    mov ss,ax             ; stack starts at seg 0
-   mov sp, 0x7c00         ; 2000h past code start, 
+   mov sp, 0x7c00
 
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;这里判断一下，先读首扇区到一个临时的位置
+    mov dword [dap.blocknumber],0
+    mov byte [dap.blockcount],1
+    mov word [dap.buffersegment],0
+    mov word [dap.bufferoffset],0x800
+    call loadsector
+;跟这个文件前256个字节(后面256个会改变)不一样的话，就跳到本文件结尾
+    mov esi,0x7c00
+    mov edi,0x800
+    mov ecx,0x100
+    cld
+    rep cmpsb
+    jne endofmbr
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+;一样的话就是在虚拟环境里面，读前128个扇区到0x10000，然后跳过去
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 loadinit:
-    ;mov cx,8            ;[10000,8ffff]
-    mov cx,2            ;[10000,8ffff]
-    mov eax,128
+    xor eax,eax
     mov bx,0x1000
-continue:
+    ;mov cx,2            ;[10000,8ffff]
+;continue:
     mov dword [dap.blocknumber],eax
     mov byte [dap.blockcount],64
     mov word [dap.buffersegment],bx
@@ -26,16 +44,15 @@ continue:
 
     mov dword [dap.blocknumber],eax
     mov byte [dap.blockcount],64
-    mov word [dap.bufferoffset],0x8000
     mov word [dap.buffersegment],bx
+    mov word [dap.bufferoffset],0x8000
     call loadsector
     add eax,64
 
-    add bx,0x1000
+    ;add bx,0x1000
+    ;loop continue
 
-    loop continue
-
-    jmp 0x1000:0x0000
+    jmp 0x1000:0x0200
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -49,6 +66,9 @@ loadsector:
     popad
     ret
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+times 256-($-$$)db 0
 
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -92,3 +112,5 @@ dd 0
 
 
 dw 0xaa55
+
+endofmbr:

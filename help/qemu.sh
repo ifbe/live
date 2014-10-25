@@ -1,6 +1,6 @@
 if [ x$1 == x ]
 then
-        echo "错误:请指定磁盘镜像的绝对地址"
+        echo "错误:请指定磁盘镜像的绝对地址(也可以是/dev/sdb这种)"
         echo "正确用法:./qemu.sh /where/name.format"
         exit -1
 fi

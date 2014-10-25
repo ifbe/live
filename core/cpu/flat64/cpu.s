@@ -5,7 +5,7 @@
 
 
 ;[+0,+1ff]:
-%include "0th/fakembr.s"	;bootmgr won't use here
+%include "0th/mbr.s"		;bootmgr won't use here
 
 ;[+200,+3ff]:
 %include "1th/still16.s"	;put memory info in [2000,2fff]

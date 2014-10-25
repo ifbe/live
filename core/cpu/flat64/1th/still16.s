@@ -13,7 +13,6 @@ startof16:
 
 ;_______________________________________
 	;clear [2000,7fff]
-
 	xor eax,eax
 	mov di,0x2000
 	mov cx,0x1800
