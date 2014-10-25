@@ -85,12 +85,12 @@ jmp ramdump
 	;________________________________________________
 	changesector:
 
-	mov rsi,0x4000
+	mov rsi,0x180000
 	.continue:
 	cmp dword [rsi],"read"
 	je .findit
 	add rsi,0x10
-	cmp rsi,0x5000
+	cmp rsi,0x180000+0x1000
 	jb .continue
 	jmp ramdump
 
@@ -229,8 +229,10 @@ jnz .anscii
 
 f1other:
 call scan2hex
-cmp al,0x10
+
+cmp al,0xf		;<0x30
 ja ramdump
+
 shl qword [rel input],4
 add [rel input],al
 jmp ramdump

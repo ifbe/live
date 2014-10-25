@@ -5,72 +5,128 @@ bits 64
 
 ;________________________________
 scan2anscii:
-    mov esi,0x5800          ;table
+
+    lea esi,[rel translatetable]          ;table
+    xor ecx,ecx
 .search:
-    cmp [esi],al            ;先把al里的扫描码转换成anscii给al
-    je .convert
-    add esi,2
-    cmp esi,0x7880
+    cmp [esi+ecx],al            ;先把al里的扫描码转换成anscii给al
+    je .return
+    add ecx,2
+    cmp ecx,(endoftranslatetable-translatetable)
     jb .search
-    mov esi,0x7200           ;no,blank
-    jmp .finish
-.convert:
-    inc esi
-    lodsb
-.finish:
+
+.returnnothing:
+    mov al,0x20
+    ret
+
+.return:
+    ;inc esi
+    ;lodsb
+    mov al,[esi+ecx+1]
     ret
 ;____________________________________
 
 
 
 
-;___________________________________
+translatetable:
+db 0x0b, '0'
+db 0x02, '1'
+db 0x03, '2'
+db 0x04, '3'
+db 0x05, '4'
+db 0x06, '5'
+db 0x07, '6'
+db 0x08, '7'
+db 0x09, '8'
+db 0x0a, '9'
+db 0x1e, 'a'
+db 0x30, 'b'
+db 0x2e, 'c'
+db 0x20, 'd'
+db 0x12, 'e'
+db 0x21, 'f'
+db 0x22, 'g'
+db 0x23, 'h'
+db 0x17, 'i'
+db 0x24, 'j'
+db 0x25, 'k'
+db 0x26, 'l'
+db 0x32, 'm'
+db 0x31, 'n'
+db 0x18, 'o'
+db 0x19, 'p'
+db 0x10, 'q'
+db 0x13, 'r'
+db 0x1f, 's'
+db 0x14, 't'
+db 0x16, 'u'
+db 0x2f, 'v'
+db 0x11, 'w'
+db 0x2d, 'x'
+db 0x15, 'y'
+db 0x2c, 'z'
+db 0x4e, '+'
+db 0x4a, '-'
+db 0x37, '*'
+db 0x35, '/'
+db 0x1a, '['
+db 0x1b, ']'
+db 0x33, ','
+db 0x34, '.'
+db 0x39, ' '
+db 0x0d, '='
+db 0x7e, '~'
+db 0xff,0xff
+endoftranslatetable:
+
+
+
+
+;________________________________
 scan2hex:
-	cmp al,0xb
-	je .return0
-	cmp al,0x1e
-	je .returna
-	cmp al,0x30
-	je .returnb
-	cmp al,0x2e
-	je .returnc
-	cmp al,0x20
-	je .returnd
-	cmp al,0x12
-	je .returne
-	cmp al,0x21
-	je .returnf
-	cmp al,0xb
-	ja .wrong
+
+    lea esi,[rel scan2hextable]          ;table
+    xor ecx,ecx
+.search:
+    cmp [esi+ecx],al            ;先把al里的扫描码转换成anscii给al
+    je .return
+    add ecx,2
+    cmp ecx,(endofscan2hextable-scan2hextable)
+    jb .search
+
+.returnnothing:
+    mov al,0xff
+    ret
 
 .return:
-	dec al
-	ret
-.wrong:
-	mov al,0xff
-	ret
-.return0:
-	xor al,al
-	ret
-.returna:
-	mov al,0xa
-	ret
-.returnb:
-	mov al,0xb
-	ret
-.returnc:
-	mov al,0xc
-	ret
-.returnd:
-	mov al,0xd
-	ret
-.returne:
-	mov al,0xe
-	ret
-.returnf:
-	mov al,0xf
-	ret
-;__________________________________
+    ;inc esi
+    ;lodsb
+    mov al,[esi+ecx+1]
+    ret
+;____________________________________
+
+
+
+
+scan2hextable:
+db 0x0b,0x0
+db 0x02,0x1
+db 0x03,0x2
+db 0x04,0x3
+db 0x05,0x4
+db 0x06,0x5
+db 0x07,0x6
+db 0x08,0x7
+db 0x09,0x8
+db 0x0a,0x9
+db 0x1e,0xa
+db 0x30,0xb
+db 0x2e,0xc
+db 0x20,0xd
+db 0x12,0xe
+db 0x21,0xf
+endofscan2hextable:
 
 
 
@@ -82,7 +138,7 @@ character:
 
     movzx eax,al
     shl ax,4
-    lea esi,[eax+0x5000]
+    lea esi,[eax+0x4000]
 
     mov ecx,16           ;16行
 .yihang:

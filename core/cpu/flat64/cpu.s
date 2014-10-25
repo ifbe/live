@@ -21,9 +21,10 @@
 
 ;[+800,+fff]:
 %include "4th/exception.s"	;set 32 default exception handler
+%include "4th/lastword.s"	;black screen
 
 ;[+1000,+1fff]:
-%include "anscii.s"		;anscii pixel table
+%include "5th/learnanscii.s"		;anscii pixel table
 
 ;)))))))))))))))))))) endof part1(16KB) ))))))))))))))))))))
 
