@@ -224,6 +224,10 @@ lea esi,[rel arg0]
 cmp dword [esi],"jump"
 je jump
 
+lea esi,[rel arg0]
+cmp dword [esi],"int"
+je enterinterrupt
+
 jmp f4enter.notinhere
 ;_____________________________________
 
@@ -378,6 +382,16 @@ jump:
 lea esi,[rel arg1]
 call string2data
 jmp [rel value]
+;_______________________________
+
+
+
+
+;_______________________________
+enterinterrupt:
+
+int3
+jmp scroll
 ;_______________________________
 
 

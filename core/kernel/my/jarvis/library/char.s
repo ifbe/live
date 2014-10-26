@@ -131,65 +131,97 @@ endofscan2hextable:
 
 
 
-;______________________________
+;_________________________________
 character:
-    push rbx
     push rcx
 
     movzx eax,al
-    shl ax,4
-    lea esi,[eax+0x4000]
+    shl eax,9
+    lea esi,[eax+0x110000]
 
-    mov ecx,16           ;16行
-.yihang:
-    xor rax,rax
-    lodsb
-    push rcx
-        mov cl,8
-      .yidian:
-        shl al,1
-        jnc .bg
-        mov edx,[rel frontcolor]
-        mov [edi],edx
-        jmp .pointdone
-      .bg:
-        mov edx,[rel backcolor]
-        cmp edx,0xffffffff
-        je .pointdone
-        mov dword [edi],edx
-      .pointdone:
-        add edi,4
-        loop .yidian
-    sub edi,32           ;每个字的行头
-    add edi,1024*4            ;下1行
+    xor ecx,ecx
+.lines:		;每排8个DWORD=4个QWORD
+    lodsq
+    mov [edi+ecx],rax
+    lodsq
+    mov [edi+ecx+8],rax
+    lodsq
+    mov [edi+ecx+16],rax
+    lodsq
+    mov [edi+ecx+24],rax
+
+    add ecx,1024*4
+    cmp ecx,1024*4*16
+    jna .lines
+
+.return:
+    add edi,32
     pop rcx
-    loop .yihang
+    ret
+;____________________________________
 
-    add edi,32            ;下个字的行头
-    sub edi,4*1024*16            ;上16行;现在edi=下个字开头
 
-    mov eax,edi
-    mov ebx,0x1000000        ;ebx=vesabase
-    ;mov ebx,[0x3028]        ;ebx=vesabase
-    sub eax,ebx             ;eax=相对距离
 
-.modfour:
-    and eax,0x00000fff           ;mod4096
-    cmp eax,0
-    jne .nochange
 
-.change:
-    add edi,4*1024*16
-    sub edi,1024*4
-
-.nochange:
-    pop rcx
-    pop rbx
-
-    ret              ;edi指向下一个字
+;______________________________
+;character:
+;    push rbx
+;    push rcx
+;
+;    movzx eax,al
+;    shl ax,4
+;    lea esi,[eax+0x4000]
+;
+;    mov ecx,16           ;16行
+;.yihang:
+;    xor rax,rax
+;    lodsb
+;    push rcx
+;        mov cl,8
+;      .yidian:
+;        shl al,1
+;        jnc .bg
+;        mov edx,[rel frontcolor]
+;        mov [edi],edx
+;        jmp .pointdone
+;      .bg:
+;        mov edx,[rel backcolor]
+;        cmp edx,0xffffffff
+;        je .pointdone
+;        mov dword [edi],edx
+;      .pointdone:
+;        add edi,4
+;        loop .yidian
+;    sub edi,32           ;每个字的行头
+;    add edi,1024*4            ;下1行
+;    pop rcx
+;    loop .yihang
+;
+;    add edi,32            ;下个字的行头
+;    sub edi,4*1024*16            ;上16行;现在edi=下个字开头
+;
+;    mov eax,edi
+;    mov ebx,0x1000000        ;ebx=vesabase
+;    ;mov ebx,[0x3028]        ;ebx=vesabase
+;    sub eax,ebx             ;eax=相对距离
+;
+;.modfour:
+;    and eax,0x00000fff           ;mod4096
+;    cmp eax,0
+;    jne .nochange
+;
+;.change:
+;    add edi,4*1024*16
+;    sub edi,1024*4
+;
+;.nochange:
+;    pop rcx
+;    pop rbx
+;
+;    ret              ;edi指向下一个字
 ;______________________________________
-backcolor:dd 0
-frontcolor:dd 0xffffffff
+;backcolor:dd 0
+;frontcolor:dd 0xffffffff
 
 
 

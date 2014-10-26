@@ -1,11 +1,12 @@
 ;1.initialization
 %include "init/input.s"		;prepare 0x800
 %include "init/first.s"		;prepare 0x100000
-%include "init/acpi.s"		;prepare 0x110000
+%include "init/anscii.s"	;prepare 0x110000
 %include "init/console.s"	;prepare 0x120000
 %include "init/journal.s"	;prepare 0x130000
 %include "init/pciold.s"	;prepare 0x140000
 %include "init/usb.s"		;prepare 0x150000
+%include "init/acpi.s"		;prepare 0x160000
 %include "init/bin.s"		;prepare 0x180000
 %include "init/else.s"		;call c program and enter final loop
 

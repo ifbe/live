@@ -12,7 +12,7 @@ stosq
 mov rax,0x100000
 stosq
 
-mov rax,"/acpi"
+mov rax,"/anscii"
 stosq
 mov rax,0x110000
 stosq
@@ -37,7 +37,7 @@ stosq
 mov rax,0x150000
 stosq
 
-mov rax,"/todo"
+mov rax,"/acpi"
 stosq
 mov rax,0x160000
 stosq
@@ -45,4 +45,9 @@ stosq
 mov rax,"/bin"
 stosq
 mov rax,0x180000
+stosq
+
+mov rax,"/todo"
+stosq
+mov rax,0x190000
 stosq

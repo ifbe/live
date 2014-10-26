@@ -24,7 +24,8 @@
 %include "4th/lastword.s"	;black screen
 
 ;[+1000,+1fff]:
-%include "5th/learnanscii.s"		;anscii pixel table
+%include "5th/data.s"		;anscii pixel table
+%include "5th/anscii.s"		;anscii pixel table
 
 ;)))))))))))))))))))) endof part1(16KB) ))))))))))))))))))))
 
