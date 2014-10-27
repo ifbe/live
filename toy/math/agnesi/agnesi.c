@@ -116,7 +116,7 @@ void main()
 		if(table[i]!=0) point(i,table[i],0xffffffff);
 		}
 
-		key=keyboard();
+		key=hltwait();
 		if(key==0x4d){
 			if(arc> -1.57) arc-=0.01;
 		}

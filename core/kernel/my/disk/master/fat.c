@@ -19,7 +19,7 @@ static QWORD cluster0;
 static QWORD cachecurrent;
 static QWORD cacheblock;
 
-void checkfatcache()	//put cache in [0x140000]
+void checkfatcache()	//put cache in +0x40000
 {
 	if(cachecurrent == cacheblock) return;
 
@@ -166,10 +166,9 @@ static void fat16_load(BYTE* addr)
 }
 
 
-void fat16()
+void fat16(QWORD fatsector)
 {
-	QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
-	say("fatsector:",fatsector);
+	//QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
 	fatsize=(QWORD)( *(WORD*)(pbrbuffer+0x16) );
 	say("fatsize:",fatsize);
 	fat0=fatsector + (QWORD)( *(WORD*)(pbrbuffer+0xe) );
@@ -302,10 +301,9 @@ static void fat32_load(BYTE* addr)
 }
 
 
-void fat32()
+void fat32(QWORD fatsector)
 {
-	QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
-	say("fatsector:",fatsector);
+	//QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
 	fatsize=(QWORD)( *(DWORD*)(pbrbuffer+0x24) );
 	say("fatsize:",fatsize);
 	fat0=fatsector + (QWORD)( *(WORD*)(pbrbuffer+0xe) );
@@ -329,6 +327,7 @@ void fat32()
 int mountfat(QWORD sector)
 {
 	diskaddr=*(QWORD*)(0x200000+8);
+	say("partition sector:",sector);
 
         read(pbrbuffer,sector,diskaddr,1); //pbr
 
@@ -354,12 +353,12 @@ int mountfat(QWORD sector)
         if(similarity==48)
         {
                 say("fat16",0);
-                fat16();
+                fat16(sector);
         }
         else if(similarity==52)
         {
                 say("fat32",0);
-                fat32();
+                fat32(sector);
         }
         else
         {

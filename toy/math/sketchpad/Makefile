@@ -2,14 +2,17 @@ binary:
 	make -s library
 	make -s main
 	ld -T link/link.ld \
-	start.o hlt.o \
+	start.o print.o convert.o math.o hlt.o \
 	sketchpad.o \
-	-o sketchpad.bin
+	-o sketch.bin
 library:
-	gcc -c lib/start.c
+	gcc -c -fPIC -O2 lib/start.c
+	gcc -c -fPIC -O2 lib/print.c
+	gcc -c -fPIC -O2 lib/convert.c
+	gcc -c -fPIC -O2 lib/math.c
 	nasm -f elf64 lib/hlt.s -o hlt.o
 main:
-	gcc -c -O2 sketchpad.c
+	gcc -c -fPIC -O2 sketchpad.c
 clean:
 	rm -f *.o
 	rm -f *.bin

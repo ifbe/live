@@ -1,18 +1,3 @@
-#define u64 long long
-
-
-void point(int x,int y,int z)
-{
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
-    char* p=(char*)0x3019;
-    char bpp=*p/8;
-
-    int* address;
-
-    address=(int*)(base+(y*1024+x)*bpp);
-    *address=z;
-}
 
 
 void background()
@@ -64,4 +49,10 @@ void main()
 	for(x=1;x<=9;x++)
 		for(y=1;y<=10;y++)
 			chess(x,y,0xffffffff);	//qizi
+
+	while(1)
+	{
+	unsigned char keyboard=hltwait();
+	if(keyboard==0x1) break;
+	}
 }

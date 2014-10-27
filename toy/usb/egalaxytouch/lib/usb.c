@@ -22,8 +22,21 @@
 	//3:ep1.1		//+6000:	ep1.1 ring
 				//+7000:	ep1.1 buffer
 
-
-
+QWORD finddevice(QWORD vendor,QWORD product)
+{
+        QWORD value=vendor+(product<<16);
+        QWORD* p=(QWORD*)0x150000;
+        int i;
+        for(i=0;i<0x200;i+=8)
+        {
+                if(p[i]== value)
+                {
+                        return (QWORD)&p[i];
+                        break;
+                }
+        }
+        return 0;
+}
 
 
 volatile static QWORD doorbell;

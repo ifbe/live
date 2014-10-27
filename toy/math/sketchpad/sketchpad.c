@@ -1,137 +1,17 @@
-#define u64 long long
+double sine(double x);
+double cosine(double x);
+
 
 void init()
 {
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
-    char* p=(char*)0x3019;
-    char bpp=*p/8;
-    int i;
-
-    for(i=0;i<1024*768;i++)    //1024*768
-    {
-        video=(u64*)base;
-        *video=0xffff00;
-        base+=bpp;
-    }
-}
-
-
-double cosine(double x)
-{
-    double ret=0,item=1.0,temp;
-    int n=0,i,sign=1;
-    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
-
-    do{
-        temp=item;
-        for(i=1;i<=2*n;i++)temp/=i;
-        ret+=sign*temp;
-        item*=x*x;
-        sign *=-1;
-        n++;
-      }while (temp>1e-10);
-return ret;
-}
-
-
-double sine(double x)
-{
-    int m = 1,i;
-    double temp,ret = 0.0;
-    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
-
-    do{
-        i=0;
-        if (m%2 == 0){temp= -1.0;}
-        else{temp= 1.0;}
-        for(i=1;i<=2*m-1;i++){temp = temp * x/i;}
-        ret+= temp;
-        m++;
-    }while (temp<-.0000005||temp>0.0000005);
-return ret;
-}
-
-
-char convert(char old)
-{
-    char* p;
-    u64 rsi;
-    char new=0x20;
-    int i;
-
-    rsi=0x6800;
-    for(i=0;i<44;i++)
-    {
-        p=(char*)rsi;
-        if(*p==old)
+        int x,y;
+        for(x=0;x<1024;x++)
         {
-            rsi++;
-            p=(char*)rsi;
-            new=*p;
-            break;
+                for(y=0;y<768;y++)
+                {
+                        point(x,y,0x44444444);
+                }
         }
-        rsi+=2;
-    }
-    return new;
-}
-
-
-void point(int x,int y,int z)
-{
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
-    char* p=(char*)0x3019;
-    char bpp=*p/8;
-
-    int* address;
-
-    address=(int*)(base+(y*1024+x)*bpp);
-    *address=z;
-}
-
-
-void print(int x,int y,char ch)
-{
-    int i,j;
-    u64 rsi=0x6000;
-    char temp;
-    char* p;
-
-    rsi+=ch<<4;
-    x=8*x;
-    y=16*y;
-
-    for(i=0;i<16;i++)
-    {
-        p=(char*)rsi;
-        for(j=0;j<8;j++)
-        {
-            temp=*p;
-            temp=temp<<j;
-            temp&=0x80;
-            if(temp!=0){point(j+x,i+y,0);}
-            else{point(j+x,i+y,0x00ffff00);}
-        }
-    rsi++;
-    }
-}
-
-
-void string(int x,int y,char* p)
-{
-    while(*p!='\0')
-    {
-    print(x,y,*p);
-    p++;
-    x++;
-    }
-}
-
-
-void draw(int x,int y,int z)
-{
-    point(x+512,384-y,z);
 }
 
 
@@ -144,16 +24,17 @@ void geometry(char* anscii)
                              //下面描点
     if(*anscii=='s')
     {
+//string(0,1,"???????????????");
         for(x=-5.00;x<5.00;x+=0.01)
         {
-            draw(100*x,100*sine(x),0);
+            draw((int)(100*x),(int)(100*sine(x)),0xffffffff);
         }
     }
     if(*anscii=='c')
     {
         for(x=-5.00;x<5.00;x+=0.01)
         {
-            draw(100*x,100*cosine(x),0);
+            draw((int)(100*x),(int)(100*cosine(x)),0xffffffff);
         }
     }
 }

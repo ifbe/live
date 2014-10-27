@@ -287,6 +287,18 @@ void hid(QWORD speed,QWORD slot)
 
 
 
+	//-----注册(放到todo队列中?)函数专门解释数据
+	//像下面这样?
+	//todo(explainer);
+	//不管todo怎么实现
+	//反正一有空就被调用
+	//无数据就自己yield
+	//有数据就一直解释到没有数据?
+	//------------------------------------------------------
+
+
+
+
 failed:
 	return;
 }
@@ -299,9 +311,9 @@ failed:
 //[10,17]:rootport+(routestring<<32)		+2
 //[18,1f]:speed					+3
 //[20,27]:slot					+4
-void iknowhid()
+void hiddevice()
 {
-	QWORD* p=(QWORD*)0x150000;	//在/usb里面找
+	QWORD* p=(QWORD*)0x150000;		//在/usb里面找
 	int i;
 	for(i=0;i<0x200;i+=8)
 	{

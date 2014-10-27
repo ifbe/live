@@ -2,14 +2,16 @@ binary:
 	make -s library
 	make -s main
 	ld -T link/link.ld \
-	start.o hlt.o \
+	start.o print.o convert.o hlt.o \
 	btree.o \
 	-o btree.bin
 library:
-	gcc -c lib/start.c
 	nasm -f elf64 lib/hlt.s -o hlt.o
+	gcc -c -fPIC -O2 lib/start.c
+	gcc -c -fPIC -O2 lib/print.c
+	gcc -c -fPIC -O2 lib/convert.c
 main:
-	gcc -c -O2 btree.c
+	gcc -c -fPIC -O2 btree.c
 clean:
 	rm -f *.o
 	rm -f *.bin

@@ -4,8 +4,7 @@ binary:
 	ld -T link/link.ld \
 	start.o print.o usb.o \
 	pl2303.o \
-	-o temp.bin
-	nasm link/size.s -o pl2303.bin
+	-o pl2303.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c
 	gcc -c -fPIC -O2 lib/print.c

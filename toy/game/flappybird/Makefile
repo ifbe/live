@@ -2,14 +2,15 @@ binary:
 	make -s library
 	make -s main
 	ld -T link/link.ld \
-	start.o hlt.o \
+	start.o print.o hlt.o \
 	flappybird.o \
 	-o bird.bin
 library:
-	gcc -c -O2 lib/start.c
+	gcc -c -fPIC -O2 lib/start.c
+	gcc -c -fPIC -O2 lib/print.c
 	nasm -f elf64 lib/hlt.s -o hlt.o
 main:
-	gcc -c -O2 flappybird.c
+	gcc -c -fPIC -O2 flappybird.c
 clean:
 	rm -f *.o
 	rm -f *.bin

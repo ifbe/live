@@ -13,7 +13,7 @@ sudo qemu-nbd -c /dev/nbd0 $2
 sudo partprobe /dev/nbd0
 sudo mount -o rw /dev/nbd0p1 /mnt/nbd
 
-sudo cp $1 /mnt/nbd/live
+sudo cp $1 /mnt/nbd/live/
 
 sudo umount /dev/nbd0p1
 sudo qemu-nbd -d /dev/nbd0

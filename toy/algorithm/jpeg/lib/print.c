@@ -15,7 +15,7 @@ void point(int x,int y,int z)
 void print(int x,int y,char ch)
 {
     int i,j;
-    long long rsi=0x5000;
+    long long rsi=0x4000;
     char temp;
     char* p;
 

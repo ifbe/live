@@ -1,19 +1,4 @@
-#define u64 long long
-int x=-250,y=0,xx,yy;
-
-void point(int x,int y,int z)
-{
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
-    char* p=(char*)0x3019;
-    char bpp=*p/8;
-
-    int* address;
-
-    address=(int*)(base+(y*1024+x)*bpp);
-    *address=z;
-}
-
+static int x=-250,y=0,xx,yy;
 
 void draw(int x,int y,int z)
 {
@@ -22,6 +7,7 @@ void draw(int x,int y,int z)
         for(j=-5;j<5;j++)
             point(x+512+i,384-y+j,z);
 }
+
 
 void move()
 {
@@ -47,7 +33,7 @@ void main()
 
     while(1)
     {
-	for(i=0;i<8000000;i++);
+	for(i=0;i<10000000;i++);
 	move();
     }
 }

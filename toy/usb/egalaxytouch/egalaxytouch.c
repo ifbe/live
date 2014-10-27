@@ -13,27 +13,6 @@
 				//+7000:	ep1.1 buffer
 
 
-
-QWORD finddevice(QWORD vendor,QWORD product)
-{
-	//从/usb里面找到设备，得到两个值：speed和slot
-	QWORD value=vendor+(product<<16);
-        QWORD* p=(QWORD*)0x150000;
-        int i;
-        for(i=0;i<0x200;i+=8)
-        {
-                if(p[i]== value)
-                {
-			return (QWORD)&p[i];
-                        break;
-                }
-        }
-	return 0;
-}
-
-
-
-
 struct setup{
 	BYTE bmrequesttype;	//	0x80
 	BYTE brequest;		//	0x6
@@ -320,9 +299,7 @@ void main()
 	//lib.c可以看成一个小型机器，需要得到xhci的doorbell等变量来正常运行
 	if(preparevariety()<0) return;
 
-	QWORD addr;
-	addr=finddevice(0xeef,0x1);
-	if(addr<=0) addr=finddevice(0xeef,0x2);
+	QWORD addr=finddevice(0xeef,0x1);
 	if(addr<=0) return;
 
 	egalaxytouch(*(QWORD*)(addr+0x18),*(QWORD*)(addr+0x20));

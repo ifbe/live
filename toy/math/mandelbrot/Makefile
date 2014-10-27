@@ -2,13 +2,14 @@ binary:
 	make -s library
 	make -s main
 	ld -T link/link.ld \
-	start.o \
+	start.o print.o \
 	mandelbrot.o \
-	-o mandelbrot.bin
+	-o man.bin
 library:
-	gcc -c lib/start.c
+	gcc -c -fPIC -O2 lib/start.c
+	gcc -c -fPIC -O2 lib/print.c
 main:
-	gcc -c -O2 mandelbrot.c
+	gcc -c -fPIC -O2 mandelbrot.c
 clean:
 	rm -f *.o
 	rm -f *.bin

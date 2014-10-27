@@ -1,4 +1,14 @@
-image:
+inlinux:
+	make -s clean
+	make -s -C cpu/flat64
+	make -s -C kernel/my
+	nasm -s init.s -o init.bin
+inwindows:
+	make -s clean
+	make -s -C cpu/flat64
+	make -s -C kernel/my
+	nasm -s init.s -o init.bin
+inmac:
 	make -s clean
 	make -s -C cpu/flat64
 	make -s -C kernel/my

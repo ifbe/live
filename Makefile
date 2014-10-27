@@ -1,20 +1,34 @@
+#这个Makefile就是用来制作处理测试磁盘镜像的
+#如果只要那个裸奔的程序，可以除了core文件夹以外其他的全部删掉
 root = $(shell pwd)
+toy =
 
 
-#toy:
-
-
-#我写好了一个脚本来制作raw格式磁盘镜像
-#总共64m，只有一个分区在[1m,64m)，已经格式化为fat32
-img:
-	make -s -C core
+inlinuxcreateraw:
+	make -s -C core inlinux
 	/bin/sh help/raw.sh $(root)
+inlinuxcreatevhd:
+	make -s -C core inlinux
+	/bin/sh help/vhd.sh $(root)
+inwindowscreateraw:
+	make -s -C core inwindows
+	/bin/sh help/raw.bat $(root)
+inwindowscreatevhd:
+	make -s -C core inwindows
+	/bin/sh help/vhd.bat $(root)
 
 
-#script/qemu.sh指定了cpu数量，内存数量，透传进去的设备vidpid，磁盘等东西
-#qemu的qemu.sh脚本相当于vmware的.vmx配置文件
-test:
+testimg:
 	/bin/sh help/qemu.sh $(root)/live.img
+
+
+testtoy:			#比如make testtoy toy=`pwd`/toy/game/2048
+ifneq ($(toy),)
+	make -s -C $(toy)
+	/bin/sh help/copyintoraw.sh $(toy)/*.bin $(root)/live.img
+	make -s -C $(toy) clean
+	make -s testimg
+endif
 
 
 clean:

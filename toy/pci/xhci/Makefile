@@ -4,8 +4,7 @@ binary:
 	ld -T link/link.ld \
 	start.o print.o interrupt.o \
 	xhci.o isr.o \
-	-o temp.bin
-	nasm link/size.s -o xhci.bin
+	-o xhci.bin
 library:
 	gcc -c -fPIC -O2 lib/start.c
 	gcc -c -fPIC -O2 lib/print.c

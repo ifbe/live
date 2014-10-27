@@ -13,23 +13,6 @@
 				//+7000:	ep1.1 buffer
 
 
-QWORD finddevice(QWORD vendor,QWORD product)
-{
-	//从/usb里面找到设备，得到两个值：speed和slot
-        QWORD value=vendor+(product<<16);
-        QWORD* p=(QWORD*)0x150000;
-        int i;
-        for(i=0;i<0x200;i+=8)
-        {
-                if(p[i]== value)
-                {
-			return (QWORD)&p[i];
-                        break;
-                }
-        }
-	return 0;
-}
-
 
 struct setup{
 	BYTE bmrequesttype;	//	0x80
@@ -223,7 +206,7 @@ int vendor_write(QWORD slot,WORD value,WORD index)
 
 void pl2303(QWORD speed,QWORD slot)
 {
-	//只要传递slot号，就能得到我们手动分配的内存
+	//usbhome+slot*0x8000开始,0x7fff个字节可以给这个文件用
 	QWORD slotcontext=usbhome+slot*0x8000;
 	QWORD devinfo=slotcontext+0x1000;
 	QWORD ep0=slotcontext+0x2000;

@@ -6,10 +6,10 @@ binary:
 	agnesi.o \
 	-o agnesi.bin
 library:
-	gcc -c -O2 lib/start.c
+	gcc -c -fPIC -O2 lib/start.c
 	nasm -f elf64 lib/hlt.s -o hlt.o
 agnesi:
-	gcc -c -O2 agnesi.c
+	gcc -c -fPIC -O2 agnesi.c
 clean:
 	rm -f *.o
 	rm -f *.bin
