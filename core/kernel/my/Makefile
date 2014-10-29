@@ -1,16 +1,30 @@
-all:
-	make -s -C jarvis	#[0x2000,0x3fff]
-	make -s -C ahci		#[0x4000,0x5fff]
-	make -s -C xhci		#[0x6000,0x7fff]
-	make -s -C usb		#[0x8000,0xbfff]
-	make -s -C disk		#[0xc000,0xffff]
+inlinux:
+	make -s -C jarvis		#[0x2000,0x3fff]
+	make -s -C ahci inlinux		#[0x4000,0x5fff]
+	make -s -C xhci inlinux		#[0x6000,0x7fff]
+	make -s -C usb inlinux		#[0x8000,0xbfff]
+	make -s -C disk inlinux		#[0xc000,0xffff]
+	nasm my.s -o my.bin
+inwindows:
+	make -s -C jarvis		#[0x2000,0x3fff]
+	make -s -C ahci inwindows	#[0x4000,0x5fff]
+	make -s -C xhci inwindows	#[0x6000,0x7fff]
+	make -s -C usb inwindows	#[0x8000,0xbfff]
+	make -s -C disk inwindows	#[0xc000,0xffff]
+	nasm my.s -o my.bin
+inmac:
+	make -s -C jarvis		#[0x2000,0x3fff]
+	make -s -C ahci inmac	#[0x4000,0x5fff]
+	make -s -C xhci inmac	#[0x6000,0x7fff]
+	make -s -C usb inmac	#[0x8000,0xbfff]
+	make -s -C disk inmac	#[0xc000,0xffff]
 	nasm my.s -o my.bin
 clean:
-	make clean -s -C jarvis
-	make clean -s -C ahci
-	make clean -s -C xhci
-	make clean -s -C usb
-	make clean -s -C disk
+	make -s -C jarvis clean
+	make -s -C ahci clean
+	make -s -C xhci clean
+	make -s -C usb clean
+	make -s -C disk clean
 	rm -f *.bin
 
 

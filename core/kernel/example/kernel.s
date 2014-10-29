@@ -1,7 +1,7 @@
 ;现在cpu已经被初始化完毕
 ;你被放在不知道哪儿
-;你有0xe000的空间可以放任何代码
-;比如：
+;编辑?/live/core/init.s，把第二部分改成类似incbin "kernel/example/example.bin"
+;你有0xe000的空间可以放任何代码比如：
 
 
 
