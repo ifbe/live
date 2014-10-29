@@ -37,7 +37,7 @@ clean:
 
 
 push:
-	make clean
+	make -s clean
 	git add --all .
 	git commit -a
 	git push
