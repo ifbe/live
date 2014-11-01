@@ -1,4 +1,69 @@
-首先的首先：
+第1个文件夹core(水果的果核(苹果核,桃核))
+裸奔的内核(试过所有虚拟机，华硕n55，联想y470)
+
+	cpu(初始化cpu直到正常工作然后jmp/call到kernel):
+		realmode:
+		unrealmode:还在实模式不过能用4g内存
+		protectmode:到古老的保护模式
+		flat64:到平坦64位模式
+	kernel(坚果的果肉(核桃仁,榛子仁)):
+		example:简单示例，屏幕上打印几个字
+		multitask:简单示例，两个进程切来切去
+		my:包括ahci(搞定了fat/ntfs/ext读取),xhci(搞定了usb),等
+
+
+第2个文件夹flesh(水果的果肉(杏肉等))
+可以在bsd/linux/mac/win下编译成裸奔的小软件
+有一些也可以编译成bsd/linux/mac/win的本地小程序
+
+	baremachine:
+		sse:
+		port:端口in，out之类的办法
+		pio:古老的硬盘读方法
+		8259:古老的PIC使用方法
+	algorithm:
+		jpeg:
+		zip:
+	game:
+		snake:贪吃蛇
+		2048:
+		flappybird:
+		ooxx:井字棋
+		tetris:俄罗斯方块
+	math:
+		agnesi:阿涅西的女巫
+		circle:画圆圈
+		calc:计算器
+		sketchpad:几何画板
+	pci:
+		ahci:只管初始化
+		ehci:只管初始化
+		xhci:只管初始化
+		e1000:虚拟机里最常用的网卡，只管初始化
+		sb16:最简单的声卡，只管初始化
+	usb:
+		egalaxytouch:
+		pl2303:
+
+
+第三个文件夹tool(与代码无关的各种小工具)
+
+	linux:
+		各种.sh:做img等
+		grub2:
+	mac:
+		各种.sh:做dmg等
+		mactool.app:给懒人的小软件,双击打开
+	win:
+		各种.bat:做vhd等
+		bootmgr:
+		bootice:
+		grub4dos:
+
+
+
+
+等等
 	开源是为了分享知识
 	而不是让不劳而获者坐享其成
 	如果用于学习交流目的非常非常欢迎
@@ -7,88 +72,3 @@
 	只要标明出处同样十分欢迎
 	但是!
 	不经本人同意不得用于商业用途!
-
-
-
-
-然后：
-	这不是"操作系统"，linux/windows/mac很棒啊，我可不敢跟老大哥们争
-	这是我为了方便理解x64最底层而写的最纯净的64位调试（裸奔）环境
-	要是想研究一下某设备的底层工作原理，肯定得靠类似干净的环境
-	如果非要不要脸攀"系统"这个名号的话，咱国自主能超过这个的没有多少应该...
-
-	需要但是linux的代码我根本看不懂，所以我希望这个源是这样：
-	编译前，是大妈都能理解的资料。运行时，初始化完毕把裸核扔进内存就撒手。
-	跟grub同级，只是初始化了一下，不过当然得离开实模式......
-	可以访问16G内存，随便用64位指令，虚实地址一一对应，没有"我的"规矩
-
-	尽量做到每个模块和njpeg一样易理解易移植,毕竟本源是以互相教学为目的
-	最喜欢别人直接指出来：第1234步干啥，我觉得反过来亦然
-	是指设备需要往哪儿写啥来初始化，不是"按我的想法"要干啥干啥
-	弄了很久了所以现在已经支持不少东西如下
-
-	ahci主控
-	fat/ext/ntfs读取（不敢尝试写入）
-	xhci主控
-	usb hid设备的ep0和ep1.1
-	网卡好像很有意思，在研究中(这个太多了只能研究各虚拟机通用的intel 8254x)
-	声卡同上
-
-	demo/每个文件夹都是个裸核:
-	计算器，移植的njpeg，弱智多线程演示，之类的东西
-	这个裸核被扔进内存之后被call或者jump调用
-	可以理解成只把环境初始化好给真正的裸核运行(扔在0x2000000，地址无关最好)
-
-
-
-
-如果有空，好几个月之后吧。
-	我会写详细的中文资料放在live01.cn（github page搭建的小站）
-	内容是乱七八糟的英文spec精简提取后的最重要部分
-	只管几种广泛使用的设备，每个设备同名文件夹下放着这个设备的使用方法txt
-	最好的编程语言不是asm/c，而是txt，小说修改了多少人的大脑...
-
-
-
-
-我发现的资料以及项目
-	osdev.org(绝对第一)
-	nanojpeg(jpeg解码很好移植)
-	ahci spec(比下面一个好...)
-	xhci spec(可怕不过好像写的不错)
-	http://github.com/pdoane/osdev(8254x网卡部分能看懂一点)
-	https://github.com/blanham/ChickenOS(网卡)
-	www.zengl.com(还是网卡)
-
-
-
-
-编译&测试：
-	1:linux下
-	2:git clone http://github.com/ifbe/live
-	3:sudo apt-get install nasm
-	4:cd到live目录下make qemutest,出现终端即可在虚拟机内正常运行
-
-
-
-
-真机使用:
-	一：grub4dos环境下：
-	1.去windows下用神器bootice(else里面有)
-	2.选fat32的U盘
-	3.主引导改成usb-hdd+分区引导改成grub4dos
-	4.else/grldr和else/menu.lst复制到U盘根目录
-	5.live复制到U盘根目录
-	6.从u盘启动然后选择live确定
-	二：grub2环境下：
-	1.在grub.cfg里加一条(按照自己的修改一下即可)：
-		menuentry 'init' {
-		set root='(hd0,msdos1)'
-		ntldr /init
-		}
-	2.开机的时候多了一个启动项，选这个即可，对任何现有系统没任何影响
-	三：只装了windows：
-	1.用bootice打开c:\boot\bcd
-	2.添加一条实模式启动项
-	3.选硬盘，选分区，选init这个文件位置
-	4.开机的时候多了一个启动项，选这个，对windows没任何影响

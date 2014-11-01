@@ -5,19 +5,12 @@ inlinux:
 	make -s -C usb inlinux		#[0x8000,0xbfff]
 	make -s -C disk inlinux		#[0xc000,0xffff]
 	nasm my.s -o my.bin
-inwindows:
+crosscompile:
 	make -s -C jarvis		#[0x2000,0x3fff]
-	make -s -C ahci inwindows	#[0x4000,0x5fff]
-	make -s -C xhci inwindows	#[0x6000,0x7fff]
-	make -s -C usb inwindows	#[0x8000,0xbfff]
-	make -s -C disk inwindows	#[0xc000,0xffff]
-	nasm my.s -o my.bin
-inmac:
-	make -s -C jarvis		#[0x2000,0x3fff]
-	make -s -C ahci inmac	#[0x4000,0x5fff]
-	make -s -C xhci inmac	#[0x6000,0x7fff]
-	make -s -C usb inmac	#[0x8000,0xbfff]
-	make -s -C disk inmac	#[0xc000,0xffff]
+	make -s -C ahci crosscompile	#[0x4000,0x5fff]
+	make -s -C xhci crosscompile	#[0x6000,0x7fff]
+	make -s -C usb crosscompile	#[0x8000,0xbfff]
+	make -s -C disk crosscompile	#[0xc000,0xffff]
 	nasm my.s -o my.bin
 clean:
 	make -s -C jarvis clean

@@ -1,0 +1,32 @@
+我发现的资料以及项目
+	osdev.org(绝对第一)
+	nanojpeg(jpeg解码很好移植)
+	ahci spec(比下面一个好...)
+	xhci spec(可怕不过好像写的不错)
+	http://github.com/pdoane/osdev(8254x网卡部分能看懂一点)
+	https://github.com/blanham/ChickenOS(网卡)
+	www.zengl.com(还是网卡)
+
+
+
+
+真机使用:
+	一：grub4dos环境下：
+	1.去windows下用神器bootice(else里面有)
+	2.选fat32的U盘
+	3.主引导改成usb-hdd+分区引导改成grub4dos
+	4.else/grldr和else/menu.lst复制到U盘根目录
+	5.live复制到U盘根目录
+	6.从u盘启动然后选择live确定
+	二：grub2环境下：
+	1.在grub.cfg里加一条(按照自己的修改一下即可)：
+		menuentry 'init' {
+		set root='(hd0,msdos1)'
+		ntldr /init
+		}
+	2.开机的时候多了一个启动项，选这个即可，对任何现有系统没任何影响
+	三：只装了windows：
+	1.用bootice打开c:\boot\bcd
+	2.添加一条实模式启动项
+	3.选硬盘，选分区，选init这个文件位置
+	4.开机的时候多了一个启动项，选这个，对windows没任何影响
