@@ -1,3 +1,5 @@
+push.sh
 .gitignore
+.DS_Store
 *.o
 *.bin
