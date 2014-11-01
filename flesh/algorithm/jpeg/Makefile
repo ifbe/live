@@ -1,10 +1,7 @@
-binary:
+inlinux:
 	make -s library
 	make -s main
-	ld -T link/link.ld \
-	start.o print.o malloc.o \
-	jpeg.o decode.o \
-	-o jpeg.bin
+	make -s binary
 library:
 	nasm -f elf64 lib/start.s -o start.o
 	gcc -c -fPIC -O2 lib/print.c
@@ -12,6 +9,11 @@ library:
 main:
 	gcc -c -fPIC -O2 jpeg.c
 	gcc -c -fPIC -O2 decode.c
+binary:
+	ld -T link/link.ld \
+	start.o print.o malloc.o \
+	jpeg.o decode.o \
+	-o jpeg.bin
 clean:
 	rm -f *.o
 	rm -f *.bin
