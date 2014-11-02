@@ -1,0 +1,14 @@
+echo "1.正在检查您是否安装了nasm....."
+nasm -v
+
+
+echo "2.正在检查您的交叉编译器x86_64-elf-gcc，能否运行，能否正常运行"
+x86_64-elf-gcc -v
+
+
+echo "3.正在检查make"
+make -v
+
+
+echo "4.正在检查qemu-system-x86_64"
+qemu-system-x86_64 --version

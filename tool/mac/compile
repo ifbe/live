@@ -1,0 +1,8 @@
+#!/bin/sh
+dir=`dirname $0`
+echo "本脚本的位置:$dir"
+core=$dir/../../core
+echo "代码位置:$core"
+
+
+make -C $core crosscompile

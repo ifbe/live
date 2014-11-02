@@ -1,0 +1,10 @@
+#!/bin/sh
+dir=`dirname $0`
+echo "本脚本的位置:$dir"
+core=$dir/../../core
+echo "代码位置:$core"
+
+
+dd if=/dev/zero of=$dir/64m.img bs=0x200 count=0x20000
+dd if=$core/core.bin of=$dir/64m.img conv=notrunc
+qemu-img convert -f raw -O vmdk $dir/64m.img $dir/64m.vmdk
