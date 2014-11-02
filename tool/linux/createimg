@@ -1,0 +1,22 @@
+#!/bin/sh
+dir=`dirname $0`
+echo "本脚本的位置:$dir"
+core=$dir/../../core
+echo "代码位置:$core"
+
+
+#[0,64m]
+dd if=/dev/zero of=$dir/live.img bs=512 count=131072
+#[0,64k)
+dd if=$core/core.bin of=$dir/live.img conv=notrunc
+
+sudo losetup /dev/loop2 $dir/live.img			#loop设备
+sudo partprobe /dev/loop2
+sudo mkfs.vfat /dev/loop2p1				#fat32文件系统
+sudo partprobe /dev/loop2
+sudo mkdir -p /mnt/tempmountpointforlive		#临时挂载点
+sudo mount /dev/loop2p1 /mnt/tempmountpointforlive	#挂载fat32
+sudo mkdir -p /mnt/tempmountpointforlive/live		#在fat32里面建一些东西
+sudo touch /mnt/tempmountpointforlive/live/something
+sudo umount /mnt/tempmountpointforlive			#卸载fat32
+sudo losetup -d /dev/loop2				#卸载loop设备

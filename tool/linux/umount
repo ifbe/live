@@ -1,0 +1,9 @@
+#!/bin/sh
+dir=`dirname $0`
+echo "本脚本的位置:$dir"
+core=$dir/../../core
+echo "代码位置:$core"
+
+
+sudo umount /mnt/tempmountpointforlive			#卸载fat32
+sudo losetup -d /dev/loop2				#卸载loop设备
