@@ -1,4 +1,4 @@
-push.sh
+push
 .gitignore
 .DS_Store
 *.o

@@ -13,3 +13,6 @@ make -v
 
 echo "4.正在检查qemu-system-x86_64"
 qemu-system-x86_64 --version
+
+
+echo "各种工具都没问题，运行compile"

@@ -20,3 +20,5 @@ sudo mkdir -p /mnt/tempmountpointforlive/live		#在fat32里面建一些东西
 sudo touch /mnt/tempmountpointforlive/live/something
 sudo umount /mnt/tempmountpointforlive			#卸载fat32
 sudo losetup -d /dev/loop2				#卸载loop设备
+
+echo "搞定，现在可以用qemu测试这个生成的live.img"

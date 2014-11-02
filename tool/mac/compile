@@ -5,4 +5,6 @@ core=$dir/../../core
 echo "代码位置:$core"
 
 
+echo "编译中......"
 make -C $core crosscompile
+echo "搞定，现在可以createimg"

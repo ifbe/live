@@ -5,5 +5,6 @@ core=$dir/../../core
 echo "代码位置:$core"
 
 
-dd if=/dev/zero of=$dir/64m.img bs=0x200 count=0x20000
+dd if=/dev/zero of=$dir/64m.img bs=512 count=131072
 dd if=$core/core.bin of=$dir/64m.img conv=notrunc
+echo "搞定，现在可以运行qemu"
