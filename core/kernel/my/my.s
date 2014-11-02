@@ -1,4 +1,4 @@
-incbin "jarvis/temp"
+incbin "jarvis/j.bin"
 times 0x2000-($-$$)db 0
 
 incbin "ahci/ahci.bin"

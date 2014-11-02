@@ -1,4 +1,4 @@
 jarvis:
-	nasm jarvis.s -o temp
+	nasm jarvis.s -o j.bin
 clean:
-	rm -f temp temp*
+	rm -f *.bin
