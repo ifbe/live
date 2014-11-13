@@ -17,12 +17,4 @@ bits 64
     mov rax,"current"
     mov [consolehome+0xfff0],rax
     mov qword [consolehome+0xfff8],0
-
-;准备进入正式程序
-    lea rax,[rel function4]
-    mov [rel screenwhat],rax
-    lea rax,[rel menu]
-    mov [rel mouseormenu],rax
-    lea rax,[rel dumpanscii]
-    mov [rel hexoranscii],rax
 ;____________________________________________________

@@ -8,5 +8,13 @@
     ;initdisk
     call endofjarvis+0x8000         ;disk@0xc000
 
+;准备进入正式程序
+    lea rax,[rel function4]
+    mov [rel screenwhat],rax
+    lea rax,[rel menu]
+    mov [rel mouseormenu],rax
+    lea rax,[rel dumpanscii]
+    mov [rel hexoranscii],rax
+
     xor rax,rax
     jmp decide

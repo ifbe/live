@@ -7,10 +7,10 @@ crosscompile:
 	make -s main compiler=x86_64-elf-gcc
 	make -s binary linker=x86_64-elf-ld
 library:
-	$(compiler) -c -fPIC -O2 lib/start.c
-	$(compiler) -c -fPIC -O2 lib/print.c
+	$(compiler) -c -fPIC -O2 wrap/start.c
+	$(compiler) -c -fPIC -O2 wrap/print.c
 main:
-	$(compiler) -c -fPIC -O2 ahci.c
+	$(compiler) -c -fPIC -O2 realcode/ahci.c
 binary:
 	$(linker) -T link/link.ld \
 	start.o print.o \
