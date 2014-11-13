@@ -1,24 +1,16 @@
-inlinux:
-	make -s library compiler=gcc
-	make -s main compiler=gcc
-	make -s binary linker=ld
-crosscompile:
-	make -s library compiler=x86_64-elf-gcc
-	make -s main compiler=x86_64-elf-gcc
-	make -s binary linker=x86_64-elf-ld
-library:
-	$(compiler) -c -fPIC -O2 lib/start.c
-	$(compiler) -c -fPIC -O2 lib/print.c
-	nasm -f elf64 lib/interrupt.s -o interrupt.o
-main:
-	$(compiler) -c -fPIC -O2 ehci.c
-	$(compiler) -c -fPIC -O2 xhci.c
-	$(compiler) -c -fPIC -O2 isr.c
 binary:
-	$(linker) -T link/link.ld \
-	start.o print.o interrupt.o \
-	xhci.o ehci.o isr.o \
+	make -s -C wrap linux
+	make -s -C main linux
+	ld -T link.ld \
+	wrap/start.o wrap/print.o wrap/interrupt.o \
+	main/xhci.o main/ehci.o main/isr.o \
+	-o xhci.bin
+cross:
+	make -s -C wrap cross
+	make -s -C main cross
+	x86_64-elf-ld -T link.ld \
+	wrap/start.o wrap/print.o wrap/interrupt.o \
+	main/xhci.o main/ehci.o main/isr.o \
 	-o xhci.bin
 clean:
-	rm -f *.o
-	rm -f *.bin
+	rm -f */*.o *.bin

@@ -1,16 +1,16 @@
-inlinux:
+binary:
 	make -s -C jarvis		#[0x2000,0x3fff]
-	make -s -C ahci inlinux		#[0x4000,0x5fff]
-	make -s -C xhci inlinux		#[0x6000,0x7fff]
-	make -s -C usb inlinux		#[0x8000,0xbfff]
-	make -s -C disk inlinux		#[0xc000,0xffff]
+	make -s -C ahci binary		#[0x4000,0x5fff]
+	make -s -C xhci binary		#[0x6000,0x7fff]
+	make -s -C usb binary		#[0x8000,0xbfff]
+	make -s -C disk binary		#[0xc000,0xffff]
 	nasm my.s -o my.bin
-crosscompile:
+cross:
 	make -s -C jarvis		#[0x2000,0x3fff]
-	make -s -C ahci crosscompile	#[0x4000,0x5fff]
-	make -s -C xhci crosscompile	#[0x6000,0x7fff]
-	make -s -C usb crosscompile	#[0x8000,0xbfff]
-	make -s -C disk crosscompile	#[0xc000,0xffff]
+	make -s -C ahci cross		#[0x4000,0x5fff]
+	make -s -C xhci cross		#[0x6000,0x7fff]
+	make -s -C usb cross		#[0x8000,0xbfff]
+	make -s -C disk cross		#[0xc000,0xffff]
 	nasm my.s -o my.bin
 clean:
 	make -s -C jarvis clean

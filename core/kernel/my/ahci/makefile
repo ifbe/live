@@ -1,21 +1,16 @@
-inlinux:
-	make -s library compiler=gcc
-	make -s main compiler=gcc
-	make -s binary linker=ld
-crosscompile:
-	make -s library compiler=x86_64-elf-gcc
-	make -s main compiler=x86_64-elf-gcc
-	make -s binary linker=x86_64-elf-ld
-library:
-	$(compiler) -c -fPIC -O2 wrap/start.c
-	$(compiler) -c -fPIC -O2 wrap/print.c
-main:
-	$(compiler) -c -fPIC -O2 realcode/ahci.c
 binary:
-	$(linker) -T link/link.ld \
-	start.o print.o \
-	ahci.o \
+	make -s -C wrap linux
+	make -s -C main linux
+	ld -T link.ld \
+	wrap/start.o wrap/print.o \
+	main/ahci.o \
+	-o ahci.bin
+cross:
+	make -s -C wrap cross
+	make -s -C main cross
+	x86_64-elf-ld -T link.ld \
+	wrap/start.o wrap/print.o \
+	main/ahci.o \
 	-o ahci.bin
 clean:
-	rm -f *.o
-	rm -f *.bin
+	rm -f */*.o *.bin
