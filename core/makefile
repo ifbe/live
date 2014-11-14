@@ -6,8 +6,14 @@ cross:
 	make -s -C cpu/flat64
 	make -s -C kernel/my cross
 	nasm -s other/64k.s -o core.bin
-img:
+bin2img:
 	nasm -s other/64m.s -o core.img
+img2dmg:
+	qemu-img convert -f raw -O dmg core.img core.dmg
+img2vhd:
+	qemu-img convert -f raw -O vpc core.img core.vhd
+img2vmdk:
+	qemu-img convert -f raw -O vmdk core.img core.vmdk
 qemu:
 	other/qemu $(shell pwd)/core.img
 clean:
