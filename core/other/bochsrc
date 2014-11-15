@@ -1,0 +1,3 @@
+megs:512
+ata0-master: type=disk, mode=flat, path="core.img", cylinders=0
+boot:disk

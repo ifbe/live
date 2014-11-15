@@ -1,3 +1,0 @@
-megs:512
-ata0-master: type=disk, mode=flat, path="../temp/live", cylinders=0
-boot:disk
