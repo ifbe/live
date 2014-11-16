@@ -10,6 +10,15 @@
 		example:简单示例，屏幕上打印几个字
 		multitask:简单示例，两个进程切来切去
 		my:包括ahci(搞定了fat/ntfs/ext读取),xhci(搞定了usb),等
+	tool:
+		生成64k.bin的脚本
+		生成64m.img的脚本
+		生成vhd,vmdk等镜像的脚本
+		qemu脚本
+		bochsrc脚本
+		vmware虚拟机文件
+		parallels.pvm文件
+		
 
 
 第2个文件夹flesh(水果的果肉(杏肉等))
@@ -46,21 +55,14 @@
 		pl2303:
 
 
-第三个文件夹tool(与代码无关的各种小工具)
-
-	linux:
-		各种.sh:做img等
-		grub2:
-	mac:
-		各种.sh:做dmg等
-		mactool.app:给懒人的小软件,双击打开
-	win:
-		各种.bat:做vhd等
-		bootmgr:
-		bootice:
-		grub4dos:
-
-
+第三个文件夹doc
+	boot.txt
+	longmode.txt
+	acpi.txt
+	apic.txt
+	ahci.txt
+	xhci.txt
+	之类
 
 
 等等
