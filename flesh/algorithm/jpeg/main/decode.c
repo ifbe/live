@@ -5,8 +5,7 @@
 #define NJ_INTERNAL_ERR 4
 #define NJ_SYNTAX_ERROR 5
 #define __NJ_FINISHED 6
-
-void* mymalloc(int i);		//告诉gcc函数的样子，防止它截断返回值最高32位
+void* mymalloc(int size);
 
 typedef struct _nj_code{
     unsigned char bits, code;
@@ -525,18 +524,9 @@ int njDecode(const void* jpeg, const int size) {
 }
 
 
-void picture2screen()
+getpicture(unsigned long long* rgb,int* w,int* h)
 {
-    unsigned char* edi=(unsigned char*)0x1400000;
-    unsigned char* p=nj.rgb;
-    int i;
-
-    for(i=0;i<nj.width*nj.height;i++)
-    {
-        *edi=*(p+2);
-        *(edi+1)=*(p+1);
-        *(edi+2)=*p;
-        edi+=4;
-        p+=3;
-    }   
+	*rgb=(unsigned long long)nj.rgb;
+	*w=nj.width;
+	*h=nj.height;
 }
