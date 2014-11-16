@@ -2,16 +2,16 @@
 binary:		#linuxer only
 	make -s -C cpu/flat64
 	make -s -C kernel/my binary
-	nasm -s other/64k.s -o core.bin
+	nasm -s tool/64k.s -o core.bin
 cross:		#windows and mac user
 	make -s -C cpu/flat64
 	make -s -C kernel/my cross
-	nasm -s other/64k.s -o core.bin
+	nasm -s tool/64k.s -o core.bin
 
 
 #2:create img
 bin2img:
-	nasm -s other/64m.s -o core.img
+	nasm -s tool/64m.s -o core.img
 
 
 #3:dmg or vhd or vmdk
@@ -25,11 +25,11 @@ img2vmdk:
 
 #4:test with many software
 kvm:
-	other/kvm $(shell pwd)/core.img
+	tool/kvm $(shell pwd)/core.img
 qemu:
-	other/qemu $(shell pwd)/core.img
+	tool/qemu $(shell pwd)/core.img
 bochs:
-	bochs -f other/bochsrc
+	bochs -f tool/bochsrc
 vmware:
 virtualbox:
 parallels:
