@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ParallelsVirtualMachine schemaVersion="1.0" dyn_lists="VirtualAppliance 0">
-   <AppVersion>9.0.24229.991745</AppVersion>
+   <AppVersion>10.1.1-28614</AppVersion>
    <ValidRc>0</ValidRc>
    <Identification dyn_lists="">
       <VmUuid>{f7f4e4df-e097-42ce-8b2d-34ee8ee8bb49}</VmUuid>
       <SourceVmUuid>{f7f4e4df-e097-42ce-8b2d-34ee8ee8bb49}</SourceVmUuid>
       <LinkedVmUuid></LinkedVmUuid>
-      <VmName>其他</VmName>
+      <LinkedSnapshotUuid></LinkedSnapshotUuid>
+      <VmName>live</VmName>
       <ServerUuid>{a3475d71-930e-4e5b-98fa-358a03bfee74}</ServerUuid>
       <LastServerUuid></LastServerUuid>
       <ServerHost></ServerHost>
       <VmFilesLocation>1</VmFilesLocation>
       <VmCreationDate>2014-11-02 04:48:26</VmCreationDate>
-      <VmUptimeStartDateTime>2014-11-02 04:50:56</VmUptimeStartDateTime>
-      <VmUptimeInSeconds>90</VmUptimeInSeconds>
+      <VmUptimeStartDateTime>2014-11-16 06:13:02</VmUptimeStartDateTime>
+      <VmUptimeInSeconds>289</VmUptimeInSeconds>
       <EnvId>1608840439</EnvId>
    </Identification>
    <Security ParentalControlEnabled_patch="1" dyn_lists="">
@@ -34,6 +35,11 @@
          <CustomProperty></CustomProperty>
          <SwapDir></SwapDir>
          <VmColor>0</VmColor>
+         <Profile Custom_patch="1" dyn_lists="">
+            <Type>0</Type>
+            <Custom>0</Custom>
+         </Profile>
+         <AssetId></AssetId>
       </General>
       <Startup AutoStart_patch="2" dyn_lists="">
          <AutoStart>0</AutoStart>
@@ -94,6 +100,7 @@
             <CornerAction>0</CornerAction>
             <CornerAction>0</CornerAction>
             <ScaleViewMode>1</ScaleViewMode>
+            <EnableGammaControl>1</EnableGammaControl>
          </FullScreen>
          <UndoDisks>0</UndoDisks>
          <SafeMode>0</SafeMode>
@@ -120,9 +127,11 @@
          <EXT_80000007_EDX_MASK>0</EXT_80000007_EDX_MASK>
          <EXT_80000008_EAX>0</EXT_80000008_EAX>
          <EXT_00000007_EBX_MASK>0</EXT_00000007_EBX_MASK>
+         <EXT_0000000D_EAX_MASK>0</EXT_0000000D_EAX_MASK>
          <CpuFeaturesMaskValid>0</CpuFeaturesMaskValid>
          <UnattendedInstallLocale></UnattendedInstallLocale>
          <UnattendedInstallEdition></UnattendedInstallEdition>
+         <HostRetinaEnabled>0</HostRetinaEnabled>
       </Runtime>
       <Schedule dyn_lists="">
          <SchedBasis>0</SchedBasis>
@@ -142,6 +151,7 @@
          <Password></Password>
          <HostName>0.0.0.0</HostName>
          <PortNumber>0</PortNumber>
+         <Encrypted>0</Encrypted>
       </RemoteDisplay>
       <Tools dyn_lists="">
          <IsolatedVm>0</IsolatedVm>
@@ -178,6 +188,7 @@
                <SetExecBitForFiles>0</SetExecBitForFiles>
                <VirtualLinks>1</VirtualLinks>
                <EnableDos8dot3Names>1</EnableDos8dot3Names>
+               <SharedShortcuts>1</SharedShortcuts>
                <SharedCloud>1</SharedCloud>
             </HostSharing>
             <GuestSharing dyn_lists="">
@@ -215,6 +226,7 @@
                <RemoteAccess>0</RemoteAccess>
             </WebApplications>
             <IconGroupingEnabled>1</IconGroupingEnabled>
+            <AddInstalledApplicationsToLaunchpad>1</AddInstalledApplicationsToLaunchpad>
          </SharedApplications>
          <AutoUpdate dyn_lists="">
             <Enabled>1</Enabled>
@@ -287,7 +299,7 @@
          <Schema>2</Schema>
          <NotifyBeforeCreation>1</NotifyBeforeCreation>
       </Autoprotect>
-      <AutoCompress dyn_lists="">
+      <AutoCompress Enabled_patch="1" dyn_lists="">
          <Enabled>0</Enabled>
          <Period>86400</Period>
          <FreeDiskSpaceRatio>50</FreeDiskSpaceRatio>
@@ -339,11 +351,25 @@
          <UhcEnabled>1</UhcEnabled>
          <EhcEnabled>1</EhcEnabled>
          <XhcEnabled>0</XhcEnabled>
+         <ExternalDevices dyn_lists="">
+            <Disks>1</Disks>
+            <HumanInterfaces>1</HumanInterfaces>
+            <Communication>1</Communication>
+            <Audio>1</Audio>
+            <Video>1</Video>
+            <SmartCards>1</SmartCards>
+            <Printers>1</Printers>
+            <SmartPhones>1</SmartPhones>
+            <Other>1</Other>
+         </ExternalDevices>
       </UsbController>
       <HighAvailability dyn_lists="">
          <Enabled>1</Enabled>
          <Priority>0</Priority>
       </HighAvailability>
+      <OnlineCompact Mode_patch="3" dyn_lists="">
+         <Mode>0</Mode>
+      </OnlineCompact>
    </Settings>
    <Hardware dyn_lists="Fdd 1 CdRom 1 Hdd 1 Serial 0 Parallel 0 Printer 0 NetworkAdapter 1 Sound 1 USB 0 PciVideoAdapter 0 GenericDevice 0 GenericPciDevice 0 GenericScsiDevice 0">
       <Cpu EnableVTxSupport_patch="1" dyn_lists="">
@@ -390,22 +416,23 @@
          <UseHiResInGuest>1</UseHiResInGuest>
       </Video>
       <Hdd id="0" dyn_lists="Partition 0">
+         <Uuid>{e700f387-1629-40ba-81aa-8cbc096d8f03}</Uuid>
          <Index>0</Index>
          <Enabled>1</Enabled>
-         <Connected>1</Connected>
+         <Connected>0</Connected>
          <EmulatedType>1</EmulatedType>
-         <SystemName>/Users/ifbe/Desktop/live/tool/mac/64m.vmdk</SystemName>
-         <UserFriendlyName>/Users/ifbe/Desktop/live/tool/mac/64m.vmdk</UserFriendlyName>
+         <SystemName>/Users/ifbe/Desktop/live/core/core.vmdk</SystemName>
+         <UserFriendlyName>/Users/ifbe/Desktop/live/core/core.vmdk</UserFriendlyName>
          <Remote>0</Remote>
          <InterfaceType>2</InterfaceType>
          <StackIndex>0</StackIndex>
          <DiskType>1</DiskType>
-         <Size>64</Size>
+         <Size>0</Size>
          <SizeOnDisk>0</SizeOnDisk>
          <Passthrough>0</Passthrough>
          <SubType>0</SubType>
          <Splitted>0</Splitted>
-         <DiskVersion>2</DiskVersion>
+         <DiskVersion>0</DiskVersion>
          <CompatLevel>level2</CompatLevel>
          <DeviceDescription></DeviceDescription>
       </Hdd>
@@ -421,6 +448,7 @@
          <AdapterName>默认适配器</AdapterName>
          <MAC>001C422917D8</MAC>
          <HostMAC>001C42E1FE72</HostMAC>
+         <HostInterfaceName></HostInterfaceName>
          <Router>0</Router>
          <DHCPUseHostMac>2</DHCPUseHostMac>
          <ForceHostMacAddress>0</ForceHostMacAddress>

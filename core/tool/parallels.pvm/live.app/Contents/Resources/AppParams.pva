@@ -1,7 +1,8 @@
 [System]
-Helper Version = 9.8
+Helper Version = 10.0
 VM Id = {f7f4e4df-e097-42ce-8b2d-34ee8ee8bb49}
-VM Name = 其他
+VM Name = live
 APP Path = 
 Protocols = 
+File Extensions = 
 Fake Stub = 1

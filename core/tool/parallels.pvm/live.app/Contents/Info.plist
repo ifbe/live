@@ -7,25 +7,23 @@
 	<key>CFBundleExecutable</key>
 	<string>WinAppHelper</string>
 	<key>CFBundleName</key>
-	<string>其他</string>
+	<string>live</string>
 	<key>CFBundleGetInfoString</key>
-	<string>9.8, </string>
+	<string>10.0, </string>
 	<key>CFBundleIconFile</key>
 	<string>WinAppHelper.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.parallels.winapp.0d98c74797e49d00bcc4c17c9d557a2b.f7f4e4dfe09742ce8b2d34ee8ee8bb49.fs</string>
+	<string>com.parallels.winapp.d0dbe915091d400bd8ee7f27f0791303.f7f4e4dfe09742ce8b2d34ee8ee8bb49.fs</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>其他</string>
+	<string>live</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>9.0.24229.991745</string>
-	<key>CSResourcesFileMapped</key>
-	<true/>
+	<string>10.28614.1072077</string>
 	<key>LSBackgroundOnly</key>
 	<true/>
 	<key>LSUIElement</key>
@@ -34,8 +32,10 @@
 	<true/>
 	<key>LSHasLocalizedDisplayName</key>
 	<true/>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.7.0</string>
 	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
+	<string>CStubApplication</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
