@@ -4,13 +4,13 @@ extern unsigned char jpegend;
 
 void main()
 {
-	printf("jpeg@%x\nsize:%x\n",&jpegstart,&jpegend-&jpegstart);
+	//printf("jpeg@%x\nsize:%x\n",&jpegstart,&jpegend-&jpegstart);
 
 
 	int i=njDecode(&jpegstart,&jpegend-&jpegstart);
 	if(i!=0)
 	{
-		printf("error:%d\n",i);
+		//printf("error:%d\n",i);
 		return;
 	}
 

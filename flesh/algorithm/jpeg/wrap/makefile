@@ -3,9 +3,22 @@ bare:
 	gcc -c -fPIC -O2 bare/start.c
 	gcc -c -fPIC -O2 bare/print.c
 	gcc -c -fPIC -O2 bare/malloc.c
+	gcc -c -fPIC -O2 bare/input.c
 .PHONY:cross
 cross:
+	x86_64-elf-gcc -c -fPIC -O2 bare/start.c
+	x86_64-elf-gcc -c -fPIC -O2 bare/print.c
+	x86_64-elf-gcc -c -fPIC -O2 bare/malloc.c
+	x86_64-elf-gcc -c -fPIC -O2 bare/input.c
 .PHONY:linux
 linux:
-	gcc -c -fPIC -O2 linux/sdl.c
-	gcc -c -fPIC -O2 linux/malloc.c
+	gcc -c -fPIC -O2 system/global.c
+	gcc -c -fPIC -O2 system/sdl.c
+	gcc -c -fPIC -O2 system/memory.c
+	ar crs wrap.a global.o sdl.o memory.o
+.PHONY:win
+win:
+	gcc -c -O2 system/global.c
+	gcc -c -O2 system/sdl.c -I /opt/SDL2-2.0.3/x86_64-w64-mingw32/include
+	gcc -c -O2 system/memory.c
+	ar crs wrap.a global.o sdl.o memory.o

@@ -10,6 +10,14 @@
 
 
 
+void loadtoy()
+{
+	read(programhome,0x80,*(QWORD*)(0x200000+8),0x800);
+}
+
+
+
+
 //从磁盘读出来的数据在[+0x400,+0x4400]=0x80个*每个0x80
 //[+0,+0xf]:类型guid			raw[0],raw[1]
 //[+0x10,+0x1f]:分区guid		raw[2],raw[3]
@@ -162,16 +170,28 @@ void master()
 	int i;
 	for(i=0;i<0x8000;i++) memory[i]=0;
 
-	//读mbr
+	//前64个扇区
         read(mbrbuffer,0,*(QWORD*)(0x200000+8),64);
-        if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55){
+        if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55)
+	{
 		say("bad disk",0);
+		return;
+	}
+	if(*(DWORD*)(mbrbuffer+0x1c0)==0x74736574)
+	{
+		loadtoy();
 		return;
 	}
 
 	//解释分区表
-	if(*(QWORD*)(mbrbuffer+0x200)==0x5452415020494645) explaingpt();
-	else explainmbr();
+	if(*(QWORD*)(mbrbuffer+0x200)==0x5452415020494645)
+	{
+		explaingpt();
+	}
+	else
+	{
+		explainmbr();
+	}
 
 	//把操作函数的位置放进/bin
 	remember(0x746e756f6d,(QWORD)mount);
