@@ -10,18 +10,23 @@
 		example:简单示例，屏幕上打印几个字
 		multitask:简单示例，两个进程切来切去
 		my:包括ahci(搞定了fat/ntfs/ext读取),xhci(搞定了usb),等
-	tool:
-		生成64k.bin的脚本
-		生成64m.img的脚本
-		生成vhd,vmdk等镜像的脚本
-		qemu脚本
-		bochsrc脚本
-		vmware虚拟机文件
-		parallels.pvm文件
-		
 
 
-第2个文件夹flesh(水果的果肉(杏肉等))
+
+
+第2个文件夹doc
+	boot.txt
+	longmode.txt
+	acpi.txt
+	apic.txt
+	ahci.txt
+	xhci.txt
+	之类
+
+
+
+
+第3个文件夹flesh(水果的果肉(杏肉等))
 可以在bsd/linux/mac/win下编译成裸奔的小软件
 有一些也可以编译成bsd/linux/mac/win的本地小程序
 
@@ -55,14 +60,16 @@
 		pl2303:
 
 
-第三个文件夹doc
-	boot.txt
-	longmode.txt
-	acpi.txt
-	apic.txt
-	ahci.txt
-	xhci.txt
-	之类
+
+
+第4个文件夹tool:
+	生成vhd,vmdk等镜像的脚本
+	qemu脚本
+	bochsrc脚本
+	vmware虚拟机文件
+	parallels.pvm文件
+
+
 
 
 等等
