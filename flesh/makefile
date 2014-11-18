@@ -5,6 +5,7 @@ toydir = $(shell dirname $(toy))
 
 #1:把../core/core.bin与刚make出来的??.bin合成成一个img文件
 all:
+	make -s -C ../core
 	make -s -C $(toydir)
 	echo -e "incbin \"../core/core.bin\"\ntimes 0x10000-(\$$-\$$\$$)db 0\nincbin \"$(toy)\"\ntimes 0x100000-(\$$-\$$\$$)db 0" > compose.s
 	nasm compose.s -o test.img
