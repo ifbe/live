@@ -1,18 +1,11 @@
-extern unsigned char jpegstart;
-extern unsigned char jpegend;
-
-
-void main()
+#include<stdio.h>
+int main()
 {
-	//printf("jpeg@%x\nsize:%x\n",&jpegstart,&jpegend-&jpegstart);
+	unsigned long long addr=fileaddr();
+	int size=filesize();
 
-
-	int i=njDecode(&jpegstart,&jpegend-&jpegstart);
-	if(i!=0)
-	{
-		//printf("error:%d\n",i);
-		return;
-	}
+	int i=njDecode((void*)addr,size);
+	if(i!=0) return i;
 
 	int w,h,x,y;
 	unsigned long long rgb;
@@ -30,4 +23,6 @@ void main()
 	writescreen();
 
 	while(waitevent()>0);
+
+	return 0;
 }

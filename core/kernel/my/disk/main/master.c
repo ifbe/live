@@ -179,10 +179,10 @@ void master()
 	}
 	if(*(DWORD*)(mbrbuffer+0x1c0)==0x74736574)
 	{
-		say("load toy",0);
 		loadtoy();
-		say("play toy",0);
-		((int (*)())(programhome))();
+		say("loaded toy",0);
+		int result=((int (*)())(programhome))();
+		say("played toy",result);
 		return;
 	}
 
