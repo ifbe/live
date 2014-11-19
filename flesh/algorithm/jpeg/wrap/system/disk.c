@@ -25,7 +25,6 @@ void initfile()
 }
 void destoryfile()
 {
-	//printf("%llx\n",*myfile);
 	free(myfile);
 }
 

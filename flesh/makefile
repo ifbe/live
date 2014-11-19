@@ -14,10 +14,10 @@ all:
 cross:
 	make -s -C ../core cross
 	make -s -C $(toydir) cross
-	echo -e "incbin \"../core/core.bin\"\ntimes 0x10000-(\$$-\$$\$$)db 0\nincbin \"$(toy)\"\ntimes 0x100000-(\$$-\$$\$$)db 0" > compose.s
+	echo "incbin \"../core/core.bin\"\ntimes 0x10000-(\$$-\$$\$$)db 0\nincbin \"$(toy)\"\ntimes 0x100000-(\$$-\$$\$$)db 0" > compose.s
 	nasm compose.s -o test.img
 	rm compose.s
-	echo -n "test" | dd of=test.img bs=1 seek=448 conv=notrunc
+	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc
 
 
 #2:

@@ -1,4 +1,7 @@
-#include<stdio.h>
+//#include<stdio.h>
+unsigned long long fileaddr();
+int filesize();
+
 int main()
 {
 	unsigned long long addr=fileaddr();

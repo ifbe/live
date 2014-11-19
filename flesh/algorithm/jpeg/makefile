@@ -17,6 +17,12 @@ linux:
 	make -s -C main linux
 	gcc main/jpeg.o main/decode.o \
 	wrap/wrap.a -lSDL2 -lm
+mac:
+	make -s -C wrap mac
+	make -s -C main mac
+	gcc main/jpeg.o main/decode.o \
+	-L /usr/local/Cellar/sdl2/2.0.3/lib \
+	wrap/wrap.a -lSDL2 -lm
 win:
 	make -s -C wrap win
 	make -s -C main win

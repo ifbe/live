@@ -1,8 +1,11 @@
 push
 .DS_Store
 *.o
+*.a
 *.bin
 *.img
 *.vhd
 *.vmdk
 *.log
+*.exe
+*.out
