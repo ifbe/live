@@ -23,14 +23,14 @@ void initsdl()
   SDL_Init(SDL_INIT_EVERYTHING);
   window=SDL_CreateWindow("My Game Window",
                           SDL_WINDOWPOS_UNDEFINED,
-                          SDL_WINDOWPOS_UNDEFINED,
+                          16,
                           width,height,
                           SDL_WINDOW_OPENGL);
   renderer= SDL_CreateRenderer(window, -1, 0);
   texture= SDL_CreateTexture(renderer,
                                SDL_PIXELFORMAT_ARGB8888,
                                SDL_TEXTUREACCESS_STREAMING,
-                               1024, 768);
+                               width,height);
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
   SDL_RenderPresent(renderer);
