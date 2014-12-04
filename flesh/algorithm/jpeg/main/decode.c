@@ -5,7 +5,7 @@
 #define NJ_INTERNAL_ERR 4
 #define NJ_SYNTAX_ERROR 5
 #define __NJ_FINISHED 6
-void* mymalloc(int size);
+extern void* getfreememory(int size);
 
 typedef struct _nj_code{
     unsigned char bits, code;
@@ -252,9 +252,9 @@ static inline void njDecodeSOF(void) {
         c->height = (nj.height * c->ssy + ssymax - 1) / ssymax;
         c->stride = nj.mbwidth * nj.mbsizex * c->ssx / ssxmax;
         if (((c->width<3)&&(c->ssx!=ssxmax)) || ((c->height<3)&&(c->ssy!=ssymax))) njThrow(NJ_UNSUPPORTED);
-        c->pixels= mymalloc(c->stride*(nj.mbheight*nj.mbsizey*c->ssy/ssymax));
+        c->pixels= getfreememory(c->stride*(nj.mbheight*nj.mbsizey*c->ssy/ssymax));
     }
-        nj.rgb = mymalloc(nj.width*nj.height*3);
+        nj.rgb = getfreememory(nj.width*nj.height*3);
     njSkip(nj.length);
 }
 
@@ -435,7 +435,7 @@ static inline void njConvert()
              while (c->width < nj.width) { c->width <<= 1; ++xshift; }
              while (c->height < nj.height) { c->height <<= 1; ++yshift; }
 
-             out = mymalloc(c->width * c->height);
+             out = getfreememory(c->width * c->height);
 
              lin = c->pixels;
              lout = out;

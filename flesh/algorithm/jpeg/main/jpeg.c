@@ -25,7 +25,11 @@ int main()
 	}
 	writescreen();
 
-	while(waitevent()>0);
-
+	while(1)
+	{
+		int temp=waitevent();
+		if(temp<=0) return;
+		if(temp==0x1b) return;
+	}
 	return 0;
 }

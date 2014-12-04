@@ -1,9 +1,9 @@
 #1:create a 64k binary,compile with gcc(linux) or x86_64-elf-gcc(other system)
-binary:		#linuxer only
+binary:				#linuxer only
 	make -s -C cpu/flat64
 	make -s -C kernel/my binary
 	nasm -s 64k.s -o core.bin
-cross:		#windows and mac user
+crosscompile:		#windows and mac user
 	make -s -C cpu/flat64
 	make -s -C kernel/my cross
 	nasm -s 64k.s -o core.bin

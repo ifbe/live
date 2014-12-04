@@ -9,9 +9,9 @@ all:
 	make -s -C $(toydir)
 	make -s generateimg
 	echo -n "test" | dd of=test.img bs=1 seek=448 conv=notrunc
-cross:
-	make -s -C ../core cross
-	make -s -C $(toydir) cross
+crosscompile:
+	make -s -C ../core crosscompile
+	make -s -C $(toydir) crosscompile
 	make -s generateimg
 	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc
 
