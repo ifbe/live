@@ -76,7 +76,7 @@ void main()
 			for(j=0;j<4;j++)
 				cubie(i,j,table[j][i]);
 		writescreen();
-		
+
 		
 		//第2步:等待虫子
 		int key=waitevent();
@@ -84,6 +84,7 @@ void main()
 
 		//第3步:虫子改变世界
 		if(key<=0) break;
+		else if(key==0x1b) break;
 		else if(key==0x40000050)	//left
 		{
 		for(i=0;i<4;i++)

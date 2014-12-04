@@ -1,16 +1,16 @@
 binary:
-	make -s -C main bare
-	make -s -C wrap bare
-	ld -T link/link.ld \
-	start.o print.o hlt.o \
-	2048.o \
+	make -s -C main binary
+	make -s -C wrap binary
+	ld -T link.ld \
+	wrap/start.o wrap/screen.o wrap/random.o wrap/input.o \
+	main/2048.o main/anscii.o \
 	-o 2048.bin
-binarycross:
-	make -s -C main cross
-	make -s -C wrap cross
-	ld -T link/link.ld \
-	start.o print.o hlt.o \
-	2048.o \
+crosscompile:
+	make -s -C main crosscompile
+	make -s -C wrap crosscompile
+	x86_64-elf-ld -T link.ld \
+	wrap/start.o wrap/screen.o wrap/random.o wrap/input.o \
+	main/2048.o main/anscii.o \
 	-o 2048.bin
 win:
 	make -s -C main win

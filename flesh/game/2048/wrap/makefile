@@ -1,15 +1,15 @@
-.PHONY:bare
-bare:
+.PHONY:binary
+binary:
 	gcc -c -fPIC -O2 bare/start.c
-	gcc -c -fPIC -O2 bare/print.c
-	gcc -c -fPIC -O2 bare/convert.c
-	nasm -f elf64 bare/input.s -o input.o
-.PHONY:cross
-cross:
+	gcc -c -fPIC -O2 bare/screen.c
+	gcc -c -fPIC -O2 bare/random.c
+	gcc -c -fPIC -O2 bare/input.c
+.PHONY:crosscompile
+crosscompile:
 	x86_64-elf-gcc -c -fPIC -O2 bare/start.c
-	x86_64-elf-gcc -c -fPIC -O2 bare/print.c
-	x86_64-elf-gcc -c -fPIC -O2 bare/convert.c
-	nasm -f elf64 bare/input.s -o input.o
+	x86_64-elf-gcc -c -fPIC -O2 bare/screen.c
+	x86_64-elf-gcc -c -fPIC -O2 bare/random.c
+	x86_64-elf-gcc -c -fPIC -O2 bare/input.c
 .PHONY:linux
 linux:
 	gcc -c system/global.c

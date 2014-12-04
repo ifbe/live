@@ -9,3 +9,4 @@ void point(int x,int y,int z)
     address=(int*)(base+(y*1024+x)*bpp);
     *address=z;
 }
+writescreen(){}

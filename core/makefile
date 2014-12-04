@@ -31,6 +31,8 @@ qemu:
 bochs:
 	bochs -f ../tool/bochsrc
 vmware:
+	cp core.vhd ../tool/vmware/test.vhd
+	#(please double click) ../tool/vmware/vmware.vmx
 virtualbox:
 parallels:
 
