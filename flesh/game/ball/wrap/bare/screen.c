@@ -1,8 +1,6 @@
-#define u64 unsigned long long
 void point(int x,int y,int z)
 {
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
+    unsigned long long base=*(unsigned long long*)0x3028;
     char* p=(char*)0x3019;
     char bpp=*p/8;
 
@@ -11,3 +9,4 @@ void point(int x,int y,int z)
     address=(int*)(base+(y*1024+x)*bpp);
     *address=z;
 }
+writescreen(){}

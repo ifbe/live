@@ -1,5 +1,5 @@
-#0:在core里做出.bin，在这里输入比如这样的make toy=algorithm/jpeg
-toy = algorithm/jpeg/jpeg.bin
+#0:在core里做出.bin，在这里输入比如这样的make toy=math/jpeg
+toy = math/jpeg/jpeg.bin
 toydir = $(shell dirname $(toy))
 
 
@@ -35,7 +35,13 @@ vmware:
 	dd if=temp.img of=test.img bs=512 seek=4096 conv=notrunc
 	qemu-img convert -f raw -O vpc test.img test.vhd
 	cp test.vhd ../tool/vmware/test.vhd
-	#(please double click) ../tool/vmware/vmware.vmx
+	#################################################
+	#        now
+	#        do it
+	#        with your mouse
+	#        double click below file
+	#        ../tool/vmware/vmware.vmx
+	################################################
 
 
 #...
