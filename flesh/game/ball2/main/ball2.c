@@ -1,18 +1,9 @@
-static int x=250,y=0,xx,yy;
-
-
-void draw(int x,int y,int z)
-{
-    int i,j;
-    for(i=-5;i<5;i++)
-        for(j=-5;j<5;j++)
-            point(x+512+i,384-y+j,z);
-}
+static int x=250,y=0,xx=0x3,yy=0x7;
 
 
 void move()
 {
-    draw(x,y,0xff00);
+    point(x+512,384-y,0xff00);
     x+=xx;
     y+=yy;
     if((y>360)|(y<-360))
@@ -23,19 +14,20 @@ void move()
     {
         xx=-xx;
     }
-    draw(x,y,0);
+    point(x+512,384-y,0);
+	writescreen();
 }
 
 
 void main()
 {
-    int i;
-    xx=-(int)(*((char*)0x500)>>4)+8;
-    yy=-(int)(*((char*)0x500)&0x0f)+8;
-
     while(1)
     {
-	for(i=0;i<8000000;i++);
+	int input=pollevent();
+	if(input<=0) break;
+
+	int i;
+	for(i=0;i<8000000;i++) asm("nop");
 	move();
     }
 }

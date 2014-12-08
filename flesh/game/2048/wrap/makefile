@@ -4,12 +4,14 @@ binary:
 	gcc -c -fPIC -O2 bare/screen.c
 	gcc -c -fPIC -O2 bare/random.c
 	gcc -c -fPIC -O2 bare/input.c
+	ar crs wrap.a screen.o random.o input.o
 .PHONY:crosscompile
 crosscompile:
 	x86_64-elf-gcc -c -fPIC -O2 bare/start.c
 	x86_64-elf-gcc -c -fPIC -O2 bare/screen.c
 	x86_64-elf-gcc -c -fPIC -O2 bare/random.c
 	x86_64-elf-gcc -c -fPIC -O2 bare/input.c
+	ar crs wrap.a screen.o random.o input.o
 .PHONY:linux
 linux:
 	gcc -c system/global.c

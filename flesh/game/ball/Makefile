@@ -1,17 +1,3 @@
-binary:
-	make -s -C main binary
-	make -s -C wrap binary
-	ld -T link.ld \
-	wrap/start.o wrap/screen.o wrap/input.o \
-	main/ball.o \
-	-o ball.bin
-crosscompile:
-	make -s -C main crosscompile
-	make -s -C wrap crosscompile
-	x86_64-elf-ld -T link.ld \
-	wrap/start.o wrap/screen.o wrap/input.o \
-	main/ball.o \
-	-o ball.bin
 win:
 	make -s -C main win
 	make -s -C wrap win
@@ -47,5 +33,23 @@ macdynamic:
 	clang main/ball.o \
 	-L /usr/local/Cellar/sdl2/2.0.3/lib \
 	wrap/wrap.a -lSDL2 -lm
+binary:
+	make -s -C main binary
+	make -s -C wrap binary
+	ld -T link.ld -o ball.bin wrap/start.o \
+	main/ball.o \
+	wrap/wrap.a
+crosscompile:
+	make -s -C main crosscompile
+	make -s -C wrap crosscompile
+	x86_64-elf-ld -T link.ld -o ball.bin wrap/start.o \
+	main/ball.o \
+	wrap/wrap.a
+test:
+	cp ../../../core/core.bin test.img								#first64k
+	dd if=ball.bin of=test.img bs=65536 seek=1 conv=notrunc			#real bin
+	echo -n 9 | dd of=test.img bs=1 seek=1048575 conv=notrunc		#fill 0
+	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc			#test sign
+	../../../tool/qemu $(shell pwd)/test.img
 clean:
-	rm -f */*.o *.bin *.exe *.out
+	rm -f */*.o *.exe *.out *.bin *.img

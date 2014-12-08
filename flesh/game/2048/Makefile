@@ -1,17 +1,3 @@
-binary:
-	make -s -C main binary
-	make -s -C wrap binary
-	ld -T link.ld \
-	wrap/start.o wrap/screen.o wrap/random.o wrap/input.o \
-	main/2048.o main/anscii.o \
-	-o 2048.bin
-crosscompile:
-	make -s -C main crosscompile
-	make -s -C wrap crosscompile
-	x86_64-elf-ld -T link.ld \
-	wrap/start.o wrap/screen.o wrap/random.o wrap/input.o \
-	main/2048.o main/anscii.o \
-	-o 2048.bin
 win:
 	make -s -C main win
 	make -s -C wrap win
@@ -30,22 +16,29 @@ linux:
 	make -s -C wrap linux
 	gcc main/2048.o main/anscii.o \
 	wrap/wrap.a -lSDL2 -lm
-linuxdynamic:
-	make -C main linux
-	make -C wrap linux
-	gcc main/2048.o main/anscii.o \
-	wrap/wrap.a -lSDL2 -lm
 mac:
 	make -C main mac
 	make -C wrap mac
 	clang main/2048.o main/anscii.o \
 	-L /usr/local/Cellar/sdl2/2.0.3/lib \
 	wrap/wrap.a -lSDL2 -lm
-macdynamic:
-	make -C main mac
-	make -C wrap mac
-	clang main/2048.o main/anscii.o \
-	-L /usr/local/Cellar/sdl2/2.0.3/lib \
-	wrap/wrap.a -lSDL2 -lm
+binary:
+	make -s -C main binary
+	make -s -C wrap binary
+	ld -T link.ld -o 2048.bin wrap/start.o \
+	main/2048.o main/anscii.o \
+	wrap/wrap.a
+crosscompile:
+	make -s -C main crosscompile
+	make -s -C wrap crosscompile
+	x86_64-elf-ld -T link.ld -o 2048.bin wrap/start.o \
+	main/2048.o main/anscii.o \
+	wrap/wrap.a
+test:
+	cp ../../../core/core.bin test.img								#first64k
+	dd if=2048.bin of=test.img bs=65536 seek=1 conv=notrunc			#real bin
+	echo -n 9 | dd of=test.img bs=1 seek=1048575 conv=notrunc		#fill 0
+	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc			#test sign
+	../../../tool/qemu $(shell pwd)/test.img
 clean:
-	rm -f */*.o *.bin *.exe *.out
+	rm -f */*.o *.bin *.img *.exe *.out

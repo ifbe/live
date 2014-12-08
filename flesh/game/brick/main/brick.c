@@ -1,15 +1,3 @@
-int random()
-{
-        int key,i=0;
-        char* memory=(char*)0x0;
-        for(i=0;i<0x1000;i++)
-                key+=memory[i];
-	if(key<0) key=-key;
-        return key;
-}
-
-
-
 void cubie(x,y,color)
 {
 	int i,j;
@@ -48,14 +36,11 @@ void main()
 	ball.dx=random() & 0xf;
 	ball.dy=16;
 
-
 	//init screen
 	for(i=0;i<1024;i++)		//clear screen
 		for(j=0;j<768;j++)
 			point(i,j,0);
 
-	//init timer
-	int20();
 
 	while(1)
 	{
@@ -80,9 +65,10 @@ void main()
 		//print ball
 		cubie(ball.x,ball.y,0xffffffff);
 
+		writescreen();
 
 		//waitforsometime
-		unsigned char key=hltwait();
+		int key=waitevent();
 
 		//clear board
 		for(i=position-64;i<position+64;i++)
@@ -94,14 +80,14 @@ void main()
 		cubie(ball.x,ball.y,0);
 
 		//move board
-		if(key==0x01) break;
-		else if(key==0x4b){
+		if(key<=0) break;
+		else if(key==0x40000050){
 			if(position>80)
 			{
 				position-=0x16;
 			}
 		}
-		else if(key==0x4d){
+		else if(key==0x4000004f){
 			if(position<1024-80)
 			{
 				position+=0x16;
@@ -139,5 +125,4 @@ void main()
 		if(ball.y>750) break;
 	}
 
-	shutup20();
 }
