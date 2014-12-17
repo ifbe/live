@@ -24,7 +24,8 @@ void main()
     while(1)
     {
 	int input=pollevent();
-	if(input<=0) break;
+	if(input<=0) return;
+	if(input==0x1b) return;
 
 	int i;
 	for(i=0;i<8000000;i++) asm("nop");

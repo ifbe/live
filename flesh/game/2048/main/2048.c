@@ -1,3 +1,6 @@
+static int table[4][4];
+
+
 void cubie(int x,int y,int z)
 {
 	int i,j,color;
@@ -44,15 +47,12 @@ int power(int in)
 {
 	if(in==0) return 1;
 
-	int temp=2;
-	for(in-=1;in>0;in--) temp*=2;
+	int temp=1;
+	for(;in>0;in--) temp*=2;
 	return temp;
 }
 
 
-
-
-static int table[4][4];
 
 
 void init()
@@ -65,7 +65,7 @@ void init()
 				table[i][j]=0;
 		}
 	}
-	table[random() & 0x3][random() & 0x3]=power( (random() &0x1) +1 );
+	table[random() % 4][random() % 4]=power( (random() % 2) +1 );
 }
 void printworld()
 {
@@ -88,14 +88,15 @@ void newone()
 	}
 	if(count!=0)
 	{
-		int temp=random() %count;					//新出来的放在哪儿
+		int temp=random() %count;	//新出来的放哪
 		for(i=0;i<4;i++)
 		{
 		for(j=0;j<4;j++)
 		{
-			if( (table[i][j] == 0) && (temp==0) )	//里面没东西并且就选这一个
+			//里面没东西并且就选这一个
+			if( (table[i][j] == 0) && (temp==0) )
 			{
-				table[i][j]=power((random() & 0x1) +1 );
+				table[i][j]=power((random() % 2) +1 );
 				return;
 			}
 			else temp--;
@@ -392,30 +393,30 @@ void main()
 		//第1步:显示世界
 		printworld();
 
-		//第2步:等待虫子
+		//第2步:等待事件
 		int key=waitevent();
 
-		//第3步:各种虫子咬自己的饼以及世界改变
+		//第3步:各种事件
 		switch(key)
 		{
 			case -1:return;
 			case 0x1b:return;
-			case 0x40000050:					//left
+			case 0x40000050:		//left
 			{
 				left();
 				break;
 			}
-			case 0x4000004f:					//right
+			case 0x4000004f:		//right
 			{
 				right();
 				break;
 			}
-			case 0x40000052:					//up
+			case 0x40000052:		//up
 			{
 				up();
 				break;
 			}
-			case 0x40000051:					//down
+			case 0x40000051:		//down
 			{
 				down();
 				break;

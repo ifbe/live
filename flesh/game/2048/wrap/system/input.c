@@ -26,8 +26,6 @@ int waitevent()
        		if (event.type == SDL_KEYDOWN) {
 			//printf("%x\n",(int)(event.key.keysym.sym));
 			return (int)(event.key.keysym.sym);
-			//printf("%x\n",(int)(event.key.keysym.scancode));
-			//return event.key.keysym.scancode;
 		}
         }
 	}

@@ -1,3 +1,14 @@
+typedef struct somestruct{
+	int x;
+	int y;
+	int dx;
+	int dy;
+}somestruct;
+static unsigned long long table[24];
+static somestruct ball;
+static int position=512;
+
+
 void cubie(x,y,color)
 {
 	int i,j;
@@ -16,15 +27,6 @@ void cubie(x,y,color)
 	}
 }
 
-typedef struct somestruct{
-	int x;
-	int y;
-	int dx;
-	int dy;
-}somestruct;
-static unsigned long long table[24];
-static somestruct ball;
-static int position=512;
 
 void init()
 {
@@ -33,7 +35,7 @@ void init()
 	for(i=0;i<24;i++) table[i]=0xffffffffffffffff;
 	ball.x=512;
 	ball.y=684;
-	ball.dx=random() & 0xf;
+	ball.dx=random() % 16;
 	ball.dy=16;
 
 	//init screen
@@ -125,6 +127,7 @@ void time()
 
 void main()
 {
+return;
 	//第0步:初始化
 	init();
 

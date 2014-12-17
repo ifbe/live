@@ -25,22 +25,26 @@ mac:
 binary:
 	make -s -C main binary
 	make -s -C wrap binary
-	ld -T link.ld \
-	wrap/start.o wrap/screen.o wrap/random.o wrap/input.o \
+	ld -T link.ld -o 2048.bin wrap/start.o \
 	main/2048.o main/anscii.o \
-	-o 2048.bin
+	wrap/wrap.a
 crosscompile:
 	make -s -C main crosscompile
 	make -s -C wrap crosscompile
-	x86_64-elf-ld -T link.ld \
-	wrap/start.o wrap/screen.o wrap/random.o wrap/input.o \
+	x86_64-elf-ld -T link.ld -o 2048.bin wrap/start.o \
 	main/2048.o main/anscii.o \
-	-o 2048.bin
-test:
-	cp ../../../core/core.bin test.img								#first64k
-	dd if=2048.bin of=test.img bs=65536 seek=1 conv=notrunc			#real bin
-	echo -n 9 | dd of=test.img bs=1 seek=1048575 conv=notrunc		#fill 0
-	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc			#test sign
+	wrap/wrap.a
+qemu:
+	cp ../../../core/core.bin test.img    #first64k
+	dd if=2048.bin of=test.img bs=65536 seek=1 conv=notrunc    #real bin
+	echo -n 9 | dd of=test.img bs=1 seek=1048575 conv=notrunc    #fill 0
+	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc    #test sign
 	../../../tool/qemu $(shell pwd)/test.img
+kvm:
+	cp ../../../core/core.bin test.img    #first64k
+	dd if=2048.bin of=test.img bs=65536 seek=1 conv=notrunc    #real bin
+	echo -n 9 | dd of=test.img bs=1 seek=1048575 conv=notrunc    #fill 0
+	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc    #test sign
+	../../../tool/kvm $(shell pwd)/test.img
 clean:
-	rm -f */*.o *.bin *.img *.exe *.out
+	rm -f */*.o */*.a *.bin *.img *.exe *.out

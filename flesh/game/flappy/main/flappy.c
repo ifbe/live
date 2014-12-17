@@ -1,14 +1,3 @@
-int random()
-{
-        int key,i=0;
-        char* memory=(char*)0x0;
-        for(i=0;i<0x1000;i++)
-                key+=memory[i];
-	if(key<0) key=-key;
-        return key;
-}
-
-
 void main()
 {
 	int i,j;
@@ -21,8 +10,6 @@ void main()
 	x2=400;y2=200;
 	x3=700;y3=300;
 	x4=1000;y4=500;
-
-	int20();
 
 	while(1)
 	{
@@ -99,5 +86,4 @@ void main()
 		//next loop
 	}
 
-	shutup20();
 }

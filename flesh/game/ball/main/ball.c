@@ -30,7 +30,8 @@ void main()
     while(1)
     {
 		int input=pollevent();
-		if(input<=0) break;
+		if(input<=0) return;
+		if(input==0x1b) return;
 
 		int i;
 		for(i=0;i<10000000;i++)asm("nop");
