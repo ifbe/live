@@ -96,7 +96,7 @@ int keyboard()	//没事返回<=0,有事返回>0
 }
 int timer()	//没事返回<=0,有事返回>0
 {
-	if() return 0;
+	if( *(u64*)0x7f8 == 0 ) return 0;
 	else return 1;
 }
 void sleep()
@@ -123,7 +123,8 @@ while(1)
 	}
 	else if(timer() > 0)	//>0	时钟有事
 	{
-		
+		*(u64*)0x7f8 == 0;
+		return 0xff;
 	}
 	else					//都没有，睡觉等着被唤醒
 	{

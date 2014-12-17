@@ -21,7 +21,6 @@ unsigned int my_callbackfunc(unsigned int interval, void *param)
     event.user = userevent;
 
     SDL_PushEvent(&event);
-
 	return interval;
 }
 __attribute__((constructor)) void inittimer()
@@ -29,8 +28,8 @@ __attribute__((constructor)) void inittimer()
 	unsigned int delay =(33 / 10) * 20;  /* To round it down to the nearest 10 ms */
 	my_timer_id = SDL_AddTimer(delay, my_callbackfunc,0);
 }
-__attribute__((destructor)) void destorytimer()
-{}
+__attribute__((destructor)) void destorytimer(){}
+
 
 
 
@@ -45,20 +44,21 @@ int waitevent()
 	SDL_Event event;
 	while (1)
 	{
-	//if (SDL_PollEvent(&event))
-	//{
-	if (SDL_WaitEvent(&event))
-	{
-		if (event.type == SDL_QUIT) {
-			return -1;
+		if (SDL_WaitEvent(&event))
+		{
+			if (event.type == SDL_QUIT)
+			{
+				return -1;
+			}
+			else if (event.type == SDL_KEYDOWN)
+			{
+				//printf("%x\n",(int)(event.key.keysym.sym));
+				return (int)(event.key.keysym.sym);
+			}
+			else if (event.type == SDL_USEREVENT)
+			{
+				return (int)event.user.code;
+			}
 		}
-		if (event.type == SDL_USEREVENT) {
-			return (int)event.user.code;
-		}
-       	if (event.type == SDL_KEYDOWN) {
-			//printf("%x\n",(int)(event.key.keysym.sym));
-			return (int)(event.key.keysym.sym);
-		}
-        }
 	}
 }

@@ -1,5 +1,6 @@
 void start()
 {
-	init();
+	enableirq8();
 	main();
+	disableirq8();
 }
