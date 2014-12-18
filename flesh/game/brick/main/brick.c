@@ -94,7 +94,7 @@ void right()
 		position+=0x16;
 	}
 }
-void time()
+void ticktock()
 {
 	cleanup();
 	
@@ -127,7 +127,6 @@ void time()
 
 void main()
 {
-return;
 	//第0步:初始化
 	init();
 
@@ -156,7 +155,7 @@ return;
 			}
 			case 0xff:
 			{
-				time();
+				ticktock();
 				break;
 			}
 			default:continue;

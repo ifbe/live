@@ -16,22 +16,22 @@ crosscompile:
 linux:
 	gcc -c system/global.c
 	gcc -c system/screen.c
-	gcc -c system/input.c
+	gcc -c system/sdl.c
 	rm -f wrap.a
-	ar crs wrap.a global.o screen.o input.o
+	ar crs wrap.a global.o screen.o sdl.o
 .PHONY:mac
 mac:
 	clang -c system/global.c
-	clang -c system/screen.c -I /usr/local/Cellar/sdl2/2.0.3/include
-	clang -c system/input.c -I /usr/local/Cellar/sdl2/2.0.3/include
+	clang -c system/screen.c
+	clang -c system/sdl.c -I /usr/local/Cellar/sdl2/2.0.3/include
 	rm -f wrap.a
-	ar crs wrap.a global.o screen.o input.o
+	ar crs wrap.a global.o screen.o sdl.o
 .PHONY:win
 win:
 	gcc -c system/global.c
-	gcc -c system/screen.c -I /opt/SDL2-2.0.3/x86_64-w64-mingw32/include
-	gcc -c system/input.c -I /opt/SDL2-2.0.3/x86_64-w64-mingw32/include
+	gcc -c system/screen.c
+	gcc -c system/sdl.c -I /opt/SDL2-2.0.3/x86_64-w64-mingw32/include
 	rm -f wrap.a
-	ar crs wrap.a global.o screen.o input.o
+	ar crs wrap.a global.o screen.o sdl.o
 clean:
 	rm -f *.o *.a
