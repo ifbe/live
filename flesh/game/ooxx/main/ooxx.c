@@ -1,5 +1,7 @@
 double cosine(double x);
 double sine(double x);
+static int x1=0,y1=0,x2=0,y2=0;
+static int table[3][3];
 
 
 void cubie(int x,int y,int z)
@@ -71,17 +73,9 @@ void kuang(x,y,color)
 }
 
 
-int random()
-{
-        int key,i=0;
-        char* memory=(char*)0x0;
-        for(i=0;i<0x1000;i++)
-                key+=memory[i];
-        return key;
-}
 
 
-int check(int table[3][3])
+int check()
 {
 	if(table[0][0]==table[0][1]&&table[0][1]==table[0][2])
 	{
@@ -133,61 +127,112 @@ int check(int table[3][3])
 }
 
 
-void main()
+void init()
 {
-	int x1,y1,x2,y2;
-	int table[3][3];
 	int i,j;
 
 	for(i=0;i<3;i++)
 		for(j=0;j<3;j++)
 			table[i][j]=0;
 
-	x1=y1=0;
-	x2=y2=2;
-
 	for(i=0;i<1024;i++)
 		for(j=0;j<768;j++)
-			point(i,j,0);
+			point(i,j,0x44444444);
+}
+void printworld()
+{
+	int i,j;
+	
+	for(i=0;i<3;i++)
+		for(j=0;j<3;j++)
+			cubie(i,j,table[j][i]);
+	kuang(x1,y1,0xff0000);
+	kuang(x2,y2,0xff);
+	
+	writescreen();
+}
+void main()
+{
+	init();
 
-	char key=0;
 	while(1)
 	{
-		for(i=0;i<3;i++)
-			for(j=0;j<3;j++)
-				cubie(i,j,table[j][i]);
-		kuang(x1,y1,0xff0000);
-		kuang(x2,y2,0xff);
+		//printworld
+		printworld();
 
-		key=keyboard();
+		//wait
+		int key=waitevent();
 
-		if(key==0x1){break;}
-		if(key==0x1e){if(x1>0) x1--;}
-		if(key==0x20){if(x1<2) x1++;}
-		if(key==0x11){if(y1>0) y1--;}
-		if(key==0x1f){if(y1<2) y1++;}
-		if(key==0x4b){if(x2>0) x2--;}
-		if(key==0x4d){if(x2<2) x2++;}
-		if(key==0x48){if(y2>0) y2--;}
-		if(key==0x50){if(y2<2) y2++;}
-		if(key==0x39)
+		//分发
+		switch(key)
 		{
-			if(table[y1][x1] == 0){
-				table[y1][x1]=1;
+			case -1:return;
+			case 0x1b:return;
+			case 'a':
+			{
+				if(x1>0) x1--;
+				break;
 			}
-			int temp=check(table);
-			if(temp==1){string(100,0,"red win !!!!");}
-			if(temp==3){string(100,0,"no winner");}
-		}
-		if(key==0x1c)
-		{
-			if(table[y2][x2] == 0){
-				table[y2][x2]=2;
+			case 'd':
+			{
+				if(x1<2) x1++;
+				break;
 			}
-			int temp=check(table);
-			if(temp==2){string(100,0,"blue win !!!!");}
-			if(temp==3){string(100,0,"no winner");}
+			case 'w':
+			{
+				if(y1>0) y1--;
+				break;
+			}
+			case 's':
+			{
+				if(y1<2) y1++;
+				break;
+			}
+			case 0x20:
+			{
+				if(table[y1][x1] == 0)
+				{
+					table[y1][x1]=1;
+				}
+				int temp=check();
+				if(temp==1){string(100,0,"red win !!!!");}
+				if(temp==3){string(100,0,"no winner");}
+				
+				break;
+			}
+			case 0x40000050:		//left
+			{
+				if(x2>0) x2--;
+				break;
+			}
+			case 0x4000004f:		//right
+			{
+				if(x2<2) x2++;
+				break;
+			}
+			case 0x40000052:		//up
+			{
+				if(y2>0) y2--;
+				break;
+			}
+			case 0x40000051:		//down
+			{
+				if(y2<2) y2++;
+				break;
+			}
+			case 0xd:
+			{
+				if(table[y2][x2] == 0)
+				{
+					table[y2][x2]=2;
+				}
+				int temp=check();
+				if(temp==2){string(100,0,"blue win !!!!");}
+				if(temp==3){string(100,0,"no winner");}
+				
+				break;
+			}
+			default:continue;
 		}
-
 	}
 }

@@ -3,10 +3,10 @@ static int x0,y0;
 static int speed,t;
 static int score,release;
 static int targetx,targety;
-static int i,j;
 
 void init()
 {
+	int i,j;
 	for(i=0;i<1024;i++)
 		for(j=0;j<768;j++)
 			point(i,j,0x44444444);
@@ -24,16 +24,18 @@ void init()
 }
 void printworld()
 {
+	int i,j;
+
+	//竖线
 	for(j=0;j<768;j++) point(100,j,0xffffffff);
+	//
 	for(i=x;i<x+16;i++)
 		for(j=y;j<y+16;j++)
 			point(i,j,0xffffffff);
+	//大块
 	for(i=targetx;i<targetx+64;i++)
 		for(j=targety;j<targety+64;j++)
 			point(i,j,0xffffffff);
-	for(i=0;i<100;i++)
-		for(j=16;j<32;j++)
-			point(i,j,0);
 	decimal(0,1,speed);
 	decimal(0,3,score);
 
@@ -41,13 +43,23 @@ void printworld()
 }
 void cleanup()
 {
+	int i,j;
+	//速度
+	for(i=0;i<100;i++)
+		for(j=16;j<32;j++)
+			point(i,j,0x44444444);
+	//分数
+	for(i=0;i<100;i++)
+		for(j=48;j<64;j++)
+			point(i,j,0x44444444);
+	//小球
 	for(i=x;i<x+16;i++)
 		for(j=y;j<y+16;j++)
 			point(i,j,0x44444444);
 }
 void ticktock()
 {
-	cleanup();
+	int i,j;
 	if(release==1)
 	{
 		t++;
@@ -56,17 +68,16 @@ void ticktock()
 
 		if(x>1024 | y>768)
 		{
-			//hit ?
-			double temp1;
-			double temp2;
-			temp1=(double)( 5*(targetx-100)*(targetx-100) ) / ( (double)(targety+64-y0) );
-			temp2=(double)( 5*(targetx-36)*(targetx-36) ) / ( (double)(targety-y0) );
+			double temp1=(double)( 5*(targetx-100)*(targetx-100) ) / ( (double)(targety+64-y0) );
+			double temp2=(double)( 5*(targetx-36)*(targetx-36) ) / ( (double)(targety-y0) );
 
+			//hit ?
 			if((int)temp1<speed*speed && (int)temp2>speed*speed)
 			{
+				//清理老的大方块
 				for(i=targetx;i<targetx+64;i++)
 					for(j=targety;j<targety+64;j++)
-						point(i,j,0);
+						point(i,j,0x44444444);
 				score++;
 				targetx=random() %668+100;
 				targety=random() %512;
@@ -95,6 +106,7 @@ void main()
 		int key=waitevent();
 
 		//change
+		cleanup();
 		switch(key)
 		{
 			case -1:return;
@@ -111,7 +123,6 @@ void main()
 			}
 			case 0x40000052:	//up
 			{
-				cleanup();
 				if(y0>=16)
 				{
 					y0-=16;
@@ -121,7 +132,6 @@ void main()
 			}
 			case 0x40000051:	//down
 			{
-				cleanup();
 				if(y0<752)
 				{
 					y0+=16;

@@ -1,0 +1,4 @@
+int random()
+{
+	return rand();
+}

@@ -2,17 +2,19 @@
 #include <stdlib.h>
 
 
+extern unsigned int* mypixel;
 extern int width;
 extern int height;
-extern unsigned int* mypixel;
 
 
-__attribute__((constructor)) void initpixel()
+__attribute__((constructor)) void initmemory()
 {
+	//准备framebuffer
 	mypixel=(unsigned int*)malloc(width*height*4);
 }
-__attribute__((destructor)) void destorypixel()
+__attribute__((destructor)) void destorymemory()
 {
+	//释放framebuffer
 	free(mypixel);
 }
 

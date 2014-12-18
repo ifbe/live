@@ -1,12 +1,16 @@
-int random()
-{
-        int key,i=0;
-        char* memory=(char*)0x0;
-        for(i=0;i<0x1000;i++)
-                key+=memory[i];
-	if(key<0) key=-key;
-        return key;
-}
+typedef struct qwer{
+	int x;
+	int y;
+}qwer;
+typedef struct table{
+	int x;
+	int y;
+	int direction;
+}table;
+static qwer food;
+static table snake[100];
+static int direction=4;
+
 
 
 void cubie(x,y,color)
@@ -27,22 +31,9 @@ void cubie(x,y,color)
 }
 
 
-void main()
+void init()
 {
 	int i,j;
-	int direction=4;
-	struct qwer{
-		int x;
-		int y;
-	}food;
-	struct table{
-		int x;
-		int y;
-		int direction;
-	}snake[100];
-
-
-
 
 	//init food and snake 
 	food.x=random() & 0x3f;
@@ -55,121 +46,148 @@ void main()
 	snake[1].direction=1;
 	for(i=2;i<100;i++) snake[i].direction=0;
 
-
-
-
 	//init screen
 	for(i=0;i<1024;i++)		//clear screen
 		for(j=0;j<768;j++)
 			point(i,j,0);
+}
+void printworld()
+{
+	int i=0;
+	while( snake[i].direction != 0 )
+	{
+		cubie(snake[i].x,snake[i].y,0xffffffff);
+		i++;
+	}
+	cubie(food.x,food.y,0xffffffff);
+	writescreen();
+}
+int change()
+{
+	int i,j;
+	//clear snake
+	i=0;
+	while( snake[i].direction != 0 )
+	{
+		cubie(snake[i].x,snake[i].y,0);
+		i++;
+	}
 
-	//init timer
-	int20();
+	//蛇头动，蛇身未动
+	snake[0].direction=direction;
+	switch(direction)
+	{
+		case 1: snake[0].x--; break;
+		case 2: snake[0].x++; break;
+		case 3: snake[0].y--; break;
+		case 4: snake[0].y++; break;
+	}
+
+	//计算蛇身长度
+	int count=0;
+	while(snake[count].direction != 0)	count++;
+
+	//撞墙或者撞自己
+	if(snake[0].x>=64 | snake[0].x<0) return -1;
+	if(snake[0].y>=48 | snake[0].y<0) return -1;
+	for(i=1;i<count;i++)
+	{
+		if(snake[0].x==snake[i].x && snake[0].y==snake[i].y)
+		{
+			break;
+		}
+	}
+	if(i!=count) return -1;
+
+	//吃食物
+	if(snake[0].x==food.x && snake[0].y==food.y)
+	{
+		if(count==100) return -1;
+		food.x=random() & 0x3f;		//new food
+		food.y=random() % 0x30;
+		snake[count].x=snake[count-1].x;	//longer body
+		snake[count].y=snake[count-1].y;
+		snake[count].direction=snake[count-1].direction;
+	}
+
+	//蛇身动
+	for(i=count-1;i>0;i--)
+	{
+		switch(snake[i].direction)
+		{
+			case 0:break;
+			case 1:
+			{
+				snake[i].x--;
+				snake[i].direction=snake[i-1].direction;
+				break;
+			}
+			case 2:
+			{
+				snake[i].x++;
+				snake[i].direction=snake[i-1].direction;
+				break;
+			}
+			case 3:
+			{
+				snake[i].y--;
+				snake[i].direction=snake[i-1].direction;
+				break;
+			}
+			case 4:
+			{
+				snake[i].y++;
+				snake[i].direction=snake[i-1].direction;
+				break;
+			}
+		}
+	}
+}
+void main()
+{
+	//
+	init();
 
 	while(1)
 	{
 		//print snake
-		i=0;
-		while( snake[i].direction != 0 )
+		printworld();
+
+		//wait
+		int key=waitevent();
+		
+		//process it
+		switch(key)
 		{
-			cubie(snake[i].x,snake[i].y,0xffffffff);
-			i++;
-		}
-		cubie(food.x,food.y,0xffffffff);
-
-
-
-
-		//waitforsometime
-		//and change snake
-		unsigned char key=hltwait();
-		if(key==0x1) break;
-		if(key==0x4b) direction=1;
-		else if(key==0x4d) direction=2;
-		else if(key==0x48) direction=3;
-		else if(key==0x50) direction=4;
-		else if(key==0xff) direction=snake[0].direction;
-		else continue;
-
-
-		//clear snake
-		i=0;
-		while( snake[i].direction != 0 )
-		{
-			cubie(snake[i].x,snake[i].y,0);
-			i++;
-		}
-
-
-		//蛇头动，蛇身未动
-		snake[0].direction=direction;
-		switch(direction)
-		{
-			case 1: snake[0].x--; break;
-			case 2: snake[0].x++; break;
-			case 3: snake[0].y--; break;
-			case 4: snake[0].y++; break;
-		}
-
-
-		//计算蛇身长度
-		int count=0;
-		while(snake[count].direction != 0)	count++;
-
-
-		//撞墙或者撞自己
-		if(snake[0].x>=64 | snake[0].x<0) break;
-		if(snake[0].y>=48 | snake[0].y<0) break;
-		for(i=1;i<count;i++)
-		{
-			if(snake[0].x==snake[i].x && snake[0].y==snake[i].y)
+			case -1:return;
+			case 0x1b:return;
+			case 0x40000050:		//left
 			{
+				direction=1;
+				break;
+			}
+			case 0x4000004f:		//right
+			{
+				direction=2;
+				break;
+			}
+			case 0x40000052:		//up
+			{
+				direction=3;
+				break;
+			}
+			case 0x40000051:		//down
+			{
+				direction=4;
+				break;
+			}
+			case 0xff:
+			{
+				direction=snake[0].direction;
 				break;
 			}
 		}
-		if(i!=count) break;
-
-
-		//吃食物
-		if(snake[0].x==food.x && snake[0].y==food.y)
-		{
-			if(count==100) break;
-			food.x=random() & 0x3f;		//new food
-			food.y=random() % 0x30;
-			snake[count].x=snake[count-1].x;	//longer body
-			snake[count].y=snake[count-1].y;
-			snake[count].direction=snake[count-1].direction;
-		}
-
-
-		//蛇身动
-		for(i=count-1;i>0;i--)
-		{
-		switch(snake[i].direction)
-		{
-			case 0:break;
-			case 1:{snake[i].x--;
-				snake[i].direction=snake[i-1].direction;
-				break;
-			}
-			case 2:{snake[i].x++;
-				snake[i].direction=snake[i-1].direction;
-				break;
-			}
-			case 3:{snake[i].y--;
-				snake[i].direction=snake[i-1].direction;
-				break;
-			}
-			case 4:{snake[i].y++;
-				snake[i].direction=snake[i-1].direction;
-				break;
-			}
-		}
-		}
-
-
-		//开始下一轮循环
+		if( change() <= 0 ) return;
 	}
 
-	shutup20();
 }

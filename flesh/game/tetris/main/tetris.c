@@ -13,6 +13,9 @@ typedef struct stucture
 	int x4;
 	int y4;
 }structure;
+static int score=0;
+static unsigned int table[49];
+static structure that;
 
 
 void cubie(int x,int y,int z)
@@ -38,15 +41,6 @@ void cubie(int x,int y,int z)
 }
 
 
-int random()
-{
-        int key,i=0;
-        char* memory=(char*)0x0;
-        for(i=0;i<0x1000;i++)
-                key+=memory[i];
-	if(key<0) key= -key;
-        return key;
-}
 
 
 void generate(structure* that)
@@ -296,15 +290,9 @@ int check(unsigned int* table,structure* that)
 	return check;
 }
 
-
-void main()
+void init()
 {
 	int i,j;
-	int score=0;
-	unsigned int temp;
-	unsigned int table[49];
-	structure that;
-
 
 	for(i=0;i<48;i++) table[i]=0;
 	table[48]=0xffffffff;
@@ -313,130 +301,171 @@ void main()
 	that.type=5;
 	that.direction=2;
 	generate(&that);
-
-
-	int20();
-
+}
+void printworld()
+{
+	int i,j;
+	//print world
+	for(j=0;j<48;j++)
+	{
+		unsigned temp=table[j];
+		for(i=0;i<32;i++)
+		{
+			cubie(i,j,temp & 0x1);
+			temp/=2;    //temp>>1 wrong,do not know why
+		}
+	}
+	//print cubies
+	cubie(that.x1,that.y1,1);
+	cubie(that.x2,that.y2,1);
+	cubie(that.x3,that.y3,1);
+	cubie(that.x4,that.y4,1);
+	//print score
+	//decimal(10,10,score);
+	
+	writescreen();
+}
+void left()
+{
+	if(that.x1>0&&that.x2>0&&that.x3>0&&that.x4>0)
+	{
+		that.x --;
+		that.x1 --;
+		that.x2 --;
+		that.x3 --;
+		that.x4 --;
+		if(check(table,&that) != 0)
+		{
+			that.x ++;
+			that.x1 ++;
+			that.x2 ++;
+			that.x3 ++;
+			that.x4 ++;
+		}
+	}
+}
+void right()
+{
+	if(that.x1<31&&that.x2<31&&that.x3<31&&that.x4<31)
+	{
+		that.x ++;
+		that.x1 ++;
+		that.x2 ++;
+		that.x3 ++;
+		that.x4 ++;
+		if(check(table,&that) != 0)
+		{
+			that.x --;
+			that.x1 --;
+			that.x2 --;
+			that.x3 --;
+			that.x4 --;
+		}
+	}
+}
+void up()
+{
+	that.direction=(that.direction +1)%4;
+	generate(&that);
+	if(check(table,&that) != 0)
+	{
+		that.direction=(that.direction+3)%4;
+	}
+	generate(&that);
+}
+void ticktock()
+{
+	that.y ++;
+	that.y1 ++;
+	that.y2 ++;
+	that.y3 ++;
+	that.y4 ++;
+	//不能下移
+	if(check(table,&that) != 0)
+	{
+		that.y --;
+		that.y1 --;
+		that.y2 --;
+		that.y3 --;
+		that.y4 --;
+		//老的方块融入世界
+		table[that.y1] |= ( (unsigned int)1 << that.x1);
+		table[that.y2] |= ( (unsigned int)1 << that.x2);
+		table[that.y3] |= ( (unsigned int)1 << that.x3);
+		table[that.y4] |= ( (unsigned int)1 << that.x4);
+		//新的方块们
+		that.x=random() %27+1;
+		that.y=1;
+		that.type=random() % 7;
+		that.direction=random() & 0x3;
+		generate(&that);
+	}
+}
+void down()
+{
+	ticktock();
+}
+void change()
+{
+	int i,j;
+	for(i=47;i>0;i--)
+	{
+		if(table[i] == 0xffffffff)
+		{
+			for(j=i;j>0;j--)
+			{
+				table[j]=table[j-1];
+			}
+			table[0]=0;
+			score++;
+		}
+	}
+}
+void main()
+{
+	//
+	init();
 
 	while(1)
 	{
-		//print world
-		for(j=0;j<48;j++)
-		{
-			temp=table[j];
-			for(i=0;i<32;i++)
-			{
-				cubie(i,j,temp & 0x1);
-				temp/=2;    //temp>>1 wrong,do not know why
-			}
-		}
-		//print cubies
-		cubie(that.x1,that.y1,1);
-		cubie(that.x2,that.y2,1);
-		cubie(that.x3,that.y3,1);
-		cubie(that.x4,that.y4,1);
-		//print score
-		decimal(10,10,score);
-
+		//
+		printworld();
 
 		//wait
-		unsigned char key=hltwait();
+		int key=waitevent();
 
-		if(key==0x01) break;
-		else if(key==0x4b)
+		//
+		switch(key)
 		{
-			if(that.x1>0&&that.x2>0&&that.x3>0&&that.x4>0)
+			case -1:return;
+			case 0x1b:return;
+			case 0x40000050:		//left
 			{
-				that.x --;
-				that.x1 --;
-				that.x2 --;
-				that.x3 --;
-				that.x4 --;
-				if(check(table,&that) != 0)
-				{
-					that.x ++;
-					that.x1 ++;
-					that.x2 ++;
-					that.x3 ++;
-					that.x4 ++;
-				}
+				left();
+				break;
+			}
+			case 0x4000004f:		//right
+			{
+				right();
+				break;
+			}
+			case 0x40000052:		//up
+			{
+				up();
+				break;
+			}
+			case 0x40000051:		//down
+			{
+				down();
+				break;
+			}
+			case 0xff:
+			{
+				ticktock();
+				break;
 			}
 		}
-		else if(key==0x4d)
-		{
-			if(that.x1<31&&that.x2<31&&that.x3<31&&that.x4<31)
-			{
-				that.x ++;
-				that.x1 ++;
-				that.x2 ++;
-				that.x3 ++;
-				that.x4 ++;
-				if(check(table,&that) != 0)
-				{
-					that.x --;
-					that.x1 --;
-					that.x2 --;
-					that.x3 --;
-					that.x4 --;
-				}
-			}
-		}
-		else if(key==0x48)		//翻转
-		{
-			that.direction=(that.direction +1)%4;
-			generate(&that);
-			if(check(table,&that) != 0)
-			{that.direction=(that.direction+3)%4;}
-			generate(&that);
-		}
-		else if(key==0x50 | key==0xff)	//键盘下或者时间滴答
-		{
-			that.y ++;
-			that.y1 ++;
-			that.y2 ++;
-			that.y3 ++;
-			that.y4 ++;
-			//不能下移
-			if(check(table,&that) != 0)
-			{
-				that.y --;
-				that.y1 --;
-				that.y2 --;
-				that.y3 --;
-				that.y4 --;
-				//老的方块融入世界
-				table[that.y1] |= ( (unsigned int)1 << that.x1);
-				table[that.y2] |= ( (unsigned int)1 << that.x2);
-				table[that.y3] |= ( (unsigned int)1 << that.x3);
-				table[that.y4] |= ( (unsigned int)1 << that.x4);
-
-				//新的方块们
-				that.x=random() %27+1;
-				that.y=1;
-				that.type=random() % 7;
-				that.direction=random() & 0x3;
-				generate(&that);
-			}
-		}
-		else continue;
-
-		//one line full ?
-		for(i=47;i>0;i--)
-		{
-			if(table[i] == 0xffffffff)
-			{
-				for(j=i;j>0;j--)
-				{
-					table[j]=table[j-1];
-				}
-				table[0]=0;
-
-				score++;
-			}
-		}
-
-		//next loop
+		change();
 	}
 
-	shutup20();
 }

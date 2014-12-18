@@ -91,10 +91,6 @@ int waitevent()
                         {
                                 return (int)(event.key.keysym.sym);
                         }
-						else if (event.type == SDL_KEYUP)
-                        {
-                                return (int)(0x80+event.key.keysym.sym);
-                        }
                         else if (event.type == SDL_USEREVENT)
                         {
                                 return (int)event.user.code;
