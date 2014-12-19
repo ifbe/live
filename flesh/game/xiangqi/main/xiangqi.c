@@ -1,6 +1,4 @@
-
-
-void background()
+void init()
 {
 	int i,j,k;
 	for(i=20;i<1000;i++)
@@ -28,8 +26,8 @@ void background()
 		point(i+k,j+140-k,0);
 		point(i+k,j+140-k+490,0);
 	}
-}
 
+}
 void chess(int x,int y,int z)
 {
 	int i,j;
@@ -39,20 +37,26 @@ void chess(int x,int y,int z)
 		for(j=-20;j<20;j++)
 			point(x+i,768-y+j,z);
 }
-
-void main()
+void printworld()
 {
 	int x,y;
-
-	background();
-
 	for(x=1;x<=9;x++)
 		for(y=1;y<=10;y++)
 			chess(x,y,0xffffffff);	//qizi
-
+	writescreen();
+}
+void main()
+{
+	//
+	init();
 	while(1)
 	{
-	unsigned char keyboard=hltwait();
-	if(keyboard==0x1) break;
+		//printworld
+		printworld();
+		//
+		int keyboard=waitevent();
+		//
+		if(keyboard<=0) return;
+		if(keyboard==0x1b) return;
 	}
 }

@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-
-extern unsigned int* mypixel;
-extern int width;
-extern int height;
+int width=640;
+int height=640;
+unsigned int* mypixel;
 
 
 __attribute__((constructor)) void initmemory()
