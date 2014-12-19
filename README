@@ -1,75 +1,39 @@
-第1个文件夹core(水果的果核(苹果核,桃核))
-裸奔的内核(试过所有虚拟机，华硕n55，联想y470)
+0.名词解释:
+	core:水果的果核,比如苹果核,桃核
+	kernel:核内的果肉,比如核桃仁,榛子仁
+	flesh:水果的果肉(杏肉等)
 
-	cpu(初始化cpu直到正常工作然后jmp/call到kernel):
-		realmode:
-		unrealmode:还在实模式不过能用4g内存
-		protectmode:到古老的保护模式
-		flat64:到平坦64位模式
-	kernel(坚果的果肉(核桃仁,榛子仁)):
-		example:简单示例，屏幕上打印几个字
-		multitask:简单示例，两个进程切来切去
-		my:包括ahci(搞定了fat/ntfs/ext读取),xhci(搞定了usb),等
+	
+第1个文件夹core:裸奔的内核(虚拟机/华硕n55/联想y470能跑,具体看core/readme)
+	cpu:初始化cpu直到正常工作然后jmp/call到kernel
+	kernel:内有ahci,fat/ntfs/ext读取,xhci,usb等
 
 
-
-
-第2个文件夹doc
+第2个文件夹doc:
 	boot.txt
 	longmode.txt
 	acpi.txt
 	apic.txt
 	ahci.txt
 	xhci.txt
-	之类
 
 
-
-
-第3个文件夹flesh(水果的果肉(杏肉等))
-可以在bsd/linux/mac/win下编译成裸奔的小软件
-有一些也可以编译成bsd/linux/mac/win的本地小程序
-
-	baremachine:
-		sse:
-		port:端口in，out之类的办法
-		pio:古老的硬盘读方法
-		8259:古老的PIC使用方法
-	algorithm:
-		jpeg:
-		zip:
-	game:
-		snake:贪吃蛇
-		2048:
-		flappybird:
-		ooxx:井字棋
-		tetris:俄罗斯方块
-	math:
-		agnesi:阿涅西的女巫
-		circle:画圆圈
-		calc:计算器
-		sketchpad:几何画板
-	pci:
-		ahci:只管初始化
-		ehci:只管初始化
-		xhci:只管初始化
-		e1000:虚拟机里最常用的网卡，只管初始化
-		sb16:最简单的声卡，只管初始化
-	usb:
-		egalaxytouch:
-		pl2303:
-
-
+第3个文件夹flesh:任意平台(linux/mac/win/裸机)程序,具体见flesh/readme
+	app
+	game
+	hardware
+	transplant
+	useme
 
 
 第4个文件夹tool:
-	生成vhd,vmdk等镜像的脚本
-	qemu脚本
-	bochsrc脚本
-	vmware虚拟机文件
-	parallels.pvm文件
-
-
+	bootice
+	grub2
+	grub4dos
+	pvm
+	vmx
+	bochsrc
+	qemu script
 
 
 等等
