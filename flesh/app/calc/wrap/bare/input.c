@@ -1,6 +1,10 @@
 #define u64 unsigned long long
 #define u8 unsigned char
-static u8 translatetable[0x60]={
+static u8 translatetable[0x80]={
+0x1c,0xd,	//回车
+0x1,0x1b,	//esc
+0xe,0x8,	//删除
+0x39,' ',	//空格
 0x0b,'0',
 0x02,'1',
 0x03,'2',
@@ -45,7 +49,6 @@ static u8 translatetable[0x60]={
 0x1b,']',
 0x33,',',
 0x34,'.',
-0x39,' ',
 0x0d,'=',
 0x7e,'~',
 0xff,0xff,
@@ -62,7 +65,7 @@ char convert(char old)
     int i;
 
     rsi=(u64)&translatetable;
-    for(i=0;i<44;i++)
+    for(i=0;i<51;i++)
     {
         p=(char*)rsi;
         if(*p==old)
@@ -75,4 +78,38 @@ char convert(char old)
         rsi+=2;
     }
     return new;
+}
+
+
+
+
+int compare()
+{
+	if( (*(u64*)0xff8) == (*(u64*)0xfe8) ) return 0;
+	return -1;
+}
+void sleep()
+{
+	asm("hlt");
+}
+int waitevent()
+{
+	//比较，没有收到就继续hlt，等从hlt出来继续比较
+	while(1)
+	{
+		if(compare() != 0) break;
+		else sleep();
+	}
+
+	//得到dequeue pointer指向的数据
+	u64 dequeue=*(u64*)0xff8;
+	u8 val=*(u8*)dequeue;
+
+	//处理dequeue pointer
+	dequeue+=1;
+	if( dequeue >= 0xfe8 ) dequeue=0x800;
+	*(u64*)0xff8=dequeue;
+	
+	//返回翻译之后的数据
+	return (int)convert(val);
 }

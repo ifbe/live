@@ -9,13 +9,8 @@ void point(int x,int y,int z)
     char bpp=*p/8;
 
     int* address;
+
     address=(int*)(base+(y*1024+x)*bpp);
     *address=z;
 }
-
-
-void draw(int x,int y,int z)
-{
-    point(x+512,384-y,z);
-}
-
+void writescreen(){}

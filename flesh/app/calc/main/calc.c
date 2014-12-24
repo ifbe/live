@@ -1,65 +1,22 @@
 #define u64 long long
+static unsigned char buffer[128];
+static int current;
 
-void init()
+static double result;
+
+
+
+double calculator()
 {
-	int x,y;
-	for(x=0;x<1024;x++)
-	{
-		for(y=0;y<768;y++)
-		{
-			point(x,y,0x44444444);
-		}
-	}
-}
-
-
-double cosine(double x)
-{
-    double ret=0,item=1.0,temp;
-    int n=0,i,sign=1;
-    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
-
-    do{
-        temp=item;
-        for(i=1;i<=2*n;i++)temp/=i;
-        ret+=sign*temp;
-        item*=x*x;
-        sign *=-1;
-        n++;
-      }while (temp>1e-10);
-return ret;
-}
-
-
-double sine(double x)
-{
-    int m = 1,i;
-    double temp,ret = 0.0;
-    if(x>2*3.1415||x<-2*3.1415){x-=((int)(x/(2*3.1415)))*(2*3.1415);}
-
-    do{
-        i=0;
-        if (m%2 == 0){temp= -1.0;}
-        else{temp= 1.0;}
-        for(i=1;i<=2*m-1;i++){temp = temp * x/i;}
-        ret+= temp;
-        m++;
-    }while (temp<-.0000005||temp>0.0000005);
-return ret;
-}
-
-
-double calculator(char* infix)
-{
+	unsigned char* infix=buffer;
     char postfix[128];
     char stack[128];
-    char result[128];
     double stack2[20];
     int num=0,top=0,temp;
 
-    for(temp=0;temp<127;temp++){stack[temp]=postfix[temp]=result[temp]=0x20;}
+    for(temp=0;temp<127;temp++){stack[temp]=postfix[temp]=0x20;}
     for(temp=0;temp<20;temp++){stack2[temp]=0.00;}
-    stack[127]=postfix[127]=result[127]='\0';
+    stack[127]=postfix[127]='\0';
 
     while(*infix!='\0')
     {
@@ -192,61 +149,61 @@ double calculator(char* infix)
         }
     num++;
     }
+	result=stack2[0];
     return stack2[0];
 }
 
 
-void analyse(char* anscii)
+void printworld()
 {
-    int i=0;
-
-    while(*(anscii+i)!='\0')
-    {
-        i++;
-    }
-
-    init();
-    string(0,0,anscii);
-    printdouble(50,20,calculator(anscii));
+	int x,y;
+	for(x=0;x<1024;x++)
+	{
+		for(y=0;y<768;y++)
+		{
+			point(x,y,0x44444444);
+		}
+	}
+    string(0,0,buffer);
+    printdouble(50,20,result);
+	writescreen();
 }
 
 
 void main()
 {
-    unsigned char buffer[128];
-    unsigned char anscii[128];
-    int i;
-    anscii[127]='\0';        //字符串结尾
-    for(i=0;i<127;i++){anscii[i]=0x20;}
-    i=0;
+	int i;
+    //string(55,20,"calculator 0.0001");
+    for(i=0;i<127;i++){buffer[i]=0x20;}
+    buffer[127]='\0';        //字符串结尾
+    current=0;
 
-    init();
-    string(55,20,"calculator 0.0001");
 
     while(1)
     {
-        buffer[i]=hltwait();
-	if(buffer[i]>=0x80) continue;
+		printworld();
+		
+        int key=waitevent();
 
-        switch(buffer[i])
+        switch(key)
         {
-            case 0x01:return;
-            case 0x0e:{
-                print(i-1,0,0x20);
-                anscii[i]=0x20;
-                if(i!=0)i--;
+            case -1:return;
+            case 8:{
+                anscii(current-1,0,0x20);
+                buffer[current]=0x20;
+                if(current!=0)current--;
                 break;
             }
-            case 0x1c:{
-                analyse(anscii);           //进行计算
-                for(i=0;i<127;i++){anscii[i]=0x20;} //处理完毕，清空
-                i=0;                           //从头再来
+            case 0xd:{
+                calculator();           //进行计算
+                for(i=0;i<127;i++){buffer[i]=0x20;} //处理完毕，清空
+                current=0;                           //从头再来
                 break;
             }
             default:{
-                anscii[i]=convert(buffer[i]);  //进来一个convert一个
-                string(0,0,anscii);
-                i=(i+1)%127;
+                buffer[current]=key;  //进来一个convert一个
+                string(0,0,buffer);
+                current=(current+1)%127;
             }
         }
     }

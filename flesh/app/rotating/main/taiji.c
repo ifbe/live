@@ -36,26 +36,6 @@ return ret;
 }
 
 
-void point(int x,int y,int z)
-{
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
-    char* p=(char*)0x3019;
-    char bpp=*p/8;
-
-    int* address;
-
-    address=(int*)(base+(y*1024+x)*bpp);
-    *address=z;
-}
-
-
-void draw(int x,int y,int z)
-{
-point(x+512,384-y,z);
-}
-
-
 void taiji(double* base)
 {
     double angle;
@@ -70,6 +50,7 @@ void taiji(double* base)
         draw(x+250,y,0xffffffff);
         draw(-x+250,-y,0);
     }
+	writescreen();
 }
 
 
@@ -79,5 +60,10 @@ void main()
     while(1)
     {
         taiji(&base);
+
+		int input=pollevent();
+		if(input<=0) return;
+		if(input==0x1b) return;
+
     }
 }

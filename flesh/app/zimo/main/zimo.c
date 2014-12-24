@@ -1,19 +1,6 @@
 #define u64 long long
-int table[16][16];
-
-
-void point(int x,int y,int z)
-{
-    u64* video=(u64*)0x3028;
-    u64 base=*video;
-    char* p=(char*)0x3019;
-    char bpp=*p/8;
-
-    int* address;
-
-    address=(int*)(base+(y*1024+x)*bpp);
-    *address=z;
-}
+static int table[16][16];
+static int x=0,y=0;
 
 
 void cubie(x,y,z)
@@ -27,113 +14,111 @@ void cubie(x,y,z)
 }
 
 
-void anscii(int x,int y,char ch)
+void printworld()
 {
-    int i,j;
-    u64 points=0x6000;
-    char temp;
-    char* p;
+	int i,j;
 
-    points+=ch<<4;
-    x=8*x;
-    y=16*y;
+	for(i=0;i<1024;i++)
+	{
+		for(j=0;j<768;j++)
+		{
+			point(i,j,0x44444444);
+		}
+	}
+	for(i=0;i<16;i++)
+	{
+		for(j=0;j<16;j++)
+		{
+			cubie(i,j,table[i][j]);
+			point(i+720,j+320,table[i][j]);
+		}
+	}
 
-    for(i=0;i<16;i++)
-    {
-        p=(char*)points;
-        for(j=0;j<8;j++)
-        {
-            temp=*p;
-            temp=temp<<j;
-            temp&=0x80;
-            if(temp!=0){point(j+x,i+y,0xffffffff);}
-            else{point(j+x,i+y,0);}
+	for(j=40;j<=640;j+=40)			//heng
+		for(i=0;i<640;i++)
+			point(i,j,0xffffffff);
+	for(i=40;i<=640;i+=40)			//shu
+		for(j=0;j<=640;j++)
+			point(i,j,0xffffffff);
 
-        }
-    points++;
-    }
+	for(i=40*y;i<40*(y+1);i++)		//kuang heng
+	{
+		point(40*x,i,0xff0000);
+		point(40*(x+1),i,0xff0000);
+	}
+	for(i=40*x;i<40*(x+1);i++)		//kuang shu
+	{
+		point(i,40*y,0xff0000);
+		point(i,40*(y+1),0xff0000);
+	}
+	for(i=712;i<744;i++)			//xiao kuang heng
+	{
+		point(i,312,0xff0000);
+		point(i,344,0xff0000);
+	}
+
+	for(i=312;i<344;i++)			//xiao kuang shu
+	{
+		point(712,i,0xff0000);
+		point(744,i,0xff0000);
+	}
+
+	int theword=0;
+	for(j=0;j<16;j++)
+	{
+		theword=0;
+		for(i=0;i<16;i++)
+		{
+			theword*=2;
+			if(table[i][j]<0){theword++;}
+		}
+		hexadecimal(80,2*j,theword);
+	}
+	
+	writescreen();
 }
-
-
-void hexadecimal(int x,int y,u64 z)
-{
-        char ch;
-        int i=0;
-
-        for(i=3;i>=0;i--)
-        {
-        ch=(char)(z&0x0000000f);
-        z=z>>4;
-        anscii(x+i,y,ch);
-        }
-}
-
-
 void main()
 {
-	int i,j,x=0,y=0;
-	char key=0;
-
+	int i,j;
 	for(i=0;i<16;i++)
 		for(j=0;j<16;j++)
 			table[i][j]=0;
 
 	while(1)
 	{
-		for(i=0;i<16;i++)
-			for(j=0;j<16;j++)
+		printworld();
+		
+		int key=waitevent();
+
+		switch(key)
+		{
+			case -1:return;
+			case 0x1b:return;
+			case 0x40000050:		//left
 			{
-				cubie(i,j,table[i][j]);
-				point(i+720,j+320,table[i][j]);
+				if(x>0)	x--;
+				break;
 			}
-
-		for(j=40;j<=640;j+=40)			//heng
-			for(i=0;i<640;i++)
-				point(i,j,0xffffffff);
-		for(i=40;i<=640;i+=40)			//shu
-			for(j=0;j<=640;j++)
-				point(i,j,0xffffffff);
-
-		for(i=40*y;i<40*(y+1);i++)		//kuang heng
-		{
-			point(40*x,i,0xff0000);
-			point(40*(x+1),i,0xff0000);
-		}
-		for(i=40*x;i<40*(x+1);i++)		//kuang shu
-		{
-			point(i,40*y,0xff0000);
-			point(i,40*(y+1),0xff0000);
-		}
-		for(i=712;i<744;i++)			//xiao kuang heng
-		{
-			point(i,312,0xff0000);
-			point(i,344,0xff0000);
-		}
-
-		for(i=312;i<344;i++)			//xiao kuang shu
-		{
-			point(712,i,0xff0000);
-			point(744,i,0xff0000);
-		}
-
-		int theword=0;
-		for(j=0;j<16;j++)
-		{
-			theword=0;
-			for(i=0;i<16;i++)
+			case 0x4000004f:		//right
 			{
-				theword*=2;
-				if(table[i][j]<0){theword++;}
+				if(x<15)	x++;
+				break;
 			}
-			hexadecimal(100,2*j,theword);
+			case 0x40000052:		//up
+			{
+				if(y>0)	y--;
+				break;
+			}
+			case 0x40000051:		//down
+			{
+				if(y<15)	y++;
+				break;
+			}
+			case 0x20:	//space
+			{
+				table[x][y]=~table[x][y];
+				break;
+			}
 		}
-
-		key=hltwait();
-		if(key==0x1){break;}
-		if(key==0x4b){if(x>0)	x--;}	//left
-		if(key==0x4d){if(x<15)	x++;}	//right
-		if(key==0x48){if(y>0)	y--;}	//up
-		if(key==0x50){if(y<15)	y++;}	//down
-		if(key==0x39){table[x][y]=~table[x][y];}	//space
 	}
 }
