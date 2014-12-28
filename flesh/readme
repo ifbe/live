@@ -1,13 +1,65 @@
-本目录里面的几个目录
-	app:有资格叫做应用程序的小东西
-	game:
-	hardware:硬件设备的使用方法
-	transplant:能移植到任何环境的小软件
-	useme:写好的裸机库函数复制或者稍微修改一下就能用
+app:软件
+	app/epic/file:几个文件系统(ext,fat,ntfs)读取
+
+	app/hero/3d
+	app/hero/agnesi
+	app/hero/btree
+	app/hero/calc
+	app/hero/color:
+
+	app/ordinary/ball
+	app/ordinary/ball2
+	app/ordinary/circle
+
+game:游戏
+	game/2048
+	game/brick
+	game/flappy
+	game/g
+	game/ooxx
+	game/snake
+	game/tetris
+	game/xiangqi
+
+hardware:硬件设备的使用方法
+	cpu/cpuid
+	cpu/cr3
+	cpu/rdmsr
+	cpu/sse
+	cpu/unrealmode
+
+	interrupt/8259
+	interrupt/apic
+
+	pci/ahci
+	pci/e1000
+	pci/ehci
+	pci/xhci
+
+	port/clock
+	port/keyboard
+	port/pio
+	port/poweroff
+
+	usb/egalaxytouch
+	usb/pl2303
+
+transplant:移植到任何环境的小软件
+	nanojpeg
+
+useme:写好的裸机库函数复制或者稍微修改一下就能用
+	screen/320x240/screen.c:point(x,y,color),writescreen()
+	screen/1024x768/screen.c:point(x,y,color),writescreen()
+	journal.c:say(stringaddr,64bit)
+	math:cosine(angle),sine(angle)
+	port:out8(port,8bit),in8(8bit),out32(port,32bit),in32(8bit)
+	printf:printf()
+	random:random()
 
 
 
 
-每个单独文件夹里面:
+////////////////每个单独的程序文件夹分为以下两个部分////////////////
 	wrap:使下面的逻辑在系统外和各种系统内运行的抽象层
 	main:只关乎逻辑(尽量)
+////////////////--------------------------------////////////////
