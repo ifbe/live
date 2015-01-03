@@ -1,6 +1,6 @@
 #1:create a 64k binary,compile with gcc(linux) or x86_64-elf-gcc(other system)
 binary:				#linuxer only
-	make -s -C cpu
+	make -s -C cpu			#[0,0x1fff]
 	make -s -C jarvis		#[0x2000,0x3fff]
 	make -s -C ahci binary		#[0x4000,0x5fff]
 	make -s -C xhci binary		#[0x6000,0x7fff]
@@ -8,7 +8,7 @@ binary:				#linuxer only
 	make -s -C disk binary		#[0xc000,0xffff]
 	nasm -s 64k.s -o core.bin
 crosscompile:		#windows and mac user
-	make -s -C cpu
+	make -s -C cpu			#[0,0x1fff]
 	make -s -C jarvis		#[0x2000,0x3fff]
 	make -s -C ahci cross		#[0x4000,0x5fff]
 	make -s -C xhci cross		#[0x6000,0x7fff]

@@ -1,15 +1,20 @@
-0.名词解释:
-	core:水果的果核,比如苹果核,桃核
-	kernel:核内的果肉,比如核桃仁,榛子仁
-	flesh:水果的果肉(杏肉等)
+blood:可用的库函数
+	math.c
+	port.c
+	random.c
+	等
 
-	
-第1个文件夹core:裸奔的内核(虚拟机/华硕n55/联想y470能跑,具体看core/readme)
+
+bone:裸奔的内核(虚拟机/华硕n55/联想y470能跑,具体看core/readme)
 	cpu:初始化cpu直到正常工作然后jmp/call到kernel
-	kernel:内有ahci,fat/ntfs/ext读取,xhci,usb等
+	jarvis:初始化以及界面
+	ahci:硬盘主控
+	xhci:3.0主控
+	usb:一个菜鸟级的usb协议栈
+	disk:fat/ntfs/ext读取
 
 
-第2个文件夹doc:
+soul:
 	boot.txt
 	longmode.txt
 	acpi.txt
@@ -18,15 +23,16 @@
 	xhci.txt
 
 
-第3个文件夹flesh:任意平台(linux/mac/win/裸机)程序,具体见flesh/readme
-	app
-	game
-	hardware
-	transplant
-	useme
+flesh:任意平台(linux/mac/win/裸机)程序,具体见flesh/readme
+	difficult:几个很难的
+	game:2048等
+	hardware:硬件使用方法
+	math:数学/算法相关
+	rubbish:没写好的
+	transplant:移植
 
 
-第4个文件夹tool:
+tool:
 	bootice
 	grub2
 	grub4dos
