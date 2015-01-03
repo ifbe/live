@@ -1,6 +1,8 @@
 binary:
 	gcc -c -fPIC -O2 color.c
 	gcc -c -fPIC -O2 anscii.c
+	rm -f main.a
+	ar crs main.a color.o anscii.o
 crosscompile:
 	x86_64-elf-gcc -c -fPIC -O2 color.c
 	x86_64-elf-gcc -c -fPIC -O2 anscii.c
@@ -13,3 +15,5 @@ mac:
 win:
 	gcc -c -O2 color.c
 	gcc -c -O2 anscii.c
+	rm -f main.a
+	ar crs main.a color.o anscii.o

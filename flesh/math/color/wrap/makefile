@@ -27,6 +27,6 @@ mac:
 .PHONY:win
 win:
 	gcc -c -O2 system/screen.c
-	gcc -c -O2 system/sdl.c -I /opt/SDL2-2.0.3/x86_64-w64-mingw32/include
+	gcc -c -O2 system/sdl.c -I d:\msys\lib\SDL2-2.0.3\x86_64-w64-mingw32\include
 	rm -f wrap.a
 	ar crs wrap.a screen.o sdl.o

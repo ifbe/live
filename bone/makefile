@@ -1,11 +1,19 @@
 #1:create a 64k binary,compile with gcc(linux) or x86_64-elf-gcc(other system)
 binary:				#linuxer only
 	make -s -C cpu
-	make -s -C kernel binary
+	make -s -C jarvis		#[0x2000,0x3fff]
+	make -s -C ahci binary		#[0x4000,0x5fff]
+	make -s -C xhci binary		#[0x6000,0x7fff]
+	make -s -C usb binary		#[0x8000,0xbfff]
+	make -s -C disk binary		#[0xc000,0xffff]
 	nasm -s 64k.s -o core.bin
 crosscompile:		#windows and mac user
 	make -s -C cpu
-	make -s -C kernel cross
+	make -s -C jarvis		#[0x2000,0x3fff]
+	make -s -C ahci cross		#[0x4000,0x5fff]
+	make -s -C xhci cross		#[0x6000,0x7fff]
+	make -s -C usb cross		#[0x8000,0xbfff]
+	make -s -C disk cross		#[0xc000,0xffff]
 	nasm -s 64k.s -o core.bin
 
 
@@ -40,5 +48,9 @@ parallels:
 #...
 clean:
 	make -s -C cpu clean
-	make -s -C kernel clean
+	make -s -C jarvis clean
+	make -s -C ahci clean
+	make -s -C xhci clean
+	make -s -C usb clean
+	make -s -C disk clean
 	rm -f *.bin *.img *.vmdk *.vhd *.dmg *.vdi
