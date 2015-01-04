@@ -1,8 +1,8 @@
 linux:
 	make -s -C wrap linux
 	make -s -C main linux
-	gcc main/color.o main/anscii.o \
-	wrap/wrap.a -lSDL2 -lm
+	gcc main/main.a wrap/wrap.a \
+	-lSDL2 -lm
 mac:
 	make -s -C wrap mac
 	make -s -C main mac

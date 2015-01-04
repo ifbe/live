@@ -16,10 +16,11 @@ crosscompile:
 	ar crs wrap.a screen.o random.o input.o
 .PHONY:linux
 linux:
-	gcc -c system/screen.c
-	gcc -c system/sdl.c
+	gcc -c -fPIC -O2 linux/disk.c
+	gcc -c -fPIC -O2 linux/log.c
+	gcc -c -fPIC -O2 linux/memory.c
 	rm -f wrap.a
-	ar crs wrap.a screen.o sdl.o
+	ar crs wrap.a disk.o log.o memory.o
 .PHONY:mac
 mac:
 	clang -c system/screen.c
@@ -28,8 +29,9 @@ mac:
 	ar crs wrap.a screen.o sdl.o
 .PHONY:win
 win:
-	gcc -c system/random.c
-	gcc -c system/screen.c
-	gcc -c system/sdl.c -I /opt/SDL2-2.0.3/x86_64-w64-mingw32/include
+	gcc -c -fPIC -O2 windows/disk.c
+	gcc -c -fPIC -O2 windows/log.c
 	rm -f wrap.a
-	ar crs wrap.a random.o screen.o sdl.o
+	ar crs wrap.a disk.o log.o
+clean:
+	rm *.o *.a

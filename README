@@ -1,11 +1,16 @@
-blood:可用的库函数
-	math.c
-	port.c
-	random.c
-	等
+blood of the enemy,forcibly taken you will resurrect your foe
+可用的库函数以及硬件的用法
+	cpu/
+	interrupt/
+	math/
+	pci/
+	port/
+	screen/
+	usb/
 
 
-bone:裸奔的内核(虚拟机/华硕n55/联想y470能跑,具体看core/readme)
+bone of the father,unknowingly given you will renew your son
+裸奔的内核(虚拟机/华硕n55/联想y470能跑,具体看core/readme)
 	cpu:初始化cpu直到正常工作然后jmp/call到kernel
 	jarvis:初始化以及界面
 	ahci:硬盘主控
@@ -14,7 +19,8 @@ bone:裸奔的内核(虚拟机/华硕n55/联想y470能跑,具体看core/readme)
 	disk:fat/ntfs/ext读取
 
 
-soul:
+soul of the evil,timelessly cursed you will rule your world
+我自己整理的相关文档
 	boot.txt
 	longmode.txt
 	acpi.txt
@@ -23,16 +29,17 @@ soul:
 	xhci.txt
 
 
-flesh:任意平台(linux/mac/win/裸机)程序,具体见flesh/readme
+flesh of the servan,willingly given you will revive your master
+任意平台(linux/mac/win/裸机)程序,具体见flesh/readme
 	difficult:几个很难的
 	game:2048等
-	hardware:硬件使用方法
 	math:数学/算法相关
 	rubbish:没写好的
 	transplant:移植
 
 
-tool:
+tool
+一些跟“操作系统”，“引导”，“调试”，“编译”相关的工具
 	bootice
 	grub2
 	grub4dos

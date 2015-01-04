@@ -3,17 +3,19 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define programhome 0x2000000
-#define diskhome 0x400000
-#define mbrbuffer diskhome+0x20000
 
-
-
-
-void loadtoy()
+struct mystruct
 {
-	read(programhome,0x80,*(QWORD*)(0x200000+8),0x800);
-}
+	unsigned long long startlba;	//[+0,0x7]:起始lba
+	unsigned long long endlba;	//[+0x8,0xf]:末尾lba
+	unsigned long long parttype;	//[+0x10,0x17]:分区类型anscii
+	unsigned long long partname;	//[0x18,0x1f]:分区名字
+	unsigned long long a[4];	//[0x20,0x3f]:undefined
+};
+//一堆这种东西的结构体的起始地址
+static struct mystruct* mytable;
+//读缓冲区的地址，缓冲区64k大小
+static QWORD readbuffer;
 
 
 
@@ -25,37 +27,42 @@ void loadtoy()
 //[+0x28,+0x2f]:末尾lba			raw[5]
 //[+0x30,+0x37]:属性标签		raw[6]
 //[+0x38,+0x7f]:名字			raw[7]~raw[0xf]
-//翻译之后的在[diskhome,diskhome+0x800]
-//[+0,0x7]:起始lba			our[0]
-//[+0x8,0xf]:末尾lba			our[1]
-//[+0x10,0x17]:分区类型anscii		our[2]
-//[0x18,0x3f]:空
 QWORD explaingpt()
 {
 	say("gpt disk",0);
-	QWORD* our=(QWORD*)diskhome;
-	QWORD* raw=(QWORD*)(mbrbuffer+0x400);
+	QWORD* raw=(QWORD*)(readbuffer+0x400);
 	int i;
-	for(i=0;i<0x200;i++) our[i]=0;
 
-	for(i=0;i<0x80;i++)
+	for(i=0;i<0x80;i++)	//0x80 partitions per disk
 	{
-		our[8*i]=raw[0x10*i+4];
-		our[8*i+1]=raw[0x10*i+5];
+		//
+		mytable[i].startlba=raw[0x10*i+4];
+		//
+		mytable[i].endlba=raw[0x10*i+5];
+		//
 		if(raw[0x10*i]==0x4433b9e5ebd0a0a2)
 		{
-			if(raw[0x10*i+1]==0xc79926b7b668c087)
-				our[8*i+2]=0x7366746e;
+		if(raw[0x10*i+1]==0xc79926b7b668c087)
+		{
+			mytable[i].parttype=0x7366746e;		//ntfs
+			say("fat@",mytable[i].startlba);
+		}
 		}
 		else if(raw[0x10*i]==0x11d2f81fc12a7328)
 		{
-			if(raw[0x10*i+1]==0x3bc93ec9a0004bba)
-				our[8*i+2]=0x746166;
+		if(raw[0x10*i+1]==0x3bc93ec9a0004bba)
+		{
+			mytable[i].parttype=0x746166;		//fat
+			say("fat@",mytable[i].startlba);
+		}
 		}
 		else if(raw[0x10*i]==0x477284830fc63daf)
 		{
-			if(raw[0x10*i+1]==0xe47d47d8693d798e)
-				our[8*i+2]=0x747865;
+		if(raw[0x10*i+1]==0xe47d47d8693d798e)
+		{
+			mytable[i].parttype=0x747865;		//ext
+			say("fat@",mytable[i].startlba);
+		}
 		}
 	}
 }
@@ -70,37 +77,34 @@ QWORD explaingpt()
 //[+0x5,+0x7]:结束磁头柱面扇区
 //[+0x8,+0xb]:起始lba
 //[+0xc,+0xf]:大小
-//翻译之后的在[diskhome,diskhome+0x800]
-//[+0,0x7]:起始lba			our[0]
-//[+0x8,0xf]:末尾lba			our[1]
-//[+0x10,0x17]:分区类型anscii		our[2]
-//[0x18,0x3f]:空
 QWORD explainmbr()
 {
 	say("mbr disk",0);
-	QWORD raw=mbrbuffer+0x1be;
-	BYTE* our=(BYTE*)diskhome;
+	QWORD raw=readbuffer+0x1be;
 	int i;
-	for(i=0;i<0x1000;i++) our[i]=0;
 
 	for(i=0;i<4;i++)
 	{
-		*(QWORD*)(our+0x40*i)=*(DWORD*)(raw+0x10*i+8);
-		*(QWORD*)(our+0x40*i+8)=*(DWORD*)(raw+0x10*i+0xc);
-
-
+		//
+		mytable[i].startlba=*(DWORD*)(raw+0x10*i+8);
+		//
+		mytable[i].endlba=*(DWORD*)(raw+0x10*i+0xc);
+		//fat/ntfs/ext?
 		BYTE temp=*(BYTE*)(raw+0x10*i+4);
 		if( temp==0x4 | temp==0x6 | temp==0xb )
 		{
-			*(QWORD*)(our+0x40*i+0x10)=0x746166;
+			mytable[i].parttype=0x746166;
+			say("fat@",mytable[i].startlba);
 		}
 		else if( temp==0x7 )
 		{
-			*(QWORD*)(our+0x40*i+0x10)=0x7366746e;
+			mytable[i].parttype=0x7366746e;
+			say("fat@",mytable[i].startlba);
 		}
 		else if( temp==0x83 )
 		{
-			*(QWORD*)(our+0x40*i+0x10)=0x747865;
+			mytable[i].parttype=0x747865;
+			say("fat@",mytable[i].startlba);
 		}
 	}
 }
@@ -108,16 +112,15 @@ QWORD explainmbr()
 
 static int mount(BYTE* addr)
 {
-	QWORD name=*(DWORD*)addr;
-
-	QWORD* memory=(QWORD*)diskhome;
+	QWORD type=*(DWORD*)addr;
 	QWORD offset=0;
 	int i;
-	for(i=0;i<0x80;i+=8)
+
+	for(i=0;i<0x80;i++)
 	{
-		if( name == memory[i+2] )
+		if( type == mytable[i].parttype )
 		{
-			offset=memory[i];
+			offset=mytable[i].startlba;
 			break;	
 		}
 	}
@@ -127,67 +130,38 @@ static int mount(BYTE* addr)
 		return -1;
 	}
 
-	if(name == 0x746166) mountfat(offset);
-	if(name == 0x7366746e) mountntfs(offset);
-	if(name == 0x747865) mountext(offset);
+	if(type == 0x746166) mountfat(offset);
+	if(type == 0x7366746e) mountntfs(offset);
+	if(type == 0x747865) mountext(offset);
 
 	return 1;
 }
 
 
-static void directidentify()
+void main()
 {
-        QWORD diskaddr=*(QWORD*)(0x200000+8);
+	//取出已经申请到的内存地址
+	getaddroftable(&mytable);
+	getaddrofbuffer(&readbuffer);
 
-        identify(programhome,diskaddr);
-
-        BYTE* p=(BYTE*)programhome;
-        BYTE temp;
-        int i;
-        for(i=0;i<0x100;i+=2)
-        {
-                temp=p[i];
-                p[i]=p[i+1];
-                p[i+1]=temp;
-        }
-}
-
-
-static void directread(QWORD sector)
-{
-        QWORD diskaddr=*(QWORD*)(0x200000+8);
-        int result;
-        result=read(programhome,sector,diskaddr,8);
-        if(result>=0) say("read sector:",sector);
-        else say("something wrong:",sector);
-}
-
-
-void master()
-{
-	//清理内存
-	BYTE* memory=(BYTE*)(mbrbuffer);
+	//清理
+	BYTE* memory;
 	int i;
-	for(i=0;i<0x8000;i++) memory[i]=0;
+	memory=(BYTE*)(mytable);
+	for(i=0;i<0x10000;i++) memory[i]=0;
+	memory=(BYTE*)(readbuffer);
+	for(i=0;i<0x100000;i++) memory[i]=0;
 
-	//前64个扇区
-        read(mbrbuffer,0,*(QWORD*)(0x200000+8),64);
-        if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55)
+	//读出前64个扇区
+        read(readbuffer,0,0,64);
+        if(*(WORD*)(readbuffer+0x1fe)!=0xAA55)
 	{
 		say("bad disk",0);
 		return;
 	}
-	if(*(DWORD*)(mbrbuffer+0x1c0)==0x74736574)
-	{
-		loadtoy();
-		say("loaded toy",0);
-		int result=((int (*)())(programhome))();
-		say("played toy",result);
-		return;
-	}
 
 	//解释分区表
-	if(*(QWORD*)(mbrbuffer+0x200)==0x5452415020494645)
+	if(*(QWORD*)(readbuffer+0x200)==0x5452415020494645)
 	{
 		explaingpt();
 	}
@@ -197,25 +171,5 @@ void master()
 	}
 
 	//把操作函数的位置放进/bin
-	remember(0x746e756f6d,(QWORD)mount);
-        remember(0x796669746e656469,(QWORD)directidentify);
-        remember(0x64616572,(QWORD)directread);
-
-	//从/bin执行
-	//自动尝试3种分区，找到live文件夹，cd进去，全部失败就返回-1
-	int result;
-	//try fat
-	mount("fat");
-	result=use(0x6463,"live");	//cd live
-	if(result>=0) return;		//成功，滚
-
-	//try ntfs
-	mount("ntfs");
-	result=use(0x6463,"live");	//cd live
-	if(result>=0) return;		//成功，滚
-
-	//try ext
-	mount("ext");
-	result=use(0x6463,"live");	//cd live
-					//不管了，直接滚
+	//remember(0x746e756f6d,(QWORD)mount);
 }
