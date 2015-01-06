@@ -12,9 +12,8 @@ mac:
 win:
 	make -s -C wrap win
 	make -s -C main win
-	gcc main/color.o main/anscii.o \
-	wrap/wrap.a \
-	-Wl,--no-undefined -static -static-libgcc 
+	gcc main/main.a wrap/uac.res wrap/wrap.a \
+	-Wl,--no-undefined -static -static-libgcc \
 	-L d:\msys\lib\SDL2-2.0.3\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2 \
 	-lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid
 binary:
@@ -42,4 +41,4 @@ kvm:
 	echo "test" | dd of=test.img bs=1 seek=448 conv=notrunc    #test sign
 	../../../tool/kvm $(shell pwd)/test.img
 clean:
-	rm -f */*.o */*.a *.bin *.out *.exe
+	rm -f */*.o */*.a */*.res *.bin *.out *.exe

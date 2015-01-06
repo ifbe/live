@@ -39,13 +39,13 @@ void anscii(int x,int y,char ch)
 }
 void say(char* p,...)
 {
-        register unsigned long long rsi asm("rsi");
+	register unsigned long long rsi asm("rsi");
 	unsigned long long first=rsi;
 	char* journal=(char*)0x40000;
 	int x=0;
 	int y=*(int*)0x7fff8;
 	int screeny=y%48;
-        //for(x=0;x<64;x++) anscii(x,screeny,0x20);
+	//for(x=0;x<64;x++) anscii(x,screeny,0x20);
 
 	x=0;
 

@@ -29,9 +29,11 @@ mac:
 	ar crs wrap.a screen.o sdl.o
 .PHONY:win
 win:
-	gcc -c -fPIC -O2 windows/disk.c
-	gcc -c -fPIC -O2 windows/log.c
+	windres --input-format=rc -O coff -i windows/uac.rc -o uac.res
+	gcc -c -O2 windows/disk.c
+	gcc -c -O2 windows/earmouth.c
+	gcc -c -O2 windows/memory.c
 	rm -f wrap.a
-	ar crs wrap.a disk.o log.o
+	ar crs wrap.a disk.o earmouth.o memory.o
 clean:
 	rm *.o *.a

@@ -1,16 +1,15 @@
-#define BYTE unsigned char
+﻿#define BYTE unsigned char
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define diskhome 0x400000
-#define programhome 0x2000000
+//memory
+static QWORD directorybuffer;
+static QWORD readbuffer;
+static QWORD fatbuffer;
+static QWORD indexbuffer;
 
-#define pbrbuffer diskhome+0x30000
-#define fatbuffer diskhome+0x40000
-#define indexbuffer diskhome+0x80000
-#define rawbuffer diskhome+0xc0000
-
+//disk
 static QWORD diskaddr;
 static QWORD fat0;
 static QWORD fatsize;
@@ -28,7 +27,7 @@ void checkfatcache()	//put cache in +0x40000
 	for(i=0;i<0x40;i++){
 		read(fatbuffer+i*0x1000,fat0+cacheblock*0x200+8*i,diskaddr,8);
 	}
-	say("cacheblock:",cacheblock);
+	say("cacheblock:%x\n",cacheblock);
 	cachecurrent=cacheblock;
 }
 
@@ -36,7 +35,7 @@ void checkfatcache()	//put cache in +0x40000
 void dir2raw()
 {
 	BYTE* rsi=(BYTE*)(indexbuffer);
-	BYTE* rdi=(BYTE*)(rawbuffer);
+	BYTE* rdi=(BYTE*)(directorybuffer);
 	int i;
 
 	for(i=0;i<0x4000;i++) rdi[i]=0;
@@ -63,7 +62,7 @@ void dir2raw()
 
 void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 {
-	say("cluster:",source);
+	say("cluster:%x\n",source);
 
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
@@ -73,13 +72,13 @@ void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 
 		source=(QWORD)(*(WORD*)(fatbuffer+2*source));
 
-		if(source<2){say("impossible cluster,bye!",source);return;}
-		if(source==0xfff7){say("bad cluster,bye!",source);return;}
+		if(source<2){say("impossible cluster,bye!%x\n",source);return;}
+		if(source==0xfff7){say("bad cluster,bye!%x\n",source);return;}
 		if(source>=0xfff8) break;
 	}
 
-	say("count:",rdi-dest);
-	say("",0);
+	say("count:%x\n",rdi-dest);
+	say("\n");
 }
 
 
@@ -88,10 +87,10 @@ void fat16_root()
 	BYTE* memory=(BYTE*)(indexbuffer);
 	int i;
 	for(i=0;i<0x80000;i++) memory[i]=0;
-	say("cd ",fat0+fatsize*2);
+	say("cd %x\n",fat0+fatsize*2);
 	read(indexbuffer,fat0+fatsize*2,diskaddr,32);
 	dir2raw();
-	say("",0);
+	say("\n");
 }
 
 
@@ -105,7 +104,7 @@ static int fat16_cd(BYTE* addr)
 	str2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
-say("name:",name);
+	say("name:%x\n",name);
 
 	if( (name&0xff) == 0x2f)
 	{
@@ -123,7 +122,7 @@ say("name:",name);
 		}
 		if(p==indexbuffer+0x800)
 		{
-			say("directory not found",0);
+			say("directory not found\n");
 			return -1;
 		}
 		directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
@@ -157,41 +156,42 @@ static void fat16_load(BYTE* addr)
 	}
 	if(p==indexbuffer+0x40000)
 	{
-		say("file not found,bye!",0);
+		say("file not found,bye!\n");
 		return;
 	}
 
 	QWORD file=(QWORD)(*(WORD*)(p+0x1a));	//fat16,only 16bit
-	fat16_data(programhome,file);
+	fat16_data(readbuffer,file);
 }
 
 
 void fat16(QWORD fatsector)
 {
-	//QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
-	fatsize=(QWORD)( *(WORD*)(pbrbuffer+0x16) );
-	say("fatsize:",fatsize);
-	fat0=fatsector + (QWORD)( *(WORD*)(pbrbuffer+0xe) );
-	say("fat0:",fat0);
-	clustersize=(QWORD)( *(BYTE*)(pbrbuffer+0xd) );
-	say("clustersize:",clustersize);
+	//QWORD fatsector=(QWORD)( *(DWORD*)(readbuffer+0x1c) );
+	//注意现在readbuffer里面还是pbr
+	fatsize=(QWORD)( *(WORD*)(readbuffer+0x16) );
+	say("fatsize:%x\n",fatsize);
+	fat0=fatsector + (QWORD)( *(WORD*)(readbuffer+0xe) );
+	say("fat0:%x\n",fat0);
+	clustersize=(QWORD)( *(BYTE*)(readbuffer+0xd) );
+	say("clustersize:%x\n",clustersize);
 	cluster0=fat0+fatsize*2+32-clustersize*2;
-	say("cluster0:",cluster0);
-	say("",0);
+	say("cluster0:%x\n",cluster0);
+	say("\n");
 
 	checkfatcache();
 	fat16_cd("/");
 
 	//保存函数地址
-        remember(0x6463,(QWORD)fat16_cd);
-        remember(0x64616f6c,(QWORD)fat16_load);
+	//remember(0x6463,(QWORD)fat16_cd);
+	//remember(0x64616f6c,(QWORD)fat16_load);
 
 }
 
 
 void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 {
-	say("cluster:",source);
+	say("cluster:%x\n",source);
 
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
@@ -204,12 +204,12 @@ void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 
 		source=(QWORD)(*(DWORD*)(fatbuffer+4*(source%0x10000)));
 
-		if(source<2){say("impossible cluster,bye!",source);return;}
-		if(source==0x0ffffff7){say("bad cluster,bye!",source);return;}
+		if(source<2){say("impossible cluster,bye!%x\n",source);return;}
+		if(source==0x0ffffff7){say("bad cluster,bye!%x\n",source);return;}
 		if(source>=0x0ffffff8) break;
 	}
-	say("count:",rdi-dest);
-	say("",0);
+	say("count:%x\n",rdi-dest);
+	say("\n");
 }
 
 
@@ -219,10 +219,10 @@ void fat32_root()
 	int i;
 	for(i=0;i<0x80000;i++) memory[i]=0;
 
-	say("cd root:",cluster0+clustersize*2);
+	say("cd root:%x\n",cluster0+clustersize*2);
 	read(indexbuffer,cluster0+clustersize*2,diskaddr,32);
 	dir2raw();
-	say("",0);
+	say("\n");
 }
 
 
@@ -249,7 +249,7 @@ static int fat32_cd(BYTE* addr)
 		}
 		if(p==indexbuffer+clustersize*0x200)
 		{
-			say("directory not found!",p);
+			say("directory not found!%x\n",p);
 			return -1;
 		}
 		directory=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
@@ -290,81 +290,99 @@ static void fat32_load(BYTE* addr)
 	}
 	if(p==indexbuffer+clustersize*0x200)
 	{
-		say("file not found,bye!",0);
+		say("file not found,bye!\n");
 		return;
 	}
 
 	QWORD file=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
 	file+=(QWORD)(*(WORD*)(p+0x1a));  //low 16bit
 
-	fat32_data(programhome,file);
+	fat32_data(readbuffer,file);
 }
 
 
 void fat32(QWORD fatsector)
 {
-	//QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
-	fatsize=(QWORD)( *(DWORD*)(pbrbuffer+0x24) );
-	say("fatsize:",fatsize);
-	fat0=fatsector + (QWORD)( *(WORD*)(pbrbuffer+0xe) );
-	say("fat0:",fat0);
-	clustersize=(QWORD)( *(BYTE*)(pbrbuffer+0xd) );
-	say("clustersize:",clustersize);
+	//QWORD fatsector=(QWORD)( *(DWORD*)(readbuffer+0x1c) );
+	//注意现在readbuffer里面还是pbr
+	fatsize=(QWORD)( *(DWORD*)(readbuffer+0x24) );
+	say("fatsize:%x\n",fatsize);
+	fat0=fatsector + (QWORD)( *(WORD*)(readbuffer+0xe) );
+	say("fat0:%x\n",fat0);
+	clustersize=(QWORD)( *(BYTE*)(readbuffer+0xd) );
+	say("clustersize:%x\n",clustersize);
 	cluster0=fat0+fatsize*2-clustersize*2;
-	say("cluster0:",cluster0);
-	say("",0);
+	say("cluster0:%x\n",cluster0);
+	say("\n");
 
 	checkfatcache();
 	fat32_cd("/");
 
 	//保存函数地址
-        remember(0x6463,(QWORD)fat32_cd);
-        remember(0x64616f6c,(QWORD)fat32_load);
+	//remember(0x6463,(QWORD)fat32_cd);
+	//remember(0x64616f6c,(QWORD)fat32_load);
 
 }
 
 
-int mountfat(QWORD sector)
+int mountfat(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
 {
-	diskaddr=*(QWORD*)(0x200000+8);
-	say("partition sector:",sector);
+	//准备好可用的内存地址
+	getaddrofbuffer(&readbuffer);
+	getaddrofdir(&directorybuffer);
+	getaddroffs(&fatbuffer);
+	indexbuffer=fatbuffer+0x40000;
 
-        read(pbrbuffer,sector,diskaddr,1); //pbr
+	//fat版本
+	//diskaddr=*(QWORD*)(0x200000+8);
+	say("partition sector:%x\n",sector);
 
-        if( *(WORD*)(pbrbuffer+0xb) !=0x200) {
-                say("not 512B per sector,bye!",0);
-                return -1;
-        }
-        if( *(BYTE*)(pbrbuffer+0x10) != 2) {
-                say("not 2 fat,bye!",0);
-                return -2;
-        }
+	read(readbuffer,sector,diskaddr,1); //pbr
 
-        int similarity=50;
+	if( *(WORD*)(readbuffer+0xb) !=0x200)
+	{
+		say("not 512B per sector,bye!\n");
+		return -1;
+	}
+	if( *(BYTE*)(readbuffer+0x10) != 2)
+	{
+		say("not 2 fat,bye!\n");
+		return -2;
+	}
 
-        if( *(WORD*)(pbrbuffer+0x11) == 0) similarity++;         //fat32为0
-        else similarity--;
-        if( *(WORD*)(pbrbuffer+0x16) ==0) similarity++;         //fat32为0
-        else similarity--;
+	int similarity=50;
+
+	if( *(WORD*)(readbuffer+0x11) == 0) similarity++;         //fat32为0
+	else similarity--;
+	if( *(WORD*)(readbuffer+0x16) ==0) similarity++;         //fat32为0
+	else similarity--;
 
 	cachecurrent=0xffffffff;
 	cacheblock=0;
 
-        if(similarity==48)
-        {
-                say("fat16",0);
-                fat16(sector);
-        }
-        else if(similarity==52)
-        {
-                say("fat32",0);
-                fat32(sector);
-        }
-        else
-        {
-                say("seem not fatxx,bye!",0);
-                return -3;
-        }
+	if(similarity==48)
+	{
+		//返回cd和load函数的地址
+		*cdfunc=(QWORD)fat16_cd;
+		*loadfunc=(QWORD)fat16_load;
+
+		say("fat16\n");
+		fat16(sector);
+	}
+	else if(similarity==52)
+	{
+		//返回cd和load函数的地址
+		*cdfunc=(QWORD)fat32_cd;
+		*loadfunc=(QWORD)fat32_load;
+
+		say("fat32\n");
+		fat32(sector);
+	}
+	else
+	{
+		say("seem not fatxx,bye!\n");
+		return -3;
+	}
 
 	return 0;
 }
