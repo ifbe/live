@@ -219,7 +219,7 @@ void main()
 		{
 			((int (*)())(cdfunc))(&second);
 		}
-		else if(first==64616f6c)				//load
+		else if(first==0x64616f6c)				//load
 		{
 			
 		}

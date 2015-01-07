@@ -36,4 +36,4 @@ win:
 	rm -f wrap.a
 	ar crs wrap.a disk.o earmouth.o memory.o
 clean:
-	rm *.o *.a
+	rm -f *.o *.a *.res
