@@ -24,11 +24,11 @@ static QWORD clustersize;	//每个簇的扇区数量
 //[0x10,0x1f]:time?
 //[0x20,0x2f]:firstcluster
 //[0x30,0x3f]:size
-void explaindirectory()
+static void explaindirectory()
 {
+	int i,j;
 	BYTE* rsi=(BYTE*)(readbuffer);
 	BYTE* rdi=(BYTE*)(directorybuffer);
-	int i;
 
 	for(i=0;i<0x4000;i++) rdi[i]=0;
 
@@ -38,7 +38,30 @@ void explaindirectory()
 		if( rsi[0] !=0xe5 ){		//not deleted
 		if( *(QWORD*)rsi !=0 ){		//have name
 			//name
-			*(QWORD*)rdi=*(QWORD*)rsi;
+			j=0;
+			for(i=0;i<8;i++)
+			{
+				if(rsi[i]!=0x20)
+				{
+					rdi[j]=rsi[i];
+					if( (rdi[j]>='A') && (rdi[j]<='Z') )rdi[j]+=0x20;
+					j++;
+				}
+			}
+			if(rsi[8]!=0x20)
+			{
+				rdi[j]='.';
+				j++;
+			}
+			for(i=8;i<11;i++)
+			{
+				if(rsi[i]!=0x20)
+				{
+					rdi[j]=rsi[i];
+					if( (rdi[j]>='A') && (rdi[j]<='Z') )rdi[j]+=0x20;
+					j++;
+				}
+			}
 			//cluster
 			QWORD temp;
 			temp=((QWORD)(*(WORD*)(rsi+0x14)))<<16; //high
@@ -64,7 +87,7 @@ void explaindirectory()
 
 
 //从收到的簇号开始一直读最多1MB，接收参数为目的内存地址，第一个簇号
-int fat16_data(QWORD dest,QWORD cluster)
+static int fat16_data(QWORD dest,QWORD cluster)
 {
 	say("cluster:%x\n",cluster);
 
@@ -91,19 +114,13 @@ int fat16_data(QWORD dest,QWORD cluster)
 static void fat16_load(BYTE* addr,QWORD offset)
 {
 //1:文件名转换成首簇号
-	//1.1:把字符串转换成fat16喜欢的格式
-	QWORD name=0;
-	str2data(addr,&name);
-	zero2blank(&name);
-	small2capital(&name);
-
 	//1.2:在directorybuffer里面搜索
-	QWORD p=readbuffer;
-	for(;p<(readbuffer+0x40000);p+=0x40)
+	QWORD p=directorybuffer;
+	for(;p<(directorybuffer+0x40000);p+=0x40)
 	{
-		if( *(QWORD*)p==name ) break;
+		if(compare(addr,p)==0) break;
 	}
-	if(p==readbuffer+0x40000)
+	if(p==directorybuffer+0x40000)
 	{
 		say("file not found,bye!\n");
 		return;
@@ -118,7 +135,7 @@ static void fat16_load(BYTE* addr,QWORD offset)
 	while(1)
 	{
 		//就是这里，就从这个簇开始
-		if(cluster==temp)break;
+		if(temp==offset)break;
 		
 		//准备下一个地址，找下一个簇，全部fat表在内存里不用担心
 		temp+=clustersize*0x200;
@@ -129,7 +146,7 @@ static void fat16_load(BYTE* addr,QWORD offset)
 //3.开始读
 	fat16_data(readbuffer,cluster);
 }
-void fat16_root()
+static void fat16_root()
 {
 	//清理内存
 	BYTE* memory=(BYTE*)(readbuffer);
@@ -150,23 +167,18 @@ void fat16_root()
 }
 static int fat16_cd(BYTE* addr)
 {
-	QWORD name=0;
 	QWORD directory=0;
 	QWORD p=directorybuffer;
 	int i;
 
-	//处理名字
-	str2data(addr,&name);
-	zero2blank(&name);
-	small2capital(&name);
-	say("name:%x\n",name);
 
 	//是根目录或者首簇号为0就直接调用fat16_root()，否则得到首簇号完事
-	if( (name&0xff) != 0x2f)
+	directory=0;
+	if( addr[0] != 0x2f)
 	{
 		for(;p<directorybuffer+0x800;p+=0x40)
 		{
-			if( *(QWORD*)p == name )
+			if(compare(p,addr)==0)
 			{
 				if( *(BYTE*)(p+0x20)&0x10) break;
 			}
@@ -177,11 +189,6 @@ static int fat16_cd(BYTE* addr)
 			return -1;
 		}
 		directory=*(QWORD*)(p+0x10); //fat16,only 16bit
-	}
-	else
-	{
-		fat16_root();
-		return 0;
 	}
 	if(directory==0)
 	{
@@ -211,7 +218,7 @@ static int fat16_cd(BYTE* addr)
 //文件分配表区总共可以有0xffffffff个*每个簇记录占4个字节<=0x400000000=16G=0x2000000个扇区
 //数据区总共0xffffffff个簇*每簇512k<=0x20000000000=2T=0x100000000个扇区
 static QWORD cachecurrent;		//单位是扇区
-void checkcacheforcluster(QWORD cluster)
+static void checkcacheforcluster(QWORD cluster)
 {
 	//0x40000=0x200个扇区=0x10000个簇记录
 	//所以要读的扇区为：[cacheblock,cacheblock+0x1ff](cacheblock=fat0扇区+(cluster/0x10000)*0x200)
@@ -231,7 +238,7 @@ void checkcacheforcluster(QWORD cluster)
 	cachecurrent=cacheblock;
 }
 //从收到的簇号开始一直读最多1MB，接收参数为目的内存地址，第一个簇号
-void fat32_data(QWORD dest,QWORD cluster)		//destine,clusternum
+static void fat32_data(QWORD dest,QWORD cluster)		//destine,clusternum
 {
 	say("cluster:%x\n",cluster);
 
@@ -256,19 +263,13 @@ void fat32_data(QWORD dest,QWORD cluster)		//destine,clusternum
 static void fat32_load(BYTE* addr,QWORD offset)
 {
 //1:文件名转换成首簇号
-	//1.1:把字符串转换成fat16喜欢的格式
-	QWORD name=0;
-	str2data(addr,&name);
-	zero2blank(&name);
-	small2capital(&name);
-
 	//1.2:在directorybuffer里面搜索
-	QWORD p=readbuffer;
-	for(;p<readbuffer+clustersize*0x200;p+=0x40)
+	QWORD p=directorybuffer;
+	for(;p<directorybuffer+clustersize*0x200;p+=0x40)
 	{
-		if( *(QWORD*)p== name) break;
+		if(compare(addr,p)==0)break;
 	}
-	if(p==readbuffer+clustersize*0x200)
+	if(p==directorybuffer+clustersize*0x200)
 	{
 		say("file not found,bye!\n");
 		return;
@@ -285,7 +286,7 @@ static void fat32_load(BYTE* addr,QWORD offset)
 //3.开始读
 	fat32_data(readbuffer,cluster);
 }
-void fat32_root()
+static void fat32_root()
 {
 	BYTE* memory=(BYTE*)(readbuffer);
 	int i;
@@ -306,31 +307,24 @@ static int fat32_cd(BYTE* addr)
 	QWORD directory=0;
 	QWORD p=directorybuffer;
 	int i;
-	str2data(addr,&name);
-	zero2blank(&name);
-	small2capital(&name);
 
 	//搜索
-	if((name&0xff) != 0x2f)
+	directory=0;
+	if(addr[0] != 0x2f)
 	{
 		for(;p<directorybuffer+clustersize*0x200;p+=0x40)
 		{
-		    if( *(QWORD*)p== name)
-		    {
-				if( *(BYTE*)(p+0x20)&0x10) break;
+		    if(compare(addr,p)==0)		//相同
+			{
+				if( *(BYTE*)(p+0x20)&0x10) break;	//并且是目录
 		    }
 		}
-		if(p==directorybuffer+clustersize*0x200)
+		if(p==directorybuffer+clustersize*0x200)	//到尾了都没找到
 		{
 			say("directory not found!%x\n",p);
 			return -1;
 		}
 		directory=*(QWORD*)(p+0x10); //high 16bit
-	}
-	else
-	{
-		fat32_root();
-		return 0;
 	}
 	if(directory==0)
 	{

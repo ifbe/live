@@ -4,11 +4,21 @@
 #define QWORD unsigned long long
 
 
+int compare(unsigned char* first,unsigned char* second)
+{
+	int i;
+	//say("%s,%s\n",first,second);
+	for(i=0;i<16;i++)
+	{
+		if( (first[i]==0) && (second[i]==0) )return 0;		//比较完毕，相同
+		if(first[i]!=second[i])return -1;
+	}
+}
 //比如aa zec，得到aa\0ec
 void blank2zero(QWORD* name)
 {
         int i;
-	QWORD temp;
+		QWORD temp;
         for(i=0;i<8;i++)
         {
                 temp = ( (*name)>>(i*8) )&0xff;
@@ -76,7 +86,7 @@ void buf2arg(char* buffer,QWORD* first,QWORD* second)
 {
 	int i=0,j,count;
 	char* temp;
-	*first=*second=0;
+	first[0]=first[1]=second[0]=second[1]=0;
 
 	temp=(char*)first;
 	for(;i<128;i++)
@@ -84,7 +94,7 @@ void buf2arg(char* buffer,QWORD* first,QWORD* second)
 		if(buffer[i]==0)return;
 		if(buffer[i]<=0x20)continue;
 		//say("buffer[%d]=%c\n",i,buffer[i]);
-		for(count=0;count<8;count++)		//多少个字母
+		for(count=0;count<16;count++)		//多少个字母
 		{
 			if(buffer[i+count]<=0x20)break;
 		}
@@ -104,7 +114,7 @@ void buf2arg(char* buffer,QWORD* first,QWORD* second)
 		if(buffer[i]==0)return;
 		if(buffer[i]<=0x20)continue;
 		//say("buffer[%d]=%c\n",i,buffer[i]);
-		for(count=0;count<8;count++)		//多少个字母
+		for(count=0;count<16;count++)		//多少个字母
 		{
 			if(buffer[i+count]<=0x20)break;
 		}

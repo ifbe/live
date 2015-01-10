@@ -17,7 +17,6 @@ static QWORD groupsize;
 static QWORD inodepergroup;
 static QWORD inodesize;
 static QWORD cachecurrent;
-static QWORD cacheblock;
 
 //
 static BYTE blockrecord[512];
@@ -50,6 +49,8 @@ QWORD getinodeblock(QWORD groupnum)
 void checkcacheforinode(QWORD inode)
 {
 	QWORD rdi=inodebuffer;
+	QWORD cacheblock;
+
 
 	//内存里是这一块的话就不重新载入了
 	cacheblock=(inode-1)*inodesize;
@@ -347,7 +348,6 @@ int mountext(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
 
 	//inode table缓存
 	cachecurrent=0xffffffff;
-	cacheblock=0;
 	say("\n");
 
 	//cd /

@@ -19,9 +19,9 @@ struct dirbuffer
 {
 	unsigned long long name;	//[+0,0x7]:起始lba
 	unsigned long long unused;
-	unsigned long long type;	//[+0x10,0x1f]:末尾lba
-	unsigned long long unused1;
 	unsigned long long specialid;	//[+0x20,0x2f]:分区类型anscii
+	unsigned long long unused1;
+	unsigned long long type;	//[+0x10,0x1f]:末尾lba
 	unsigned long long unused2;
 	unsigned long long size;	//[0x30,0x3f]:分区名字
 	unsigned long long unused3;
@@ -215,45 +215,61 @@ void main()
 	while(1)
 	{
 		//等输入
-		QWORD first,second;
+		char first[16],second[16];
 		listen(buffer);
-		buf2arg(buffer,&first,&second);
-		//say("%s,%s\n",(char*)&first,(char*)&second);
-		//say("%llx,%llx\n",first,second);
+		buf2arg(buffer,first,second);
+		//say("%s,%s\n",first,second);
+		//say("%llx,%llx\n",*(QWORD*)first,*(QWORD*)second);
 
 		//判断
-		if(first==0x74697865)break;		//exit
-		else if(first==0x746e756f6d)			//mount ?
+		if(*(QWORD*)first==0x74697865)break;		//exit
+		else if(*(QWORD*)first==0x746e756f6d)			//mount ?
 		{
 			QWORD temp;
-			anscii2dec(&second,&temp);
+			anscii2dec(second,&temp);
 			//say("temp:%llx\n",temp);
 			mount(temp);
 		}
-		else if(first==0x6463)				//cd
+		else if(*(QWORD*)first==0x6463)				//cd
 		{
-			((int (*)())(cdfunc))(&second);
+			((int (*)())(cdfunc))(second);
 		}
-		else if(first==0x64616f6c)				//load
+		else if(*(QWORD*)first==0x64616f6c)				//load
 		{
 			//寻找这个文件名，主要为了得到size
 			int i;
 			for(i=0;i<0x40;i++)
 			{
-				
+				if(compare(second,(char*)(&dir[i]))==0)break;
 			}
+			if(i==0x40)
+			{
+				say("file not found\n");
+				continue;
+			}
+			say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].specialid,dir[i].type,dir[i].size);
+
+			//现在分段读取保存
+			QWORD totalsize=dir[i].size;
+			QWORD temp;
+			for(temp=0;temp<totalsize/0x100000;temp++)
+			{
+				say("shouldn't here\n");
+				((int (*)())(loadfunc))(second,temp*0x100000);			//
+				mem2file(readbuffer,second,temp*0x100000,0x100000);		//mem地址，file名字，文件内偏移，写入多少字节
+			}
+			((int (*)())(loadfunc))(second,temp*0x100000);			//
+			mem2file(readbuffer,second,temp*0x100000,totalsize%0x100000);		//mem地址，file名字，文件内偏移，写入多少字节
 			
-			//现在才是分段读取保存
-			((int (*)())(loadfunc))(&second,i);
 		}
-		else if(first==0x736c)				//ls
+		else if(*(QWORD*)first==0x736c)				//ls
 		{
 			int i;
 			say("name                special id          type                size\n");
 			for(i=0;i<0x40;i++)
 			{
 				if(dir[i].name==0)break;
-				say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].type,dir[i].specialid,dir[i].size);
+				say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].specialid,dir[i].type,dir[i].size);
 			}
 			say("\n");
 		}
