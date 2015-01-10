@@ -47,7 +47,7 @@ QWORD getinodeblock(QWORD groupnum)
 }
 
 
-void checkinodecache(QWORD inode)
+void checkcacheforinode(QWORD inode)
 {
 	QWORD rdi=inodebuffer;
 
@@ -127,7 +127,7 @@ void explaininode(QWORD rdi,QWORD inode)
 	QWORD rsi;
 	int i;
 
-	checkinodecache(inode);
+	checkcacheforinode(inode);
 
 	say("inode:%x\n",inode);
 

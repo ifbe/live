@@ -144,7 +144,7 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 }
 
 
-void checkmftcache(QWORD mftnum)
+void checkcacheformft(QWORD mftnum)
 {
 	//是否需要重新载入某块mft
 	cacheblock=mftnum & 0xffffffffffffff00;
@@ -321,7 +321,7 @@ void explaina0(QWORD addr)	//index allocation
 
 void explainmft(QWORD data)
 {
-	checkmftcache(data);		//reload cache
+	checkcacheformft(data);		//reload cache
 	QWORD mft=mftbuffer+0x400*(data % 0x100);    //0x40000/0x400=0x100个
 	if( *(DWORD*)mft !=0x454c4946 )
 	{
@@ -516,8 +516,6 @@ static void ntfs_load(BYTE* addr)
 int mountntfs(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
 {
 	//返回cd和load函数的地址
-	//remember(0x6463,(QWORD)ntfs_cd);
-	//remember(0x64616f6c,(QWORD)ntfs_load);
 	*cdfunc=(QWORD)ntfs_cd;
 	*loadfunc=(QWORD)ntfs_load;
 

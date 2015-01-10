@@ -4,20 +4,36 @@
 #define QWORD unsigned long long
 
 
+//每0x40个字节是一个磁盘分区记录，里面包含起止扇区分区类型分区名字等信息
 struct mystruct
 {
 	unsigned long long startlba;	//[+0,0x7]:起始lba
 	unsigned long long endlba;	//[+0x8,0xf]:末尾lba
 	unsigned long long parttype;	//[+0x10,0x17]:分区类型anscii
 	unsigned long long partname;	//[0x18,0x1f]:分区名字
-	unsigned long long a[4];	//[0x20,0x3f]:undefined
+	unsigned long long a[4];	//[0x20,0x3f]:unused
 };
-//一堆这种东西的结构体的起始地址
-static struct mystruct* mytable;
+static struct mystruct mytable[128];		//0x40*0x80=0x2000
+//每0x40个字节是一个当前目录表
+struct dirbuffer
+{
+	unsigned long long name;	//[+0,0x7]:起始lba
+	unsigned long long unused;
+	unsigned long long type;	//[+0x10,0x1f]:末尾lba
+	unsigned long long unused1;
+	unsigned long long specialid;	//[+0x20,0x2f]:分区类型anscii
+	unsigned long long unused2;
+	unsigned long long size;	//[0x30,0x3f]:分区名字
+	unsigned long long unused3;
+};
+static struct dirbuffer* dir;	//dir=“目录名缓冲区”的内存地址（dir[0],dir[1],dir[2]是这个内存地址里面的第0，1，2字节快）
 //读缓冲区的地址，缓冲区64k大小
 static QWORD readbuffer;
-static QWORD cdfunc,loadfunc;
+//键盘输入专用
 static unsigned char buffer[128];
+//调用的cd和load函数所在的内存地址
+static QWORD cdfunc,loadfunc;
+
 
 
 
@@ -130,14 +146,14 @@ QWORD explainmbr()
 void init()
 {
 	//取出已经申请到的内存地址，看不惯就手动malloc吧
-	getaddroftable(&mytable);
 	getaddrofbuffer(&readbuffer);
+	getaddrofdir(&dir);
 
 	//清理
 	BYTE* memory;
 	int i;
 	memory=(BYTE*)(mytable);
-	for(i=0;i<0x10000;i++) memory[i]=0;
+	for(i=0;i<0x2000;i++) memory[i]=0;
 	memory=(BYTE*)(readbuffer);
 	for(i=0;i<0x100000;i++) memory[i]=0;
 
@@ -161,8 +177,13 @@ void init()
 }
 
 
-static int mount(int i)
+static int mount(QWORD i)
 {
+	if(i>10)
+	{
+		say("impossible partition:%llx\n",i);
+		return;
+	}
 	QWORD start=mytable[i].startlba;
 	QWORD end=mytable[i].endlba;
 	QWORD type=mytable[i].parttype;
@@ -188,31 +209,25 @@ static int mount(int i)
 
 void main()
 {
+	//分区表转换到容易理解的表里
 	init();
 
-	//把操作函数的位置放进/bin
-	//remember(0x746e756f6d,(QWORD)mount);
-
-	QWORD first,second;
-	int i;
-	QWORD temp;
-	QWORD** p;
-	getaddrofdir(&p);
-	say("type exit to exit,type mount ? to mount,type ls to list,type load ? to load\n");
 	while(1)
 	{
-		//取一段输入
+		//等输入
+		QWORD first,second;
 		listen(buffer);
 		buf2arg(buffer,&first,&second);
 		//say("%s,%s\n",(char*)&first,(char*)&second);
-		say("%llx,%llx\n",first,second);
+		//say("%llx,%llx\n",first,second);
 
 		//判断
 		if(first==0x74697865)break;		//exit
 		else if(first==0x746e756f6d)			//mount ?
 		{
+			QWORD temp;
 			anscii2dec(&second,&temp);
-			//say("temp:%d\n",temp);
+			//say("temp:%llx\n",temp);
 			mount(temp);
 		}
 		else if(first==0x6463)				//cd
@@ -221,24 +236,24 @@ void main()
 		}
 		else if(first==0x64616f6c)				//load
 		{
+			//寻找这个文件名，主要为了得到size
+			int i;
+			for(i=0;i<0x40;i++)
+			{
+				
+			}
 			
+			//现在才是分段读取保存
+			((int (*)())(loadfunc))(&second,i);
 		}
 		else if(first==0x736c)				//ls
 		{
-			for(i=0;i<0x200;i+=0x10)
+			int i;
+			say("name                special id          type                size\n");
+			for(i=0;i<0x40;i++)
 			{
-				if(p[i]==0)break;
-				say("%-16.16s    ",(char*)(&p[i]));
-				//say("%s,%llx    ",(char*)(&p[i]),p[i+2]);
-				if(p[i+4]==0)break;
-				say("%-16.16s    ",(char*)(&p[i+4]));
-				//say("%s,%llx    ",(char*)(&p[i+4]),p[i+6]);
-				if(p[i+8]==0)break;
-				say("%-16.16s    ",(char*)(&p[i+8]));
-				//say("%s,%llx    ",(char*)(&p[i+8]),p[i+0x10]);
-				if(p[i+0xc]==0)break;
-				say("%-16.16s\n",(char*)(&p[i+12]));
-				//say("%s,%llx\n",(char*)(&p[i+0xc]),p[i+0xe]);
+				if(dir[i].name==0)break;
+				say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].type,dir[i].specialid,dir[i].size);
 			}
 			say("\n");
 		}

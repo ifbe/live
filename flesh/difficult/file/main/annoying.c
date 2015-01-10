@@ -60,13 +60,14 @@ void str2data(BYTE* str,QWORD* data)
 	}
 }
 //anscii码转换成一个数字，比如anscii码串为0x36,0x33,转换后得到decimal=32
-void anscii2dec(BYTE* second,BYTE* decimal)
+void anscii2dec(BYTE* second,QWORD* decimal)
 {
 	*decimal=0;
 	int i;
 	for(i=0;i<8;i++)
 	{
 		if(second[i]<=0x20) break;
+		//say("%x\n",second[i]);
 		*decimal=(second[i]-0x30)+(*decimal)*10;
 	}
 }

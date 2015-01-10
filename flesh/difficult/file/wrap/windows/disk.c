@@ -31,7 +31,7 @@ __attribute__((constructor)) void initdisk()
 			//printf("physicaldrive%d,GetLastError()=:%d\n",i,GetLastError());
 		}
 	}
-	printf("choose disk\n");
+	printf("choose disk(give me the number):");
 	scanf("%d",&i);
 	diskname[17]=0x30+i;
 	hDev=CreateFile(diskname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
@@ -54,9 +54,9 @@ void read(QWORD buf,QWORD startsector,QWORD disk,DWORD count)
 	li.QuadPart = startsector*512;
 	SetFilePointer (hDev,li.LowPart,&li.HighPart,FILE_BEGIN);
 
-	unsigned long dwRet = 0;
-	ReadFile(hDev,(unsigned char*)buf,count*512,&dwRet,0);
-	//printf("read %d bytes\n",dwRet);
+	unsigned long dwret = 0;
+	ReadFile(hDev,(unsigned char*)buf,count*512,&dwret,0);
+	if(dwret!=count*512)printf("read %d bytes,GetLastError()=%d\n",dwret,GetLastError());
 /*
 	int i,j;
 	for(i=0;i<dwRet;i+=16)
