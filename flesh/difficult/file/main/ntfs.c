@@ -144,6 +144,7 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 }
 
 
+//保证包含mftnum的那个1M大小的数据块在我们定义的1M大小的缓冲区里
 void checkcacheformft(QWORD mftnum)
 {
 	//是否需要重新载入某块mft
@@ -178,6 +179,7 @@ void checkcacheformft(QWORD mftnum)
 }
 
 
+//run到哪里，run信息在哪儿
 void datarun(QWORD rdi,QWORD runaddr)
 {
 	say("run@%x\n",runaddr);
@@ -252,8 +254,7 @@ void index2raw(QWORD start,QWORD end)
 		*(QWORD*)(buffer+0x10)= (*(QWORD*)index)&0xffffffffffff;
 
 		index+= *(WORD*)(index+0x8);
-		rawpointer+=0x20;
-		buffer+=0x20;
+		buffer+=0x40;
 	}
 }
 

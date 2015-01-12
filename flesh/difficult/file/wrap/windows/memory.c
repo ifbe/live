@@ -24,7 +24,7 @@ void getaddrofbuffer(unsigned long long* p)
 }
 void getaddrofdir(unsigned long long* p)
 {
-	*p=(unsigned long long)fsbuf;
+	*p=(unsigned long long)dirbuf;
 }
 void getaddroffs(unsigned long long* p)
 {

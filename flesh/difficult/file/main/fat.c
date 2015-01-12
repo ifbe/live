@@ -214,28 +214,27 @@ static int fat16_cd(BYTE* addr)
 
 
 
-//fat32
-//文件分配表区总共可以有0xffffffff个*每个簇记录占4个字节<=0x400000000=16G=0x2000000个扇区
-//数据区总共0xffffffff个簇*每簇512k<=0x20000000000=2T=0x100000000个扇区
-static QWORD cachecurrent;		//单位是扇区
+
+//fat32的fat表很大，不能像fat16那样直接全部存进一块32K的内存里
+//所以每次查表的时候，要把，被查的表项目，所在的64K块，搬进内存
+//0x40000=0x200个扇区=0x10000个簇记录
+//所以要读的扇区为：[whatwewant,whatwewant+0x1ff](whatwewant=fat0扇区+(cluster/0x10000)*0x200)
+//举例子：
+//请求cluster=   0x777，如果内存里就是这第   0大块就返回，否则要把       0号到  0xffff号扔进内存然后记下当前clustercurrent=0
+//请求cluster= 0x13578，如果内存里就是这第   1大块就返回，否则要把 0x10000号到 0x1ffff号扔进内存然后记下当前clustercurrent=0x10000
+//请求cluster= 0x20000，如果内存里就是这第   2大块就返回，否则要把 0x20000号到 0x2ffff号扔进内存然后记下当前clustercurrent=0x20000
+//请求cluster=0x613153，如果内存里就是这第0x61大块就返回，否则要把0x610000号到0x61ffff号扔进内存然后记下当前clustercurrent=0x610000
+static QWORD firstincache;
 static void checkcacheforcluster(QWORD cluster)
 {
-	//0x40000=0x200个扇区=0x10000个簇记录
-	//所以要读的扇区为：[cacheblock,cacheblock+0x1ff](cacheblock=fat0扇区+(cluster/0x10000)*0x200)
-	//举例子：777在第0大块，13578在第1大块，每大块0x200个扇区
-	//当前返回
-	QWORD cacheblock=(cluster/0x10000);
-	if(cachecurrent == cacheblock) return;
+	//现在的就是我们要的，就直接返回
+	QWORD whatwewant=cluster&0xffffffffffff0000;
+	if(firstincache == whatwewant) return;
 
-
-	//读，之后保存这块的编号
-	QWORD i;
-	for(i=0;i<0x40;i++)
-	{
-		read(fatbuffer+i*0x1000,fat0+cacheblock*0x200+8*i,diskaddr,8);
-	}
-	say("cacheblock:%x\n",cacheblock);
-	cachecurrent=cacheblock;
+	//否则，从这个开始，读0xffff个，再记下目前cache里面第一个
+	say("whatwewant:%x\n",whatwewant);
+	read(fatbuffer,fat0+(whatwewant/0x80),diskaddr,0x200);	//每扇区有0x200/4=0x80个，需要fat表所在位置往后
+	firstincache=whatwewant;
 }
 //从收到的簇号开始一直读最多1MB，接收参数为目的内存地址，第一个簇号
 static void fat32_data(QWORD dest,QWORD cluster)		//destine,clusternum
@@ -252,9 +251,10 @@ static void fat32_data(QWORD dest,QWORD cluster)		//destine,clusternum
 		checkcacheforcluster(cluster);
 		cluster=(QWORD)(*(DWORD*)(fatbuffer+4*(cluster%0x10000)));
 
-		if(cluster<2){say("impossible cluster,bye!%x\n",cluster);return;}
-		if(cluster==0x0ffffff7){say("bad cluster,bye!%x\n",cluster);return;}
-		if(cluster>=0x0ffffff8) break;
+		//if(cluster<2){say("impossible cluster,bye!%x\n",cluster);return;}
+		if(cluster<2)break;
+		if(cluster>=0x0ffffff8)break;
+		if(cluster==0x0ffffff7){say("bad cluster,bye!%x\n",cluster);break;}
 	}
 	say("count:%x\n",rdi-dest);
 	say("\n");
@@ -292,7 +292,10 @@ static void fat32_root()
 	int i;
 	for(i=0;i<0x40000;i++) memory[i]=0;
 
-	cachecurrent=0xffffffff;
+	//fat32
+	//文件分配表区总共可以有0xffffffff个*每个簇记录占4个字节<=0x400000000=16G=0x2000000个扇区
+	//数据区总共0xffffffff个簇*每簇512k<=0x20000000000=2T=0x100000000个扇区
+	firstincache=0xffffffff;		//绝对会读一块
 	checkcacheforcluster(0);
 
 	say("cd root:%x\n",cluster0+clustersize*2);
