@@ -42,41 +42,41 @@ static QWORD getinodeblock(QWORD groupnum)
 }
 
 
-//可以放在cache里的数目=0x40000/inodesize
-//有两个问题，1是inodesize可能没法使数目为整数，2是inode分散在不同的blockgroup里面
-//1的解决方法是多用一点地方，向上取商
-//2的解决方法是找呗
+//输入：想要的inode号
+//返回：想要的inode挪进内存之后的地址
+//作用：把0x40000/0x100=0x400个inode挪进内存（因为每个inode占用的子节数量可能是120,0x80,0x100）
+//也就是[inode-(inode-1)%0x400,+0x3ff]。比如0x3352号:[0x3001,0x3400]
 static QWORD firstincache;
-static void checkcacheforinode(QWORD inode)
+static QWORD checkcacheforinode(QWORD wanted)
 {
 	//内存里已经是这一块的话就直接返回
-	QWORD whatwewant=(inode-1)*inodesize;
-	whatwewant&=0xfffffffffffc0000;		//0x40000一块
-	say("whatwewant:%x,firstincache:%x\n",whatwewant,firstincache);
-	if(firstincache == whatwewant) return;
+	QWORD offsetfromfirst=(wanted-1)%0x400;
+	if(wanted-offsetfromfirst == firstincache)
+	{
+		return inodebuffer+offsetfromfirst*inodesize;
+	}
 
 
-	//麻烦了
-	say("caching inode table{\n",whatwewant);
+	//不是就麻烦了
 	QWORD rdi=inodebuffer;
-	inode=1+whatwewant/inodesize;
+	QWORD this=wanted-offsetfromfirst;
+	say("reading inode:%x\n",this);
 	while(1)
 	{
-		//读满0x40000字节就走人
-		if(rdi>=inodebuffer+0x40000) break;
+		//读满0x400个inode就走人
+		if(this-wanted>=0x400) break;
 
 		//inode分散在各个group里面，可能需要从不同地方收集
-		say("reading inode:%x\n",inode);
-		QWORD groupnum=(inode-1)/inodepergroup;		//算出此inode在第几块组
-		say("group number:%x\n",groupnum);
-		QWORD groupoffset=((inode-1) % inodepergroup)/(0x200/inodesize);		//在这一组内的偏移（多少扇区）
-		say("group offset:%x\n",groupoffset);
+		QWORD groupnum=(this-1)/inodepergroup;		//算出此inode在第几块组
+		QWORD groupoffset=((this-1) % inodepergroup)/(0x200/inodesize);		//在这一组内的偏移（多少扇区）
 		QWORD inodeblock=getinodeblock(groupnum);		//得到这一组的块编号
-		say("inode block:%x\n",inodeblock);
 		QWORD where=block0+inodeblock*blocksize+groupoffset;		//计算从哪一块开始
+		say("group number:%x\n",groupnum);
+		say("group offset:%x\n",groupoffset);
+		say("inode block:%x\n",inodeblock);
 		say("sector:%x\n",where);
 
-		//计算读多少块
+		//在这一group里面读多少块
 		//每扇区inode数量=0x200/inodesize
 		//inode表里，每组多少扇区=inodepergroup/（0x200/inodesize）
 		QWORD count;
@@ -101,11 +101,11 @@ static void checkcacheforinode(QWORD inode)
 	    read(rdi,where,diskaddr,count);
 
 		rdi+=count*0x200;
-		inode+=0x200/inodesize*count;
+		this+=0x200/inodesize*count;
 	}
 	//mem2file(inodebuffer,"after.bin",0,0x40000);
-	firstincache=whatwewant;
-	say("}\n");
+	firstincache=wanted-offsetfromfirst;
+	return inodebuffer+offsetfromfirst*inodesize;
 }
 
 
@@ -113,11 +113,8 @@ static void checkcacheforinode(QWORD inode)
 //返回值：<=0就是失败
 static int explaininode(QWORD rdi,QWORD inode)
 {
-	checkcacheforinode(inode);
-	//(inode-1)%(0x40000/inodesize)
-	QWORD rsi=inodebuffer+((inode-1)*inodesize)%0x40000;
-	say("inode:%x\n",inode);
-	say("%x\n",((inode-1)*inodesize)%0x40000);
+	say("inode:%x{\n",inode);
+	QWORD rsi=checkcacheforinode(inode);
 
 	//检查是不是软链接
 	WORD temp=(*(WORD*)rsi)&0xf000;
