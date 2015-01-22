@@ -1,4 +1,8 @@
-﻿#define BYTE unsigned char
+﻿//块组结构:						[block0]				[block1]			[block2]				[block3]				[block4]
+//第一组且每小块扇区数2:		[bootsector]			[superblock]		[groupdescriptor0]		[groupdescriptor1]		[groupdescriptor2]......
+//第一组且每block扇区数4,8,16:	[bootsector+superblock]	[groupdescriptor0]	[groupdescriptor1]		[groupdescriptor2]		[groupdescriptor3]
+//其他组不管每块扇区数是几		[superblock]			[groupdescriptor0]	[groupdescriptor1]		[groupdescriptor2]		[groupdescriptor3]
+#define BYTE unsigned char
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
@@ -17,8 +21,29 @@ static QWORD inodepergroup;
 static QWORD inodesize;
 
 
-//把包含这一组信息的一个扇区读进这512字节缓冲区里面
+
+
+//输入值：请求的组号
+//返回值：这个组里面inode表的第一个block号
 static BYTE blockrecord[512];
+static QWORD whichblock(QWORD groupnum)
+{
+	//group descriptor从哪个扇区开始
+	QWORD sector;
+	if(blocksize==2) sector=block0+4;
+	else sector=block0+blocksize;
+
+	//从这个扇区起往后多少扇区
+	sector+=groupnum/(0x200/0x20);
+
+	//肯定在这个扇区里面
+	read(blockrecord,sector,diskaddr,1);
+
+	//每0x20描述一个组，一个扇区有16个组的信息
+	QWORD addr=(QWORD)blockrecord+8+(groupnum*0x20)%0x200;
+	return *(DWORD*)addr;
+}
+/*
 static QWORD getinodeblock(QWORD groupnum)
 {
 	QWORD sector;
@@ -40,31 +65,76 @@ static QWORD getinodeblock(QWORD groupnum)
 	//得到这一组inode表的block号
 	return *(DWORD*)addr;
 }
+*/
 
 
-//输入：想要的inode号
-//返回：想要的inode挪进内存之后的地址
-//作用：把0x40000/0x100=0x400个inode挪进内存（因为每个inode占用的子节数量可能是120,0x80,0x100）
-//也就是[inode-(inode-1)%0x400,+0x3ff]。比如0x3352号:[0x3001,0x3400]
-static QWORD firstincache;
+
+//文件->人，inode->户口本里的记录，这个函数->管理员
+//这个函数作用：每次指名要一个记录，管理员就从户口本里翻到那儿([0x400n+1号,0x400n+1号])再指给请求者看
+//比如:0x3352号:[0x3001,0x3400]，0x182304号->[0x182001,182400]
+//注意1:不管inodesize是120(0x400*120)还是128(0x400*128)还是256(0x400*256)，算出的值都能被0x200(一个扇区)整除
+//注意2:每个组的inode数量一般为8192，是0x400的倍数
+//注意3:inode首个的编号是1不是0
+static QWORD firstinodeincache;
 static QWORD checkcacheforinode(QWORD wanted)
 {
-	//内存里已经是这一块的话就直接返回
-	QWORD offsetfromfirst=(wanted-1)%0x400;
-	if(wanted-offsetfromfirst == firstincache)
+	//内存里已经是这几个的话就直接返回
+	QWORD inodeoffset=(wanted-1)%0x400;
+	if(wanted-inodeoffset == firstinodeincache)
 	{
-		return inodebuffer+offsetfromfirst*inodesize;
+		return inodebuffer+inodeoffset*inodesize;
 	}
 
 
 	//不是就麻烦了
 	QWORD rdi=inodebuffer;
-	QWORD this=wanted-offsetfromfirst;
-	say("reading inode:%x\n",this);
+	QWORD this=wanted-inodeoffset;
+	while(1)
+	{
+		//inode分散在各个group里面，可能需要从不同地方收集
+		QWORD groupnum=(this-1)/inodepergroup;		//算出此inode在第几块组
+		QWORD groupoffset=(this-1)%inodepergroup;			//在这一组内的偏移（几个）
+
+		//算：哪个扇区,几个扇区
+		QWORD where;
+		where=block0+blocksize*whichblock(groupnum);	//这一组第一个inode所在扇区，不会出问题
+		where+=groupoffset*inodesize/0x200;		//注意！！！！inodepergroup奇葩时这里出问题
+		QWORD count;
+		count=inodepergroup-groupoffset;	//这一group内剩余多少个
+		if(count>0x400)count=0x400;			//这一组里剩余的太多的话，多余的不要
+
+		//read inode table
+		say("inode:%x@%x\n",this,where);
+	    read(rdi,where,diskaddr,count*inodesize/0x200);	//注意！！！！inodepergroup奇葩时这里出问题
+
+		//读满0x400个inode就走人
+		rdi+=count*inodesize;				//注意！！！！inodepergroup奇葩时这里出问题
+		this+=count;
+		if(rdi-inodebuffer>=0x40000) break;
+	}
+	//mem2file(inodebuffer,"after.bin",0,0x40000);
+	firstinodeincache=wanted-inodeoffset;
+	return inodebuffer+inodeoffset*inodesize;
+}
+/*
+static QWORD checkcacheforinode(QWORD wanted)
+{
+	//内存里已经是这几个的话就直接返回
+	QWORD offset=(wanted-1)%0x400;
+	if(wanted-offset == firstinodeincache)
+	{
+		return inodebuffer+offset*inodesize;
+	}
+
+
+	//不是就麻烦了
+	QWORD rdi=inodebuffer;
+	QWORD this=wanted-offset;
 	while(1)
 	{
 		//读满0x400个inode就走人
 		if(this-wanted>=0x400) break;
+		say("reading inode:%x\n",this);
 
 		//inode分散在各个group里面，可能需要从不同地方收集
 		QWORD groupnum=(this-1)/inodepergroup;		//算出此inode在第几块组
@@ -104,14 +174,15 @@ static QWORD checkcacheforinode(QWORD wanted)
 		this+=0x200/inodesize*count;
 	}
 	//mem2file(inodebuffer,"after.bin",0,0x40000);
-	firstincache=wanted-offsetfromfirst;
-	return inodebuffer+offsetfromfirst*inodesize;
+	firstinodeincache=wanted-offset;
+	return inodebuffer+offset*inodesize;
 }
+*/
 
 
 //输入值：目的内存地址，要搞的inode号
 //返回值：<=0就是失败
-static int explaininode(QWORD rdi,QWORD inode)
+static int explaininode(QWORD inode)
 {
 	say("inode:%x{\n",inode);
 	QWORD rsi=checkcacheforinode(inode);
@@ -128,11 +199,16 @@ static int explaininode(QWORD rdi,QWORD inode)
 	rsi+=0x28;
 	if(*(WORD*)rsi == 0xf30a)		//ext4用新方式
 	{
-		QWORD numbers;
-
+		QWORD numbers=*(WORD*)(rsi+2);
 		say("extend@%x\n",rsi);
-		numbers=*(WORD*)(rsi+2);
 		say("numbers:%x\n",numbers);
+
+		QWORD rdi;
+		for(rdi=readbuffer;rdi<readbuffer+0x40000;rdi++)
+		{
+			*(BYTE*)rdi=0;
+		}
+		rdi=readbuffer;
 
 		int i;
 		rsi+=12;
@@ -252,7 +328,7 @@ static int ext_cd(BYTE* addr)
 	}
 
 	//开搞
-	int result=explaininode(readbuffer,number);
+	int result=explaininode(number);
 	if(result>0)explaindirectory();
 	return 1;
 }
@@ -283,7 +359,7 @@ static void ext_load(BYTE* addr)
 		return;
 	}
 
-	explaininode(readbuffer,number);
+	explaininode(number);
 }
 
 
@@ -297,11 +373,7 @@ int mountext(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
 	getaddrofbuffer(&readbuffer);
 	getaddrofdir(&directorybuffer);
 	getaddroffs(&inodebuffer);
-	//say("%llx,%llx\n",directorybuffer,inodebuffer);
-
-	//diskaddr=*(QWORD*)(0x200000+8);
-	block0=sector;
-	say("ext sector:%x\n",sector);
+	block0=sector;				//say("ext sector:%x\n",sector);
 
 	//读分区前8扇区，总共0x1000字节
 	read(readbuffer,block0,diskaddr,0x8);	//0x1000
@@ -310,18 +382,18 @@ int mountext(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
 	if( *(WORD*)(readbuffer+0x438) != 0xef53 ) return;
 
 	//变量们
-	blocksize=*(DWORD*)(readbuffer+0x418);	//就不另开个temp变量了
-	blocksize=( 1<<(blocksize+10) )/0x200;
+	blocksize=*(DWORD*)(readbuffer+0x418);
+	blocksize=( 1<<(blocksize+10) )/0x200;		//每块多少扇区
 	say("sectorperblock:%x\n",blocksize);
-	groupsize=( *(DWORD*)(readbuffer+0x420) )*blocksize;
+	groupsize=( *(DWORD*)(readbuffer+0x420) )*blocksize;	//每组多少扇区
 	say("sectorpergroup:%x\n",groupsize);
-	inodepergroup=*(DWORD*)(readbuffer+0x428);
+	inodepergroup=*(DWORD*)(readbuffer+0x428);		//每组多少个inode
 	say("inodepergroup:%x\n",inodepergroup);
-	inodesize=*(WORD*)(readbuffer+0x458);
+	inodesize=*(WORD*)(readbuffer+0x458);		//每inode多少字节
 	say("byteperinode:%x\n",inodesize);
 
 	//inode table缓存
-	firstincache=0xffffffff;
+	firstinodeincache=0xffffffff;
 
 	//cd /
 	ext_cd("/");
