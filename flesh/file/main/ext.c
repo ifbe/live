@@ -1,7 +1,30 @@
-﻿//块组结构:						[block0]				[block1]			[block2]				[block3]				[block4]
-//第一组且每小块扇区数2:		[bootsector]			[superblock]		[groupdescriptor0]		[groupdescriptor1]		[groupdescriptor2]......
-//第一组且每block扇区数4,8,16:	[bootsector+superblock]	[groupdescriptor0]	[groupdescriptor1]		[groupdescriptor2]		[groupdescriptor3]
-//其他组不管每块扇区数是几		[superblock]			[groupdescriptor0]	[groupdescriptor1]		[groupdescriptor2]		[groupdescriptor3]
+﻿/*
+一.ext物理结构如下
+单独的每粒瓜子-->一个扇区(512或者4096字节？，硬盘读写的基本单位)
+很多粒装进一袋-->一个块(由几个扇区组成)
+很多袋装进一箱-->一个块组(由很多块组成)
+很多箱放满仓库-->一个分区(由很多块组组成)
+
+
+二.ext逻辑结构如下
+所有文件或者目录由inode记录管理，每个group一部分inode
+文件inode记录文件所有信息，如：大小，权限，位置，扇区数，等等
+找inode的方法是计算在第几组，计算它是组内第几个，然后读就行了
+找到inode就找到了文件或者目录项，得到大小，位置和扇区然后把文件从磁盘提取到内存即可
+
+
+三.具体某一种东西的结构
+什么是一个块组：(这里每个[]表示一个块):
+(第一组且每block扇区数2):		[bootsector]			[superblock]		[groupdescriptor0]	[groupdescriptor1]	[groupdescriptor2]......
+(第一组且每block扇区数4,8,16):	[bootsector+superblock]	[groupdescriptor0]	[groupdescriptor1]	[groupdescriptor2]	[groupdescriptor3]
+(其他组不管):					[superblock]			[groupdescriptor0]	[groupdescriptor1]	[groupdescriptor2]	[groupdescriptor3]
+
+什么是一个目录：
+[张三疯，1732号，120斤][李四合院，8号，99斤][王二百五十六，11130号，101斤][麻子，55号，115斤]
+
+什么是一个文件：
+床前明月光，自挂东南枝。谁知盘中餐，红掌拨清波。
+*/
 #define BYTE unsigned char
 #define WORD unsigned short
 #define DWORD unsigned int
@@ -43,35 +66,14 @@ static QWORD whichblock(QWORD groupnum)
 	QWORD addr=(QWORD)blockrecord+8+(groupnum*0x20)%0x200;
 	return *(DWORD*)addr;
 }
-/*
-static QWORD getinodeblock(QWORD groupnum)
-{
-	QWORD sector;
-	QWORD addr;
-
-	//group descriptor从哪个扇区开始
-	if(blocksize==2) sector=block0+4;
-	else sector=block0+blocksize;
-
-	//从这个扇区起往后多少扇区
-	sector+=groupnum/(0x200/0x20);
-
-	//肯定在这个扇区里面
-	read(blockrecord,sector,diskaddr,1);
-
-	//每0x20描述一个组，一个扇区有16个组的信息
-	addr=(QWORD)blockrecord+8+(groupnum*0x20)%0x200;
-
-	//得到这一组inode表的block号
-	return *(DWORD*)addr;
-}
-*/
 
 
 
-//文件->人，inode->户口本里的记录，这个函数->管理员
+
+//文件->一家人，inode->户口本里的记录，这个函数->管理员
 //这个函数作用：每次指名要一个记录，管理员就从户口本里翻到那儿([0x400n+1号,0x400n+1号])再指给请求者看
-//比如:0x3352号:[0x3001,0x3400]，0x182304号->[0x182001,182400]
+//比如0x3352号:先读入[0x3001,0x3400]这1024个记录
+//再比如0x182304号:读入[0x182001,182400]这1024个记录
 //注意1:不管inodesize是120(0x400*120)还是128(0x400*128)还是256(0x400*256)，算出的值都能被0x200(一个扇区)整除
 //注意2:每个组的inode数量一般为8192，是0x400的倍数
 //注意3:inode首个的编号是1不是0
@@ -104,7 +106,7 @@ static QWORD checkcacheforinode(QWORD wanted)
 		if(count>0x400)count=0x400;			//这一组里剩余的太多的话，多余的不要
 
 		//read inode table
-		say("inode:%x@%x\n",this,where);
+		//say("inode:%x@%x\n",this,where);
 	    read(rdi,where,diskaddr,count*inodesize/0x200);	//注意！！！！inodepergroup奇葩时这里出问题
 
 		//读满0x400个inode就走人
@@ -116,132 +118,155 @@ static QWORD checkcacheforinode(QWORD wanted)
 	firstinodeincache=wanted-inodeoffset;
 	return inodebuffer+inodeoffset*inodesize;
 }
-/*
-static QWORD checkcacheforinode(QWORD wanted)
+
+
+
+
+//------------------粗糙的打比方--------------------
+//一个村庄（每个文件）
+//被拆迁（文件系统处理）
+//村里各户人家（组成文件那些字节字节字节字节字节...）
+//分散到各种地方（硬盘上分区内第几扇区到第几扇区）
+//调用这个蛋碎一地函数（这块实际上在哪儿，这块总共多少个扇区，这块逻辑上是哪儿，你要哪儿）
+//就是跟老村联络员说（王二家现在住哪，总共多少人，王二拆迁前住在哪，要找村里哪几户人家）
+
+//-------------------详细的抽象---------------------
+//20厘米的尺子第3到11厘米涂上颜色，被不同大小得掰断成好几份
+//分别是[0,2],[2,4],[4,8],[8,10],[10,14],[14,20]
+//现在要把涂色的地方摆在(规定的地方)，没涂色的部分扔掉不管
+//因为这把尺子每个碎块上面都有刻度，所以从0开始可以排好队等着搞
+//[0,2],[14,20]:这两块都不要不管
+//[2,4]:切出[3,4],放在(规定的地方),总共1cm
+//[4,8]:全部放在(规定的地方+1cm),总共4cm
+//[8,10]:全部放在(规定的地方+4cm),总共2cm
+//[10,14]:切出[10,11],放在(规定的地方+7cm),总共1cm
+
+//--------------------画图说事--------------------
+//               |[want,want+1m]|
+//1:             |              | [where,]  //自己就能排除，不要麻烦这个函数
+//2: [where,]    |              |           //自己就能排除，不要麻烦这个函数
+//3:         [---|--where,--]   |           //传进来一块，前面不要
+//4:         [---|--where,------|----]      //传进来一块，前面不要，后面也不要
+//5:             |  [where,]    |           //传进来一块，全要
+//6:             |  [---where,--|----]      //传进来一块，后面不要
+
+void holyshit(sector,count,where,want)
 {
-	//内存里已经是这几个的话就直接返回
-	QWORD offset=(wanted-1)%0x400;
-	if(wanted-offset == firstinodeincache)
+	//关键:读到哪儿，读哪号扇区，读几个扇区
+	QWORD rdi=0;
+	QWORD rsi=0;
+	QWORD rcx=0;
+
+	//改rdi,rsi,rcx数值
+	if(where<want)		//3和4
 	{
-		return inodebuffer+offset*inodesize;
-	}
-
-
-	//不是就麻烦了
-	QWORD rdi=inodebuffer;
-	QWORD this=wanted-offset;
-	while(1)
-	{
-		//读满0x400个inode就走人
-		if(this-wanted>=0x400) break;
-		say("reading inode:%x\n",this);
-
-		//inode分散在各个group里面，可能需要从不同地方收集
-		QWORD groupnum=(this-1)/inodepergroup;		//算出此inode在第几块组
-		QWORD groupoffset=((this-1) % inodepergroup)/(0x200/inodesize);		//在这一组内的偏移（多少扇区）
-		QWORD inodeblock=getinodeblock(groupnum);		//得到这一组的块编号
-		QWORD where=block0+inodeblock*blocksize+groupoffset;		//计算从哪一块开始
-		say("group number:%x\n",groupnum);
-		say("group offset:%x\n",groupoffset);
-		say("inode block:%x\n",inodeblock);
-		say("sector:%x\n",where);
-
-		//在这一group里面读多少块
-		//每扇区inode数量=0x200/inodesize
-		//inode表里，每组多少扇区=inodepergroup/（0x200/inodesize）
-		QWORD count;
-		QWORD temp=inodepergroup/(0x200/inodesize);
-
-		//计算这一次读多少个扇区
-		if(groupoffset+0x200<=temp)
+		rdi=readbuffer;
+		rsi=sector+(want-where)/0x200;
+		if(where+count*0x200<=want+0x100000)
 		{
-			count=0x200;
+			rcx=count-(want-where)/0x200;
 		}
 		else
 		{
-			count=temp-groupoffset;
-			if(rdi-inodebuffer<0x200*count)
-			{
-				count=(inodebuffer+0x40000-rdi)/0x200;
-			}
+			rcx=0x100000/0x200;
 		}
-		say("count:%x\n",count);
-
-		//read inode table
-	    read(rdi,where,diskaddr,count);
-
-		rdi+=count*0x200;
-		this+=0x200/inodesize*count;
 	}
-	//mem2file(inodebuffer,"after.bin",0,0x40000);
-	firstinodeincache=wanted-offset;
-	return inodebuffer+offset*inodesize;
+	else
+	{
+		rdi=readbuffer+(where-want);
+		rsi=sector;
+		if(where+count*0x200<=want+0x100000)
+		{
+			rcx=count;
+		}
+		else
+		{
+			rcx=(want+0x100000-where)/0x200;
+		}
+	}
+	
+	say("rdi=%x,rsi=:%x,rcx=%x\n",rdi,rsi,rcx);
+	read(rdi,rsi,diskaddr,rcx);
 }
-*/
 
 
-//输入值：目的内存地址，要搞的inode号
+
+
+//输入值：要搞的inode号，这个inode对应的文件内部偏移
 //返回值：<=0就是失败
-static int explaininode(QWORD inode)
+//作用：从offset开始能读多少读多少(1M以内)
+static int explaininode(QWORD inode,QWORD wantwhere)
 {
-	say("inode:%x{\n",inode);
+	//函数调用之后,rsi为所请求的inode的内存地址，
 	QWORD rsi=checkcacheforinode(inode);
+
+	//打印整个inode方便调试，这步可注释掉
+	say("inode:%x\n",inode);
+	printmemory(rsi,inodesize);
 
 	//检查是不是软链接
 	WORD temp=(*(WORD*)rsi)&0xf000;
-	//say("%x\n",temp);
-	if(temp == 0xa000){
+	if(temp == 0xa000)
+	{
 		say((char*)(rsi+0x28));
 		say("(soft link)\n");
 		return -1;
 	}
 
-	rsi+=0x28;
-	if(*(WORD*)rsi == 0xf30a)		//ext4用新方式
+	if(*(WORD*)(rsi+0x28) == 0xf30a)	//ext4用新方式
 	{
-		QWORD numbers=*(WORD*)(rsi+2);
-		say("extend@%x\n",rsi);
-		say("numbers:%x\n",numbers);
+		//读extend头，拿点重要的变量
+					//*(WORD*)(rsi+0x28)		//这是个标志，等于0xf30a说明用extend方式
+		QWORD numbers=*(WORD*)(rsi+0x28+2);		//有效项个数
+					//*(WORD*)(rsi+0x28+4);		//项中的存储容量，4
+					//*(WORD*)(rsi+0x28+6);		//树的深度
+					//*(DWORD*)(rsi+0x28+8);	//树的代数
 
+		//为循环准备变量，清空内存，给读取的数据空间
+		rsi=rsi+0x28;		//加完以后指向ext4_extend头
+		int i;
 		QWORD rdi;
-		for(rdi=readbuffer;rdi<readbuffer+0x40000;rdi++)
+		for(rdi=readbuffer;rdi<readbuffer+0x100000;rdi++)
 		{
 			*(BYTE*)rdi=0;
 		}
-		rdi=readbuffer;
-
-		int i;
-		rsi+=12;
 		for(i=0;i<numbers;i++)
 		{
-			QWORD temp1;
-			QWORD temp2;
-			say("    @%x\n",rsi);
-
-			temp1=*(DWORD*)(rsi+8);
-			temp1+= *(WORD*)(rsi+6);
-			temp1*=blocksize;
-			temp1+=block0;
-			say("    sector:%x\n",temp1);
-
-			temp2=*(WORD*)(rsi+4);
-			temp2*=blocksize;
-			say("    count:%x\n",temp2);
-
+			//ext4_extend体结构如下:
+			//[0,3]第一个逻辑块
+			//[4,5]数据块个数
+			//[6,7]数据块高16位
+			//[8,b]数据块低32位
+			//每个ext4_extend体，大小为12B
 			rsi+=12;
 
-		    read(rdi,temp1,diskaddr,temp2);
-			rdi+=0x200*blocksize;
+			//逻辑上，这是文件的第几块
+			QWORD aaaaa=( *(DWORD*)rsi )*blocksize*0x200;		//逻辑上，这块的字节位置
+			if(aaaaa>=wantwhere+0x100000)break;		//结束了
+
+			//总共多少个扇区
+			QWORD count=( *(WORD*)(rsi+4) )*blocksize;			//多少个扇区
+			if(aaaaa+count*0x200<=wantwhere)continue;			//还没到
+
+			//实际上，从第几个扇区开始
+			QWORD sector=*(WORD*)(rsi+6);	//从extent体里得到高16位实际块号
+			sector=(sector<<32) + ( *(DWORD*)(rsi+8) );	//加上低32位实际块号
+			sector*=blocksize;	//乘以每块多少扇区，现在sector=分区内偏移多少个扇区
+			sector+=block0;		//加上分区相对硬盘开始多少个扇区
+
+			//蛋碎了，拼回来。。。
+			//传进去的参数为：这一块的物理扇区号，逻辑位置，需求位置，写入位置
+			holyshit(sector,count,aaaaa,wantwhere);
 		}
 
-		say("}\n");
 		return 1;
 	}
-	else				//ext2，3用老方式
+	else		//ext2，3用老的直接间接块的方式
 	{
 	say("old@%x\n",rsi);
 	say("{\n");
 /*
+	rsi+=0x28;
 	for(i=0;i<8;i++)
 	{
 		if(*(DWORD*)rsi != 0)
@@ -259,7 +284,6 @@ static int explaininode(QWORD inode)
 		rsi+=4;
 	}
 */
-	say("}\n");
 	return 2;
 	}
 }
@@ -287,10 +311,13 @@ static void explaindirectory()
 			*(BYTE*)(rdi+i)=*(BYTE*)(rsi+8+i);
 		}
 		//2.inode号
-		*(QWORD*)(rdi+0x10)=*(DWORD*)rsi;
+		QWORD thisinode=*(DWORD*)rsi;
+		*(QWORD*)(rdi+0x10)=thisinode;
 		//3.type
 		*(QWORD*)(rdi+0x20)=*(BYTE*)(rsi+7);
 		//4.size，ext的目录表里面没有文件大小，需要到inode表里面寻找
+		QWORD inodeaddr=checkcacheforinode(thisinode);
+		*(QWORD*)(rdi+0x30)=*(DWORD*)(inodeaddr+4);
 		//最后指向下一个
 		rsi+=*(WORD*)(rsi+4);
 		rdi+=0x40;
@@ -328,13 +355,13 @@ static int ext_cd(BYTE* addr)
 	}
 
 	//开搞
-	int result=explaininode(number);
+	int result=explaininode(number,0);
 	if(result>0)explaindirectory();
 	return 1;
 }
 
 
-static void ext_load(BYTE* addr)
+static void ext_load(BYTE* addr,QWORD offset)
 {
 	QWORD name;
 	QWORD* table=(QWORD*)(directorybuffer);	//一定要括号
@@ -359,7 +386,7 @@ static void ext_load(BYTE* addr)
 		return;
 	}
 
-	explaininode(number);
+	explaininode(number,offset);
 }
 
 

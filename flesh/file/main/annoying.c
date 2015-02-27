@@ -128,3 +128,25 @@ void buf2arg(char* buffer,QWORD* first,QWORD* second)
 		break;
 	}
 }
+//debug用，打印从addr开始的总共size个字节
+void printmemory(QWORD addr,QWORD size)
+{
+	BYTE* printaddr=(BYTE*)addr;
+	int i,j;
+
+	say("@%-15x",addr);
+	for(i=0;i<0xf;i++)
+	{
+		say("%2x  ",i);
+	}
+	say(" f\n");
+	for(j=0;j<size/16;j++)
+	{
+		say("%-16x",j*16);
+		for(i=0;i<0xf;i++)
+		{
+			say("%2x  ",printaddr[16*j+i]);
+		}
+		say("%2x\n",printaddr[16*j+15]);
+	}
+}

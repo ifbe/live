@@ -69,7 +69,6 @@ void explainrun(QWORD runaddr,long long* offset,long long* count)
 void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 {
 	say("mftrun@%x\n",runaddr);
-	say("{\n",0);
 
 	//变量们
 	QWORD rdi=mftbuffer;
@@ -97,13 +96,13 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 		end += count;
 
 		//判断是否是我们要的，是就读进内存
-		//			[----wishstart,wishend----]
+		//			      [----wishstart,wishend----]
 		//[------------------------------------------------------]
-		//1:[--start,end--]
-		//2:[----------start,end------------]
+		//1:[start,end]
+		//2:[----------start,end--------]
 		//3:[-------------------start,end------------------------]
-		//4:			[-----start,end------]
-		//5:			[-----------start,end------------]
+		//4:                [-----start,end------]
+		//5:                [-----------start,end------------]
 		if(end > wishstart)	//读[wishstart,?]
 		{
 			//即将被读的开始扇区号
@@ -124,7 +123,6 @@ void mftpart(QWORD runaddr,QWORD mftnum)	//datarun地址，mft号
 
 				say("    lastpart:%x\n",temp1);
 				say("}\n",0);
-				say("\n",0);
 				return;
 			}
 			else			//从wishstart读到本run结束
