@@ -226,14 +226,19 @@ static void explaindirectory()
 	QWORD rsi=readbuffer;
 	int i;
 
-	for(i=0;i<0x10000;i++)
+	for(i=0;i<0x100000;i++)
 	{
 		*(BYTE*)(rdi+i)=0;
 	}
 	while(1)
 	{
-		//全零就结束
+		//几种情况结束的
+		if(rdi>=directorybuffer+0x100000)break;
+		if(rsi>=readbuffer+0x100000)break;
 		if(*(DWORD*)rsi == 0)break;
+		if(*(WORD*)(rsi+4) == 0)break;
+		//say("%x\n",*(WORD*)(rsi+4));
+		//printmemory(rsi,0x10);
 
 		//1.名字
 		i=0;
@@ -249,6 +254,7 @@ static void explaindirectory()
 		//4.size，ext的目录表里面没有文件大小，需要到inode表里面寻找
 		QWORD inodeaddr=checkcacheforinode(thisinode);
 		*(QWORD*)(rdi+0x30)=*(DWORD*)(inodeaddr+4);
+
 		//最后指向下一个
 		rsi+=*(WORD*)(rsi+4);
 		rdi+=0x40;
