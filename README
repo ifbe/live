@@ -1,3 +1,10 @@
+具体各种硬件/工具/文件系统/协议栈的文档，在如下网址(下面几个都是一样的)
+liangcao.xyz
+www.liangcao.xyz
+粮草.xyz
+www.粮草.xyz
+
+
 blood of the enemy,forcibly taken you will resurrect your foe
 可用的库函数以及硬件的用法
 	cpu/
@@ -17,16 +24,6 @@ bone of the father,unknowingly given you will renew your son
 	xhci:3.0主控
 	usb:一个菜鸟级的usb协议栈
 	disk:fat/ntfs/ext读取
-
-
-soul of the evil,timelessly cursed you will reclaim your throne
-我自己整理的相关文档
-	boot.txt
-	longmode.txt
-	acpi.txt
-	apic.txt
-	ahci.txt
-	xhci.txt
 
 
 flesh of the servan,willingly given you will revive your master
