@@ -32,7 +32,7 @@ static QWORD readbuffer;
 //键盘输入专用
 static unsigned char buffer[128];
 //调用的cd和load函数所在的内存地址
-static QWORD cdfunc,loadfunc;
+static QWORD explainfunc,cdfunc,loadfunc;
 
 
 
@@ -192,17 +192,64 @@ static int mount(QWORD i)
 	//看分区种类调用函数，顺便把分区offset给它
 	if(type == 0x746166)
 	{
-		mountfat(start,&cdfunc,&loadfunc);
+		mountfat(start,&explainfunc,&cdfunc,&loadfunc);
 	}
 	else if(type == 0x7366746e)
 	{
-		mountntfs(start,&cdfunc,&loadfunc);
+		mountntfs(start,&explainfunc,&cdfunc,&loadfunc);
 	}
 	else if(type == 0x747865)
 	{
-		mountext(start,&cdfunc,&loadfunc);
+		mountext(start,&explainfunc,&cdfunc,&loadfunc);
 	}
 	return 1;
+}
+static int explain(QWORD number)
+{
+	((int (*)())(explainfunc))(number);
+}
+static int cd(addr)
+{
+	say("i am in\n");
+	((int (*)())(cdfunc))(addr);
+}
+static int load(addr)
+{
+	//寻找这个文件名，主要为了得到size
+	int i;
+	for(i=0;i<0x40;i++)
+	{
+		if(compare(addr,(char*)(&dir[i]))==0)break;
+	}
+	if(i==0x40)
+	{
+		say("file not found\n");
+		return -1;
+	}
+	say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].specialid,dir[i].type,dir[i].size);
+
+	//现在分段读取保存
+	QWORD totalsize=dir[i].size;
+	QWORD temp;
+	for(temp=0;temp<totalsize/0x100000;temp++)
+	{
+		say("shouldn't here\n");
+		((int (*)())(loadfunc))(addr,temp*0x100000);			//
+		mem2file(readbuffer,addr,temp*0x100000,0x100000);		//mem地址，file名字，文件内偏移，写入多少字节
+	}
+	((int (*)())(loadfunc))(addr,temp*0x100000);			//
+	mem2file(readbuffer,addr,temp*0x100000,totalsize%0x100000);		//mem地址，file名字，文件内偏移，写入多少字节
+}
+static int ls()
+{
+	int i;
+	say("name                special id          type                size\n");
+	for(i=0;i<0x40;i++)
+	{
+		if(dir[i].name==0)break;
+		say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].specialid,dir[i].type,dir[i].size);
+	}
+	say("\n");
 }
 
 
@@ -222,56 +269,50 @@ void main()
 		//say("%llx,%llx\n",*(QWORD*)first,*(QWORD*)second);
 
 		//判断
-		if(*(QWORD*)first==0x74697865)break;		//exit
-		else if(*(QWORD*)first==0x746e756f6d)			//mount ?
+		switch(*(QWORD*)first)
 		{
-			QWORD temp;
-			anscii2dec(second,&temp);
-			//say("temp:%llx\n",temp);
-			mount(temp);
-		}
-		else if(*(QWORD*)first==0x6463)				//cd
-		{
-			((int (*)())(cdfunc))(second);
-		}
-		else if(*(QWORD*)first==0x64616f6c)				//load
-		{
-			//寻找这个文件名，主要为了得到size
-			int i;
-			for(i=0;i<0x40;i++)
+			case 0x74697865:
 			{
-				if(compare(second,(char*)(&dir[i]))==0)break;
+				//exit
+				return;
 			}
-			if(i==0x40)
+			case 0x746e756f6d:
 			{
-				say("file not found\n");
-				continue;
-			}
-			say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].specialid,dir[i].type,dir[i].size);
+				//接收到的anscii转数字
+				QWORD temp;
+				anscii2dec(second,&temp);
 
-			//现在分段读取保存
-			QWORD totalsize=dir[i].size;
-			QWORD temp;
-			for(temp=0;temp<totalsize/0x100000;temp++)
-			{
-				say("shouldn't here\n");
-				((int (*)())(loadfunc))(second,temp*0x100000);			//
-				mem2file(readbuffer,second,temp*0x100000,0x100000);		//mem地址，file名字，文件内偏移，写入多少字节
+				//传数字(第几个分区)
+				mount(temp);
+				break;
 			}
-			((int (*)())(loadfunc))(second,temp*0x100000);			//
-			mem2file(readbuffer,second,temp*0x100000,totalsize%0x100000);		//mem地址，file名字，文件内偏移，写入多少字节
-			
-		}
-		else if(*(QWORD*)first==0x736c)				//ls
-		{
-			int i;
-			say("name                special id          type                size\n");
-			for(i=0;i<0x40;i++)
+			case 0x6e69616c707865:
 			{
-				if(dir[i].name==0)break;
-				say("%-16.16s    %-16llx    %-16llx    %-16llx\n",(char*)(&dir[i]),dir[i].specialid,dir[i].type,dir[i].size);
+				//接收到的anscii转数字
+				QWORD temp;
+				anscii2dec(second,&temp);
+
+				//传数字(几号)
+				explain(temp);
+				break;
 			}
-			say("\n");
+			case 0x6463:
+			{
+				//传文件名字符串的地址进去
+				cd(second);
+				break;
+			}
+			case 0x64616f6c:
+			{
+				//传文件名字符串的地址进去
+				load(second);
+				break;
+			}
+			case 0x736c:
+			{
+				ls();
+				break;
+			}
 		}
 	}
 }

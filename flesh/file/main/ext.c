@@ -122,7 +122,6 @@ static QWORD checkcacheforinode(QWORD wanted)
 
 
 
-
 //输入值：要搞的inode号，这个inode对应的文件内部偏移
 //返回值：<=0就是失败
 //作用：从offset开始能读多少读多少(1M以内)
@@ -130,10 +129,6 @@ static int explaininode(QWORD inode,QWORD wantwhere)
 {
 	//函数调用之后,rsi为所请求的inode的内存地址，
 	QWORD rsi=checkcacheforinode(inode);
-
-	//打印整个inode方便调试，这步可注释掉
-	say("inode:%x\n",inode);
-	printmemory(rsi,inodesize);
 
 	//检查是不是软链接
 	WORD temp=(*(WORD*)rsi)&0xf000;
@@ -262,6 +257,18 @@ static void explaindirectory()
 }
 
 
+static int ext_explain(inode)
+{
+	say("inode %x\n",inode);
+
+	//函数调用之后,rsi为所请求的inode的内存地址，
+	QWORD rsi=checkcacheforinode(inode);
+
+	//打印整个inode方便调试，这步可注释掉
+	printmemory(rsi,inodesize);
+}
+
+
 static int ext_cd(BYTE* addr)
 {
 	//QWORD name;
@@ -327,9 +334,10 @@ static void ext_load(BYTE* addr,QWORD offset)
 }
 
 
-int mountext(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
+int mountext(QWORD sector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 {
 	//返回cd和load函数的地址
+	*explainfunc=(QWORD)ext_explain;
 	*cdfunc=(QWORD)ext_cd;
 	*loadfunc=(QWORD)ext_load;
 

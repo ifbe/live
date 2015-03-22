@@ -175,7 +175,7 @@ unsigned int findport(QWORD addr)
 		abar->ports[i].fb = receivefisbuffer+i*0x100;
 		abar->ports[i].fbu = 0;
 		abar->ports[i].cmd |=0x10;
-		abar->ports[i].cmd |=0x2;
+		abar->ports[i].cmd |=0x2;				//是1么？
 	}
 
 	//try again

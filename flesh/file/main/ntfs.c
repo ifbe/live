@@ -133,7 +133,7 @@ QWORD checkcacheformft(QWORD mftnum)
 		if(property==0x80)
 		{
 			//从mft0的datarun中读取我们要的部分mft
-			printmemory(mft0+offset,0x80);
+			//printmemory(mft0+offset,0x80);
 
 			QWORD temp=(QWORD)mft0+offset;
 			temp+=(*(QWORD*)(temp+0x20));
@@ -165,7 +165,7 @@ void explain80(QWORD addr,QWORD want)	//file data
 	else
 	{
 		say("non resident80@%x\n",addr);
-		datarun(readbuffer,addr + (*(QWORD*)(addr+0x20)) ,0);
+		datarun(readbuffer,addr + (*(WORD*)(addr+0x20)) ,want);
 	}
 }
 
@@ -209,7 +209,7 @@ QWORD explainindex(QWORD rdi,QWORD rsi,QWORD rcx)
 			if(property==0x30)
 			{
 				//从mft0的datarun中读取我们要的部分mft
-				printmemory(thismft+offset,0x60);
+				//printmemory(thismft+offset,0x60);
 
 				QWORD property30body=thismft+offset;
 				property30body += *(WORD*)(property30body+0x14);
@@ -233,7 +233,7 @@ void explain90(QWORD addr)	//index root
 {
 	say("90@%x\n",addr);
 
-	addr += *(DWORD*)(addr+0x14);	//现在addr=属性体地址=索引根地址
+	addr += *(WORD*)(addr+0x14);	//现在addr=属性体地址=索引根地址
 
 	addr+=0x10;			//现在addr=索引头地址
 	QWORD size=(QWORD)( *(DWORD*)(addr+4) );
@@ -362,7 +362,6 @@ void explainmft(QWORD mftnum,QWORD want)
 {
 	//具体不用管，知道返回值是所求MFT的地址就行
 	QWORD mft=checkcacheformft(mftnum);
-	printmemory(mft,0x400);
 
 	//mft会被改掉，所以把当前的复制一份到自己家处理
 	int i;
@@ -466,6 +465,14 @@ void explainmft(QWORD mftnum,QWORD want)
 }
 
 
+static void ntfs_explain(QWORD mftnum)
+{
+	say("mft %x\n",mftnum);
+	QWORD mft=checkcacheformft(mftnum);
+	printmemory(mft,0x400);
+}
+
+
 static int ntfs_cd(BYTE* addr)
 {
 	//QWORD name;
@@ -543,9 +550,10 @@ static int ntfs_load(BYTE* addr,QWORD offset)
 }
 
 
-int mountntfs(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
+int mountntfs(QWORD sector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 {
 	//返回cd和load函数的地址
+	*explainfunc=(QWORD)ntfs_explain;
 	*cdfunc=(QWORD)ntfs_cd;
 	*loadfunc=(QWORD)ntfs_load;
 
@@ -574,7 +582,7 @@ int mountntfs(QWORD sector,QWORD* cdfunc,QWORD* loadfunc)
 
 	//保存开头几个mft
 	read(mft0,ntfssector+mftcluster*clustersize,diskaddr,1);
-	printmemory(mft0,0x400);
+	//printmemory(mft0,0x400);
 
 	//
 	firstmftincache=0xffffffff;		//no mft cache yet

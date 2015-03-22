@@ -91,6 +91,9 @@ static void explaindirectory()
 
 
 
+static int fat16_explain()
+{
+}
 //从收到的簇号开始一直读最多1MB，接收参数为目的内存地址，第一个簇号
 static int fat16_data(QWORD dest,QWORD cluster)
 {
@@ -241,6 +244,9 @@ static void checkcacheforcluster(QWORD cluster)
 	read(fatbuffer,fat0+(whatwewant/0x80),diskaddr,0x200);	//每扇区有0x200/4=0x80个，需要fat表所在位置往后
 	firstincache=whatwewant;
 }
+static int fat32_explain()
+{
+}
 //从收到的簇号开始一直读最多1MB，接收参数为目的内存地址，第一个簇号
 static void fat32_data(QWORD dest,QWORD cluster)		//destine,clusternum
 {
@@ -358,7 +364,7 @@ static int fat32_cd(BYTE* addr)
 
 
 
-int mountfat(QWORD firstsector,QWORD* cdfunc,QWORD* loadfunc)
+int mountfat(QWORD firstsector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 {
 	//准备好可用的内存地址
 	getaddrofbuffer(&readbuffer);
@@ -392,6 +398,7 @@ int mountfat(QWORD firstsector,QWORD* cdfunc,QWORD* loadfunc)
 	{
 		//返回cd和load函数的地址给老大master用
 		say("fat16\n");
+		*explainfunc=(QWORD)fat16_explain;
 		*cdfunc=(QWORD)fat16_cd;
 		*loadfunc=(QWORD)fat16_load;
 
@@ -414,6 +421,7 @@ int mountfat(QWORD firstsector,QWORD* cdfunc,QWORD* loadfunc)
 	{
 		//返回cd和load函数的地址给老大master用
 		say("fat32\n");
+		*explainfunc=(QWORD)fat32_explain;
 		*cdfunc=(QWORD)fat32_cd;
 		*loadfunc=(QWORD)fat32_load;
 
