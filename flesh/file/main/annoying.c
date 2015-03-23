@@ -192,49 +192,67 @@ void anscii2dec(BYTE* second,QWORD* decimal)
 		*decimal=(second[i]-0x30)+(*decimal)*10;
 	}
 }
-//接收到的转换成两个，buf里面是“mount 12”，转换后得到first为“mount”，second为“12”
+//接收到的转换成两个
+//如果buf里面是“mount”，转换后得到first为“mount”，second为0xffffffff
+//如果buf里面是“mount 12”，转换后得到first为“mount”，second为“12”
 void buf2arg(char* buffer,QWORD* first,QWORD* second)
 {
 	int i=0,j,count;
 	char* temp;
-	first[0]=first[1]=second[0]=second[1]=0;
+
+	//空的命令空的数字会返回-1
+	first[0]=first[1]=second[0]=second[1]=0xffffffffffffffff;
 
 	temp=(char*)first;
-	for(;i<128;i++)
+	for(;i<128-16;i++)
 	{
-		if(buffer[i]==0)return;
-		if(buffer[i]<=0x20)continue;
 		//say("buffer[%d]=%c\n",i,buffer[i]);
-		for(count=0;count<16;count++)		//多少个字母
+		//字符串结尾符号0
+		if(buffer[i]==0)return;
+		//越过所有非正常字符
+		if(buffer[i]<=0x20)continue;
+
+		//超过16个字节的命令不会出现吧，出现再改
+		for(count=0;count<16;count++)
 		{
 			if(buffer[i+count]<=0x20)break;
 		}
 		//say("%d\n",count);
+
+		//如果有字符的话，first buffer就不能是-1(无标志)了
+		if(count>0)first[0]=first[1]=0;
 		for(j=0;j<count;j++)
 		{
 			temp[j]=buffer[i+j];
 		}
 		//say(temp);
+
 		i+=count;
 		break;
 	}
 
 	temp=(char*)second;
-	for(;i<128;i++)
+	for(;i<128-16;i++)
 	{
+		//say("buffer[%d]=%c\n",i,buffer[i]);
 		if(buffer[i]==0)return;
 		if(buffer[i]<=0x20)continue;
-		//say("buffer[%d]=%c\n",i,buffer[i]);
-		for(count=0;count<16;count++)		//多少个字母
+
+		//超过16个字节的命令不会出现吧，出现再改
+		for(count=0;count<16;count++)
 		{
 			if(buffer[i+count]<=0x20)break;
 		}
 		//say("%d\n",count);
+
+		//如果有字符的话，first buffer就不能是-1(无标志)了
+		if(count>0)second[0]=second[1]=0;
 		for(j=0;j<count;j++)
 		{
 			temp[j]=buffer[i+j];
 		}
 		//say(temp);
+
 		i+=count;
 		break;
 	}

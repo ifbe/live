@@ -1,10 +1,4 @@
 #include<stdio.h>
-void listen(char* p)
-{
-	int i;
-	for(i=0;i<128;i++)p[i]=0;
-	gets(p);
-}
 /*
 void say(char* string,unsigned long long data)
 {
@@ -15,4 +9,14 @@ void say(char* string,unsigned long long data)
 void say(char* p,...)
 {
 	asm("jmp printf");
+}
+void listen(char* p)
+{
+	int i;
+	for(i=0;i<128;i++)p[i]=0;
+	while(1)
+	{
+		gets(p);
+		if( p[0] != 0 )break;
+	}
 }

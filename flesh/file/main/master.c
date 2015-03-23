@@ -65,20 +65,25 @@ QWORD explaingpt()
 
 		//parttype
 		say("[%8x,%8x]    ",mytable[dst].startlba,mytable[dst].endlba);
-		if((firsthalf==0x4433b9e5ebd0a0a2)&&(secondhalf==0xc79926b7b668c087))
+		if((firsthalf==0x477284830fc63daf)&&(secondhalf==0xe47d47d8693d798e))
 		{
-			mytable[dst].parttype=0x7366746e;		//ntfs
-			say("ntfs\n");
+			mytable[dst].parttype=0x747865;		//ext
+			say("ext\n");
 		}
 		else if((firsthalf==0x11d2f81fc12a7328)&&(secondhalf==0x3bc93ec9a0004bba))
 		{
 			mytable[dst].parttype=0x746166;		//fat
 			say("fat\n");
 		}
-		else if((firsthalf==0x477284830fc63daf)&&(secondhalf==0xe47d47d8693d798e))
+		else if((firsthalf==0x11aa000048465300)&&(secondhalf==0xacec4365300011aa))
 		{
-			mytable[dst].parttype=0x747865;		//ext
-			say("ext\n");
+			mytable[dst].parttype=0x736668;		//hfs
+			say("hfs\n");
+		}
+		else if((firsthalf==0x4433b9e5ebd0a0a2)&&(secondhalf==0xc79926b7b668c087))
+		{
+			mytable[dst].parttype=0x7366746e;		//ntfs
+			say("ntfs\n");
 		}
 		else say("unknown\n");
 
@@ -143,12 +148,8 @@ QWORD explainmbr()
 }
 
 
-void init()
+void explainparttable()
 {
-	//取出已经申请到的内存地址，看不惯就手动malloc吧
-	getaddrofbuffer(&readbuffer);
-	getaddrofdir(&dir);
-
 	//清理
 	BYTE* memory;
 	int i;
@@ -177,35 +178,54 @@ void init()
 }
 
 
-static int mount(QWORD i)
+static int mount(QWORD addr)
 {
+	if(*(DWORD*)addr == 0xffffffff)
+	{
+		explainparttable();
+		return -1;
+	}
+
+	//接收到的anscii转数字
+	QWORD i;
+	anscii2dec(addr,&i);
 	if(i>10)
 	{
 		say("impossible partition:%llx\n",i);
 		return;
 	}
+
 	QWORD start=mytable[i].startlba;
 	QWORD end=mytable[i].endlba;
 	QWORD type=mytable[i].parttype;
 	say("startlba:%x,endlba:%x,type:%s\n",start,end,(char*)&type);
 
 	//看分区种类调用函数，顺便把分区offset给它
-	if(type == 0x746166)
+	if(type == 0x747865)
+	{
+		mountext(start,&explainfunc,&cdfunc,&loadfunc);
+	}
+	else if(type == 0x746166)
 	{
 		mountfat(start,&explainfunc,&cdfunc,&loadfunc);
+	}
+	else if(type == 0x736668)
+	{
+		mounthfs(start,&explainfunc,&cdfunc,&loadfunc);
 	}
 	else if(type == 0x7366746e)
 	{
 		mountntfs(start,&explainfunc,&cdfunc,&loadfunc);
 	}
-	else if(type == 0x747865)
-	{
-		mountext(start,&explainfunc,&cdfunc,&loadfunc);
-	}
 	return 1;
 }
-static int explain(QWORD number)
+static int explain(QWORD addr)
 {
+	//接收到的anscii转数字
+	QWORD number;
+	anscii2dec(addr,&number);
+
+	//解释(几号文件)
 	((int (*)())(explainfunc))(number);
 }
 static int cd(addr)
@@ -256,14 +276,19 @@ static int ls()
 
 void main()
 {
+	//取出已经申请到的内存地址，看不惯就手动malloc吧
+	getaddrofbuffer(&readbuffer);
+	getaddrofdir(&dir);
+
 	//分区表转换到容易理解的表里
-	init();
+	explainparttable();
 
 	while(1)
 	{
 		//等输入
 		char first[16],second[16];
 		listen(buffer);
+		//say("%llx\n",*(QWORD*)buffer);
 		buf2arg(buffer,first,second);
 		//say("%s,%s\n",first,second);
 		//say("%llx,%llx\n",*(QWORD*)first,*(QWORD*)second);
@@ -276,35 +301,32 @@ void main()
 				//exit
 				return;
 			}
+			case 0x6b736964:
+			{
+				//选择硬盘(具体哪个sata硬盘/usb磁盘/把文件当硬盘/网络盘)
+				disk((QWORD)second);
+				if(*(DWORD*)second!=0xffffffff)explainparttable();
+				break;
+			}
 			case 0x746e756f6d:
 			{
-				//接收到的anscii转数字
-				QWORD temp;
-				anscii2dec(second,&temp);
-
-				//传数字(第几个分区)
-				mount(temp);
+				mount((QWORD)second);
 				break;
 			}
 			case 0x6e69616c707865:
 			{
-				//接收到的anscii转数字
-				QWORD temp;
-				anscii2dec(second,&temp);
-
-				//传数字(几号)
-				explain(temp);
+				explain((QWORD)second);
 				break;
 			}
 			case 0x6463:
 			{
-				//传文件名字符串的地址进去
+				//进入目录(目录名字符串的地址)
 				cd(second);
 				break;
 			}
 			case 0x64616f6c:
 			{
-				//传文件名字符串的地址进去
+				//读出文件(文件名字符串的地址)
 				load(second);
 				break;
 			}
@@ -312,6 +334,17 @@ void main()
 			{
 				ls();
 				break;
+			}
+			default:
+			{
+				say("disk                    (list disks)\n");
+				say("disk ?                  (choose a disk)\n");
+				say("disk ?:\\\\name.format    (use an image file as disk)\n");
+				say("mount                   (list partitions)\n");
+				say("mount ?                 (choose a partition)\n");
+				say("explain ?               (explain inode/cluster/cnid/mft)\n");
+				say("cd dirname              (change directory)\n");
+				say("load filename           (load this file)\n");
 			}
 		}
 	}
