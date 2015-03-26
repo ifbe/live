@@ -112,7 +112,7 @@ void printmemory(QWORD addr,QWORD size)
 
 		for(i=0;i<=0xf;i++)
 		{
-			say("%2x ",printaddr[16*j+i]);
+			say("%.2x ",printaddr[16*j+i]);
 		}
 		for(i=0;i<=0xf;i++)
 		{

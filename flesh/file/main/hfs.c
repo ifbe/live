@@ -21,35 +21,48 @@ static QWORD nodesize;
 
 
 
-static void explainnode()
-{/*
-	switch(type)
-	{
-		case 1:		//头节点
-		{
-			break;
-		}
-		case 2:		//map节点
-		{
-			break;
-		}
-		case 0:		//index节点
-		{
-			break;
-		}
-		case -1:	//叶节点
-		{
-			break;
-		}
-	}
-*/
-}
 static void hfs_explain(QWORD number)
 {
 	say("%llx@%llx\n",number,catalogsector+nodesize*number);
 	readdisk(readbuffer,catalogsector+nodesize*number,0,nodesize);	//0x1000
-	printmemory(readbuffer,0x200*nodesize);
 	printmemory(readbuffer,0x200);
+
+	//1.解释节点头
+	DWORD rightbrother=BSWAP_32(*(DWORD*)readbuffer);
+	DWORD leftbrother=BSWAP_32(*(DWORD*)(readbuffer+4));
+	BYTE type=*(BYTE*)(readbuffer+8);
+	say("rightbro=%x\nleftbro=%x\ntype:%x\n",rightbrother,leftbrother,type);
+	if(type==1|type==2)return;
+
+	//2.解释节点内容，每个index和leaf节点尾巴上有，每个record的位置
+	int offset=nodesize*0x200-2;
+	while(1)
+	{
+		//总节点尾巴上找到record在哪儿，指针=0，或者指针>本身位置，就退出
+		int temp=BSWAP_16(*(WORD*)(readbuffer+offset));
+		if(temp==0)break;
+		if(temp>=offset)break;
+
+		//拿到keylength，如果这个位置是最后的空记录，就退出
+		int keylen=BSWAP_16(*(WORD*)(readbuffer+temp));
+		if(keylen==0)break;
+
+		//打印
+		say("%llx@%llx,%4x\n",temp,offset,keylen);
+
+		//
+		say("key=");
+		int i;
+		for(i=0;i<6;i++)
+		{
+			say("%2x,",*(BYTE*)(readbuffer+temp+2+i));
+		}
+		DWORD child=BSWAP_32(*(DWORD*)(readbuffer+temp+2+keylen));
+		say("child=%.8llx\n",child);
+
+		//
+		offset-=2;
+	}
 }
 
 
