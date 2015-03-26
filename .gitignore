@@ -8,4 +8,5 @@ push
 *.vmdk
 *.log
 *.exe
+*.res
 *.out
