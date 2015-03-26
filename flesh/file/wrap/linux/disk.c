@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#define _FILE_OFFSET_BITS 64
 #define QWORD unsigned long long
 #define DWORD unsigned int
 static char diskname[10]={'/','d','e','v','/','s','d','a','\0','\0'};
