@@ -110,7 +110,7 @@ static int fat16_data(QWORD dest,QWORD cluster)
 		if(cluster>=0xfff8)break;
 
 		//读一个簇
-		read(rdi,cluster0+clustersize*cluster,diskaddr,clustersize);
+		readdisk(rdi,cluster0+clustersize*cluster,diskaddr,clustersize);
 
 		//准备下一个地址，找下一个簇，全部fat表在内存里不用担心
 		rdi+=clustersize*0x200;
@@ -167,10 +167,10 @@ static void fat16_root()
 	//文件分配表区最多0xffff个簇记录*每个记录占2个字节<=0x20000=0x100个扇区
 	//而数据区最大0xffff个簇记录*每簇0x8000字节(?)<=0x80000000=2G=0x400000个扇区
 	say("reading whole fat table\n");
-	read(fatbuffer,fat0,diskaddr,0x100);
+	readdisk(fatbuffer,fat0,diskaddr,0x100);
 
 	say("cd %x\n",fat0+fatsize*2);
-	read(readbuffer,fat0+fatsize*2,diskaddr,32);	//0x40000=0x20*0x200
+	readdisk(readbuffer,fat0+fatsize*2,diskaddr,32);	//0x40000=0x20*0x200
 	explaindirectory();
 
 	say("\n");
@@ -243,7 +243,7 @@ static void checkcacheforcluster(QWORD cluster)
 
 	//否则，从这个开始，读0xffff个，再记下目前cache里面第一个
 	say("whatwewant:%x\n",whatwewant);
-	read(fatbuffer,fat0+(whatwewant/0x80),diskaddr,0x200);	//每扇区有0x200/4=0x80个，需要fat表所在位置往后
+	readdisk(fatbuffer,fat0+(whatwewant/0x80),diskaddr,0x200);	//每扇区有0x200/4=0x80个，需要fat表所在位置往后
 	firstincache=whatwewant;
 }
 static int fat32_explain()
@@ -257,7 +257,7 @@ static void fat32_data(QWORD dest,QWORD cluster)		//destine,clusternum
 	QWORD rdi=dest;
 	while(rdi<dest+0x100000)
 	{
-		read(rdi,cluster0+clustersize*cluster,diskaddr,clustersize);
+		readdisk(rdi,cluster0+clustersize*cluster,diskaddr,clustersize);
 		rdi+=clustersize*0x200;
 
 		//检查缓冲，从检查完的缓冲区里面读一个cluster号
@@ -312,7 +312,7 @@ static void fat32_root()
 	checkcacheforcluster(0);
 
 	say("cd root:%x\n",cluster0+clustersize*2);
-	read(readbuffer,cluster0+clustersize*2,diskaddr,32);
+	readdisk(readbuffer,cluster0+clustersize*2,diskaddr,32);
 	explaindirectory();
 }
 static int fat32_cd(BYTE* addr)
@@ -376,7 +376,7 @@ int mountfat(QWORD firstsector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 	//读取pbr
 	//say("partition sector:%x\n",firstsector);
 	//diskaddr=*(QWORD*)(0x200000+8);
-	read(readbuffer,firstsector,diskaddr,1); //pbr
+	readdisk(readbuffer,firstsector,diskaddr,1); //pbr
 
 	//检查分区问题，有就滚
 	if( *(WORD*)(readbuffer+0xb) !=0x200)

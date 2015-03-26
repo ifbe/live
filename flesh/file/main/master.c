@@ -159,7 +159,7 @@ void explainparttable()
 	for(i=0;i<0x100000;i++) memory[i]=0;
 
 	//读出前64个扇区
-	read(readbuffer,0,0,64);
+	readdisk(readbuffer,0,0,64);
 	if(*(WORD*)(readbuffer+0x1fe)!=0xAA55)
 	{
 		say("bad disk\n");

@@ -47,7 +47,7 @@ static void explainnode()
 static void hfs_explain(QWORD number)
 {
 	say("%llx@%llx\n",number,catalogsector+nodesize*number);
-	read(readbuffer,catalogsector+nodesize*number,0,nodesize);	//0x1000
+	readdisk(readbuffer,catalogsector+nodesize*number,0,nodesize);	//0x1000
 	printmemory(readbuffer,0x200*nodesize);
 	printmemory(readbuffer,0x200);
 }
@@ -115,7 +115,7 @@ int mounthfs(QWORD sector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 	getaddroffs(&catalogbuffer);
 
 	//读分区前8扇区，总共0x1000字节(其实只要分区内2号和3号扇区)
-	read(readbuffer,sector,0,0x8);	//0x1000
+	readdisk(readbuffer,sector,0,0x8);	//0x1000
 
 	//检查magic值
 	if( *(WORD*)(readbuffer+0x400) == 0x2b48 )
@@ -133,7 +133,7 @@ int mounthfs(QWORD sector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 	//catalogsize
 	catalogsector=block0+8*BSWAP_32(*(DWORD*)(readbuffer+0x520) );
 	//读catalog，得到nodesize
-	read(readbuffer,catalogsector,0,0x8);	//0x1000
+	readdisk(readbuffer,catalogsector,0,0x8);	//0x1000
 	nodesize=BSWAP_16( *(WORD*)(readbuffer+0x20) )/0x200;
 
 	say("1block=%llxsector\n",blocksize);

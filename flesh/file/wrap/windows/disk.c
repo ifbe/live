@@ -89,7 +89,7 @@ void disk(QWORD addr)
 	}
 }
 //内存地址，第一扇区，请无视，总字节数
-void read(QWORD buf,QWORD startsector,QWORD disk,DWORD count)
+void readdisk(QWORD buf,QWORD startsector,QWORD disk,DWORD count)
 {
 	LARGE_INTEGER li;
 	li.QuadPart = startsector*512;

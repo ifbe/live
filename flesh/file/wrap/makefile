@@ -16,7 +16,7 @@ crosscompile:
 	ar crs wrap.a screen.o random.o input.o
 .PHONY:linux
 linux:
-	gcc -c -fPIC -O2 linux/disk.c
+	gcc -c -fPIC -D_FILE_OFFSET_BITS=64 -D_LARGE_FILE -O2 linux/disk.c
 	gcc -c -fPIC -O2 linux/log.c
 	gcc -c -fPIC -O2 linux/memory.c
 	rm -f wrap.a
