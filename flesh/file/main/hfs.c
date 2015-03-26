@@ -1,4 +1,4 @@
-#define BYTE unsigned char
+ï»¿#define BYTE unsigned char
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
@@ -8,7 +8,7 @@
 #define	BSWAP_64(x)	((BSWAP_32(x) << 32) | BSWAP_32((x) >> 32))
 
 
-//ÏµÍ³»òÕß¸÷ÖÖ¶«Î÷Ìá¹©ºÃµÄmemory£¬Õâ¼¸¸ö±äÁ¿½ö½ö¼ÇÂ¼ÁËÎ»ÖÃ
+//ç³»ç»Ÿæˆ–è€…å„ç§ä¸œè¥¿æä¾›å¥½çš„memoryï¼Œè¿™å‡ ä¸ªå˜é‡ä»…ä»…è®°å½•äº†ä½ç½®
 static QWORD readbuffer;
 static QWORD directorybuffer;
 static QWORD catalogbuffer;
@@ -25,19 +25,19 @@ static void explainnode()
 {/*
 	switch(type)
 	{
-		case 1:		//Í·½Úµã
+		case 1:		//å¤´èŠ‚ç‚¹
 		{
 			break;
 		}
-		case 2:		//map½Úµã
+		case 2:		//mapèŠ‚ç‚¹
 		{
 			break;
 		}
-		case 0:		//index½Úµã
+		case 0:		//indexèŠ‚ç‚¹
 		{
 			break;
 		}
-		case -1:	//Ò¶½Úµã
+		case -1:	//å¶èŠ‚ç‚¹
 		{
 			break;
 		}
@@ -104,20 +104,20 @@ int mounthfs(QWORD sector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 {
 	block0=sector;
 
-	//·µ»ØcdºÍloadº¯ÊıµÄµØÖ·
+	//è¿”å›cdå’Œloadå‡½æ•°çš„åœ°å€
 	*explainfunc=(QWORD)hfs_explain;
 	*cdfunc=(QWORD)hfs_cd;
 	*loadfunc=(QWORD)hfs_load;
 
-	//×¼±¸ºÃ¿ÉÓÃµÄÄÚ´æµØÖ·
+	//å‡†å¤‡å¥½å¯ç”¨çš„å†…å­˜åœ°å€
 	getaddrofbuffer(&readbuffer);
 	getaddrofdir(&directorybuffer);
 	getaddroffs(&catalogbuffer);
 
-	//¶Á·ÖÇøÇ°8ÉÈÇø£¬×Ü¹²0x1000×Ö½Ú(ÆäÊµÖ»Òª·ÖÇøÄÚ2ºÅºÍ3ºÅÉÈÇø)
+	//è¯»åˆ†åŒºå‰8æ‰‡åŒºï¼Œæ€»å…±0x1000å­—èŠ‚(å…¶å®åªè¦åˆ†åŒºå†…2å·å’Œ3å·æ‰‡åŒº)
 	read(readbuffer,sector,0,0x8);	//0x1000
 
-	//¼ì²émagicÖµ
+	//æ£€æŸ¥magicå€¼
 	if( *(WORD*)(readbuffer+0x400) == 0x2b48 )
 	{
 		say("hfs+\n");
@@ -132,7 +132,7 @@ int mounthfs(QWORD sector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 	blocksize=BSWAP_32( *(DWORD*)(readbuffer+0x428) )/0x200;
 	//catalogsize
 	catalogsector=block0+8*BSWAP_32(*(DWORD*)(readbuffer+0x520) );
-	//¶Ácatalog£¬µÃµ½nodesize
+	//è¯»catalogï¼Œå¾—åˆ°nodesize
 	read(readbuffer,catalogsector,0,0x8);	//0x1000
 	nodesize=BSWAP_16( *(WORD*)(readbuffer+0x20) )/0x200;
 

@@ -194,6 +194,26 @@ void anscii2dec(BYTE* second,QWORD* decimal)
 		*decimal=(second[i]-0x30)+(*decimal)*10;
 	}
 }
+//anscii码转换成一个16进制数字，比如anscii码串为0x36,0x61,转换后得到hex=0x6a
+void anscii2hex(BYTE* second,QWORD* hex)
+{
+	*hex=0;
+	int i;
+	for(i=0;i<8;i++)
+	{
+		if(second[i]<=0x20) break;
+		//say("%x\n",second[i]);
+		*hex=(*hex)<<4;
+		if(second[i]>=0x61 && second[i]<=0x66)
+		{
+			*hex+=second[i]-0x61+10;
+		}
+		else if(second[i]>=0x30 && second[i]<=0x39)
+		{
+			*hex+=second[i]-0x30;
+		}
+	}
+}
 //接收到的转换成两个
 //如果buf里面是“mount”，转换后得到first为“mount”，second为0xffffffff
 //如果buf里面是“mount 12”，转换后得到first为“mount”，second为“12”

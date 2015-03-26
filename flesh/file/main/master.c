@@ -188,7 +188,7 @@ static int mount(QWORD addr)
 
 	//接收到的anscii转数字
 	QWORD i;
-	anscii2dec(addr,&i);
+	anscii2hex(addr,&i);
 	if(i>10)
 	{
 		say("impossible partition:%llx\n",i);
@@ -223,7 +223,7 @@ static int explain(QWORD addr)
 {
 	//接收到的anscii转数字
 	QWORD number;
-	anscii2dec(addr,&number);
+	anscii2hex(addr,&number);
 
 	//解释(几号文件)
 	((int (*)())(explainfunc))(number);
