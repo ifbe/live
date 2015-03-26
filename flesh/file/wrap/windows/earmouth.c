@@ -10,7 +10,7 @@ void say(char* p,...)
 {
 	asm("jmp printf");
 }
-void listen(char* p)
+void waitinput(char* p)
 {
 	int i;
 	for(i=0;i<128;i++)p[i]=0;

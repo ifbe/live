@@ -18,6 +18,8 @@ static QWORD mftcluster;
 //ntfs...............
 static QWORD pwd[10];
 static int ntfspwd;
+void printmemory(QWORD addr,QWORD size);
+
 
 
 

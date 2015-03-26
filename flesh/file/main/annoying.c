@@ -97,7 +97,7 @@ void printmemory(QWORD addr,QWORD size)
 	int i,j;
 
 	//1111111111111111111111
-	say("[---addr---]");
+	say("[-----addr-----]");
 	for(i=0;i<=0xf;i++)
 	{
 		say("%2x ",i);
@@ -107,7 +107,9 @@ void printmemory(QWORD addr,QWORD size)
 	//2222222222222222222222222
 	for(j=0;j<size/16;j++)
 	{
-		say("%-12x",addr+j*16);
+		if(j%16 == 0)say("%-16llx",addr+j*16);
+		else say("+%-15x",j*16);
+
 		for(i=0;i<=0xf;i++)
 		{
 			say("%2x ",printaddr[16*j+i]);

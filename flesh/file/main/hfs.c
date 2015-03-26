@@ -8,6 +8,8 @@
 static QWORD readbuffer;
 static QWORD directorybuffer;
 static QWORD catalogbuffer;
+void printmemory(QWORD addr,QWORD size);
+
 
 
 

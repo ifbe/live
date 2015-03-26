@@ -11,7 +11,7 @@ static int status[10];
 HANDLE hDev;
 
 
-void enumeratedisk()
+static void enumeratedisk()
 {
 	//disk暂时根本不管是什么，默认就是当前第一个硬盘
 	HANDLE temphandle;

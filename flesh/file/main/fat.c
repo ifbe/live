@@ -11,6 +11,8 @@ fat文件系统大概是下面这样：(比喻)
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
+void printmemory(QWORD addr,QWORD size);
+
 
 //memory
 static QWORD fatbuffer;				//fat表

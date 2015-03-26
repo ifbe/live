@@ -279,6 +279,7 @@ void main()
 	//取出已经申请到的内存地址，看不惯就手动malloc吧
 	getaddrofbuffer(&readbuffer);
 	getaddrofdir(&dir);
+	say("1@%llx\n2@%llx\n",(QWORD)readbuffer,(QWORD)dir);
 
 	//分区表转换到容易理解的表里
 	explainparttable();
@@ -287,7 +288,7 @@ void main()
 	{
 		//等输入
 		char first[16],second[16];
-		listen(buffer);
+		waitinput(buffer);
 		//say("%llx\n",*(QWORD*)buffer);
 		buf2arg(buffer,first,second);
 		//say("%s,%s\n",first,second);
