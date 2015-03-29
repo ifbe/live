@@ -251,9 +251,9 @@ static int load(addr)
 	//现在分段读取保存
 	QWORD totalsize=dir[i].size;
 	QWORD temp;
+	if(totalsize>0x100000)say("warning:large file\n");
 	for(temp=0;temp<totalsize/0x100000;temp++)
 	{
-		say("shouldn't here\n");
 		((int (*)())(loadfunc))(addr,temp*0x100000);			//
 		mem2file(readbuffer,addr,temp*0x100000,0x100000);		//mem地址，file名字，文件内偏移，写入多少字节
 	}

@@ -166,13 +166,10 @@ static void hfs_explain(QWORD number)
 
 
 
-
-//搜索b树，在节点里找到第一个大于等于cnid的key
-//返回找到的节点内偏移，找不到就返回-1
-int searchnodeforcnid(QWORD* in1,QWORD* in2)
+//告诉我从哪个节点开始搜，你要哪一号cnid
+//我会返回这一号cnid所在的叶子节点
+QWORD searchbtreeforcnid(QWORD nodenum,QWORD wantcnid)
 {
-	QWORD nodenum=*in1;
-	DWORD want=*in2;
 	say("enter node:%llx\n",nodenum);
 
 	//把指定节点读到内存,顺便看看这节点是啥类型
@@ -180,98 +177,95 @@ int searchnodeforcnid(QWORD* in1,QWORD* in2)
 	BYTE type=*(BYTE*)(readbuffer+8);
 
 	//节点内每一个record找一遍，找本节点内第一个的偏移
-	int temp=nodesize*0x200;
-	int candidateoffset=-1;
-	QWORD candidatekey=0;
-	QWORD candidatechild=0;
+	int totalrecords=BSWAP_16(*(WORD*)(readbuffer+0xa));
+	int temp=0;
+
+	int candidatechosen=0;		//确认就选这个了
+	int candidateoffset=-1;		//候选record的位置
+	QWORD candidatekey=0;		//候选record的key
+	QWORD candidatechild=0;		//候选record的child
 	while(1)
 	{
-		//每次进来减少2，下一个指针
-		temp-=2;
-
-
-		//从节点尾巴上找到record在哪儿，不可能在0，也不可能大于尾巴上的指针的位置
-		int offset=BSWAP_16(*(WORD*)(readbuffer+temp));
-		if(offset==0)break;
-		if(offset>=temp)break;
-
-
-		//拿到keylength，如果这个位置是最后的那一个空记录，就退出
-		int keylen=BSWAP_16(*(WORD*)(readbuffer+offset));
-		if(keylen==0)break;
-
-
-		//看这一个record的key
-		DWORD key=BSWAP_32(*(DWORD*)(readbuffer+offset+2));
-
-
-		//每次碰到key<want的，要把它设置为新的候选者，然后看下一个record继续等着
-		//注意这里key==want也要设为候选者（这种情况，进入了两个if里面）
-		if(key<=want)
+		//每次进来减1，下一个指针
+		temp++;
+		//这是最后一个但是不能确定，所以还要处理一下
+		if(temp>totalrecords)
 		{
-			//比如节点内是1，2，3，64，88，1270，3355，而want=4
-			//那么最开始1是候选者，又被更好的2取代，又被更好的3取代
-			candidateoffset=offset;
-			candidatekey=key;
-			candidatechild=BSWAP_32(*(DWORD*)(readbuffer+offset+2+keylen));
+			QWORD temptempnodenum=BSWAP_32(*(DWORD*)readbuffer);
+			if(temptempnodenum==0)break;
+
+			//临时读下一个到readbuffer+0x8000那里(节点最大不超过0x8000吧)
+			//读这个临时节点的第一个记录看看，能确定下来目前的最后一个record就是想要的
+			readdisk(readbuffer+0x8000,catalogsector+temptempnodenum*nodesize,0,nodesize);
+			QWORD temptempkey=BSWAP_32(*(DWORD*)(readbuffer+0x8000+0x10));
+
+			//
+			//say("temptempnode:%x,temptempkey:%x\n",temptempnodenum,temptempkey);
+			if(wantcnid<=temptempkey)
+			{
+				candidatechosen=1;			//候选者选中信号1
+			}
 		}
 
-		//碰到want<key的，后面就更不可能want<key了，就用这个候选者吧
-		//注意这里want==key的完美选择，后面的同样也不需要看了（这种情况，进入了两个if里面）
-		if(want<=key)
+
+		//没有特权的，只能先成为候选人
+		if(candidatechosen==0)
 		{
-			//检查一遍候选者
+			WORD offset=BSWAP_16(*(WORD*)(readbuffer+nodesize*0x200-temp*2));
+			DWORD key=BSWAP_32(*(DWORD*)(readbuffer+offset+2));
+			int keylen=BSWAP_16(*(WORD*)(readbuffer+offset));
+			//say("%x@%x,%x\n",key,nodenum,offset);
+
+
+			//候选者
+			if(key<wantcnid)
+			{
+				//比如节点内是1，2，3，64，88，1270，3355，而want=4
+				//那么最开始1是候选者，又被更好的2取代，又被更好的3取代
+				candidateoffset=offset;
+				candidatekey=key;
+				candidatechild=BSWAP_32(*(DWORD*)(readbuffer+offset+2+keylen));
+				//say("candidatekey:%x,candidatechild:%x,@%x,%x\n",key,candidatechild,nodenum,offset);
+			}
+			else{candidatechosen=1;}			//候选者选中信号2
+		}
+
+
+		//有两种情况进入这里，1：这是节点内最后1个record，而下一个节点全部大于等于所要的
+		//2：当前这个已经大于等于想要的，所以候选者直接被选中
+		if(candidatechosen>0)
+		{
+			//say("the chosen one:%x,%x\n",nodenum,candidatekey);
+
+			//有问题的候选者退出
 			if(candidateoffset==-1)
 			{
-				//want=0所以它会比所有的都小，但是cnid不可能=0，所以返回失败
-				*in2=0;
-				return;
+				//wantcnid=0所以它会比所有的都小，但是cnid不可能=0，所以返回失败 want
+				return 0;
 			}
-			/*
-			if(candidateoffset==offset&&)		//有毛病吧！！！！！！！！！！！！！！
-			{
-				//选了当前这个record而不是前一个record，并且本node内最后一个record就是它
-				//所以有可能，右兄弟节点里面有更好的候选者
-				*in1=0;
-				*in2=0;
-				return;
-			}*/
 
-
-			//其他正常候选record，看节点类型分别处理（头节点和位图节点不可能被传进来吧？）
+			//看节点类型分别处理（头节点和位图节点不可能被传进来吧？）
 			if(type==0xff)
 			{
-				//要是叶子节点，因为指定要那一号
-				//所以必须相等才能返回正常位置，不相等就返回失败
-				if(want==key)
-				{
-					*in1=nodenum;
-					*in2=candidateoffset;
-				}
-				else
-				{
-					*in2=0;
-				}
-				return;
+				//say("return %x\n",nodenum);
+				return nodenum;
 			}
 			if(type==0)
 			{
 				//要是index节点，就找它儿子麻烦
-				*in1=candidatechild;
-				*in2=want;
-				searchnodeforcnid(in1,in2);
-				return;
+				return searchbtreeforcnid(candidatechild,wantcnid);
 			}
-		}//大概找到那一个key之后的处理
+		}
+
 
 	}//大while(1)循环
 
-}//函数结束
+}
 
 
 
 
-static void explaindirectory(QWORD temp1,QWORD wantcnid)
+static void explaindirectory(QWORD nodenum,QWORD wantcnid)
 {
 	QWORD rdi=directorybuffer;
 	int i;
@@ -287,30 +281,38 @@ static void explaindirectory(QWORD temp1,QWORD wantcnid)
 	*(QWORD*)(rdi+0x10)=wantcnid;		//2.cnid
 	rdi+=0x40;
 
-
-	//然后是后面的记录
-	int temp=nodesize*0x200;
+	//这俩控制循环次数
+	int totalrecords=BSWAP_16(*(WORD*)(readbuffer+0xa));
+	int temp=0;
 	while(1)
 	{
-		//每次进来直接减2
-		temp-=2;
+		//每次进来
+		temp++;
+		//这个结束了就继续下一个节点
+		if(temp>totalrecords)
+		{
+			nodenum=BSWAP_32(*(DWORD*)readbuffer);
+			if(nodenum==0)break;
+			say("next node:%x\n",nodenum);
 
-		//这个节点结束了
-		WORD offset=BSWAP_16(*(WORD*)(readbuffer+temp));
-		if(offset==0)break;
-		if(offset>=temp)break;
+			readdisk(readbuffer,catalogsector+nodenum*nodesize,0,nodesize);
+			totalrecords=BSWAP_16(*(WORD*)(readbuffer+0xa));
+			temp=0;
+			continue;
+		}
 
-		//出毛病了，到指针最后一个都没找着
-		int keylen=BSWAP_16(*(WORD*)(readbuffer+offset));
-		if(keylen==0)return;
 
-		//拿key，要是key>wantcnid就结束了,要是小于就越过这个直接找下一位
+
+
+		//这以后所有的key都大于想要的就跳出循环
+		WORD offset=BSWAP_16(*(WORD*)(readbuffer+nodesize*0x200-temp*2));
 		DWORD key=BSWAP_32(*(DWORD*)(readbuffer+offset+2));
 		if(key>wantcnid)break;
-		if(wantcnid<key)continue;
+		if(key<wantcnid)continue;
+		//say("key:%x,in:%llx\n",key,nodenum);
 
-		//既然到这儿，那么key==wantcnid
-		//所以把这个record，翻译成这种格式就行：名字，id，种类，大小
+		int keylen=BSWAP_16(*(WORD*)(readbuffer+offset));
+		//1.名字
 		WORD namelen=BSWAP_16(*(WORD*)(readbuffer+offset+6));
 		//say("%x@%x\n",namelen,offset);
 		if(namelen>=0xf)namelen=0xf;
@@ -331,11 +333,14 @@ static void explaindirectory(QWORD temp1,QWORD wantcnid)
 			*(QWORD*)(rdi+0x30)=BSWAP_64(*(QWORD*)(readbuffer+offset+2+keylen+0x58));
 		}
 
-		if(*(DWORD*)rdi == 0)*(DWORD*)rdi=0x3f3f3f3f;
+
+
+
+		if(*(DWORD*)rdi == 0) *(DWORD*)rdi=0x3f3f3f3f;
 		rdi+=0x40;
+		if(rdi>=directorybuffer+0xfffc0)break;
 
 	}//大while(1)循环
-
 
 }//函数结束
 //所谓cd，就是把fathercnid=want的那些记录，翻译成容易看懂的格式：名字，id，种类，大小
@@ -371,49 +376,48 @@ static int hfs_cd(BYTE* addr)
 
 
 	//2.已经知道了目录的cnid号，那么需要从b树里面找到节点号和节点内偏移
-	QWORD temp1;	//传走的时候是最初的节点号，传回来的时候是找到的节点号
-	QWORD temp2;	//传走的时候是请求的cnid，传回来的时候是找到的节点内偏移（0就出错）
+	QWORD foundnode;
 	if(wantcnid==2)
 	{
 		//根肯定在最开始的地方，相当于稍微优化一下
-		temp1=firstleafnode;
-		temp2=2;
+		readdisk(readbuffer,catalogsector+firstleafnode*nodesize,0,nodesize);
+		foundnode=firstleafnode;
 	}
 	else
 	{
-		temp1=rootnode;
-		temp2=wantcnid;
+		foundnode=searchbtreeforcnid(rootnode,wantcnid);
+		if( foundnode <= 0 )		//offset值不可能小于e
+		{
+			say("this cnid isn't in btree\n");
+			return -2;
+		}
+		say("found:%llx@node:%llx\n",wantcnid,foundnode);
 	}
-	searchnodeforcnid(&temp1,&temp2);
-	if( temp2 < 0xe )		//offset值不可能小于e
-	{
-		say("this cnid isn't in btree\n");
-		return -2;
-	}
-	say("wantcnid:%llx,@node:%llx,offset:%llx\n",wantcnid,temp1,temp2);
 
 
 
 
 	//3.既然上面找到了，那么就逐个翻译吧
 	//（temp2那个返回值是为了省事给hfs_load函数准备的，但是hfs_cd只用它来判断搜索成功失败）
-	explaindirectory(temp1,wantcnid);
+	explaindirectory(foundnode,wantcnid);
 }
 
 
 
 
-void explainfile(QWORD temp1,QWORD wantcnid,QWORD fileoffset)
+//传进来的是：本文件父目录的cnid，本文件的cnid，节点号，想要的文件内部偏移
+void explainfile(QWORD fathercnid,QWORD wantcnid,QWORD nodenum,QWORD wantwhere)
 {
-	
+	readdisk(catalogbuffer,catalogsector+nodenum*nodesize,0,nodesize);
 	QWORD rdi=readbuffer;
 	int i;
-
 	//清理内存
 	for(i=0;i<0x100000;i++)
 	{
 		*(BYTE*)(rdi+i)=0;
 	}
+	say("father:%x,self:%x,node:%x,want:%x\n",fathercnid,wantcnid,nodenum,wantwhere);
+
 
 	//然后是后面的记录
 	int temp=nodesize*0x200;
@@ -421,50 +425,60 @@ void explainfile(QWORD temp1,QWORD wantcnid,QWORD fileoffset)
 	{
 		//每次进来直接减2
 		temp-=2;
+		//say("oh\n");
 
-		//这个节点结束了
-		WORD offset=BSWAP_16(*(WORD*)(readbuffer+temp));
-		if(offset==0)break;
+		//这个节点结束了（1）
+		WORD offset=BSWAP_16(*(WORD*)(catalogbuffer+temp));
+		//say("oh 1:offset=%x\n",offset);
 		if(offset>=temp)break;
 
-		//出毛病了，到指针最后一个都没找着
-		int keylen=BSWAP_16(*(WORD*)(readbuffer+offset));
+		//出毛病了，到指针最后一个都没找着（2）
+		int keylen=BSWAP_16(*(WORD*)(catalogbuffer+offset));
+		//say("oh 2:keylen=%x\n",keylen);
 		if(keylen==0)return;
 
-		//拿key，要是key>wantcnid就结束了,要是小于就越过这个直接找下一位
-		DWORD key=BSWAP_32(*(DWORD*)(readbuffer+offset+2));
-		if(key>wantcnid)break;
-		if(wantcnid<key)continue;
+		//比较fathercnid，要是不一样就跳过（3）
+		DWORD key=BSWAP_32(*(DWORD*)(catalogbuffer+offset+2));
+		//say("oh 3:key=%x\n",key);
+		if(key!=fathercnid)continue;
 
-		//既然到这儿，那么key==wantcnid
-		//所以把这个record，翻译成这种格式就行：名字，id，种类，大小
-		WORD namelen=BSWAP_16(*(WORD*)(readbuffer+offset+6));
-		//say("%x@%x\n",namelen,offset);
-		if(namelen>=0xf)namelen=0xf;
-		i=0;
-		for(i=0;i<namelen;i++)	//namelength=*(byte*)(rsi+6)
-		{
-			*(BYTE*)(rdi+i)=*(BYTE*)(readbuffer+offset+9+i*2);
-			//say("%c",*(BYTE*)(readbuffer+offset+9+i*2));
-		}
-		//2.cnid号
-		*(QWORD*)(rdi+0x10)=BSWAP_32(*(DWORD*)(readbuffer+offset+2+keylen+0x8));
-		//3.type
-		QWORD filetype=BSWAP_16(*(WORD*)(readbuffer+offset+2+keylen));
-		*(QWORD*)(rdi+0x20)=filetype;
-		//4.size
-		if(filetype==2)
-		{
-			*(QWORD*)(rdi+0x30)=BSWAP_64(*(QWORD*)(readbuffer+offset+2+keylen+0x58));
-		}
+		//要是这个record不是文件，那就再跳过（4）
+		BYTE filetype=*(BYTE*)(catalogbuffer+offset+2+keylen+1);
+		//say("oh 4:type=:%x\n",filetype);
+		if(filetype!=2)continue;
 
-		if(*(DWORD*)rdi == 0)*(DWORD*)rdi=0x3f3f3f3f;
-		rdi+=0x40;
+		//再看看文件cnid对不对，不对还跳过（5）
+		DWORD thiscnid=BSWAP_32(*(DWORD*)(catalogbuffer+offset+2+keylen+8));
+		//say("oh 5:self:%x\n",thiscnid);
+		if(thiscnid!=wantcnid)continue;
+
+		//穿越重重阻碍，现在可以从datafork里面，找扇区号，和扇区数了
+		say("oh i am here!\n");
+		QWORD forkaddr=catalogbuffer+offset+2+keylen+0x58+0x10;
+		QWORD logicwhere=0;
+		for(i=0;i<8;i++)
+		{
+			//读块号，没有这项就返回
+			QWORD fileblock=BSWAP_32(*(DWORD*)(forkaddr+i*0x50));
+			if(fileblock==0)break;
+
+			//读块数，是0就返回
+			QWORD count=BSWAP_32(*(DWORD*)(forkaddr+4+i*0x50));
+			if(fileblock==0)break;
+
+			//蛋又碎了，传进去的参数为：这一块的物理扇区号，扇区数，逻辑位置，需求位置，目标位置
+			holyshit(fileblock*blocksize,count*blocksize,logicwhere,wantwhere,readbuffer);
+
+			//下一块位置修改
+			logicwhere+=count*blocksize*0x200;
+
+		}//for循环
+		break;
 
 	}//大while(1)循环
 
 }
-static void hfs_load(BYTE* addr,QWORD fileoffset)
+static int hfs_load(BYTE* addr,QWORD wantwhere)
 {
 	//1.在自己的表里面搜索到这个文件名对应的cnid号
 	QWORD* table=(QWORD*)(directorybuffer);	//一定要括号
@@ -488,21 +502,20 @@ static void hfs_load(BYTE* addr,QWORD fileoffset)
 
 
 	//2.搜索b树搜索key，只能找它爸，没办法直接找到它！
-	QWORD temp1=rootnode;
-	QWORD temp2=*(DWORD*)(directorybuffer+0x10);	//
-	searchnodeforcnid(&temp1,&temp2);
-	if(temp2 < 0xe)
+	QWORD fathercnid=*(DWORD*)(directorybuffer+0x10);
+	QWORD foundnode=searchbtreeforcnid(rootnode,fathercnid);
+	if(foundnode <= 0)
 	{
 		say("not found\n");
 		return;
 	}
-	say("wantcnid:%llx,@node:%llx,offset:%llx\n",wantcnid,temp1,temp2);
+	say("found:%llx@node:%llx\n",wantcnid,foundnode);
 
 
 
 
 	//3.从这个节点开始，record，的data部分，的fork信息里面，找到东西
-	explainfile(temp1,wantcnid,fileoffset);
+	explainfile(fathercnid,wantcnid,foundnode,wantwhere);
 }
 
 
@@ -574,5 +587,6 @@ int mounthfs(QWORD sector,QWORD* explainfunc,QWORD* cdfunc,QWORD* loadfunc)
 	say("rootnode:%x\n",rootnode);
 	say("firstleafnode:%x\n",firstleafnode);
 
+	hfs_cd("/");
 	return 0;
 }
