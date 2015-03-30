@@ -30,7 +30,7 @@ static struct dirbuffer* dir;	//dir=“目录名缓冲区”的内存地址（di
 //读缓冲区的地址，缓冲区64k大小
 static QWORD readbuffer;
 //键盘输入专用
-static unsigned char buffer[128];
+static BYTE buffer[128];
 //调用的cd和load函数所在的内存地址
 static QWORD explainfunc,cdfunc,loadfunc;
 
@@ -279,7 +279,7 @@ void main()
 	//取出已经申请到的内存地址，看不惯就手动malloc吧
 	getaddrofbuffer(&readbuffer);
 	getaddrofdir(&dir);
-	say("1@%llx\n2@%llx\n",(QWORD)readbuffer,(QWORD)dir);
+	say("readbuffer@%llx\ndirbuffer@%llx\n",(QWORD)readbuffer,(QWORD)dir);
 
 	//分区表转换到容易理解的表里
 	explainparttable();
@@ -287,66 +287,59 @@ void main()
 	while(1)
 	{
 		//等输入
-		char first[16],second[16];
 		waitinput(buffer);
-		//say("%llx\n",*(QWORD*)buffer);
-		buf2arg(buffer,first,second);
-		//say("%s,%s\n",first,second);
-		//say("%llx,%llx\n",*(QWORD*)first,*(QWORD*)second);
+
+		//把这段里面所有的0x20变成0
+		QWORD first,second;
+		buf2arg(buffer,&first,&second);
+		say("%llx,%llx\n",first,second);
+		printmemory(buffer,0x80);
 
 		//判断
-		switch(*(QWORD*)first)
+		if(compare( (char*)first , "exit" ) == 0)
 		{
-			case 0x74697865:
-			{
-				//exit
-				return;
-			}
-			case 0x6b736964:
-			{
-				//选择硬盘(具体哪个sata硬盘/usb磁盘/把文件当硬盘/网络盘)
-				disk((QWORD)second);
-				if(*(DWORD*)second!=0xffffffff)explainparttable();
-				break;
-			}
-			case 0x746e756f6d:
-			{
-				mount((QWORD)second);
-				break;
-			}
-			case 0x6e69616c707865:
-			{
-				explain((QWORD)second);
-				break;
-			}
-			case 0x6463:
-			{
-				//进入目录(目录名字符串的地址)
-				cd(second);
-				break;
-			}
-			case 0x64616f6c:
-			{
-				//读出文件(文件名字符串的地址)
-				load(second);
-				break;
-			}
-			case 0x736c:
-			{
-				ls();
-				break;
-			}
-			default:
-			{
-				say("disk                    (list disks)\n");
-				say("disk ?                  (choose a disk)\n");
-				say("disk ?:\\\\name.format    (use an image file as disk)\n");
-				say("mount                   (list partitions)\n");
-				say("mount ?                 (choose a partition)\n");
-				say("explain ?               (explain inode/cluster/cnid/mft)\n");
-				say("cd dirname              (change directory)\n");
-				say("load filename           (load this file)\n");
-			}
+			break;
+			//exit
 		}
-	}
+		else if(compare( (char*)first , "disk" ) == 0)
+		{
+			//选择硬盘(具体哪个sata硬盘/usb磁盘/把文件当硬盘/网络盘)
+			disk(second);
+			if(*(DWORD*)second!=0xffffffff)explainparttable();
+		}
+		else if(compare( (char*)first , "mount" ) == 0)
+		{
+			mount(second);
+		}
+		else if(compare( (char*)first , "explain" ) == 0)
+		{
+			explain(second);
+		}
+		else if(compare( (char*)first , "cd" ) == 0)
+		{
+			//进入目录(目录名字符串的地址)
+			cd(second);
+		}
+		else if(compare( (char*)first , "load" ) == 0)
+		{
+			//读出文件(文件名字符串的地址)
+			load(second);
+		}
+		else if(compare( (char*)first , "ls" ) == 0)
+		{
+			ls();
+		}
+		else
+		{
+			say("disk                    (list disks)\n");
+			say("disk ?                  (choose a disk)\n");
+			say("disk ?:\\\\name.format    (use an image file as disk)\n");
+			say("mount                   (list partitions)\n");
+			say("mount ?                 (choose a partition)\n");
+			say("explain ?               (explain inode/cluster/cnid/mft)\n");
+			say("cd dirname              (change directory)\n");
+			say("load filename           (load this file)\n");
+		}
+
+	}//while(1)循环
 }

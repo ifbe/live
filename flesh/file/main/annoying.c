@@ -214,68 +214,48 @@ void anscii2hex(BYTE* second,QWORD* hex)
 		}
 	}
 }
-//接收到的转换成两个
-//如果buf里面是“mount”，转换后得到first为“mount”，second为0xffffffff
-//如果buf里面是“mount 12”，转换后得到first为“mount”，second为“12”
-void buf2arg(char* buffer,QWORD* first,QWORD* second)
+void buf2arg(BYTE* buffer,QWORD* first,QWORD* second)
 {
-	int i=0,j,count;
-	char* temp;
+	//开始的时候尾巴处写满0xffffffff,然后first和second都指向尾巴
+	*(QWORD*)(buffer+0x78)=0xffffffffffffffff;
+	*first=*second=(QWORD)(buffer+0x78);
 
-	//空的命令空的数字会返回-1
-	first[0]=first[1]=second[0]=second[1]=0xffffffffffffffff;
-
-	temp=(char*)first;
-	for(;i<128-16;i++)
+	//
+	int i;
+	int howmany=0;
+	for(i=0;i<0x78;i++)
 	{
-		//say("buffer[%d]=%c\n",i,buffer[i]);
-		//字符串结尾符号0
-		if(buffer[i]==0)return;
-		//越过所有非正常字符
-		if(buffer[i]<=0x20)continue;
-
-		//超过16个字节的命令不会出现吧，出现再改
-		for(count=0;count<16;count++)
+		if( buffer[i] <= 0x20 )
 		{
-			if(buffer[i+count]<=0x20)break;
+			buffer[i]=0;
 		}
-		//say("%d\n",count);
-
-		//如果有字符的话，first buffer就不能是-1(无标志)了
-		if(count>0)first[0]=first[1]=0;
-		for(j=0;j<count;j++)
+		if( buffer[i] > 0x20 )
 		{
-			temp[j]=buffer[i+j];
-		}
-		//say(temp);
+			if(i == 0)
+			{
+				*first=(QWORD)&buffer[i];
+				//say("%llx\n",*first);
+				howmany++;
+			}
+			else
+			{
+				if( buffer[i-1] == 0 )
+				{
+					if( howmany == 0 )
+					{
+						*first=(QWORD)&buffer[i];
+						howmany++;
+					}
+					else if( howmany == 1 )
+					{
+						say("here:%x\n",howmany);
+						*second=(QWORD)&buffer[i];
+					}
+				}//if前一个是0
 
-		i+=count;
-		break;
-	}
+			}//else这不是buffer里面第一个
 
-	temp=(char*)second;
-	for(;i<128-16;i++)
-	{
-		//say("buffer[%d]=%c\n",i,buffer[i]);
-		if(buffer[i]==0)return;
-		if(buffer[i]<=0x20)continue;
+		}//if这个是正常字符
 
-		//超过16个字节的命令不会出现吧，出现再改
-		for(count=0;count<16;count++)
-		{
-			if(buffer[i+count]<=0x20)break;
-		}
-		//say("%d\n",count);
-
-		//如果有字符的话，first buffer就不能是-1(无标志)了
-		if(count>0)second[0]=second[1]=0;
-		for(j=0;j<count;j++)
-		{
-			temp[j]=buffer[i+j];
-		}
-		//say(temp);
-
-		i+=count;
-		break;
-	}
+	}//最外面的for循环
 }

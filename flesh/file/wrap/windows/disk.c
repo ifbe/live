@@ -66,7 +66,7 @@ void disk(QWORD addr)
 
 	//收到的地址里面究竟是些什么
 	QWORD i;
-	anscii2dec(addr,&i);
+	anscii2hex(addr,&i);
 
 	//如果是小于10的数字
 	if(i<10)			
@@ -81,11 +81,21 @@ void disk(QWORD addr)
 	//如果是一个虚拟磁盘文件的路径
 	else
 	{
-		//关掉原先已经打开的磁盘
-		CloseHandle(hDev);
+		HANDLE temphandle=CreateFile((BYTE*)addr,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+		if(temphandle != INVALID_HANDLE_VALUE)
+		{
+			//测试成功
+			printf("%s\n",addr);
+			CloseHandle(temphandle);
 
-		//把这个虚拟磁盘文件当成硬盘来用并且选定,这个肯定要先检查，现在没时间。。。。
-		hDev=CreateFile(diskname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+			//关掉原先已经打开的磁盘，然后把这个虚拟磁盘文件当成硬盘来用并且选定
+			CloseHandle(hDev);
+			hDev=CreateFile(diskname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+		}
+		else
+		{
+			printf("failed\n");
+		}
 	}
 }
 //内存地址，第一扇区，请无视，总字节数
