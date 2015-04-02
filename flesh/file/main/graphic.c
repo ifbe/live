@@ -4,8 +4,6 @@
 #define QWORD unsigned long long
 
 
-
-
 //每0x40个字节是一个当前目录表
 struct dirbuffer
 {
@@ -20,20 +18,20 @@ struct dirbuffer
 };
 static struct dirbuffer* dir;	//dir=“目录名缓冲区”的内存地址（dir[0],dir[1],dir[2]是这个内存地址里面的第0，1，2字节快）
 
-//调用的cd和load函数所在的内存地址
-static QWORD explainfunc,cdfunc,loadfunc;
-
 //读缓冲区的地址，缓冲区64k大小
 static QWORD readbuffer;
 
 //键盘输入专用
 static BYTE buffer[128];
 
+//调用的cd和load函数所在的内存地址
+static QWORD explainfunc,cdfunc,loadfunc;
+
+
 
 
 //[fedcba9876543210,ffffffffffffffff]，就只需要打印已经认出的分区
-//[100,fedcba9876543210)，收到一个地址，那个地方是一堆数字
-//[0,ff]，收到数字
+//[0,fedcba9876543210)，收到一个地址，那个地方是一堆数字
 static int mount(QWORD in)
 {
 	if(in >= 0xfedcba9876543210)
@@ -41,13 +39,12 @@ static int mount(QWORD in)
 		explainparttable();
 		return -1;
 	}
-	if(in > 0xff) return -2;
 
 	//得到编号，然后得到分区位置，然后挂载
 	QWORD start;
 	QWORD type;
 	whereisthepartition(in,&start,&type);
-	if( (start==0) )
+	if((start==0) )
 	{
 		say("impossible partition:%llx\n",in);
 		return;
@@ -126,9 +123,18 @@ static int ls()
 
 
 
+//
+void printworld()
+{
+	int i,j;
+	for(i=0;i<1024;i++)
+		for(j=0;j<768;j++)
+			point(i,j,0x88888888);
+	writescreen();
+}
 void main()
 {
-	//已申请到的内存在哪
+	//取出已经申请到的内存地址，看不惯就手动malloc吧
 	getaddrofbuffer(&readbuffer);
 	getaddrofdir(&dir);
 	say("readbuffer@%llx\ndirbuffer@%llx\n",(QWORD)readbuffer,(QWORD)dir);
@@ -139,16 +145,18 @@ void main()
 
 	while(1)
 	{
-		//等输入
+		//1.这次显示啥
+		printworld();
+
+		//2.等输入
 		waitinput(buffer);
 
-		//把这段里面所有的0x20变成0
 		QWORD first,second;
 		buf2arg(buffer,&first,&second);
 		say("%llx,%llx\n",first,second);
 		printmemory(buffer,0x80);
 
-		//判断
+		//3.干活
 		if(compare( (char*)first , "exit" ) == 0)
 		{
 			break;

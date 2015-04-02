@@ -1,4 +1,4 @@
-.PHONY:binary
+﻿.PHONY:binary
 binary:
 	gcc -c -fPIC -O2 bare/start.c
 	gcc -c -fPIC -O2 bare/screen.c
@@ -35,5 +35,14 @@ win:
 	gcc -c -O2 windows/memory.c
 	rm -f wrap.a
 	ar crs wrap.a disk.o earmouth.o memory.o
+.PHONY:win-graphic
+win-graphic:
+	windres --input-format=rc -O coff -i windows/uac.rc -o uac.res
+	gcc -c -O2 win-graphic/disk.c
+	gcc -c -O2 win-graphic/memory.c
+	gcc -c -O2 win-graphic/screen.c
+	gcc -c -O2 win-graphic/sdl.c -I d:\msys\lib\SDL2-2.0.3\x86_64-w64-mingw32\include
+	rm -f wrap.a
+	ar crs wrap.a disk.o memory.o screen.o sdl.o
 clean:
 	rm -f *.o *.a *.res

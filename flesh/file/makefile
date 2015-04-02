@@ -1,4 +1,4 @@
-linux:
+﻿linux:
 	make -s -C wrap linux
 	make -s -C main linux
 	gcc main/main.a wrap/wrap.a \
@@ -12,6 +12,13 @@ mac:
 win:
 	make -s -C wrap win
 	make -s -C main win
+	gcc main/main.a wrap/uac.res wrap/wrap.a \
+	-Wl,--no-undefined -static -static-libgcc \
+	-L d:\msys\lib\SDL2-2.0.3\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2 \
+	-lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid
+win-graphic:
+	make -s -C wrap win-graphic
+	make -s -C main win-graphic
 	gcc main/main.a wrap/uac.res wrap/wrap.a \
 	-Wl,--no-undefined -static -static-libgcc \
 	-L d:\msys\lib\SDL2-2.0.3\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2 \
