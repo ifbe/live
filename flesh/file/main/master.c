@@ -4,19 +4,36 @@
 #define QWORD unsigned long long
 
 
+//每0x40字节存放分区的基本信息
+struct diskinfo
+{
+	BYTE path[0x20];
+	BYTE name[0x20];
+};
+static struct diskinfo* diskinfo;
 
+//每0x40字节存放分区的基本信息
+struct mytable
+{
+	QWORD startlba;	//[+0,0x7]:起始lba
+	QWORD endlba;	//[+0x8,0xf]:末尾lba
+	QWORD parttype;	//[+0x10,0x17]:分区类型anscii
+	QWORD partname;	//[0x18,0x1f]:分区名字
+	QWORD a[4];	//[0x20,0x3f]:unused
+};
+static struct mytable* mytable;
 
 //每0x40个字节是一个当前目录表
 struct dirbuffer
 {
-	unsigned long long name;	//[+0,0x7]:起始lba
-	unsigned long long unused;
-	unsigned long long specialid;	//[+0x20,0x2f]:分区类型anscii
-	unsigned long long unused1;
-	unsigned long long type;	//[+0x10,0x1f]:末尾lba
-	unsigned long long unused2;
-	unsigned long long size;	//[0x30,0x3f]:分区名字
-	unsigned long long unused3;
+	QWORD name;	//[+0,0x7]:起始lba
+	QWORD unused;
+	QWORD specialid;	//[+0x20,0x2f]:分区类型anscii
+	QWORD unused1;
+	QWORD type;	//[+0x10,0x1f]:末尾lba
+	QWORD unused2;
+	QWORD size;	//[0x30,0x3f]:分区名字
+	QWORD unused3;
 };
 static struct dirbuffer* dir;	//dir=“目录名缓冲区”的内存地址（dir[0],dir[1],dir[2]是这个内存地址里面的第0，1，2字节快）
 
@@ -38,15 +55,15 @@ static int mount(QWORD in)
 {
 	if(in >= 0xfedcba9876543210)
 	{
-		explainparttable();
+		readdisk(readbuffer,0,0,64);
+		explainparttable(readbuffer);
 		return -1;
 	}
 	if(in > 0xff) return -2;
 
 	//得到编号，然后得到分区位置，然后挂载
-	QWORD start;
-	QWORD type;
-	whereisthepartition(in,&start,&type);
+	QWORD type=mytable[in].parttype;
+	QWORD start=mytable[in].startlba;
 	if( (start==0) )
 	{
 		say("impossible partition:%llx\n",in);
@@ -129,13 +146,14 @@ static int ls()
 void main()
 {
 	//已申请到的内存在哪
-	getaddrofbuffer(&readbuffer);
+	getaddrofdiskinfo(&diskinfo);
+	getaddrofparttable(&mytable);
 	getaddrofdir(&dir);
-	say("readbuffer@%llx\ndirbuffer@%llx\n",(QWORD)readbuffer,(QWORD)dir);
+	getaddrofbuffer(&readbuffer);
+	say("%llx,%llx,%llx,%llx\n",(QWORD)diskinfo,(QWORD)mytable,(QWORD)dir,readbuffer);
 
 	//初始化一下parttable.c需要的变量
-	initpartmanager();
-	explainparttable();
+	mount(0xffffffffffffffff);
 
 	while(1)
 	{
@@ -145,8 +163,8 @@ void main()
 		//把这段里面所有的0x20变成0
 		QWORD first,second;
 		buf2arg(buffer,&first,&second);
-		say("%llx,%llx\n",first,second);
-		printmemory(buffer,0x80);
+		//say("%llx,%llx\n",first,second);
+		//printmemory(buffer,0x80);
 
 		//判断
 		if(compare( (char*)first , "exit" ) == 0)
@@ -170,6 +188,7 @@ void main()
 				}
 				else disk(second);
 			}
+			mount(0xffffffffffffffff);
 		}
 		else if(compare( (char*)first , "mount" ) == 0)
 		{

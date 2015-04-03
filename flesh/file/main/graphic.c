@@ -4,6 +4,25 @@
 #define QWORD unsigned long long
 
 
+//每0x40字节存放分区的基本信息
+struct diskinfo
+{
+	BYTE path[0x20];
+	BYTE name[0x20];
+};
+static struct diskinfo* diskinfo;
+
+//每0x40字节存放分区的基本信息
+struct mytable
+{
+	QWORD startlba;	//[+0,0x7]:起始lba
+	QWORD endlba;	//[+0x8,0xf]:末尾lba
+	QWORD parttype;	//[+0x10,0x17]:分区类型anscii
+	QWORD partname;	//[0x18,0x1f]:分区名字
+	QWORD a[4];	//[0x20,0x3f]:unused
+};
+static struct mytable* mytable;
+
 //每0x40个字节是一个当前目录表
 struct dirbuffer
 {
@@ -23,6 +42,7 @@ static QWORD readbuffer;
 
 //键盘输入专用
 static BYTE buffer[128];
+static bufcount=0;
 
 //调用的cd和load函数所在的内存地址
 static QWORD explainfunc,cdfunc,loadfunc;
@@ -36,15 +56,16 @@ static int mount(QWORD in)
 {
 	if(in >= 0xfedcba9876543210)
 	{
-		explainparttable();
+		readdisk(readbuffer,0,0,64);
+		explainparttable(readbuffer);
 		return -1;
 	}
+	if(in > 0xff) return -2;
 
 	//得到编号，然后得到分区位置，然后挂载
-	QWORD start;
-	QWORD type;
-	whereisthepartition(in,&start,&type);
-	if((start==0) )
+	QWORD type=mytable[in].parttype;
+	QWORD start=mytable[in].startlba;
+	if( (start==0) )
 	{
 		say("impossible partition:%llx\n",in);
 		return;
@@ -124,107 +145,97 @@ static int ls()
 
 
 //
+static int tag=0;
 void printworld()
 {
+	writetitle(buffer);
+	//清屏，上面一排，分隔线
 	int i,j;
-	for(i=0;i<1024;i++)
-		for(j=0;j<768;j++)
-			point(i,j,0x88888888);
+	for(i=0;i<640;i++)
+		for(j=0;j<32;j++)
+			point(i,j,0xffffffff);
+	for(j=0;j<32;j++)
+	{
+		point(80,j,0);
+		point(160,j,0);
+		point(240,j,0);
+		point(320,j,0);
+	}
+
+	//本程序的大概标签式结构，标签含义，标签内的颜色
+	DWORD color=0xfeffefcf>>(tag*5);
+	for(i=tag*80;i<tag*80+80;i++)
+		for(j=0;j<32;j++)
+			point(i,j,color);
+	for(i=0;i<640;i++)
+		for(j=32;j<640;j++)
+			point(i,j,color);
+	string(0,0,"1.disk");
+	string(10,0,"2.part");
+	string(20,0,"3.file");
+	string(30,0,"4.detail");
+
+	//写屏
 	writescreen();
 }
 void main()
 {
-	//取出已经申请到的内存地址，看不惯就手动malloc吧
-	getaddrofbuffer(&readbuffer);
+	//已申请到的内存在哪
+	getaddrofdiskinfo(&diskinfo);
+	getaddrofparttable(&mytable);
 	getaddrofdir(&dir);
-	say("readbuffer@%llx\ndirbuffer@%llx\n",(QWORD)readbuffer,(QWORD)dir);
+	getaddrofbuffer(&readbuffer);
+	say("%llx,%llx,%llx,%llx\n",(QWORD)diskinfo,(QWORD)mytable,(QWORD)dir,readbuffer);
 
 	//初始化一下parttable.c需要的变量
-	initpartmanager();
-	explainparttable();
+	mount(0xffffffffffffffff);
 
 	while(1)
 	{
 		//1.这次显示啥
 		printworld();
 
-		//2.等输入
-		waitinput(buffer);
+		//2.等事件
+		DWORD type=0;
+		DWORD key=0;
+		waitevent(&type,&key);
+		//say("%x\n",key);
 
-		QWORD first,second;
-		buf2arg(buffer,&first,&second);
-		say("%llx,%llx\n",first,second);
-		printmemory(buffer,0x80);
-
-		//3.干活
-		if(compare( (char*)first , "exit" ) == 0)
+		//3.干啥事
+		switch(type)
 		{
-			break;
-			//exit
-		}
-		else if(compare( (char*)first , "disk" ) == 0)
-		{
-			if(*(DWORD*)second==0xffffffff)
+			case 0:return;
+			case 1:
 			{
-				disk(0xffffffffffffffff);
-			}
-			else
-			{
-				int i;
-				anscii2hex(second,&i);
-				if(i<0xa)
+				if(key==0x1b)return;
+				else if(key==0x8)
 				{
-					disk(i);
+					if(bufcount!=0)
+					{
+						bufcount--;
+						buffer[bufcount]=0;
+					}
 				}
-				else disk(second);
-			}
-		}
-		else if(compare( (char*)first , "mount" ) == 0)
-		{
-			if(*(DWORD*)second==0xffffffff)
-			{
-				mount(0xffffffffffffffff);
-			}
-			else
-			{
-				int i;
-				anscii2hex(second,&i);
-				if(i<0xa)
+				else
 				{
-					mount(i);
+					buffer[bufcount]=key&0xff;
+					bufcount++;
 				}
-				else mount(second);
+				break;
+			}
+			case 3:
+			{
+				int x=key&0xffff;
+				int y=(key>>16)&0xffff;
+				say("(%d,%d)\n",x,y);
+
+				//
+				if( (y<48) && (x<320) )
+				{
+					tag=x/80;
+				}
+				break;
 			}
 		}
-		else if(compare( (char*)first , "explain" ) == 0)
-		{
-			explain(second);
-		}
-		else if(compare( (char*)first , "cd" ) == 0)
-		{
-			//进入目录(目录名字符串的地址)
-			cd(second);
-		}
-		else if(compare( (char*)first , "load" ) == 0)
-		{
-			//读出文件(文件名字符串的地址)
-			load(second);
-		}
-		else if(compare( (char*)first , "ls" ) == 0)
-		{
-			ls();
-		}
-		else
-		{
-			say("disk                    (list disks)\n");
-			say("disk ?                  (choose a disk)\n");
-			say("disk ?:\\\\name.format    (use an image file as disk)\n");
-			say("mount                   (list partitions)\n");
-			say("mount ?                 (choose a partition)\n");
-			say("explain ?               (explain inode/cluster/cnid/mft)\n");
-			say("cd dirname              (change directory)\n");
-			say("load filename           (load this file)\n");
-		}
-
-	}//while(1)循环
+	}//while(1)
 }

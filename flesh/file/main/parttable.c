@@ -15,9 +15,6 @@ struct mystruct
 };
 static struct mystruct mytable[128];		//0x40*0x80=0x2000
 
-//临时缓冲区
-static QWORD readbuffer;
-
 
 
 
@@ -28,7 +25,7 @@ static QWORD readbuffer;
 //[+0x28,+0x2f]:末尾lba			raw[5]
 //[+0x30,+0x37]:属性标签		raw[6]
 //[+0x38,+0x7f]:名字			raw[7]~raw[0xf]
-QWORD explaingpt()
+QWORD explaingpt(QWORD readbuffer)
 {
 	say("gpt disk\n");
 	QWORD* raw=(QWORD*)(readbuffer+0x400);
@@ -86,9 +83,9 @@ QWORD explaingpt()
 //[+0x5,+0x7]:结束磁头柱面扇区
 //[+0x8,+0xb]:起始lba
 //[+0xc,+0xf]:大小
-QWORD explainmbr()
+QWORD explainmbr(readbuffer)
 {
-	say("mbr disk",0);
+	say("mbr disk\n",0);
 	QWORD raw=readbuffer+0x1be;
 
 	int src=0,dst=0;
@@ -132,18 +129,21 @@ QWORD explainmbr()
 }
 
 
-void explainparttable()
+
+
+
+
+
+
+void explainparttable(QWORD readbuffer)
 {
 	//清理
 	BYTE* memory;
 	int i;
 	memory=(BYTE*)(mytable);
 	for(i=0;i<0x2000;i++) memory[i]=0;
-	memory=(BYTE*)(readbuffer);
-	for(i=0;i<0x100000;i++) memory[i]=0;
 
 	//读出前64个扇区
-	readdisk(readbuffer,0,0,64);
 	if(*(WORD*)(readbuffer+0x1fe)!=0xAA55)
 	{
 		say("bad disk\n");
@@ -153,21 +153,14 @@ void explainparttable()
 	//解释分区表
 	if(*(QWORD*)(readbuffer+0x200)==0x5452415020494645)
 	{
-		explaingpt();
+		explaingpt(readbuffer);
 	}
 	else
 	{
-		explainmbr();
+		explainmbr(readbuffer);
 	}
 }
-void whereisthepartition(QWORD i,QWORD* start,QWORD* type)
+getaddrofparttable(unsigned long long* p)
 {
-	*start=mytable[i].startlba;
-	*type=mytable[i].parttype;
-	say("startlba:%x,endlba:%x,type:%s\n",start,(char*)&type);
-}
-void initpartmanager()
-{
-	//
-	getaddrofbuffer(&readbuffer);
+	*p=(unsigned long long)mytable;
 }

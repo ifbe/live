@@ -1,4 +1,5 @@
 ﻿#include "SDL2/SDL.h"
+#include "SDL2/SDL_video.h"
 #undef main
 
 
@@ -11,6 +12,7 @@ SDL_Texture* texture;		//texture是在显存里的？
 SDL_TimerID my_timer_id;
 
 
+/*
 unsigned int my_callbackfunc(unsigned int interval, void *param)
 {
   //push SDL_USEREVENT into queue,causes it to be called again same interval
@@ -28,6 +30,7 @@ unsigned int my_callbackfunc(unsigned int interval, void *param)
   SDL_PushEvent(&event);
   return interval;
 }
+*/
 __attribute__((constructor)) void initsdl()
 {
   //准备sdl
@@ -47,8 +50,8 @@ __attribute__((constructor)) void initsdl()
   SDL_RenderPresent(renderer);
 
   //准备timer
-  unsigned int delay =(33/10) * 20; //round it down to the nearest 10 ms
-  my_timer_id = SDL_AddTimer(delay, my_callbackfunc,0);
+  //unsigned int delay =(33/10) * 20; //round it down to the nearest 10 ms
+  //my_timer_id = SDL_AddTimer(delay, my_callbackfunc,0);
 }
 __attribute__((destructor)) void destorysdl()
 {
@@ -68,6 +71,10 @@ __attribute__((destructor)) void destorysdl()
 
 
 
+void writetitle(char* p)
+{
+	SDL_SetWindowTitle(window,p);
+}
 void writescreen()
 {
   //画texture？
@@ -76,29 +83,47 @@ void writescreen()
   SDL_RenderCopy(renderer, texture, NULL, NULL);
   SDL_RenderPresent(renderer);
 }
-int waitevent()
+
+
+//自定义的种类码，不是sdl的不要混淆
+//0:退出
+//1:键盘按下
+//2:键盘松开
+//3:鼠标按下
+//4:鼠标松开
+//5:鼠标移动
+//0xff:时间
+int waitevent(unsigned int* type,unsigned int* value)
 {
-        SDL_Event event;
-        while (1)
-        {
-                if (SDL_WaitEvent(&event))
-                {
-                        if (event.type == SDL_QUIT)
-                        {
-                                return -1;
-                        }
-                        else if (event.type == SDL_KEYDOWN)
-                        {
-                                return (int)(event.key.keysym.sym);
-                        }
-                        else if (event.type == SDL_USEREVENT)
-                        {
-                                return (int)event.user.code;
-                        }
-                }
-        }
-}
-void waitinput()
-{
-	
+	SDL_Event event;
+	while (1)
+	{
+		if (SDL_WaitEvent(&event))
+		{
+			if(event.type == SDL_QUIT)
+			{
+				*type=0;
+				return;
+			}
+			else if (event.type == SDL_KEYDOWN)
+			{
+				*type=1;
+				*value=(int)(event.key.keysym.sym);
+				return;
+			}
+			else if(event.type == SDL_MOUSEBUTTONDOWN)	//MOUSEMOTION
+			{
+				if(event.button.button=SDL_BUTTON_LEFT)
+				{
+					//如果是左键按下的事件，就要判断按下鼠标的时候鼠标是否处在button区域中，所以要得到鼠标坐标
+					int x=event.button.x;
+					int y=event.button.y;
+
+					*type=3;
+					*value=x+(y<<16);
+					return;
+				}
+			}
+		}//如果有事件
+	}//while(1)
 }

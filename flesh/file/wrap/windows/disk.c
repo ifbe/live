@@ -6,48 +6,75 @@
 #define DWORD unsigned int
 #define WORD unsigned short
 #define BYTE unsigned char
-static BYTE diskname[20]={'\\','\\','.','\\','P','h','y','s','i','c','a','l','D','r','i','v','e','0','\0','\0'};
-static int status[10];
+
+//每0x40字节存放分区的基本信息
+struct diskinfo
+{
+	unsigned char path[0x20];
+	unsigned char name[0x20];
+};
+static struct diskinfo diskinfo[10];
+
 HANDLE hDev;
+
+static BYTE tempname[20]={'\\','\\','.','\\','P','h','y','s','i','c','a','l','D','r','i','v','e','0','\0','\0'};
+
+
 
 
 static void enumeratedisk()
 {
+	//printf("enu disk\n");
 	//disk暂时根本不管是什么，默认就是当前第一个硬盘
-	HANDLE temphandle;
 	DWORD i=0;
+	char* p=(char*)diskinfo;
+	for(i=0;i<0x40*10;i++)
+	{
+		//全部清零
+		p[i]=0;
+	}
 	for(i=0;i<10;i++)
 	{
-		diskname[17]=0x30+i;
-		temphandle=CreateFile(diskname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+		//printf("%d\n",i);
+		tempname[17]=0x30+i;
+		HANDLE temphandle=CreateFile(tempname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
 		if(temphandle != INVALID_HANDLE_VALUE)
 		{
-			printf("%d    \\\\.\\PHYSICALDRIVE%d\n",i,i);
-			status[i]=1;
+			//
 			CloseHandle(temphandle);
+			printf("%d    \\\\.\\PHYSICALDRIVE%d\n",i,i);
+
+			//打开成功的，path才会不等于0
+			int j=0;
+			for(;j<20;j++)
+			{
+				diskinfo[i].path[j]=tempname[j];
+			}
 		}
 		else
 		{
-			status[i]=0;
 			//printf("physicaldrive%d,GetLastError()=:%d\n",i,GetLastError());
 		}
-	}
+	}//10个记录
 }
 __attribute__((constructor)) void initdisk()
 {
 	//只enumerate一遍，其他什么都不做
 	enumeratedisk();
 
-	//接收"哥们上面的磁盘你要哪个?"
+	//打开找到的第一个硬盘并且选择它
 	int i;
-	printf("choose disk(give me the number):");
-	scanf("%d",&i);
-
-	//createfile一直打开着也就是选定这个磁盘，其他操作都是对这个磁盘进行的
-	diskname[17]=0x30+i;
-	hDev=CreateFile(diskname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+	for(i=0;i<10;i++)
+	{
+		if(diskinfo[i].path[0]==0)continue;
+		hDev=CreateFile((BYTE*)diskinfo+i*0x40,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+		if(hDev == INVALID_HANDLE_VALUE)
+		{
+			printf("can't open first disk\n");
+		}
+	}
 }
-__attribute__((destructor)) void destorydisk()
+__attribute__((destructor)) void freedisk()
 {
 	CloseHandle(hDev);
 }
@@ -55,11 +82,16 @@ __attribute__((destructor)) void destorydisk()
 
 
 
+void getaddrofdiskinfo(unsigned long long* p)
+{
+	*p=(unsigned long long)diskinfo;
+}
 //[fedcba9876543210,ffffffffffffffff]，就只需要打印已经认出的分区
 //[0,ff]，是一个数字，从表里取出这一号
 //[100,fedcba9876......]，收到一个地址，可能要把d:\image\name.format当作硬盘
 void disk(QWORD in)
 {
+	//say("%llx\n",in);
 	if(in >= 0xfedcba9876543210)	//是0xffffffffffffffff，就只扫描一遍然后打印一遍了事
 	{
 		enumeratedisk();
@@ -71,8 +103,7 @@ void disk(QWORD in)
 		CloseHandle(hDev);
 
 		//选定这个磁盘
-		diskname[17]=0x30+in;
-		hDev=CreateFile(diskname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+		hDev=CreateFile((BYTE*)diskinfo+in*0x40,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
 	}
 	else		//如果是一个地址，那里放着虚拟磁盘文件的位置字符串比如x:\where\wow\haha.img
 	{
@@ -85,7 +116,7 @@ void disk(QWORD in)
 
 			//关掉原先已经打开的磁盘，然后把这个虚拟磁盘文件当成硬盘来用并且选定
 			CloseHandle(hDev);
-			hDev=CreateFile(diskname,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
+			hDev=CreateFile((BYTE*)in,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0);
 		}
 		else
 		{
