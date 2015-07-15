@@ -5,7 +5,7 @@ mov edi,0x4000
 mov ecx,0x1000
 rep movsb
 
-call endofcpu
+jmp endofcpu
 
 
 
