@@ -17,7 +17,7 @@ static QWORD xhciaddr=0;
 
 
 
-//全部设备信息我放在0x140000了，格式如下:(非本环境自己处理这一步)
+//全部设备信息我放在0x110000了，格式如下:(非本环境自己处理这一步)
 //[0,7]:(vendorid<<16)+deviceid
 //[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
 //[0x10,0x17]:portaddress of the device

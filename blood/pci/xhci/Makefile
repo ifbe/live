@@ -1,19 +1,16 @@
-inlinux:
-	make -s library
-	make -s main
-	make -s binary
-library:
-	gcc -c -fPIC -O2 lib/start.c
-	gcc -c -fPIC -O2 lib/print.c
-	nasm -f elf64 lib/interrupt.s -o interrupt.o
-main:
-	gcc -c -fPIC -O2 xhci.c
-	gcc -c -fPIC -O2 isr.c
 binary:
-	ld -T link/link.ld \
-	start.o print.o interrupt.o \
-	xhci.o isr.o \
+	make -s -C wrap linux
+	make -s -C main linux
+	ld -T link.ld \
+	wrap/start.o wrap/print.o wrap/interrupt.o \
+	main/xhci.o main/ehci.o main/isr.o \
+	-o xhci.bin
+cross:
+	make -s -C wrap cross
+	make -s -C main cross
+	x86_64-elf-ld -T link.ld \
+	wrap/start.o wrap/print.o wrap/interrupt.o \
+	main/xhci.o main/ehci.o main/isr.o \
 	-o xhci.bin
 clean:
-	rm -f *.o
-	rm -f *.bin
+	rm -f */*.o *.bin
