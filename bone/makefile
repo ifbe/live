@@ -2,14 +2,12 @@
 binary:				#linuxer only
 	make -s -C skull			#[0,0x1fff]
 	make -s -C trunk		#[0x2000,0x3fff]
-	make -s -C extremities/ahci binary		#[0x4000,0x5fff]
-	make -s -C extremities/disk binary		#[0xc000,0xffff]
+	make -s -C extremities binary		#[0x4000,0xffff]
 	nasm -s 64k.s -o core.bin
-crosscompile:		#windows and mac user
+cross:		#windows and mac user
 	make -s -C skull			#[0,0x1fff]
 	make -s -C trunk		#[0x2000,0x3fff]
-	make -s -C extremities/ahci cross		#[0x4000,0x5fff]
-	make -s -C extremities/disk cross		#[0xc000,0xffff]
+	make -s -C extremities cross		#[0x4000,0xffff]
 	nasm -s 64k.s -o core.bin
 
 
@@ -43,10 +41,7 @@ parallels:
 
 #...
 clean:
-	make -s -C cpu clean
-	make -s -C jarvis clean
-	make -s -C ahci clean
-	make -s -C xhci clean
-	make -s -C usb clean
-	make -s -C disk clean
+	make -s -C skull clean
+	make -s -C trunk clean
+	make -s -C extremities clean
 	rm -f *.bin *.img *.vmdk *.vhd *.dmg *.vdi

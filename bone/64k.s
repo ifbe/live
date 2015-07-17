@@ -8,8 +8,5 @@ times 0x2000-($-$$)db 0
 incbin "trunk/j.bin"
 times 0x4000-($-$$)db 0
 
-incbin "extremities/ahci/ahci.bin"
-times 0x6000-($-$$)db 0
-
-incbin "extremities/disk/disk.bin"
+incbin "extremities/k.bin"
 times 0x10000-($-$$)db 0

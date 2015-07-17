@@ -8,6 +8,9 @@
 
 void start()
 {
+	//
+	initahci();
+
 	//检查问题
 	QWORD diskaddr=*(QWORD*)(0x200000+8);
 	if(diskaddr==0)
