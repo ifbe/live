@@ -259,7 +259,7 @@ char:
     not rax
     shl dl,1
     jc .skip
-    mov eax,0xff00
+    mov eax,0xff
 .skip:
     mov [edi],eax
     add edi,[rel onepoint]
