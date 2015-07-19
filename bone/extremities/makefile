@@ -7,7 +7,7 @@ binary:
 	wrap/print.o wrap/remember.o wrap/else.o \
 	wrap/identify.o wrap/read.o \
 	main/ahci.o \
-	-o k.bin
+	-o ../extremities.bin
 cross:
 	make -s -C wrap cross
 	make -s -C main cross
@@ -17,6 +17,6 @@ cross:
 	wrap/print.o wrap/remember.o wrap/else.o \
 	wrap/identify.o wrap/read.o \
 	main/ahci.o \
-	-o k.bin
+	-o ../extremities.bin
 clean:
 	rm -f */*.o *.bin

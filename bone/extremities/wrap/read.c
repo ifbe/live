@@ -1,4 +1,5 @@
 #include "sata.h"
+void say(char*,QWORD);
 
 int find_cmdslot(HBA_PORT *port)
 {

@@ -6,6 +6,14 @@
 
 
 
+void say(char*);
+
+void initahci();
+void master();
+
+
+
+
 void start()
 {
 	//

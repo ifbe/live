@@ -1,4 +1,5 @@
 #include "sata.h"
+void say(char*,QWORD);
 
 int identify(DWORD edi,QWORD addr)
 {

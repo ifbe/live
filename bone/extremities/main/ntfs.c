@@ -12,6 +12,17 @@
 #define rawbuffer diskhome+0xc0000
 
 
+
+
+void remember(QWORD first,QWORD second);
+void say(char* first,QWORD second);
+void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
+void str2data(BYTE* str,QWORD* data);
+void blank2zero(QWORD* name);
+
+
+
+
 static QWORD diskaddr;
 static QWORD ntfssector;
 static QWORD cacheblock;

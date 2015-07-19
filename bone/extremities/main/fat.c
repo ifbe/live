@@ -11,6 +11,19 @@
 #define indexbuffer diskhome+0x80000
 #define rawbuffer diskhome+0xc0000
 
+
+
+
+void remember(QWORD,QWORD);
+void say(char* first,QWORD second);
+void read(QWORD,QWORD,QWORD,QWORD);
+void str2data(BYTE* str,QWORD* data);
+void zero2blank(QWORD* name);
+void small2capital(QWORD* name);
+
+
+
+
 static QWORD diskaddr;
 static QWORD fat0;
 static QWORD fatsize;

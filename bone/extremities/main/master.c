@@ -10,6 +10,18 @@
 
 
 
+int use(QWORD,char*);
+void remember(QWORD,QWORD);
+void say(char*,QWORD);
+void mountfat(QWORD);
+void mountext(QWORD);
+void mountntfs(QWORD);
+int read(QWORD,QWORD,QWORD,QWORD);
+void identify(QWORD,QWORD);
+
+
+
+
 void loadtoy()
 {
 	read(programhome,0x80,*(QWORD*)(0x200000+8),0x800);

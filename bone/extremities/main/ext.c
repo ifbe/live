@@ -12,6 +12,17 @@
 #define rawbuffer diskhome+0xc0000
 
 
+
+
+void remember(QWORD first,QWORD second);
+void say(char* first,QWORD second);
+void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
+void blank2zero(QWORD* name);
+void str2data(BYTE* str,QWORD* data);
+
+
+
+
 static QWORD diskaddr;
 static QWORD block0;
 static QWORD blocksize;
@@ -322,7 +333,7 @@ int mountext(QWORD sector)
         read(pbrbuffer,block0,diskaddr,0x8);	//0x1000
 
 	//检查magic值
-	if( *(WORD*)(pbrbuffer+0x438) != 0xef53 ) return;
+	if( *(WORD*)(pbrbuffer+0x438) != 0xef53 ) return -1;
 
 	//变量们
 	blocksize=*(DWORD*)(pbrbuffer+0x418);	//就不另开个temp变量了
