@@ -2,4 +2,4 @@
 
 ;[0,0x1fff]
 incbin "core.bin"
-times 0x4000000-($-$$)db 0
+times 0x400000-($-$$)db 0

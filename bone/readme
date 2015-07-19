@@ -1,30 +1,75 @@
+####################real mode area#######################
+[0,3ff]    [0,1023]    real mode interrupt vector table
+[400,4ff]    [1024,1279]    bios data area
+[500,5ff]    [1280,1535]    cmos dump from port 0x70 and 0x71
+[600,7ff]    [1536,2047]    memory infomation from e820
+[800,fff]    [2048,4095]    -------------------------
+[1000,1fff]    [4096,8191]    screen infomation
+[2000,2fff]    [8192,12288]    gdt
+[3000,3fff]    [12288,16383]    idt
+[4000,4fff]    [16384,20479]    old page map level 4 -> anscii table
+[5000,5fff]    [20480,24575]    old page directory pointer table -> kbd buffer
+[6000,6fff]    [24576,28671]    old page directory
+[7000,7fff]    [28672,32767]    old page table
+
+
+
+
+##################pre kernel area######################
+[10000,1ffff]    [64k,128k)    pre kernel code
+[20000,2ffff]    [128k,192k)    1
+[?~9fff8]:stack
+
+
+
+
+#################kernel area###########################
+[100000,1fffff]    [1m,2m)    kernel code
+[200000,2fffff]    [2m,3m)    journal
+[300000,3fffff]    [3m,4m)    console
+[400000,7fffff]    [4m,7m)    1024*1024*rgba pixel data
+[800000,efffff]    [8m,15m)    --------------------
+[f00000,ffffff]    [15m,16m)    isa hole
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[0x100000,0x10ffff]:/
-#��ʽ��[+0,+7]:����,[+8,+f]:��ַ
+#格式：[+0,+7]:名字,[+8,+f]:地址
 #[0x110000,0x11ffff]:/acpi
-#��ʽ��[+0,+7]:����,[+8,+f]:��ַ
+#格式：[+0,+7]:名字,[+8,+f]:地址
 #[0x120000,0x12ffff]:/console
-#��ʽ��ȫ��anscii�룬ÿ0x128�ֽ�һ�У��ܹ�30����Ļ
+#格式：全是anscii码，每0x128字节一行，总共30行屏幕
 #[0x130000,0x13ffff]:/journal
-#��ʽ��ȫ��anscii�룬���ֳ������µ�log
+#格式：全是anscii码，各种程序留下的log
 
 #[0x140000,0x14ffff]:/pci
-#��ʽ��[+0,+3]:pidvid,[+8,+b]:�豸���ʹ���,[+10,+14]:��ַ,[+18,+1b]:�豸��ʲô
+#格式：[+0,+3]:pidvid,[+8,+b]:设备类型代码,[+10,+14]:地址,[+18,+1b]:设备是什么
 #[0x150000,0x15ffff]:/usb
-#��ʽ��[+0,+3]:pidvid,[+8,+b]:�豸����,[+10,+17]:rootport,[+18,+20]:routestring
+#格式：[+0,+3]:pidvid,[+8,+b]:设备类型,[+10,+17]:rootport,[+18,+20]:routestring
 
 #[0x140000,0x14ffff]:/todo
-#[+0,+7]����,[+8,+f]:������ַ(����ÿһ����ÿ�������пվͻ�call)
+#[+0,+7]名字,[+8,+f]:函数地址(这里每一条，每当核心有空就会call)
 #[0x180000,0x1fffff]:/bin
-#��ʽ��[+0,+7]:��������,[+8,+f]:������ַ
+#格式：[+0,+7]:函数名字,[+8,+f]:函数地址
 
-#[0x200000,0x2fffff]:ahci������Ҫ�Ŀռ�
-#[0x300000,0x3fffff]:xhci������Ҫ�Ŀռ�
-#[0x400000,0x4fffff]:�����ļ�ϵͳ��Ҫ�Ŀռ�
-#[0x500000,0x5fffff]:usb��context��transfer ring��Ҫ�Ŀռ�
+#[0x200000,0x2fffff]:ahci驱动需要的空间
+#[0x300000,0x3fffff]:xhci驱动需要的空间
+#[0x400000,0x4fffff]:几个文件系统需要的空间
+#[0x500000,0x5fffff]:usb的context，transfer ring需要的空间
 
-#[0x1000000,0x13fffff]:׼��д����Ļ�ϵĵ���rgb���ݣ�f1��
-#[0x1400000,0x17fffff]:׼��д����Ļ�ϵĵ���rgb���ݣ�f2��
-#[0x1800000,0x1bfffff]:׼��д����Ļ�ϵĵ���rgb���ݣ�f3��
-#[0x1c00000,0x1ffffff]:׼��д����Ļ�ϵĵ���rgb���ݣ�f4��
+#[0x1000000,0x13fffff]:准备写到屏幕上的点阵rgb数据（f1）
+#[0x1400000,0x17fffff]:准备写到屏幕上的点阵rgb数据（f2）
+#[0x1800000,0x1bfffff]:准备写到屏幕上的点阵rgb数据（f3）
+#[0x1c00000,0x1ffffff]:准备写到屏幕上的点阵rgb数据（f4）
 
-#[0x2000000,?]:������ָ�����ļ����ӵ�����
+#[0x2000000,?]:磁盘上指定的文件被扔到这里

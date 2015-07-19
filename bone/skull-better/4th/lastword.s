@@ -1,3 +1,4 @@
+%define screeninfo 0x1000
 [bits 64]
 
 
@@ -65,7 +66,7 @@ mov [rel buffer+0x278],rax
 
 
 ;________________varities____________________
-mov al,[0x3019]
+mov al,[screeninfo+0x19]
 movzx eax,al
 shr eax,3
 mov [rel onepoint],eax
@@ -90,10 +91,10 @@ sixteenline:dq 0
 ;________________the end,print to screen______________
 theend:
 ;mov al,0x44
-;mov edi,[0x3028]
+;mov edi,[screeninfo+0x28]
 ;call char
 
-mov edi,[0x3028]
+mov edi,[screeninfo+0x28]
 mov eax,[rel onepoint]
 shl eax,8			;*256
 lea eax,[eax*2+eax]		;*3
