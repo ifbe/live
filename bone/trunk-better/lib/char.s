@@ -1,3 +1,4 @@
+%define ansciihome 0x30000
 bits 64
 
 
@@ -137,7 +138,7 @@ character:
 
     movzx eax,al
     shl eax,9
-    lea esi,[eax+0x110000]
+    lea esi,[eax+ansciihome]
 
     xor ecx,ecx
 .lines:		;每排8个DWORD=4个QWORD

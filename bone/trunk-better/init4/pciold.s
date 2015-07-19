@@ -1,5 +1,5 @@
 ;/pci
-%define pcihome 0x140000
+%define pcihome 0x40000
 
 
 [BITS 64]

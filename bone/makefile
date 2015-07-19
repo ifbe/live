@@ -4,20 +4,23 @@ binary:				#linuxer only
 	make -s -C trunk		#[0x2000,0x3fff]
 	make -s -C extremities binary		#[0x4000,0xffff]
 	nasm -s bin.s -o core.bin
+
 better:
 	make -s -C skull-better			#[0,0x1fff]
 	make -s -C trunk-better		#[0x2000,0x3fff]
-	make -s -C extremities binary		#[0x4000,0xffff]
+	make -s -C extremities-better binary		#[0x4000,0xffff]
 	nasm -s bin.s -o core.bin
+
 cross:		#windows and mac user
 	make -s -C skull		#[0,0x1fff]
 	make -s -C trunk		#[0x2000,0x3fff]
 	make -s -C extremities cross		#[0x4000,0xffff]
 	nasm -s bin.s -o core.bin
+
 cross-better:		#windows and mac user
 	make -s -C skull-better			#[0,0x1fff]
 	make -s -C trunk-better		#[0x2000,0x3fff]
-	make -s -C extremities cross		#[0x4000,0xffff]
+	make -s -C extremities-better cross		#[0x4000,0xffff]
 	nasm -s bin.s -o core.bin
 
 
@@ -56,4 +59,5 @@ clean:
 	make -s -C trunk clean
 	make -s -C trunk-better clean
 	make -s -C extremities clean
+	make -s -C extremities-better clean
 	rm -f *.bin *.img *.vmdk *.vhd *.dmg *.vdi

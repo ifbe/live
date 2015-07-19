@@ -1,5 +1,5 @@
 ;/acpi
-%define acpihome 0x160000
+%define acpihome 0x20000
 
 
 [BITS 64]

@@ -1,7 +1,7 @@
 [ORG 0x7c00]              ; add to offsets
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    cli                    ; no interrupts
-   xor ax, ax             ; make it zero
+   xor ax,ax             ; make it zero
    mov ds,ax
    mov es,ax
    mov ss,ax             ; stack starts at seg 0

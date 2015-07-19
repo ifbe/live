@@ -1,4 +1,4 @@
-%define ansciihome 0x110000
+%define ansciihome 0x30000
 
 optimizeanscii:
 mov esi,0x4000
