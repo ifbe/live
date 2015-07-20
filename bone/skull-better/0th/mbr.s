@@ -1,6 +1,9 @@
 [ORG 0x7c00]              ; add to offsets
 startofmbr:
 
+
+
+
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;关中断,设置ds=es=ss=0,设置栈开始于7c00
 	cli                    ; no interrupts
@@ -13,6 +16,8 @@ startofmbr:
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
+
+
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;先读首扇区到一个临时的位置:0x800
 	mov dword [dap.blocknumber],0
@@ -23,6 +28,8 @@ startofmbr:
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
+
+
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;跟这个文件前256个字节(后面256个会改变)不一样的话，就跳到本文件结尾
 	mov esi,0x7c00
@@ -30,8 +37,51 @@ startofmbr:
 	mov ecx,0x100
 	cld
 	rep cmpsb
-	jne endofmbr
+	je loadinit
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;不一样说明代码是被引导器加载的，但是不知具体位置所以比必须自己搬家
+	xor eax,eax
+	xor ebx,ebx
+
+	call whereami
+whereami:
+	pop bx				;拿到ip
+
+	mov ax,cs
+	shl eax,4			;拿到cs<<4
+
+	add eax,ebx
+	sub eax,whereami-startofmbr
+	mov [0x4e0],eax		;拿到本程序被加载到的实际位置
+
+	shr eax,4
+	mov ds,ax			;ds
+	mov ax,0x1000
+	mov es,ax			;es
+	mov cx,0x7f00		;cx=(0x10000-0x200)/2
+
+	cmp word [0x4e2],0
+	jb reversemove
+		mov si,0x200			;si
+		mov di,si			;di
+		cld
+		rep movsw
+		jmp 0x1000:0x0200
+
+	reversemove:
+		mov si,0xfffe
+		mov di,si
+		std
+		rep movsw
+		jmp 0x1000:0x0200
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
 
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -62,6 +112,10 @@ loadinit:
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
+
+times 384-($-$$)db 0
+
+
 ;<<<<<<<<<<<<<<load sector<<<<<<<<<<<<<<<<<<<<<<<
 loadsector:
 	pushad
@@ -74,7 +128,6 @@ loadsector:
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
-times 256-($-$$)db 0
 
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

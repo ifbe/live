@@ -4,6 +4,15 @@
 [500,5ff]    [1280,1535]    cmos dump from port 0x70 and 0x71
 [600,7ff]    [1536,2047]    memory infomation from e820
 [800,fff]    [2048,4095]    -------------------------
+        800:jmp rax
+		810:where i was born
+		820:gdtr
+		830:idtr
+
+
+
+
+########################################################
 [1000,1fff]    [4096,8191]    screen infomation
 [2000,2fff]    [8192,12288]    gdt
 [3000,3fff]    [12288,16383]    idt
