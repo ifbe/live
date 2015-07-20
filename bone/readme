@@ -33,10 +33,15 @@
 
 #################kernel area###########################
 [100000,1fffff]    [1m,2m)    kernel code
-[200000,2fffff]    [2m,3m)    journal
-[300000,3fffff]    [3m,4m)    console
-[400000,7fffff]    [4m,7m)    1024*1024*rgba pixel data
-[800000,efffff]    [8m,15m)    --------------------
+[200000,2fffff]    [2m,3m)    ahci
+[300000,3fffff]    [3m,4m)    disk
+
+[400000,8fffff]    [4m,12m)    --------------------
+
+[800000,bfffff]    [8m,12m)    1024*1024*rgba pixel data
+[c00000,cfffff]    [12m,13m)    console
+[d00000,dfffff]    [13m,14m)    journal
+[e00000,efffff]    [14m,15m)    something else
 [f00000,ffffff]    [15m,16m)    isa hole
 
 

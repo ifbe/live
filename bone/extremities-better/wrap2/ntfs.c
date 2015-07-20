@@ -15,7 +15,7 @@
 
 
 void remember(QWORD first,QWORD second);
-void say(char* first,QWORD second);
+void say(char* , ...);
 void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
 void str2data(BYTE* str,QWORD* data);
 void blank2zero(QWORD* name);

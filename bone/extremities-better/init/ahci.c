@@ -7,12 +7,11 @@
 
 
 
-void say(char* first,QWORD second);
+void say(char* , ...);
 
 
 
 
-//全部pci设备信息我放在0x140000了，格式如下:(非本环境自己处理这一步)
 //[0,7]:(vendorid<<16)+deviceid
 //[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
 //[0x10,0x17]:portaddress of the device
@@ -22,7 +21,7 @@ void say(char* first,QWORD second);
 //2.填上[0x18,0x1f],(为了工整好看)
 unsigned int findaddr()
 {
-	QWORD* addr=(QWORD*)0x140000;
+	QWORD* addr=(QWORD*)0x40000;
 	int i;
 	unsigned int temp;
 	for(i=0;i<0x80;i++)		//每个0x40
@@ -61,7 +60,7 @@ static inline unsigned int in32( unsigned short port )
 //出：内存地址
 unsigned int probepci(QWORD addr)
 {
-	say("ahci(port)@",addr);
+	say("ahci(port)@%x",addr);
 
 	out32(0xcf8,addr+0x4);
 	unsigned int temp=in32(0xcfc)|(1<<10)|(1<<2);
@@ -69,7 +68,7 @@ unsigned int probepci(QWORD addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	say("pci status and command:",(QWORD)in32(0xcfc));
+	say("pci status and command:%x",(QWORD)in32(0xcfc));
 
 	out32(0xcf8,addr+0x24);
 	addr=in32(0xcfc)&0xfffffff0;
@@ -82,7 +81,7 @@ unsigned int probepci(QWORD addr)
 
 void probeahci(QWORD addr)
 {
-	say("ahci@",addr);
+	say("ahci@%x",addr);
 
 	HBA_MEM* abar=(HBA_MEM*)addr;
 	abar->ghc|=0x80000000;
@@ -161,7 +160,7 @@ unsigned int findport(QWORD addr)
 		if( (ipm != 0) && (det != 0) )
 		{return temp;}
 	}
-	say("failed to find port(try1)",0);
+	say("failed to find port(try1)");
 
 	//something wrong,reset ports
 	int i;
@@ -195,7 +194,7 @@ unsigned int findport(QWORD addr)
 		if( (ipm != 0) && (det != 0) )
 		{return temp;}
 	}
-	say("failed to find port(try2)",0);
+	say("failed to find port(try2)");
 
 	return 0;
 }
@@ -205,16 +204,16 @@ unsigned int findport(QWORD addr)
 
 void enable(HBA_PORT *port)
 {
-	//say("port->cmd before enable:",(QWORD)(port->cmd));
+	//say("port->cmd before enable:%x",(QWORD)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
  
 	port->cmd |= 1<<4;	//bit4,receive enable
 	port->cmd |= 1; 	//bit0,start
-	//say("port->cmd after enable:",(QWORD)(port->cmd));
+	//say("port->cmd after enable:%x",(QWORD)(port->cmd));
 }
 void disable(HBA_PORT *port)
 {
-	//say("port->cmd before disable:",(QWORD)(port->cmd));
+	//say("port->cmd before disable:%x",(QWORD)(port->cmd));
 	port->cmd &= 0xfffffffe;	//bit0
 	port->cmd &= 0xffffffef;	//bit4,FRE
  
@@ -230,11 +229,11 @@ void disable(HBA_PORT *port)
 	}
  
 	if(i==0){
-		say("error:can't disable:",(QWORD)(port->cmd));
+		say("error!can't disable:%x",(QWORD)(port->cmd));
 		return;
 	}
 
-	//say("port->cmd after disable:",(QWORD)(port->cmd));
+	//say("port->cmd after disable:%x",(QWORD)(port->cmd));
 }
 void probeport(QWORD addr)
 {
@@ -268,6 +267,8 @@ void initahci()
 {
 	QWORD addr;
 
+	say("ahci initializing...",0);
+
 	//clear home
 	addr=ahcihome;
 	for(;addr<ahcihome+0x100000;addr++) *(BYTE*)addr=0;
@@ -285,5 +286,5 @@ void initahci()
 
 	probeport(addr);
 
-	say("",0);
+	say("");
 }

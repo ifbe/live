@@ -6,7 +6,7 @@
 
 
 
-void say(char*);
+void say(char*,...);
 
 void initahci();
 void master();
@@ -17,6 +17,7 @@ void master();
 void start()
 {
 	//
+	say("c......");
 	initahci();
 
 	//检查问题

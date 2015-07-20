@@ -1,7 +1,9 @@
+%define journalhome 0xd00000
+%define journalsize 0x100000
 ;清空/journal
-    mov ecx,0x8000
-    mov edi,0x40000
+    mov edi,journalhome
+    mov ecx,journalsize
     xor rax,rax
-    rep stosq
+    rep stosb
     mov rax,"current"
-    mov [0x7fff0],rax
+    mov [journalhome+journalsize-0x10],rax
