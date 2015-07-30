@@ -44,9 +44,7 @@ parallels:
 
 clean:
 	make -s -C skull clean
-	make -s -C skull-better clean
 	make -s -C trunk clean
-	make -s -C trunk-better clean
 	make -s -C extremities clean
-	make -s -C extremities-better clean
-	rm -f *.bin *.img *.vmdk *.vhd *.dmg *.vdi
+	rm -f */*.o */*.bin
+	rm -f *.img *.vmdk *.vhd *.dmg *.vdi
