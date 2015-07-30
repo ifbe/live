@@ -1,5 +1,9 @@
 %define journalhome 0xd00000
 %define journalsize 0x100000
+
+
+
+
 ;清空/journal
     mov edi,journalhome
     mov ecx,journalsize

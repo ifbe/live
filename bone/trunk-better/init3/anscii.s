@@ -1,25 +1,24 @@
+%define slowdata 0x4000
 %define ansciihome 0x30000
 
 optimizeanscii:
-mov esi,0x4000
-mov edi,ansciihome
+	mov esi,slowdata
+	mov edi,ansciihome
 
 .continue:
-mov bl,[esi]
-inc esi
+	mov bl,[esi]
+	inc esi
 
-mov ecx,8
+	mov ecx,8
 .eighttimes:
-shl bl,1
-jc .color
-	.nocolor:
 	xor eax,eax
-	jmp .put
-	.color:
-	mov eax,0xffffffff
-.put:
-stosd
-loop .eighttimes
+	shl bl,1
+	jnc .skip
+.blackcolor:
+	not eax
+.skip:
+	stosd
+	loop .eighttimes
 
-cmp esi,0x4800
-jb .continue
+	cmp esi,0x4800
+	jb .continue

@@ -4,39 +4,49 @@
 [bits 64]
 
 
+
+
+;_________________1111111111___________________
 ;清空input buffer
-    mov edi,kbdhome
-    mov ecx,bufsize
-    xor rax,rax
-    rep stosb
+	mov edi,kbdhome
+	mov ecx,bufsize
+	xor rax,rax
+	rep stosb
 
-    mov rax,"input"
-    mov [kbdhome+bufsize-0x20],rax
-    mov rax,kbdhome
-    mov [kbdhome+bufsize-0x18],rax
-    mov rax,"progress"
-    mov [kbdhome+bufsize-0x10],rax
-    mov rax,kbdhome
-    mov [kbdhome+bufsize-0x8],rax
+	mov rax,"input"
+	mov [kbdhome+bufsize-0x20],rax
+	mov rax,kbdhome
+	mov [kbdhome+bufsize-0x18],rax
+	mov rax,"progress"
+	mov [kbdhome+bufsize-0x10],rax
+	mov rax,kbdhome
+	mov [kbdhome+bufsize-0x8],rax
+;_____________________________________________
 
 
-;_____________int 21h__________________
-;keyboard:
-cli
-lea rax,[rel keyboardisr]
-mov edi,idthome+0x21*0x10
-call isrinstall
+
+
+;_____________222222222222222__________________
+;isr21
+	cli
+	lea rax,[rel keyboardisr]
+	mov edi,idthome+0x21*0x10
+	call isrinstall
 
 ;enable
-mov edi,0xfec00000
-mov dword [edi],0x10+2*0x1
-mov dword [edi+0x10],0x21
-mov dword [edi],0x10+2*0x1+1
-mov dword [edi+0x10],0
+	mov edi,0xfec00000
+	mov dword [edi],0x10+2*0x1
+	mov dword [edi+0x10],0x21
+	mov dword [edi],0x10+2*0x1+1
+	mov dword [edi+0x10],0
 
-jmp endofkeyboard
+	jmp endofinterrupt
+;________________________________________
 
 
+
+
+;______________________________________
 keyboardisr:
 push rax
 push rbx
@@ -55,25 +65,24 @@ mov dword [eax],0
 pop rbx
 pop rax
 iretq
-
-endofkeyboard:
 ;________________________________________
 
 
-jmp endofinterrupt
+
 
 ;___________________________________
 isrinstall:
-stosw
-mov dword [edi],0x8e000008
-add edi,4
-shr rax,16
-stosw
-shr rax,16
-stosd
-xor eax,eax
-stosd
-ret
+	stosw
+	mov dword [edi],0x8e000008
+	add edi,4
+	shr rax,16
+	stosw
+	shr rax,16
+	stosd
+	xor eax,eax
+	stosd
+
+	ret
 ;____________________________________
 
 

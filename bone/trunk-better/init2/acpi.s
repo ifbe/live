@@ -1,16 +1,14 @@
-;/acpi
+;/acpi translate
 %define acpihome 0x20000
-
-
 [BITS 64]
 
 
 startofacpi:
 ;______________________clear____________________________
     mov edi,acpihome
-    mov ecx,0x2000
+    mov ecx,0x4000
     xor rax,rax
-    rep stosq
+    rep stosd
 ;____________________________________________________
 
 
