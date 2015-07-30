@@ -1,9 +1,4 @@
-%define screeninfo 0x1000
-[bits 64]
-
-
-
-
+bits 64
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F3----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 function3:
 
@@ -25,8 +20,8 @@ cyberspace:
 	rep stosd
 
 	mov esi,0x1800000
-	mov edi,[screeninfo+0x28]
-	mov bl,[screeninfo+0x19]
+	mov edi,[0x3028]
+	mov bl,[0x3019]
 	shr bl,3
 	movzx ebx,bl
 	mov ecx,1024*768

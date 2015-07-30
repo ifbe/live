@@ -3,10 +3,10 @@ BITS 16
 
 startofscreen:
 ;_________________________________
-	mov si,0x3000
+	mov si,0x1000
 searchresolution:
 	add si,0x20
-	cmp si,0x3fff
+	cmp si,0x1fff
 	ja endofscreen
 	mov eax,[si+0x12]
 	cmp eax,0x03000400
@@ -20,13 +20,13 @@ searchresolution:
 
 ;__________________________________
 setresolution:
-	sub si,0x3000
+	sub si,0x1000
 	shr si,5
 	push si
 
 	mov cx,si
 	mov ch,1
-	mov di,0x3000
+	mov di,0x1000
 	mov ax,0x4f01
 	int 0x10
 

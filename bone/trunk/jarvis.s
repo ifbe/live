@@ -1,33 +1,33 @@
 ;1.initialization
-%include "init/input.s"	;prepare 0x800
-%include "init/first.s"	;prepare 0x100000
-%include "init/anscii.s"	;prepare 0x110000
-%include "init/console.s"	;prepare 0x120000
-%include "init/journal.s"	;prepare 0x130000
-%include "init/pciold.s"	;prepare 0x140000
-%include "init/usb.s"		;prepare 0x150000
-%include "init/acpi.s"	;prepare 0x160000
-%include "init/bin.s"		;prepare 0x180000
-%include "init/else.s"	;call c program and enter final loop
+%include "init1/input.s"	;prepare interrupt
+%include "init2/acpi.s"		;prepare 0x20000
+%include "init3/anscii.s"	;prepare 0x30000
+%include "init4/pciold.s"	;prepare 0x40000
+%include "init5/usb.s"		;prepare 0x50000
+%include "init6/bin.s"		;prepare 0x60000
+%include "initelse/console.s"	;prepare 0x70000
+%include "initelse/journal.s"	;prepare 0x70000
 
 
 
 
-;2.library
-%include "lib/power.s"	;poweroff,reboot
-%include "lib/work.s"	;f1~f5之间的切换
-%include "lib/char.s"	;点阵字符
-%include "lib/wait.s"	;有事找函数处理，无事睡觉
-
-
-
-
-;3.screen and memory manager
+;2.main
+%include "main/main.s"		;call c program and enter final loop
 %include "main/f1.s"		;内存每字节，一个个anscii或者hex显示到屏幕上
 %include "main/f2.s"		;内存每4B一个rgbw点,共1024*768*4=3MB图片
 %include "main/f3.s"		;内存每4B一个点,共1024*1024*1024*4=4G,3维图像
 %include "main/f4.s"		;喜闻乐见大终端
 %include "main/f5.s"		;屏幕设置失败，留在0xb8000文字模式，打印内存
+
+
+
+
+;2.library
+%include "library/power.s"	;poweroff,reboot
+%include "library/work.s"	;f1~f5之间的切换
+%include "library/char.s"	;点阵字符
+%include "library/wait.s"	;有事找函数处理，无事睡觉
+
 
 
 

@@ -1,6 +1,14 @@
-bits 64
+%define consolehome 0xc00000
+%define consolesize 0x100000
+%define screeninfo 0x1000
+%define binhome 0x6000
+[bits 64]
+
+
+
+
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>----console----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-;[0x120000，0x12ffff]属于console，弄得好看一点
+
 
 
 
@@ -37,8 +45,8 @@ cmp byte [rel length],8
 jna console
 
 ;lea ebx,[rel line0]
-mov ebx,[0x12fff8]
-add ebx,0x120000
+mov ebx,[consolehome+consolesize-8]
+add ebx,consolehome
 dec byte [rel length]
 add ebx,[rel length]
 mov byte [ebx],0
@@ -56,8 +64,8 @@ jae console
 call scan2anscii
 
 record:
-mov ebx,[0x12fff8]
-add ebx,0x120000
+mov ebx,[consolehome+consolesize-8]
+add ebx,consolehome
 add ebx,[rel length]
 mov [ebx],al
 inc byte [rel length]
@@ -78,15 +86,15 @@ jmp searchinmemory
 
 notfound:
 	call checkandchangeline
-	mov edi,[0x12fff8]
-	add edi,0x120000
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
 	mov dword [edi],"notf"
 	mov dword [edi+4],"ound"
 
 scroll:
 	call checkandchangeline
-	mov edi,[0x12fff8]
-	add edi,0x120000
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
 	mov dword [edi],"[   "
 	mov dword [edi+4],"/]$ "
 	mov dword [rel length],8
@@ -103,8 +111,8 @@ scroll:
 ;因为上一次取得的arg0和arg1没有被改变
 ;______________________________________
 explainarg:
-	mov esi,[0x12fff8]
-	add esi,0x120008			;[   /]
+	mov esi,[consolehome+consolesize-8]
+	add esi,consolehome+8
 
 
 	;;;;;;;;;;;;吃掉esi指向的最开始的空格
@@ -241,7 +249,7 @@ searchinmemory:
 	cmp rax,0x20
 	jb .return
 
-	mov esi,0x180000		;/bin
+	mov esi,binhome
 .search:
 	cmp [esi],rax
 	je .find
@@ -259,13 +267,13 @@ searchinmemory:
 	mov rbx,[rel explainedarg0]
 	call rbx2string
 	lea esi,[rel string]
-	mov edi,[0x12fff8]
-	add edi,0x120000
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
 	movsq
 	movsq
 
-	mov edi,[0x12fff8]
-	add edi,0x120000
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
 	add edi,16+8
 	lea rsi,[rel arg1]
 	movsq
@@ -292,7 +300,7 @@ test:
 	xor rax,rax
 	rep stosq
 .search:
-	mov esi,0x180000
+	mov esi,binhome
 	.continue:
 	cmp dword [esi],"load"
 	je .load
@@ -319,16 +327,16 @@ test:
 
 ;____________________________________
 clear:
-mov edi,0x120000
+mov edi,consolehome
 mov ecx,128*0x30
 xor rax,rax
 rep stosb
 
-mov edi,0x120000
+mov edi,consolehome
 mov rax,"[   /]$ "
 stosq
 
-mov dword [0x12fff8],0
+mov dword [consolehome+consolesize-8],0
 mov dword [rel length],8
 jmp console
 ;_______________________________________
@@ -339,8 +347,8 @@ jmp console
 ;_________________________
 ls:
 	call checkandchangeline		;get new edi
-	mov edi,[0x12fff8]
-	add edi,0x120000
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
 	mov esi,0x4c0000
 	xor ecx,ecx
 .continue:
@@ -356,8 +364,8 @@ ls:
 	test ecx,0x7
 	jnz .continue
 	call checkandchangeline
-	mov edi,[0x12fff8]
-	add edi,0x120000
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
 	jmp .continue
 ;_________________________
 
@@ -399,17 +407,17 @@ jmp scroll
 
 ;_________________________________
 checkandchangeline:
-	cmp dword [0x12fff8],0x80*47
+	cmp dword [consolehome+consolesize-8],0x80*47
 	jae .move
 
-	add dword [0x12fff8],128		;no:line+1
+	add dword [consolehome+consolesize-8],128		;no:line+1
 	jmp .return
 
 	.move:					;yes:move
 	push rsi
 	push rcx
-	mov esi,0x120080
-	mov edi,0x120000
+	mov esi,consolehome+0x80
+	mov edi,consolehome
 	mov ecx,128*0x30
 	cld
 	rep movsb
@@ -438,7 +446,7 @@ mov dword [rel looptimes],0
     imul eax,[rel looptimes]
     add edi,eax
 
-    mov esi,0x120000
+    mov esi,consolehome
     mov eax,[rel looptimes]
     shl eax,7
     add esi,eax
@@ -459,8 +467,8 @@ mov dword [rel looptimes],0
 
 
     mov esi,0x1c00000
-    mov edi,[0x3028]
-    mov bl,[0x3019]
+    mov edi,[screeninfo+0x28]
+    mov bl,[screeninfo+0x19]
     shr bl,3
     movzx ebx,bl
     mov ecx,1024*768

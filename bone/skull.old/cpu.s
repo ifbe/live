@@ -28,6 +28,7 @@
 %include "5th/anscii.s"		;anscii pixel table
 
 ;)))))))))))))))))))) endof part1(16KB) ))))))))))))))))))))
+
 times 0x2000-($-$$) db 0
 
 endofcpu:

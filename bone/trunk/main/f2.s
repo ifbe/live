@@ -1,4 +1,9 @@
-bits 64
+%define screeninfo 0x1000
+[bits 64]
+
+
+
+
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F2----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;_________________________________________
 function2:
@@ -72,8 +77,8 @@ picture:
 
 
 	mov esi,[rel jpegbase]
-	mov edi,[0x3028]
-	mov bl,[0x3019]
+	mov edi,[screeninfo+0x28]
+	mov bl,[screeninfo+0x19]
 	shr bl,3
 	movzx ebx,bl
 	mov ecx,1024*768

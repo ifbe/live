@@ -1,143 +1,138 @@
-%define idtr 0x830
-%define idthome 0x3000
-
 [bits 64]
 startofexception:
 
 
-;_______________________________________
-	cld
-	cli
-;清空interrupt descriptor table
-	mov rdi,idthome
-	xor rax,rax
-	mov rcx,0x200
-	rep stosq
+;________________________________
+cld
+xor rax,rax
 
-;写入table的大小和位置
-	mov rdi,idtr
-	mov ax,0xfff
-	stosw			;[+0,+1]
-	mov rax,idthome
-	stosq			;[+2,+9]
-	xor rax,rax
-	stosw			;[+0xa,+0xb]
-	stosd			;[+0xc,+0xf]
+mov rcx,0x100
+mov rdi,0x600
+rep stosb
 
-	lidt [idtr]
+mov rcx,0x200
+mov rdi,0x1000
+rep stosq
+;______________________________
+
+
+;__________________idt____________________
+cli
+mov word [0x600],0xfff
+mov qword [0x602],0x1000
+lidt [0x600]
 ;_____________________________________
 
 
 ;_______________null exception______________________
 exceptioninstall:
-	mov edi,idthome
+mov edi,0x1000
 
-	lea rax,[rel exception0]
-	call isrinstall
+lea rax,[rel exception0]
+call idtinstall
 
-	lea rax,[rel exception1]
-	call isrinstall		;exception1
+lea rax,[rel exception1]
+call idtinstall		;exception1
 
-	lea rax,[rel exception2]
-	call isrinstall		;exception2
+lea rax,[rel exception2]
+call idtinstall		;exception2
 
-	lea rax,[rel exception3]
-	call isrinstall		;exception3
+lea rax,[rel exception3]
+call idtinstall		;exception3
 
-	lea rax,[rel exception4]
-	call isrinstall		;exception4
+lea rax,[rel exception4]
+call idtinstall		;exception4
 
-	lea rax,[rel exception5]
-	call isrinstall		;exception5
+lea rax,[rel exception5]
+call idtinstall		;exception5
 
-	lea rax,[rel exception6]
-	call isrinstall		;exception6
+lea rax,[rel exception6]
+call idtinstall		;exception6
 
-	lea rax,[rel exception7]
-	call isrinstall		;exception7
+lea rax,[rel exception7]
+call idtinstall		;exception7
 
-	lea rax,[rel exception8]
-	call isrinstall		;exception8
+lea rax,[rel exception8]
+call idtinstall		;exception8
 
-	lea rax,[rel exception9]
-	call isrinstall		;exception9
+lea rax,[rel exception9]
+call idtinstall		;exception9
 
-	lea rax,[rel exceptiona]
-	call isrinstall		;exceptiona
+lea rax,[rel exceptiona]
+call idtinstall		;exceptiona
 
-	lea rax,[rel exceptionb]
-	call isrinstall		;exceptionb
+lea rax,[rel exceptionb]
+call idtinstall		;exceptionb
 
-	lea rax,[rel exceptionc]
-	call isrinstall		;exceptionc
+lea rax,[rel exceptionc]
+call idtinstall		;exceptionc
 
-	lea rax,[rel exceptiond]
-	call isrinstall		;exceptiond
+lea rax,[rel exceptiond]
+call idtinstall		;exceptiond
 
-	lea rax,[rel exceptione]
-	call isrinstall		;exceptione
+lea rax,[rel exceptione]
+call idtinstall		;exceptione
 
-	lea rax,[rel exceptionf]
-	call isrinstall		;exceptionf
+lea rax,[rel exceptionf]
+call idtinstall		;exceptionf
 
-	lea rax,[rel exception10]
-	call isrinstall		;exception10
+lea rax,[rel exception10]
+call idtinstall		;exception10
 
-	lea rax,[rel exception11]
-	call isrinstall		;exception11
+lea rax,[rel exception11]
+call idtinstall		;exception11
 
-	lea rax,[rel exception12]
-	call isrinstall		;exception12
+lea rax,[rel exception12]
+call idtinstall		;exception12
 
-	lea rax,[rel exception13]
-	call isrinstall		;exception13
+lea rax,[rel exception13]
+call idtinstall		;exception13
 
-	lea rax,[rel exception14]
-	call isrinstall		;exception14
+lea rax,[rel exception14]
+call idtinstall		;exception14
 
-	lea rax,[rel exception15]
-	call isrinstall		;exception15
+lea rax,[rel exception15]
+call idtinstall		;exception15
 
-	lea rax,[rel exception16]
-	call isrinstall		;exception16
+lea rax,[rel exception16]
+call idtinstall		;exception16
 
-	lea rax,[rel exception17]
-	call isrinstall		;exception17
+lea rax,[rel exception17]
+call idtinstall		;exception17
 
-	lea rax,[rel exception18]
-	call isrinstall		;exception18
+lea rax,[rel exception18]
+call idtinstall		;exception18
 
-	lea rax,[rel exception19]
-	call isrinstall		;exception19
+lea rax,[rel exception19]
+call idtinstall		;exception19
 
-	lea rax,[rel exception1a]
-	call isrinstall		;exception1a
+lea rax,[rel exception1a]
+call idtinstall		;exception1a
 
-	lea rax,[rel exception1b]
-	call isrinstall		;exception1b
+lea rax,[rel exception1b]
+call idtinstall		;exception1b
 
-	lea rax,[rel exception1c]
-	call isrinstall		;exception1c
+lea rax,[rel exception1c]
+call idtinstall		;exception1c
 
-	lea rax,[rel exception1d]
-	call isrinstall		;exception1d
+lea rax,[rel exception1d]
+call idtinstall		;exception1d
 
-	lea rax,[rel exception1e]
-	call isrinstall		;exception1e
+lea rax,[rel exception1e]
+call idtinstall		;exception1e
 
-	lea rax,[rel exception1f]
-	call isrinstall		;exception1f
+lea rax,[rel exception1f]
+call idtinstall		;exception1f
 
-	mov ecx,0xe0
+mov ecx,0xe0
 .external:
-	lea rax,[rel unknown]
-	call isrinstall
-	loop .external
+lea rax,[rel unknown]
+call idtinstall
+loop .external
 
-	jmp endofexception
+jmp endofexception
+
 ;_______________________________________
-
-
 
 
 ;_____________________________________
@@ -287,10 +282,8 @@ jmp lastwords
 ;________________________________________
 
 
-
-
 ;___________________________________
-isrinstall:
+idtinstall:
 stosw
 mov dword [edi],0x8e000008
 add edi,4

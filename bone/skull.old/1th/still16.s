@@ -1,7 +1,7 @@
 BITS 16
 startof16:
 
-;_______关中断,设置ds=es=ss=0,设置栈开始于0x7c00__________
+;_________________环境设置__________________
 	cli
 	xor ax,ax    ; Set up segment registers.
 	mov ds,ax
@@ -11,21 +11,19 @@ startof16:
 ;___________________________________________
 
 
-
-
-;_______清空0x1000到0x7fff___________
+;_______________________________________
+	;clear [2000,7fff]
 	xor eax,eax
-	mov di,0x1000
-	mov cx,0x7000
+	mov di,0x2000
+	mov cx,0x1800
 	cld
-	rep stosb
+	rep stosd
 ;__________________________________________
-
-
 
 
 ;____________________________
 CheckCPU:    ; Check whether CPUID is supported or not.
+
 	pushfd    ; Get flags in EAX register.
 
 	pop eax
@@ -59,8 +57,6 @@ CheckCPU:    ; Check whether CPUID is supported or not.
 ;_____________________________________________
 
 
-
-
 ;________________________________
 no64:
 	mov ax,0xb800
@@ -77,8 +73,6 @@ no64:
 	mov al,'4'
 	stosw
 ;______________________________
-
-
 
 
 ;______________________________
@@ -106,7 +100,7 @@ cmos:
 
 
 ;____________int15 e820 memory detect___________
-	mov di,0x600
+	mov di,0x2000
 	xor ebx,ebx
 e820:
 	mov eax,0xe820
@@ -117,7 +111,7 @@ e820:
 	cmp eax,0x534d4150
 	jne e820finish
 	add di,0x20
-	cmp di,0x800
+	cmp di,0x3000
 	jae e820finish
 	cmp ebx,0
 	jne e820
@@ -130,7 +124,7 @@ e820finish:
 
 ;______________列出vesa模式________________
 	mov cx,0x101
-	mov di,0x1020
+	mov di,0x3020
 
 listresolution:
 	mov ax,0x4f01

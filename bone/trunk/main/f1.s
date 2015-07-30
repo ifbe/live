@@ -1,4 +1,9 @@
-bits 64
+%define screeninfo 0x1000
+[bits 64]
+
+
+
+
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F1-----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;___________________________
 function1:
@@ -250,8 +255,8 @@ call [rel hexoranscii]
 call [rel mouseormenu]
 
     mov esi,0x1000000
-    mov edi,[0x3028]
-    mov bl,[0x3019]
+    mov edi,[screeninfo+0x28]
+    mov bl,[screeninfo+0x19]
     shr bl,3
     movzx ebx,bl
     mov ecx,1024*768

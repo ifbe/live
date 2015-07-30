@@ -1,59 +1,72 @@
 [bits 64]
 startoflocalapic:
-;______________________________
+
+
+
+
+;______________检查是否有apic,没有就啥都不干______________
 detectlocalapic:
-    mov eax,1
-    cpuid
-    bt edx,9
-    jnc endoflocalapic
-;______________________________
+	mov eax,1
+	cpuid
+	bt edx,9
+	jnc endoflocalapic
+;___________________________________________________
 
 
-;_____________________________________
+
+
+;_______找到了apic,如果地址不是0xfee00000还是罢工________
 findlocalapic:
-    mov rcx,0x1b
-    rdmsr
-    ;bts eax,11            ;enable lapic
-    ;wrmsr
-    and eax,0xfffff000
-    cmp eax,0xfee00000
-    jb endoflocalapic
-;_____________________________________
+	mov rcx,0x1b
+	rdmsr
+	;bts eax,11            ;enable lapic
+	;wrmsr
+	and eax,0xfffff000
+	cmp eax,0xfee00000
+	jb endoflocalapic
+;__________________________________________________
 
 
-;________________________________________
+
+
+;___________________一切正常,开始初始化_____________________
 localapicinitialization:
+	mov edi,0xfee00000
 
-    mov edi,0xfee00000
+;task priority
+;[+80]=0
+	xor eax,eax
+	mov [edi+0x80],eax    ;(cr8=0<<4)
 
-    ;[+80]=0              (task priority=0)
-    xor eax,eax
-    mov [edi+0x80],eax    ;(cr8=0<<4)
+;disable timer interrupt
+;[+320] = 10000
+	mov eax,0x10000
+	mov [edi+0x320],eax
 
-    ;[+320]=10000         (disable timer interrupt)
-    mov eax,0x10000
-    mov [edi+0x320],eax
+;disable performance counter interrupt
+;[+340]=10000
+	mov eax,0x10000
+	mov [edi+0x340],eax
 
-    ;[+340]=10000         (disable performance counter interrupt)
-    mov eax,0x10000
-    mov [edi+0x340],eax
+;disable local interrupt 0(normal external interrupt)
+;[+350]=8700f
+	mov eax,0x8700
+	mov [edi+0x350],eax
 
-    ;[+350]=8700          (disable local interrupt 0(normal external interrupt))
-    mov eax,0x8700
-    mov [edi+0x350],eax
+;disable local interrupt 1(normal nmi processing)
+;[+360]=400
+	mov eax,0x400
+	mov [edi+0x360],eax
 
-    ;[+360]=400           (disable local interrupt 1(normal nmi processing))
-    mov eax,0x400
-    mov [edi+0x360],eax
+;disable error interrupt
+;[+370]=10000
+	mov eax,0x10000
+	mov [edi+0x370],eax
 
-    ;[+370]=10000         (disable error interrupt)
-    mov eax,0x10000
-    mov [edi+0x370],eax
-
-    ;[+f0]=10f            (disable spurious vector+enable apic)
-    mov eax,0x170
-    mov [edi+0xf0],eax
-
+;disable spurious vector+enable apic
+;[+f0]=10f
+	mov eax,0x170
+	mov [edi+0xf0],eax
 ;_________________________________________
 endoflocalapic:
 
@@ -65,38 +78,40 @@ endoflocalapic:
 
 
 startofioapic:
+
+
+
+
 ;____________________________________
-initioapic:
-
 disable8259:
-    mov al, 0xff
-    out 0xa1, al
-    out 0x21, al
+	mov al, 0xff
+	out 0xa1, al
+	out 0x21, al
+;_________________________________________
 
-mov edi,[rel ioapicaddress]
-mov ecx,24
-mov eax,0x10
 
+
+
+;_____________mask all interrupt__________
+	mov edi,0xfec00000
+	mov ecx,24
+	mov eax,0x10
 maskall:
-    mov [edi],eax
-    inc eax
-    mov dword [edi],0x10000
+	mov [edi],eax
+	inc eax
+	mov dword [edi],0x10000
 
-    mov [edi],eax
-    inc eax
-    mov dword [edi+0x10],0
+	mov [edi],eax
+	inc eax
+	mov dword [edi+0x10],0
 
-loop maskall
+	loop maskall
 ;____________________________________
 
 
 jmp endofioapic
 
 
-madtstart:dq 0
-madtend:dq 0
-tablestart:dq 0
-ioapicaddress:dq 0
 
 
 paddingofioapic:
