@@ -1,16 +1,10 @@
 #1:create a 64k binary,compile with gcc(linux) or x86_64-elf-gcc(other system)
 binary:				#linuxer only
-	make -s -C skull		#[0,0x1fff]
-	make -s -C trunk		#[0x2000,0x3fff]
-	make -s -C extremities binary		#[0x4000,0xffff]
-	nasm -s bin.s -o core.bin
-	nasm -s img.s -o core.img
+	make -s -C new		#[0,0x1fff]
+	nasm readme -o core.img
 cross:		#windows and mac user
-	make -s -C skull		#[0,0x1fff]
-	make -s -C trunk		#[0x2000,0x3fff]
-	make -s -C extremities cross		#[0x4000,0xffff]
-	nasm -s bin.s -o core.bin
-	nasm -s img.s -o core.img
+	make -s -C new		#[0,0x1fff]
+	nasm readme -o core.img
 
 
 
