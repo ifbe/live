@@ -4,45 +4,34 @@
 
 
 
-;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F2----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;>>>>>>>>>>>>>>>>>>>-----F2----<<<<<<<<<<<<<<<<<<<<<<
 ;_________________________________________
-function2:
+f2event:
+.up:
+	cmp al,0x48
+	jne .notup
 
-cmp al,0x3b
-je f1
-cmp al,0x3c
-je f2
-cmp al,0x3d
-je f3
-cmp al,0x3e
-je f4
-cmp al,0x3f
-je f5
-cmp al,0x48
-je f2up
-cmp al,0x50
-je f2down
-jmp picture
+	sub qword [rel jpegbase],0x10000
+	ret
+.notup:
+
+.down:
+	cmp al,0x50
+	jne .notdown
+
+	add qword [rel jpegbase],0x10000
+	ret
+.notdown:
+
+.other:
+	ret
 ;________________________________________
 
 
 
 
-;________________________________________
-f2up:
-sub qword [rel jpegbase],0x10000
-jmp picture
-f2down:
-add qword [rel jpegbase],0x10000
-jmp picture
-;_______________________________________
-
-
-
-
-;________________________________________
-picture:
-
+;_________________picture_______________________
+f2show:
 	mov edi,0x1400000
 
 	mov rbx,[0x4fd8]
@@ -88,6 +77,6 @@ picture:
 	add edi,ebx
 	loop .continuescreen
 
-jmp forever
+	ret
 ;_________________________________________
 jpegbase:dq 0x1400000

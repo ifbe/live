@@ -9,16 +9,16 @@
 forever:			;不知被谁叫醒，一个个问一遍
 
 .keyboard:			;键盘，有事？
-mov rax,[kbdhome+bufsize-8]
-cmp [kbdhome+bufsize-0x18],rax
-jne hellokeyboard
+	mov rax,[kbdhome+bufsize-8]
+	cmp [kbdhome+bufsize-0x18],rax
+	jne hellokeyboard
 
 .mouse:				;鼠标，有事？
 				;传感器，有事？......
 
-.sleep:				;什么事都没有，那就睡觉吧，等着被唤醒
-hlt				;todo:不要一碰就醒，戳的使劲一些才醒就好了
-jmp forever
+.sleep:			;什么事都没有，那就睡觉吧，等着被唤醒
+	hlt		;todo:不要一碰就醒，戳的使劲一些才醒就好了
+	jmp forever
 ;_________________________________________________
 
 
@@ -26,19 +26,14 @@ jmp forever
 
 ;___________________________________
 hellokeyboard:
-;下一个要处理的数据
-mov rax,[kbdhome+bufsize-8]
-mov al,[rax]
+	mov rax,[kbdhome+bufsize-8]
+	mov al,[rax]
 
 ;更新dequque pointer
-inc qword [kbdhome+bufsize-8]               ;p++
-cmp qword [kbdhome+bufsize-8],kbdhome+bufsize-0x40         ;p>=0xfc0?
-jb .nochange
-mov qword [kbdhome+bufsize-8],kbdhome
+	inc qword [kbdhome+bufsize-8]               ;p++
+	cmp qword [kbdhome+bufsize-8],kbdhome+bufsize-0x40    ;p>=0xfc0?
+	jb .nochange
+	mov qword [kbdhome+bufsize-8],kbdhome
 .nochange:
+	ret
 ;___________________________________
-
-
-decide:
-jmp [rel screenwhat]
-screenwhat:dq 0

@@ -37,8 +37,6 @@ parallels:
 
 
 clean:
-	make -s -C skull clean
-	make -s -C trunk clean
-	make -s -C extremities clean
+	make -s -C new clean
 	rm -f */*.o */*.bin
 	rm -f *.img *.vmdk *.vhd *.dmg *.vdi

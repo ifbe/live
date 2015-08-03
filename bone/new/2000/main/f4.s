@@ -7,99 +7,143 @@
 
 
 
-;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>----console----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;___________________________________________
+;清空/console
+f4init:
+	mov edi,consolehome
+	mov rax,"[   /]$ "
+	stosq
+	mov ecx,consolesize-8
+	xor rax,rax
+	rep stosb
+
+	mov rax,"current"
+	mov [consolehome+consolehome-0x10],rax
+	mov qword [consolehome+consolehome-8],0
+
+	ret
+;____________________________________________________
+
+
+
+
+;___________________________________________
+f4show:
+	mov edi,0x1c00000
+	mov ecx,1024*750
+	xor eax,eax
+	rep stosd
+
+	mov dword [rel looptimes],0
+.lines:
+	mov edi,0x1c00000
+	mov eax,4*1024*16
+	imul eax,[rel looptimes]
+	add edi,eax
+
+	mov esi,consolehome
+	mov eax,[rel looptimes]
+	shl eax,7
+	add esi,eax
+
+	mov cl,128
+.continue:
+	mov al,[esi]
+	push rsi
+	call char
+	pop rsi
+	inc esi
+	dec cl
+	jnz .continue
+
+	inc byte [rel looptimes]
+	cmp byte [rel looptimes],0x30
+	jb .lines
+
+	mov esi,0x1c00000
+	mov edi,[screeninfo+0x28]
+	mov bl,[screeninfo+0x19]
+	shr bl,3
+	movzx ebx,bl
+	mov ecx,1024*768
+.continuescreen:
+	lodsd
+	mov [edi],eax
+	add edi,ebx
+	loop .continuescreen
+
+	ret
+;________________________________________
+looptimes:dd 0
+length:dq 8
 
 
 
 
 ;_______________________________________________
-function4:
-
-cmp al,0
-je console		;do nothing
-cmp al,0x3b
-je f1
-cmp al,0x3c
-je f2
-cmp al,0x3d
-je f3
-cmp al,0x3e
-je f4
-cmp al,0x3f
-je f5
-cmp al,0x1c
-je f4enter
-cmp al,0x0e
-je f4backspace
-
-cmp al,0x80
-ja console
-jmp f4other
-;_______________________________________________________________________________
+f4event:
+	cmp al,0x80
+	jae .return
 
 
-;_______________________________
-f4backspace:
-
-cmp byte [rel length],8
-jna console
-
-;lea ebx,[rel line0]
-mov ebx,[consolehome+consolesize-8]
-add ebx,consolehome
-dec byte [rel length]
-add ebx,[rel length]
-mov byte [ebx],0
-
-jmp console
-;_________________________________________
+.backspace:
+	cmp al,0x0e
+	jne .notbackspace
+	cmp byte [rel length],8
+	jna console
+	mov ebx,[consolehome+consolesize-8]
+	add ebx,consolehome
+	dec byte [rel length]
+	add ebx,[rel length]
+	mov byte [ebx],0
+	jmp console
+.notbackspace:
 
 
-;_____________________________________
-f4other:
-
-cmp byte [rel length],128
-jae console
-
-call scan2anscii
-
-record:
-mov ebx,[consolehome+consolesize-8]
-add ebx,consolehome
-add ebx,[rel length]
-mov [ebx],al
-inc byte [rel length]
-jmp console
-;___________________________________
-
-
-;___________________________________
-f4enter:
-
-call explainarg
-
-jmp searchinhere
+.enter:
+	cmp al,0x1c
+	jne .notenter
+	call explainarg
+	jmp searchhere
 .notinhere:
-
-jmp searchinmemory
+	jmp searchmemory
 .notinmemory:
-
-notfound:
+	;jmp searchdisk
+.notfound:
 	call checkandchangeline
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
 	mov dword [edi],"notf"
 	mov dword [edi+4],"ound"
-
-scroll:
+.scroll:
 	call checkandchangeline
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
 	mov dword [edi],"[   "
 	mov dword [edi+4],"/]$ "
 	mov dword [rel length],8
-	jmp console
-;_________________________________
+	ret
+.notenter:
+
+
+.other:
+	cmp byte [rel length],128
+	jae console
+	call scan2anscii
+	mov ebx,[consolehome+consolesize-8]
+	add ebx,consolehome
+	add ebx,[rel length]
+	mov [ebx],al
+	inc byte [rel length]
+
+
+.return:
+	ret
+;___________________________________
+
+
+
+
 
 
 
@@ -182,61 +226,60 @@ arg1:times 16 db 0
 
 
 ;___________________________________
-searchinhere:
+searchhere:
+	lea esi,[rel arg0]
+	cmp dword [esi],"powe"		;if [esi]=="powe"
+	jne .skippoweroff
+	cmp dword [esi+4],"roff"	;if [esi+4]=="roff"
+	jne .skippoweroff
+	cmp byte [esi+8],0		;if [esi+8]=0x20
+	je poweroff
+.skippoweroff:
 
-lea esi,[rel arg0]
-cmp dword [esi],"powe"		;if [esi]=="powe"
-jne skippoweroff
-cmp dword [esi+4],"roff"	;if [esi+4]=="roff"
-jne skippoweroff
-cmp byte [esi+8],0		;if [esi+8]=0x20
-je poweroff
-skippoweroff:
+	lea esi,[rel arg0]
+	cmp dword [esi],"rebo"
+	jne .skipreboot
+	cmp word [esi+4],"ot"
+	jne .skipreboot
+	cmp byte [esi+6],0
+	je reboot
+.skipreboot:
 
-lea esi,[rel arg0]
-cmp dword [esi],"rebo"
-jne skipreboot
-cmp word [esi+4],"ot"
-jne skipreboot
-cmp byte [esi+6],0
-je reboot
-skipreboot:
+	lea esi,[rel arg0]
+	cmp dword [esi],"exit"
+	jne .skipexit
+	cmp byte [esi+4],0
+	je poweroff
+.skipexit:
 
-lea esi,[rel arg0]
-cmp dword [esi],"exit"
-jne skipexit
-cmp byte [esi+4],0
-je poweroff
-skipexit:
+	lea esi,[rel arg0]
+	cmp dword [esi],"clea"
+	jne .skipclear
+	cmp byte [esi+4],'r'
+	je clear
+.skipclear:
 
-lea esi,[rel arg0]
-cmp dword [esi],"clea"
-jne skipclear
-cmp byte [esi+4],'r'
-je clear
-skipclear:
+	lea esi,[rel arg0]
+	cmp word [esi],"ls"
+	je ls
 
-lea esi,[rel arg0]
-cmp word [esi],"ls"
-je ls
+	lea esi,[rel arg0]
+	cmp dword [esi],"test"
+	je test
 
-lea esi,[rel arg0]
-cmp dword [esi],"test"
-je test
+	lea esi,[rel arg0]
+	cmp dword [esi],"call"
+	je cast
 
-lea esi,[rel arg0]
-cmp dword [esi],"call"
-je cast
+	lea esi,[rel arg0]
+	cmp dword [esi],"jump"
+	je jump
 
-lea esi,[rel arg0]
-cmp dword [esi],"jump"
-je jump
+	lea esi,[rel arg0]
+	cmp dword [esi],"int"
+	je enterinterrupt
 
-lea esi,[rel arg0]
-cmp dword [esi],"int"
-je enterinterrupt
-
-jmp f4enter.notinhere
+	jmp f4event.notinhere
 ;_____________________________________
 
 
@@ -244,7 +287,7 @@ jmp f4enter.notinhere
 
 ;找到就执行
 ;____________________________________
-searchinmemory:
+searchmemory:
 	mov rax,[rel arg0]
 	cmp rax,0x20
 	jb .return
@@ -256,7 +299,7 @@ searchinmemory:
 	add esi,0x10
 	cmp esi,0x200000
 	jb .search
-	jmp f4enter.notinmemory
+	jmp f4event.notinmemory
 
 .find:
 	mov rbx,[esi+8]
@@ -282,10 +325,10 @@ searchinmemory:
 	lea rdi,[rel arg1]
 	call [rel explainedarg0]
 
-	jmp scroll
+	jmp f4event.scroll
 
 .return:
-	jmp f4enter.notinmemory
+	jmp f4event.notinmemory
 ;__________________________________________
 explainedarg0:dq 0	;解释完是函数地址
 
@@ -307,19 +350,19 @@ test:
 	add esi,0x10
 	cmp esi,0x200000
 	jb .continue
-	jmp notfound
+	jmp f4event.notfound
 .load:
 	mov rdx,[esi+8]
 	lea rdi,[rel arg1]
 	call rdx
 .check:
 	cmp dword [0x2000000],0
-	je notfound
+	je f4event.notfound
 .execute:
 	mov rax,0x2000000
 	call rax
 .return:
-	jmp scroll
+	jmp f4event.scroll
 ;__________________________________
 
 
@@ -327,18 +370,18 @@ test:
 
 ;____________________________________
 clear:
-mov edi,consolehome
-mov ecx,128*0x30
-xor rax,rax
-rep stosb
+	mov edi,consolehome
+	mov ecx,128*0x30
+	xor rax,rax
+	rep stosb
 
-mov edi,consolehome
-mov rax,"[   /]$ "
-stosq
+	mov edi,consolehome
+	mov rax,"[   /]$ "
+	stosq
 
-mov dword [consolehome+consolesize-8],0
-mov dword [rel length],8
-jmp console
+	mov dword [consolehome+consolesize-8],0
+	mov dword [rel length],8
+	jmp console
 ;_______________________________________
 
 
@@ -353,14 +396,14 @@ ls:
 	xor ecx,ecx
 .continue:
 	cmp dword [esi],0
-	je scroll
+	je f4event.scroll
 	movsq
 	add esi,0x18
 	add edi,0x8
 	inc ecx
 
 	cmp ecx,0x200
-	jae scroll
+	jae f4event.scroll
 	test ecx,0x7
 	jnz .continue
 	call checkandchangeline
@@ -374,11 +417,10 @@ ls:
 
 ;_______________________________
 cast:
-
-lea esi,[rel arg1]
-call string2data
-call [rel value]
-jmp scroll
+	lea esi,[rel arg1]
+	call string2data
+	call [rel value]
+	jmp f4event.scroll
 ;_______________________________
 
 
@@ -386,10 +428,9 @@ jmp scroll
 
 ;_______________________________
 jump:
-
-lea esi,[rel arg1]
-call string2data
-jmp [rel value]
+	lea esi,[rel arg1]
+	call string2data
+	jmp [rel value]
 ;_______________________________
 
 
@@ -397,9 +438,8 @@ jmp [rel value]
 
 ;_______________________________
 enterinterrupt:
-
-int3
-jmp scroll
+	int3
+	jmp f4event.scroll
 ;_______________________________
 
 
@@ -410,10 +450,10 @@ checkandchangeline:
 	cmp dword [consolehome+consolesize-8],0x80*47
 	jae .move
 
-	add dword [consolehome+consolesize-8],128		;no:line+1
+	add dword [consolehome+consolesize-8],128	;no:line+1
 	jmp .return
 
-	.move:					;yes:move
+.move:				;yes:move
 	push rsi
 	push rcx
 	mov esi,consolehome+0x80
@@ -424,61 +464,6 @@ checkandchangeline:
 	pop rcx
 	pop rsi
 
-	.return:
+.return:
 	ret					;now line=a blank line
 ;____________________________________
-
-
-
-
-;___________________________________________
-console:
-mov edi,0x1c00000
-mov ecx,1024*750
-xor eax,eax
-rep stosd
-
-
-mov dword [rel looptimes],0
-.lines:
-    mov edi,0x1c00000
-    mov eax,4*1024*16
-    imul eax,[rel looptimes]
-    add edi,eax
-
-    mov esi,consolehome
-    mov eax,[rel looptimes]
-    shl eax,7
-    add esi,eax
-
-    mov cl,128
-    .continue:
-    mov al,[esi]
-    push rsi
-    call char
-    pop rsi
-    inc esi
-    dec cl
-    jnz .continue
-
-    inc byte [rel looptimes]
-    cmp byte [rel looptimes],0x30
-    jb .lines
-
-
-    mov esi,0x1c00000
-    mov edi,[screeninfo+0x28]
-    mov bl,[screeninfo+0x19]
-    shr bl,3
-    movzx ebx,bl
-    mov ecx,1024*768
-.continuescreen:
-    lodsd
-    mov [edi],eax
-    add edi,ebx
-    loop .continuescreen
-
-jmp forever
-;________________________________________
-looptimes:dd 0
-length:dq 8

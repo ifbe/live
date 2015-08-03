@@ -1,5 +1,30 @@
-%define screeninfo 0x1000
 [bits 64]
+%define screeninfo 0x1000
+%define journalhome 0xd00000
+%define journalsize 0x100000
+
+
+
+
+;_________________清空/journal________________
+f1init:
+	mov edi,journalhome
+	mov ecx,journalsize
+	xor rax,rax
+	rep stosb
+	mov rax,"current"
+	mov [journalhome+journalsize-0x10],rax
+
+	mov qword [rel addr],0x100000		;r14 memory pointer
+	mov qword [rel offset],0x420		;r15 offset pointer
+
+	lea rax,[rel menu]
+	mov [rel mouseormenu],rax
+	lea rax,[rel dumpanscii]
+	mov [rel hexoranscii],rax
+
+	ret
+;_______________________________________________
 
 
 
@@ -7,17 +32,6 @@
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F1-----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;___________________________
 function1:
-
-cmp al,0x3b
-je f1
-cmp al,0x3c
-je f2
-cmp al,0x3d
-je f3
-cmp al,0x3e
-je f4
-cmp al,0x3f
-je f5
 
 cmp al,0x01
 je f1esc
