@@ -1,7 +1,8 @@
-%define consolehome 0xc00000
-%define consolesize 0x100000
 %define screeninfo 0x1000
 %define binhome 0x6000
+%define binsize 0x1000
+%define consolehome 0xc00000
+%define consolesize 0x100000
 [bits 64]
 
 
@@ -11,15 +12,18 @@
 ;清空/console
 f4init:
 	mov edi,consolehome
-	mov rax,"[   /]$ "
-	stosq
-	mov ecx,consolesize-8
+	mov ecx,consolesize
 	xor rax,rax
 	rep stosb
 
+	mov edi,consolehome
+	lea esi,[rel welcomemessage]
+	mov ecx,19
+	rep movsb
+	
 	mov rax,"current"
 	mov [consolehome+consolehome-0x10],rax
-	mov qword [consolehome+consolehome-8],0
+	mov qword [consolehome+consolesize-8],0x80
 
 	ret
 ;____________________________________________________
@@ -162,11 +166,11 @@ f4event:
 ;因为上一次取得的arg0和arg1没有被改变
 ;______________________________________
 explainarg:
-	mov esi,[consolehome+consolesize-8]
-	add esi,consolehome+8
+	mov esi,[consolehome+consolesize-8]		;;距离buffer开头多少
+	add esi,consolehome+8					;;加上buffer开头地址
 
 
-	;;;;;;;;;;;;吃掉esi指向的最开始的空格
+;;;;;;;;;;;;吃掉esi指向的最开始的空格
 	mov ecx,8
 .eatspace0:
 	cmp byte [esi],0x20		;先检查
@@ -177,7 +181,7 @@ explainarg:
 .ate0:
 
 
-	;;;;;;;;;;;;;现在esi指向l
+;;;;;;;;;;;;;现在esi指向0
 .fetcharg0:
         mov qword [rel arg0],0		;先清理
         mov qword [rel arg0+8],0	;先清理
@@ -194,7 +198,7 @@ explainarg:
 .finisharg0:
 
 
-	;;;;;;;;;;;;吃掉esi指向的中间的空格
+;;;;;;;;;;;;吃掉esi指向的中间的空格
 	mov ecx,8
 .eatspace1:
 	cmp byte [esi],0x20		;先检查
@@ -206,7 +210,7 @@ explainarg:
 
 
 
-	;;;;;;;;;;;现在esi指向1
+;;;;;;;;;;;现在esi指向1
 .fetcharg1:
         mov qword [rel arg1],0		;先清理
         mov qword [rel arg1+8],0	;先清理
@@ -223,11 +227,41 @@ explainarg:
 .finisharg1:
 
 
+
+;;;;;;;;;;;;吃掉esi指向的中间的空格
+	mov ecx,8
+.eatspace2:
+	cmp byte [esi],0x20		;先检查
+	ja .ate2			;已经吃光了，下一步
+	inc esi				;吃一个空格
+	loop .eatspace2
+	jmp .return			;全是空格->出错了直接返回
+.ate2:
+
+
+;;;;;;;;;;;现在esi指向2
+.fetcharg2:
+        mov qword [rel arg2],0		;先清理
+        mov qword [rel arg2+8],0	;先清理
+        lea rdi,[rel arg2]		;edi=目标地址
+        mov ecx,16
+.continue2:
+        lodsb				;取一个
+        cmp al,0x20
+        jbe .finisharg2			;小于0x20或者
+        cmp al,0x7a
+        ja .finisharg2			;大于0x80都是错，直接返回
+        stosb				;正常的话往目的地放
+        loop .continue2
+.finisharg2:
+
+
 .return:
 	ret
 ;____________________________________________
 arg0:times 16 db 0		;本函数运行完的输出结果
 arg1:times 16 db 0
+arg2:times 16 db 0
 
 
 
@@ -304,13 +338,13 @@ searchmemory:
 	cmp [esi],rax
 	je .find
 	add esi,0x10
-	cmp esi,0x200000
+	cmp esi,binhome+binsize
 	jb .search
 	jmp f4event.notinmemory
 
 .find:
 	mov rbx,[esi+8]
-	mov [rel explainedarg0],rbx	;取得函数地址，保存在某处
+	mov [rel explainedarg0],rbx		;取得函数地址，保存在某处
 
 	call checkandchangeline
 
@@ -342,20 +376,28 @@ explainedarg0:dq 0	;解释完是函数地址
 
 
 
+;_______________________________________________
+searchdisk:
+	jmp f4event.notfound
+;____________________________________________________
+
+
+
+
 ;__________________________________
 test:
 .cleanmemory:
-	mov edi,0x2000000
-	mov ecx,0x2000
+	mov edi,0x2000000				;32m
+	mov ecx,0x4000
 	xor rax,rax
-	rep stosq
-.search:
+	rep stosd
+
 	mov esi,binhome
-	.continue:
+.continue:
 	cmp dword [esi],"load"
 	je .load
 	add esi,0x10
-	cmp esi,0x200000
+	cmp esi,binhome+binsize
 	jb .continue
 	jmp f4event.notfound
 .load:
@@ -453,6 +495,21 @@ enterinterrupt:
 
 
 
+;_______________________________________
+outport:
+	mov dx,[rel arg1]
+	mov al,[rel arg2]
+	out dx,al
+	jmp f4event.scroll
+inport:
+	mov dx,[rel arg1]
+	in al,dx
+	jmp f4event.scroll
+;________________________________________
+
+
+
+
 ;_________________________________
 checkandchangeline:
 	cmp dword [consolehome+consolesize-8],0x80*47
@@ -475,3 +532,34 @@ checkandchangeline:
 .return:
 	ret					;now line=a blank line
 ;____________________________________
+
+
+
+
+;r8=arg0,r9=arg1,r10=arg2........
+;_______________________________________________
+say:
+	mov rdi,[consolehome+consolesize-8]		;;距离buffer开头多少
+	add rdi,consolehome+8					;;加上buffer开头地址
+	mov rsi,r8
+	mov cx,0x80
+.continue:
+	cmp byte [rsi],0
+	je .return
+	cmp byte [rsi],0xa
+	jne .normalchar
+	call checkandchangeline
+.normalchar:
+	movsb
+	loop .continue
+
+.return:
+	ret
+;___________________________________________
+
+
+
+
+;____________________________________________________
+welcomemessage:db "welcome to my brain"
+dirtyword: db "wozhenshirilegoua"

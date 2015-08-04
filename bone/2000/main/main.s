@@ -4,7 +4,7 @@
 
 	call endofjarvis                ;ahci@0x4000
 
-	call processevent.isf3
+	call processevent.isf4
 ;_______________________________________________
 
 

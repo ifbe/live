@@ -28,3 +28,4 @@ times 0x8000-($-$$) db 0
 
 ;[8000,ffff]
 times 0x8000-($-$$) db 0
+times 0x10000-($-$$) db 0
