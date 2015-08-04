@@ -1,9 +1,17 @@
 #1:create a 64k binary,compile with gcc(linux) or x86_64-elf-gcc(other system)
 binary:				#linuxer only
-	make -s -C new		#[0,0x1fff]
+	make -s -C 0
+	make -s -C 1000
+	make -s -C 2000
+	make -s -C 4000
+	nasm core.s -o core.bin
 	nasm readme -o core.img
 cross:		#windows and mac user
-	make -s -C new		#[0,0x1fff]
+	make -s -C 0
+	make -s -C 1000
+	make -s -C 2000
+	make -s -C 4000 cross
+	nasm core.s -o core.bin
 	nasm readme -o core.img
 
 
@@ -37,6 +45,6 @@ parallels:
 
 
 clean:
-	make -s -C new clean
+	make -s -C 4000 clean
 	rm -f */*.o */*.bin
-	rm -f *.img *.vmdk *.vhd *.dmg *.vdi
+	rm -f *.bin *.img *.vmdk *.vhd *.dmg *.vdi
