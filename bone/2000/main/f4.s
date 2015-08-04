@@ -18,7 +18,7 @@ f4init:
 
 	mov edi,consolehome
 	lea esi,[rel welcomemessage]
-	mov ecx,19
+	mov ecx,dirtyword-welcomemessage
 	rep movsb
 	
 	mov rax,"current"
@@ -37,10 +37,10 @@ f4init:
 
 ;___________________________________________
 f4show:
-	mov edi,0x1c00000
-	mov ecx,1024*750
-	xor eax,eax
-	rep stosd
+	;mov edi,0x1c00000
+	;mov ecx,1024*750
+	;xor eax,eax
+	;rep stosd
 
 	mov dword [rel looptimes],0
 .lines:
@@ -269,6 +269,7 @@ arg2:times 16 db 0
 ;___________________________________
 searchhere:
 	lea esi,[rel arg0]
+
 	cmp dword [esi],"powe"		;if [esi]=="powe"
 	jne .skippoweroff
 	cmp dword [esi+4],"roff"	;if [esi+4]=="roff"
@@ -277,7 +278,6 @@ searchhere:
 	je poweroff
 .skippoweroff:
 
-	lea esi,[rel arg0]
 	cmp dword [esi],"rebo"
 	jne .skipreboot
 	cmp word [esi+4],"ot"
@@ -286,39 +286,35 @@ searchhere:
 	je reboot
 .skipreboot:
 
-	lea esi,[rel arg0]
 	cmp dword [esi],"exit"
 	jne .skipexit
 	cmp byte [esi+4],0
 	je poweroff
 .skipexit:
 
-	lea esi,[rel arg0]
 	cmp dword [esi],"clea"
 	jne .skipclear
 	cmp byte [esi+4],'r'
 	je clear
 .skipclear:
 
-	lea esi,[rel arg0]
-	cmp word [esi],"ls"
-	je ls
-
-	lea esi,[rel arg0]
-	cmp dword [esi],"test"
-	je test
-
-	lea esi,[rel arg0]
 	cmp dword [esi],"call"
 	je cast
 
-	lea esi,[rel arg0]
 	cmp dword [esi],"jump"
 	je jump
 
-	lea esi,[rel arg0]
 	cmp dword [esi],"int"
 	je enterinterrupt
+
+	cmp word [esi],"ls"
+	je ls
+
+	cmp dword [esi],"test"
+	je test
+
+	cmp dword [esi],"shit"
+	je shit
 
 	jmp f4event.notinhere
 ;_____________________________________
@@ -384,39 +380,6 @@ searchdisk:
 
 
 
-;__________________________________
-test:
-.cleanmemory:
-	mov edi,0x2000000				;32m
-	mov ecx,0x4000
-	xor rax,rax
-	rep stosd
-
-	mov esi,binhome
-.continue:
-	cmp dword [esi],"load"
-	je .load
-	add esi,0x10
-	cmp esi,binhome+binsize
-	jb .continue
-	jmp f4event.notfound
-.load:
-	mov rdx,[esi+8]
-	lea rdi,[rel arg1]
-	call rdx
-.check:
-	cmp dword [0x2000000],0
-	je f4event.notfound
-.execute:
-	mov rax,0x2000000
-	call rax
-.return:
-	jmp f4event.scroll
-;__________________________________
-
-
-
-
 ;____________________________________
 clear:
 	mov edi,consolehome
@@ -433,34 +396,6 @@ clear:
 
 	ret
 ;_______________________________________
-
-
-
-
-;_________________________
-ls:
-	call checkandchangeline		;get new edi
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
-	mov esi,0x4c0000
-	xor ecx,ecx
-.continue:
-	cmp dword [esi],0
-	je f4event.scroll
-	movsq
-	add esi,0x18
-	add edi,0x8
-	inc ecx
-
-	cmp ecx,0x200
-	jae f4event.scroll
-	test ecx,0x7
-	jnz .continue
-	call checkandchangeline
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
-	jmp .continue
-;_________________________
 
 
 
@@ -510,6 +445,76 @@ inport:
 
 
 
+;_________________________
+ls:
+	call checkandchangeline		;get new edi
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
+	mov esi,0x4c0000
+	xor ecx,ecx
+.continue:
+	cmp dword [esi],0
+	je f4event.scroll
+	movsq
+	add esi,0x18
+	add edi,0x8
+	inc ecx
+
+	cmp ecx,0x200
+	jae f4event.scroll
+	test ecx,0x7
+	jnz .continue
+	call checkandchangeline
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
+	jmp .continue
+;_________________________
+
+
+
+
+;__________________________________
+test:
+.cleanmemory:
+	mov edi,0x2000000				;32m
+	mov ecx,0x4000
+	xor rax,rax
+	rep stosd
+
+	mov esi,binhome
+.continue:
+	cmp dword [esi],"load"
+	je .load
+	add esi,0x10
+	cmp esi,binhome+binsize
+	jb .continue
+	jmp f4event.notfound
+.load:
+	mov rdx,[esi+8]
+	lea rdi,[rel arg1]
+	call rdx
+.check:
+	cmp dword [0x2000000],0
+	je f4event.notfound
+.execute:
+	mov rax,0x2000000
+	call rax
+.return:
+	jmp f4event.scroll
+;__________________________________
+
+
+
+
+;________________________________________
+shit:
+	lea r8,[rel dirtyword]
+	call say
+;________________________________________
+
+
+
+
 ;_________________________________
 checkandchangeline:
 	cmp dword [consolehome+consolesize-8],0x80*47
@@ -539,16 +544,23 @@ checkandchangeline:
 ;r8=arg0,r9=arg1,r10=arg2........
 ;_______________________________________________
 say:
-	mov rdi,[consolehome+consolesize-8]		;;距离buffer开头多少
-	add rdi,consolehome+8					;;加上buffer开头地址
 	mov rsi,r8
+	mov rdi,[consolehome+consolesize-8]	;距离buffer开头多少
+	add rdi,consolehome			;加上buffer开头地址
+
+	mov rax,"20150804"
+	stosq				;纪年月日
+	mov rax,"220733"
+	stosq				;时分秒毫
+	mov rax,"system"		;用户名前8字节
+	stosq
+	xor rax,rax
+	stosq				;用户名后8字节
+
 	mov cx,0x80
 .continue:
 	cmp byte [rsi],0
 	je .return
-	cmp byte [rsi],0xa
-	jne .normalchar
-	call checkandchangeline
 .normalchar:
 	movsb
 	loop .continue
@@ -561,5 +573,9 @@ say:
 
 
 ;____________________________________________________
-welcomemessage:db "welcome to my brain"
-dirtyword: db "wozhenshirilegoua"
+welcomemessage:
+	db "################welcome into my brain################"
+	db 0
+dirtyword:
+	db "wozhenshirilegoule"
+	db 0
