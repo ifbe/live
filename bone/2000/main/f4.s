@@ -16,14 +16,16 @@ f4init:
 	xor rax,rax
 	rep stosb
 
-	mov edi,consolehome
-	lea esi,[rel welcomemessage]
-	mov ecx,dirtyword-welcomemessage
-	rep movsb
-	
+	mov rax,"xxxxxxxx"
+	mov [consolehome+consolesize-0x20],rax
 	mov rax,"current"
-	mov [consolehome+consolehome-0x10],rax
-	mov qword [consolehome+consolesize-8],0x80
+	mov [consolehome+consolesize-0x10],rax
+
+	;mov edi,consolehome
+	lea r8,[rel welcomemessage]
+	;mov ecx,dirtyword-welcomemessage
+	;rep movsb
+	call say
 
 	ret
 ;____________________________________________________
@@ -83,7 +85,7 @@ f4show:
 	ret
 ;________________________________________
 looptimes:dd 0
-length:dq 8
+length:dq 0x20
 
 
 
@@ -101,7 +103,7 @@ f4event:
 .backspace:
 	cmp al,0x0e
 	jne .notbackspace
-	cmp byte [rel length],8
+	cmp byte [rel length],0x20
 	jna .return
 	mov ebx,[consolehome+consolesize-8]
 	add ebx,consolehome
@@ -116,24 +118,23 @@ f4event:
 	cmp al,0x1c
 	jne .notenter
 	call explainarg
+	call checkandchangeline
+.startsearch:
 	jmp searchhere
 .notinhere:
 	jmp searchmemory
 .notinmemory:
 	;jmp searchdisk
 .notfound:
-	call checkandchangeline
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
-	mov dword [edi],"notf"
-	mov dword [edi+4],"ound"
+
+
 .scroll:
-	call checkandchangeline
+	;call checkandchangeline
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
 	mov dword [edi],"[   "
 	mov dword [edi+4],"/]$ "
-	mov dword [rel length],8
+	mov dword [rel length],0x20
 	ret
 .notenter:
 
@@ -167,7 +168,7 @@ f4event:
 ;______________________________________
 explainarg:
 	mov esi,[consolehome+consolesize-8]		;;距离buffer开头多少
-	add esi,consolehome+8					;;加上buffer开头地址
+	add esi,consolehome+0x20					;;加上buffer开头地址
 
 
 ;;;;;;;;;;;;吃掉esi指向的最开始的空格
@@ -327,7 +328,7 @@ searchhere:
 searchmemory:
 	mov rax,[rel arg0]
 	cmp rax,0x20
-	jb .return
+	jb .errorreturn
 
 	mov esi,binhome
 .search:
@@ -336,7 +337,7 @@ searchmemory:
 	add esi,0x10
 	cmp esi,binhome+binsize
 	jb .search
-	jmp f4event.notinmemory
+	jmp .errorreturn
 
 .find:
 	mov rbx,[esi+8]
@@ -362,9 +363,11 @@ searchmemory:
 	lea rdi,[rel arg1]
 	call [rel explainedarg0]
 
+.normalreturn:
 	jmp f4event.scroll
-
-.return:
+.errorreturn:
+	lea r8,[rel notfoundmsg]
+	call say
 	jmp f4event.notinmemory
 ;__________________________________________
 explainedarg0:dq 0	;解释完是函数地址
@@ -374,6 +377,8 @@ explainedarg0:dq 0	;解释完是函数地址
 
 ;_______________________________________________
 searchdisk:
+	lea r8,[rel notfoundmsg]
+	call say
 	jmp f4event.notfound
 ;____________________________________________________
 
@@ -392,7 +397,7 @@ clear:
 	stosq
 
 	mov dword [consolehome+consolesize-8],0
-	mov dword [rel length],8
+	mov dword [rel length],0x20
 
 	ret
 ;_______________________________________
@@ -447,7 +452,6 @@ inport:
 
 ;_________________________
 ls:
-	call checkandchangeline		;get new edi
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
 	mov esi,0x4c0000
@@ -488,19 +492,24 @@ test:
 	add esi,0x10
 	cmp esi,binhome+binsize
 	jb .continue
-	jmp f4event.notfound
+	jmp .errorreturn
 .load:
 	mov rdx,[esi+8]
 	lea rdi,[rel arg1]
 	call rdx
 .check:
 	cmp dword [0x2000000],0
-	je f4event.notfound
+	je .errorreturn
 .execute:
 	mov rax,0x2000000
 	call rax
-.return:
+
+.normalreturn:
 	jmp f4event.scroll
+.errorreturn:
+	lea r8,[rel notfoundmsg]
+	call say
+	jmp f4event.notfound
 ;__________________________________
 
 
@@ -510,6 +519,7 @@ test:
 shit:
 	lea r8,[rel dirtyword]
 	call say
+	jmp f4event.scroll
 ;________________________________________
 
 
@@ -524,17 +534,14 @@ checkandchangeline:
 	jmp .return
 
 .move:				;yes:move
-	push rsi
-	push rcx
 	mov esi,consolehome+0x80
 	mov edi,consolehome
 	mov ecx,128*0x30
 	cld
 	rep movsb
-	pop rcx
-	pop rsi
 
 .return:
+	mov qword [rel length],0x20
 	ret					;now line=a blank line
 ;____________________________________
 
@@ -544,20 +551,15 @@ checkandchangeline:
 ;r8=arg0,r9=arg1,r10=arg2........
 ;_______________________________________________
 say:
-	mov rsi,r8
 	mov rdi,[consolehome+consolesize-8]	;距离buffer开头多少
 	add rdi,consolehome			;加上buffer开头地址
 
-	mov rax,"20150804"
-	stosq				;纪年月日
-	mov rax,"220733"
-	stosq				;时分秒毫
-	mov rax,"system"		;用户名前8字节
-	stosq
-	xor rax,rax
-	stosq				;用户名后8字节
+	lea rsi,[rel senderinfomation]
+	mov ecx,0x20
+	rep movsb
 
-	mov cx,0x80
+	mov rsi,r8
+	mov ecx,80			;一次最多打印这么多字节
 .continue:
 	cmp byte [rsi],0
 	je .return
@@ -566,6 +568,7 @@ say:
 	loop .continue
 
 .return:
+	call checkandchangeline
 	ret
 ;___________________________________________
 
@@ -573,6 +576,14 @@ say:
 
 
 ;____________________________________________________
+senderinfomation:
+	dq "20150804"
+	dq "220733"
+	dq "system:"
+	dq 0
+notfoundmsg:
+	db "notfound"
+	db 0
 welcomemessage:
 	db "################welcome into my brain################"
 	db 0

@@ -16,7 +16,7 @@
 
 ;_______________准备进入正式程序__________________
 showsomething:
-	call [rel screenwhat]
+	call printworld
 
 waitevent:
 	call forever
@@ -31,6 +31,13 @@ againandagain:
 
 
 
+;_________________________________________________
+printworld:
+	call [rel screenwhat]
+	;do something(for example:start menu)
+	ret
+;___________________________________________________
+screenwhat:dq 0
 
 
 
@@ -95,13 +102,4 @@ processevent:
 .otherkey:
 	jmp [rel whoevent]
 ;___________________________________________
-
-
-
-
-
-
-
-
-screenwhat:dq 0
 whoevent:dq 0
