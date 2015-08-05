@@ -16,15 +16,20 @@ f4init:
 	xor rax,rax
 	rep stosb
 
+	lea r8,[rel welcomemessage]
+	call printf
+	lea rdi,[rel welcomemessage]
+	xor rax,rax
+	mov rcx,0x80-5
+	stosb
+	lea r8,[rel userinput]
+	call printf
+
+
 	mov rax,"xxxxxxxx"
 	mov [consolehome+consolesize-0x20],rax
-	mov rax,"current"
+	mov rax,"yyyyyyyy"
 	mov [consolehome+consolesize-0x10],rax
-
-	lea r8,[rel welcomemessage]
-	call say
-	lea r8,[rel userinput]
-	call putstring
 
 	ret
 ;____________________________________________________
@@ -84,7 +89,7 @@ f4show:
 	ret
 ;________________________________________
 looptimes:dd 0
-length:dq 0x20
+length:dq 5
 
 
 
@@ -99,10 +104,12 @@ f4event:
 	jae .return
 
 
+
+
 .backspace:
 	cmp al,0x0e
 	jne .notbackspace
-	cmp byte [rel length],0x20
+	cmp byte [rel length],5
 	jna .return
 	mov ebx,[consolehome+consolesize-8]
 	add ebx,consolehome
@@ -111,6 +118,8 @@ f4event:
 	mov byte [ebx],0
 	ret
 .notbackspace:
+
+
 
 
 .enter:
@@ -125,13 +134,15 @@ f4event:
 .notinmemory:
 	;jmp searchdisk
 .notfound:
-
-
+	lea r8,[rel notfoundmsg]
+	call say
 .scroll:
 	lea r8,[rel userinput]
-	call putstring
+	call printf
 	ret
 .notenter:
+
+
 
 
 .other:
@@ -143,6 +154,8 @@ f4event:
 	add ebx,[rel length]
 	mov [ebx],al
 	inc byte [rel length]
+
+
 
 .return:
 	ret
@@ -163,7 +176,7 @@ f4event:
 ;______________________________________
 explainarg:
 	mov esi,[consolehome+consolesize-8]		;;距离buffer开头多少
-	add esi,consolehome+0x20					;;加上buffer开头地址
+	add esi,consolehome+5			;;加上buffer开头地址
 
 
 ;;;;;;;;;;;;吃掉esi指向的最开始的空格
@@ -361,8 +374,6 @@ searchmemory:
 .normalreturn:
 	jmp f4event.scroll
 .errorreturn:
-	lea r8,[rel notfoundmsg]
-	call say
 	jmp f4event.notinmemory
 ;__________________________________________
 explainedarg0:dq 0	;解释完是函数地址
@@ -372,8 +383,6 @@ explainedarg0:dq 0	;解释完是函数地址
 
 ;_______________________________________________
 searchdisk:
-	lea r8,[rel notfoundmsg]
-	call say
 	jmp f4event.notfound
 ;____________________________________________________
 
@@ -382,18 +391,6 @@ searchdisk:
 
 ;____________________________________
 clear:
-	mov edi,consolehome
-	mov ecx,128*0x30
-	xor rax,rax
-	rep stosb
-
-	mov edi,consolehome
-	mov rax,"[   /]$ "
-	stosq
-
-	mov dword [consolehome+consolesize-8],0
-	mov dword [rel length],0x20
-
 	ret
 ;_______________________________________
 
@@ -437,6 +434,12 @@ outport:
 	mov al,[rel arg2]
 	out dx,al
 	jmp f4event.scroll
+;______________________________________
+
+
+
+
+;________________________________________
 inport:
 	mov dx,[rel arg1]
 	in al,dx
@@ -454,20 +457,22 @@ ls:
 	xor ecx,ecx
 .continue:
 	cmp dword [esi],0
-	je f4event.scroll
+	je .return
 	movsq
 	add esi,0x18
 	add edi,0x8
 	inc ecx
 
 	cmp ecx,0x200
-	jae f4event.scroll
+	jae .return
 	test ecx,0x7
 	jnz .continue
 	call checkandchangeline
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
 	jmp .continue
+.return:
+	jmp f4event.scroll
 ;_________________________
 
 
@@ -503,8 +508,6 @@ test:
 .normalreturn:
 	jmp f4event.scroll
 .errorreturn:
-	lea r8,[rel notfoundmsg]
-	call say
 	jmp f4event.notfound
 ;__________________________________
 
@@ -537,28 +540,36 @@ checkandchangeline:
 	rep movsb
 
 .return:
-	mov qword [rel length],0x20
 	ret					;now line=a blank line
 ;____________________________________
 
 
 
 
+;r8=arg0,r9=arg1,r10=arg2........
 ;_______________________________________________
-putstring:
+printf:
 	mov rdi,[consolehome+consolesize-8]	;距离buffer开头多少
 	add rdi,consolehome			;加上buffer开头地址
 
 	mov rsi,r8
-	mov ecx,80			;一次最多打印这么多字节
+	xor ecx,ecx			;一次最多打印这么多字节
 .continue:
 	cmp byte [rsi],0
 	je .return
+
+	cmp byte [rsi],0xa
+	jne .normalchar
+	call checkandchangeline
+
 .normalchar:
 	movsb
-	loop .continue
+	inc ecx
+	cmp ecx,0x80
+	jb .continue
 
 .return:
+	mov [rel length],rcx
 	ret
 ;_________________________________________________
 
@@ -580,12 +591,16 @@ say:
 .continue:
 	cmp byte [rsi],0
 	je .return
+
+	cmp byte [rsi],0xa
+	jne .normalchar
+	call checkandchangeline
+
 .normalchar:
 	movsb
 	loop .continue
 
 .return:
-	call checkandchangeline
 	ret
 ;___________________________________________
 senderinfomation:
@@ -598,15 +613,19 @@ senderinfomation:
 
 
 ;____________________________________________________
-userinput:
-	dq "user:"
-	db 0
 notfoundmsg:
 	db "notfound"
-	db 0
-welcomemessage:
-	db "################welcome into my brain################"
-	db 0
+	db 0xa,0
 dirtyword:
 	db "wozhenshirilegoule"
-	db 0
+	db 0xa,0
+userinput:
+	db "user:"
+welcomemessage:
+	db "################"
+	db "  welcome  into "
+	db "  my  brain     "
+	db "################"
+	db 0xa,0
+padding:
+	times 0x80-(padding-userinput) db 0
