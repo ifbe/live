@@ -21,11 +21,10 @@ f4init:
 	mov rax,"current"
 	mov [consolehome+consolesize-0x10],rax
 
-	;mov edi,consolehome
 	lea r8,[rel welcomemessage]
-	;mov ecx,dirtyword-welcomemessage
-	;rep movsb
 	call say
+	lea r8,[rel userinput]
+	call putstring
 
 	ret
 ;____________________________________________________
@@ -129,12 +128,8 @@ f4event:
 
 
 .scroll:
-	;call checkandchangeline
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
-	mov dword [edi],"[   "
-	mov dword [edi+4],"/]$ "
-	mov dword [rel length],0x20
+	lea r8,[rel userinput]
+	call putstring
 	ret
 .notenter:
 
@@ -428,6 +423,7 @@ jump:
 
 ;_______________________________
 enterinterrupt:
+	mov qword [rel arg0],0
 	int3
 	jmp f4event.scroll
 ;_______________________________
@@ -548,6 +544,27 @@ checkandchangeline:
 
 
 
+;_______________________________________________
+putstring:
+	mov rdi,[consolehome+consolesize-8]	;距离buffer开头多少
+	add rdi,consolehome			;加上buffer开头地址
+
+	mov rsi,r8
+	mov ecx,80			;一次最多打印这么多字节
+.continue:
+	cmp byte [rsi],0
+	je .return
+.normalchar:
+	movsb
+	loop .continue
+
+.return:
+	ret
+;_________________________________________________
+
+
+
+
 ;r8=arg0,r9=arg1,r10=arg2........
 ;_______________________________________________
 say:
@@ -571,16 +588,19 @@ say:
 	call checkandchangeline
 	ret
 ;___________________________________________
-
-
-
-
-;____________________________________________________
 senderinfomation:
 	dq "20150804"
 	dq "220733"
 	dq "system:"
 	dq 0
+
+
+
+
+;____________________________________________________
+userinput:
+	dq "user:"
+	db 0
 notfoundmsg:
 	db "notfound"
 	db 0

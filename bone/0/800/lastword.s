@@ -131,9 +131,9 @@ test al,1
 jz whatthen
 
 in al,0x60
-cmp al,0x39		;enter
+cmp al,0x1c		;enter
 je leaveexception
-cmp al,0x1c		;esc
+cmp al,0x1		;esc
 je turnoff
 
 jmp whatthen
