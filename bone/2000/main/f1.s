@@ -15,7 +15,7 @@ f1init:
 	mov rax,"current"
 	mov [journalhome+journalsize-0x10],rax
 
-	mov qword [rel addr],0x100000		;r14 memory pointer
+	mov qword [rel addr],0x800		;r14 memory pointer
 	mov qword [rel offset],0x420		;r15 offset pointer
 
 	lea rax,[rel menu]

@@ -14,15 +14,21 @@ startofenter64:
 
 
 ;__________________________________________
-;清空[0x800,0x6fff]
-;注意不能清空:屏幕信息[1000,1fff],栈[7000,7c00]
+;注意不能清空:e820信息[800,fff],屏幕信息[1000,1fff],栈[7000,7c00]
 	xor eax, eax
 	mov es,ax
 	cld
 
-	mov di,0x800
-	mov cx,0x800
+;[0x600,0x61f]:jump rax
+;[0x620,0x62f]:gdtr
+;[0x630,0x63f]:idtr
+	mov di,0x600
+	mov cx,0x200
 	rep stosb
+
+;[0x2000,0x6fff]:gdt
+;[0x3000,0x3fff]:idt
+;[0x4000,0x6fff]:pml4,pdpt,pd
 	mov di,0x2000
 	mov cx,0x5000
 	rep stosb
@@ -31,10 +37,10 @@ startofenter64:
 
 
 
-;_______在0x800这个位置手工写入jmp rax这条指令_______
+;_______在0x600这个位置手工写入jmp rax这条指令_______
 	xor ax,ax
 	mov es,ax
-	mov di,0x800
+	mov di,0x600
 	mov word [es:di],0xe0ff		;e0ff=jmp rax
 ;___________________________________________________
 
@@ -64,8 +70,8 @@ startofenter64:
 
 
 
-;gdtr位于0x800
-	mov di,0x820
+;gdtr位于0x620
+	mov di,0x620
 ;gdtr.size=gdt表的总长度-1
 	mov ax,0x17
 	stosw	;dw $-GDT-1	16bit Size
@@ -88,13 +94,13 @@ startofenter64:
 	nop
 
 ;一个空的IDTR,任何可屏蔽中断都会三重错误
-	mov di,0x830	;now es=0
+	mov di,0x630	;now es=0
 	xor eax,eax
 	stosw		;length
 	stosd		;base
 
 ;lidt指令
-	lidt [0x830]	;load pointer
+	lidt [0x630]	;load pointer
 ;_______________________________________________
  
 
@@ -171,11 +177,11 @@ where:
 	add eax,endofenter64-where
 
 ;Load pointer (a32 because over 64k)
-	a32 lgdt [0x820]
+	a32 lgdt [0x620]
 
 ;Load CS,flush instruction cache
 ;内存800位置里面的东西是jmp rax,也就是跳回来到endofenter64的位置
-	jmp dword 0x0008:0x0800
+	jmp dword 0x0008:0x0600
 ;______________________________________________
 
 

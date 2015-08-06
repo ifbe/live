@@ -15,8 +15,8 @@ startof16:
 
 ;_______清空0x1000到0x7fff___________
 	xor eax,eax
-	mov di,0x1000
-	mov cx,0x7000
+	mov di,0x800
+	mov cx,0x7800
 	cld
 	rep stosb
 ;__________________________________________
@@ -105,8 +105,8 @@ cmos:
 
 
 
-;____________int15 e820 memory detect___________
-	mov di,0x600
+;____________e820 @ 800___________
+	mov di,0x800
 	xor ebx,ebx
 e820:
 	mov eax,0xe820
@@ -117,7 +117,7 @@ e820:
 	cmp eax,0x534d4150
 	jne e820finish
 	add di,0x20
-	cmp di,0x800
+	cmp di,0x1000
 	jae e820finish
 	cmp ebx,0
 	jne e820

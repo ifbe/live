@@ -4,13 +4,13 @@
 ;#########################################################
 ;[0,3ff]    [0,1023]    real mode interrupt vector table
 ;[400,4ff]    [1024,1279]    bios data area
-;[500,5ff]    [1280,1535]    cmos dump from port 0x70 and 0x71
-;[600,7ff]    [1536,2047]    memory infomation from e820
-;[800,fff]    [2048,4095]    -------------------------
-;        800:jmp rax
-;		810:where i was born
-;		820:gdtr
-;		830:idtr
+;[500,57f]    [1280,1535]    cmos dump from port 0x70 and 0x71
+;[600,7ff]    [1536,2047]    discriptor table for cpu
+;        600:jmp rax
+;		610:where i was born
+;		620:gdtr
+;		630:idtr
+;[800,fff]    [2048,4095]    e820 memory infomation
 
 
 

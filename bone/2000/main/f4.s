@@ -17,13 +17,13 @@ f4init:
 	rep stosb
 
 	lea r8,[rel welcomemessage]
-	call printf
+	call say
 	lea rdi,[rel welcomemessage]
 	xor rax,rax
 	mov rcx,0x80-5
 	stosb
 	lea r8,[rel userinput]
-	call printf
+	call continuesay
 
 
 	mov rax,"xxxxxxxx"
@@ -126,7 +126,6 @@ f4event:
 	cmp al,0x1c
 	jne .notenter
 	call explainarg
-	call checkandchangeline
 .startsearch:
 	jmp searchhere
 .notinhere:
@@ -138,7 +137,7 @@ f4event:
 	call say
 .scroll:
 	lea r8,[rel userinput]
-	call printf
+	call continuesay
 	ret
 .notenter:
 
@@ -266,10 +265,24 @@ explainarg:
 
 
 .return:
+	call checkandchangeline
+	mov qword [rel length],0
+	lea r8,[rel arg0msg]			;debug
+	call say
+	lea r8,[rel arg1msg]
+	call continuesay
+	lea r8,[rel arg2msg]
+	call continuesay
+	call checkandchangeline
 	ret
 ;____________________________________________
+arg0msg:db "arg0="
 arg0:times 16 db 0		;本函数运行完的输出结果
+
+arg1msg:db "    arg1="
 arg1:times 16 db 0
+
+arg2msg:db "    arg2="
 arg2:times 16 db 0
 
 
@@ -307,11 +320,26 @@ searchhere:
 	je clear
 .skipclear:
 
+	cmp dword [esi],"writ"
+	jne .skipwrite
+	cmp byte [esi+4],'e'
+	je write
+.skipwrite:
+
+	cmp dword [esi],"read"
+	je read
+
 	cmp dword [esi],"call"
 	je cast
 
 	cmp dword [esi],"jump"
 	je jump
+
+	cmp dword [esi],"out"
+	je outport
+
+	cmp word [esi],"in"
+	je inport
 
 	cmp dword [esi],"int"
 	je enterinterrupt
@@ -397,6 +425,24 @@ clear:
 
 
 
+;_________________________________________
+write:
+	ret
+;_________________________________________
+
+
+
+
+;________________________________________
+read:
+	lea esi,[rel arg1]
+	call string2data
+	ret
+;_________________________________________
+
+
+
+
 ;_______________________________
 cast:
 	lea esi,[rel arg1]
@@ -430,9 +476,24 @@ enterinterrupt:
 
 ;_______________________________________
 outport:
+	lea esi,[rel arg1]
+	call string2data
+	mov rax,[rel value]
+	mov [rel arg1],rax
+
+	lea esi,[rel arg2]
+	call string2data
+	mov rax,[rel value]
+	mov [rel arg2],rax
+
+.out8:
 	mov dx,[rel arg1]
 	mov al,[rel arg2]
 	out dx,al
+	jmp .return
+.out16:
+.out32:
+.return:
 	jmp f4event.scroll
 ;______________________________________
 
@@ -441,10 +502,38 @@ outport:
 
 ;________________________________________
 inport:
+	lea esi,[rel arg1]
+	call string2data
+	mov rax,[rel value]
+	mov [rel arg1],rax
+	
 	mov dx,[rel arg1]
 	in al,dx
+	mov ah,al
+
+	and ax,0x0ff0
+	shr al,4
+
+	add ax,0x3030
+
+	cmp al,0x3a
+	jb .skiphigh
+	add al,0x7
+.skiphigh:
+
+	cmp ah,0x3a
+	jb .skiplow
+	add ah,0x7
+.skiplow:
+
+	mov [rel gottenmsg],ax
+	lea r8,[rel gottenmsg]
+	call say
+	lea r8,[rel huanhang]
+	call say
 	jmp f4event.scroll
 ;________________________________________
+gottenmsg:dq 0
 
 
 
@@ -524,6 +613,18 @@ shit:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 ;_________________________________
 checkandchangeline:
 	cmp dword [consolehome+consolesize-8],0x80*47
@@ -540,38 +641,9 @@ checkandchangeline:
 	rep movsb
 
 .return:
+	mov qword [rel length],0
 	ret					;now line=a blank line
 ;____________________________________
-
-
-
-
-;r8=arg0,r9=arg1,r10=arg2........
-;_______________________________________________
-printf:
-	mov rdi,[consolehome+consolesize-8]	;距离buffer开头多少
-	add rdi,consolehome			;加上buffer开头地址
-
-	mov rsi,r8
-	xor ecx,ecx			;一次最多打印这么多字节
-.continue:
-	cmp byte [rsi],0
-	je .return
-
-	cmp byte [rsi],0xa
-	jne .normalchar
-	call checkandchangeline
-
-.normalchar:
-	movsb
-	inc ecx
-	cmp ecx,0x80
-	jb .continue
-
-.return:
-	mov [rel length],rcx
-	ret
-;_________________________________________________
 
 
 
@@ -584,30 +656,43 @@ say:
 
 	lea rsi,[rel senderinfomation]
 	mov ecx,0x20
+	mov [rel length],ecx
 	rep movsb
 
+continuesay:
+	mov rdi,[consolehome+consolesize-8]	;距离buffer开头多少
+	add rdi,consolehome			;加上buffer开头地址
+	add rdi,[rel length]
+
 	mov rsi,r8
-	mov ecx,80			;一次最多打印这么多字节
+	mov ecx,[rel length]
 .continue:
 	cmp byte [rsi],0
 	je .return
 
 	cmp byte [rsi],0xa
 	jne .normalchar
+
+.nextline:
 	call checkandchangeline
+	inc rsi
+	jmp .nextchar
 
 .normalchar:
 	movsb
-	loop .continue
+	inc qword [rel length]
+
+.nextchar:
+	inc ecx
+	cmp ecx,0x80
+	jb .continue
 
 .return:
 	ret
 ;___________________________________________
 senderinfomation:
-	dq "20150804"
-	dq "220733"
-	dq "system:"
-	dq 0
+	dq "20150804","220733"
+	dq ":system:",0
 
 
 
@@ -626,6 +711,7 @@ welcomemessage:
 	db "  welcome  into "
 	db "  my  brain     "
 	db "################"
+huanhang:
 	db 0xa,0
 padding:
 	times 0x80-(padding-userinput) db 0
