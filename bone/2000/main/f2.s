@@ -1,31 +1,4 @@
-%define screeninfo 0x1000
 [bits 64]
-
-
-
-
-;>>>>>>>>>>>>>>>>>>>-----F2----<<<<<<<<<<<<<<<<<<<<<<
-;_________________________________________
-f2event:
-.up:
-	cmp al,0x48
-	jne .notup
-
-	sub qword [rel jpegbase],0x10000
-	ret
-.notup:
-
-.down:
-	cmp al,0x50
-	jne .notdown
-
-	add qword [rel jpegbase],0x10000
-	ret
-.notdown:
-
-.other:
-	ret
-;________________________________________
 
 
 
@@ -64,19 +37,34 @@ f2show:
 	add rdi,4096
 	loop .continue
 
-
-	mov esi,[rel jpegbase]
-	mov edi,[screeninfo+0x28]
-	mov bl,[screeninfo+0x19]
-	shr bl,3
-	movzx ebx,bl
-	mov ecx,1024*768
-.continuescreen:
-	lodsd
-	mov [edi],eax
-	add edi,ebx
-	loop .continuescreen
-
-	ret
+	jmp writescreen2
 ;_________________________________________
-jpegbase:dq 0x1400000
+
+
+
+
+
+
+
+
+;_________________________________________
+f2event:
+.up:
+	cmp al,0x48
+	jne .notup
+
+	sub qword [rel jpegbase],0x10000
+	ret
+.notup:
+
+.down:
+	cmp al,0x50
+	jne .notdown
+
+	add qword [rel jpegbase],0x10000
+	ret
+.notdown:
+
+.other:
+	ret
+;________________________________________

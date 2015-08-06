@@ -1,5 +1,4 @@
 [bits 64]
-%define screeninfo 0x1000
 %define journalhome 0xd00000
 %define journalsize 0x100000
 
@@ -38,20 +37,8 @@ f1show:
 	call [rel hexoranscii]
 	call [rel mouseormenu]
 
-    mov esi,0x1000000				;[16m,20m)
-    mov edi,[screeninfo+0x28]
-    mov bl,[screeninfo+0x19]
-    shr bl,3
-    movzx ebx,bl
-    mov ecx,1024*768
-.continue:
-    lodsd
-    mov [edi],eax
-    add edi,ebx
-    loop .continue
-
-	ret
-;_________________________________________________
+	jmp writescreen0
+;_____________________________________________
 mouseormenu:dq 0
 hexoranscii:dq 0
 
@@ -62,7 +49,6 @@ hexoranscii:dq 0
 
 
 
-;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-----F1-----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;_________________________________________________
 f1event:
 	cmp al,0x80

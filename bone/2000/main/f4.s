@@ -1,4 +1,3 @@
-%define screeninfo 0x1000
 %define binhome 0x6000
 %define binsize 0x1000
 %define consolehome 0xc00000
@@ -43,11 +42,6 @@ f4init:
 
 ;___________________________________________
 f4show:
-	;mov edi,0x1c00000
-	;mov ecx,1024*750
-	;xor eax,eax
-	;rep stosd
-
 	mov dword [rel looptimes],0
 .lines:
 	mov edi,0x1c00000
@@ -74,19 +68,7 @@ f4show:
 	cmp byte [rel looptimes],0x30
 	jb .lines
 
-	mov esi,0x1c00000
-	mov edi,[screeninfo+0x28]
-	mov bl,[screeninfo+0x19]
-	shr bl,3
-	movzx ebx,bl
-	mov ecx,1024*768
-.continuescreen:
-	lodsd
-	mov [edi],eax
-	add edi,ebx
-	loop .continuescreen
-
-	ret
+	jmp writescreen4
 ;________________________________________
 looptimes:dd 0
 length:dq 5
@@ -350,8 +332,8 @@ searchhere:
 	cmp dword [esi],"test"
 	je test
 
-	cmp dword [esi],"shit"
-	je shit
+	cmp dword [esi],"time"
+	je printtime
 
 	jmp f4event.notinhere
 ;_____________________________________
@@ -381,8 +363,8 @@ searchmemory:
 
 	call checkandchangeline
 
-	mov rbx,[rel explainedarg0]
-	call rbx2string
+	mov r8,[rel explainedarg0]
+	call data2string
 	lea esi,[rel string]
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
@@ -435,7 +417,7 @@ write:
 
 ;________________________________________
 read:
-	lea esi,[rel arg1]
+	lea r8,[rel arg1]
 	call string2data
 	ret
 ;_________________________________________
@@ -445,7 +427,7 @@ read:
 
 ;_______________________________
 cast:
-	lea esi,[rel arg1]
+	lea r8,[rel arg1]
 	call string2data
 	call [rel value]
 	jmp f4event.scroll
@@ -456,7 +438,7 @@ cast:
 
 ;_______________________________
 jump:
-	lea esi,[rel arg1]
+	lea r8,[rel arg1]
 	call string2data
 	jmp [rel value]
 ;_______________________________
@@ -476,12 +458,12 @@ enterinterrupt:
 
 ;_______________________________________
 outport:
-	lea esi,[rel arg1]
+	lea r8,[rel arg1]
 	call string2data
 	mov rax,[rel value]
 	mov [rel arg1],rax
 
-	lea esi,[rel arg2]
+	lea r8,[rel arg2]
 	call string2data
 	mov rax,[rel value]
 	mov [rel arg2],rax
@@ -502,7 +484,7 @@ outport:
 
 ;________________________________________
 inport:
-	lea esi,[rel arg1]
+	lea r8,[rel arg1]
 	call string2data
 	mov rax,[rel value]
 	mov [rel arg1],rax
@@ -604,9 +586,11 @@ test:
 
 
 ;________________________________________
-shit:
-	lea r8,[rel dirtyword]
+printtime:
+	lea r8,[rel time]
 	call say
+	lea r8,[rel huanhang]
+	call continuesay
 	jmp f4event.scroll
 ;________________________________________
 
@@ -691,7 +675,9 @@ continuesay:
 	ret
 ;___________________________________________
 senderinfomation:
+time:
 	dq "20150804","220733"
+name:
 	dq ":system:",0
 
 
@@ -700,9 +686,6 @@ senderinfomation:
 ;____________________________________________________
 notfoundmsg:
 	db "notfound"
-	db 0xa,0
-dirtyword:
-	db "wozhenshirilegoule"
 	db 0xa,0
 userinput:
 	db "user:"

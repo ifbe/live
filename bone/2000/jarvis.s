@@ -21,9 +21,10 @@
 
 
 ;2.library
-%include "library/power.s"	;poweroff,reboot
-%include "library/char.s"	;点阵字符
-%include "library/wait.s"	;有事找函数处理，无事睡觉
+%include "library/convert.s"	;各种必须的恶心的转换
+%include "library/power.s"		;poweroff,reboot
+%include "library/screen.s"		;点阵字符
+%include "library/wait.s"		;有事找函数处理，无事睡觉
 
 
 
