@@ -132,12 +132,12 @@ endofscan2hextable:
 
 ;传参：r8,r9,r10,r11......
 ;___________________________________
-itoa:
 data2string:
+itoa:
 	mov rbx,r8
-
 	mov qword [rel string],0
 	mov qword [rel string+8],0
+
 	lea edi,[rel string+0xf]
 	mov ecx,8		;只管低32位
 .continue:
@@ -156,7 +156,7 @@ data2string:
 .return:
 	ret
 ;___________________________________
-string:db "0123456789abcdef"
+string:db "0123456789abcdef",0xa,0
 
 
 
@@ -169,7 +169,9 @@ string:db "0123456789abcdef"
 ;esi指向的anscii串转成数字放在value:里
 ;________________________________
 string2data:
+atoi:
 	mov rsi,r8
+
 	mov qword [rel value],0
 	mov ecx,16
 .part:
@@ -208,8 +210,14 @@ value:dq 0
 ;传参：r8,r9,r10,r11......
 ;分析字符串，把结果放到下面等人来取
 ;__________________________________________________
-explainarg:
-	mov rsi,r8
+buf2arg:
+	mov rsi,r8					;buffer地址
+	mov qword [rel arg0],0		;先清理
+	mov qword [rel arg0+8],0
+	mov qword [rel arg1],0
+	mov qword [rel arg1+8],0
+	mov qword [rel arg2],0
+	mov qword [rel arg2+8],0
 
 
 ;;;;;;;;;;;;吃掉esi指向的最开始的空格
@@ -225,8 +233,6 @@ explainarg:
 
 ;;;;;;;;;;;;;现在esi指向0
 .fetcharg0:
-        mov qword [rel arg0],0		;先清理
-        mov qword [rel arg0+8],0	;先清理
         lea rdi,[rel arg0]		;edi=目标地址
         mov ecx,16
 .continue0:
@@ -254,8 +260,6 @@ explainarg:
 
 ;;;;;;;;;;;现在esi指向1
 .fetcharg1:
-        mov qword [rel arg1],0		;先清理
-        mov qword [rel arg1+8],0	;先清理
         lea rdi,[rel arg1]		;edi=目标地址
         mov ecx,16
 .continue1:
@@ -283,8 +287,6 @@ explainarg:
 
 ;;;;;;;;;;;现在esi指向2
 .fetcharg2:
-        mov qword [rel arg2],0		;先清理
-        mov qword [rel arg2+8],0	;先清理
         lea rdi,[rel arg2]		;edi=目标地址
         mov ecx,16
 .continue2:

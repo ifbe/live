@@ -1,4 +1,4 @@
 jarvis:
-	nasm jarvis.s -o ../trunk.bin
+	nasm readme -o ../trunk.bin
 clean:
 	rm -f *.bin

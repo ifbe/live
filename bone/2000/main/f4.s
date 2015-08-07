@@ -106,9 +106,9 @@ f4event:
 	cmp al,0x1c
 	jne .notenter
 .convert:
-	mov r8,[consolehome+consolesize-8]		;;距离buffer开头多少
-	add r8,consolehome+5			;;加上buffer开头地址
-	call explainarg
+	mov r8,[consolehome+consolesize-8]		;距离buffer开头多少
+	add r8,consolehome+5			;加上buffer开头地址
+	call buf2arg
 .startsearch:
 	jmp searchhere
 .notinhere:
@@ -116,6 +116,7 @@ f4event:
 .notinmemory:
 	;jmp searchdisk
 .notindisk:
+.notfound:							;哪都找不到就不找了，报告给用户如下
 	lea r8,[rel notfoundmsg]		;notfound:
 	call machinesay
 	lea r8,[rel arg0msg]			;arg0=
@@ -124,6 +125,7 @@ f4event:
 	call say
 	lea r8,[rel arg2msg]			;arg2=
 	call say
+
 	lea r8,[rel huanhang]
 	call say
 	lea r8,[rel userinput]			;user:
@@ -158,7 +160,19 @@ f4event:
 
 
 
-;________________________________________
+;_____________________________________________
 notfoundmsg:
-	db "notfound",0
+	db "notfound->",0
+userinput:
+	db "user:"
+welcomemessage:
+	db "################"
+	db "  welcome  into "
+	db "  my  brain     "
+	db "################"
+huanhang:
+	db 0xa,0
+padding:
+	times 0x80-(padding-userinput) db 0
+
 ;__________________________________________

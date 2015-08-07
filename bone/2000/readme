@@ -1,0 +1,55 @@
+;combine them all together
+;have fun
+
+
+
+
+;_______________________init(初始化)___________________________
+%include "init/init1/input.s"		;prepare interrupt
+%include "init/init2/acpi.s"		;prepare 0x20000
+%include "init/init3/anscii.s"		;prepare 0x30000
+%include "init/init4/pciold.s"		;prepare 0x40000
+%include "init/init5/usb.s"			;prepare 0x50000
+%include "init/init6/bin.s"			;prepare 0x60000
+;______________________________________________________________
+
+
+
+
+;_________________main(使用wrap?里面的函数)___________________
+%include "main/main.s"				;main loop
+%include "main/f1.s"				;一维
+%include "main/f2.s"				;二维
+%include "main/f3.s"				;三维
+%include "main/f4.s"				;终端
+%include "main/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
+;_______________________________________________________________
+
+
+
+
+;________________wrap1(在wrap基础上由软件实现)_________________
+%include "wrap1/f1.stupid.s"
+%include "wrap1/f4.stupid.s"
+%include "wrap1/f4.search.s"
+%include "wrap1/f4.say.s"
+%include "wrap1/convert.s"			;各种必须的恶心的转换
+;______________________________________________________________
+
+
+
+
+;__________________wrap(必须由"环境"提供)______________________
+%include "wrap/power.s"				;poweroff,reboot
+%include "wrap/screen.s"			;点阵字符
+%include "wrap/wait.s"				;有事处理，无事睡觉
+;_______________________________________________________________
+
+
+
+
+;__________________________________________________________
+;padding
+times 0x2000-($-$$) db 0
+endofjarvis:
+;___________________________________________________________
