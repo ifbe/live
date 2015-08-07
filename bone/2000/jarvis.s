@@ -10,11 +10,13 @@
 
 
 ;2.main
-%include "main/main.s"		;main loop
-%include "main/f1.s"		;一维
-%include "main/f2.s"		;二维
-%include "main/f3.s"		;三维
-%include "main/f4.s"		;终端
+%include "main/main.s"			;main loop
+%include "main/f1.s"			;一维
+%include "main/f1detail.s"
+%include "main/f2.s"			;二维
+%include "main/f3.s"			;三维
+%include "main/f4.s"			;终端
+%include "main/f4detail.s"
 %include "main/f5.s"		;要是屏幕设置失败，会留在0xb8000模式
 
 

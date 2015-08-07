@@ -5,7 +5,6 @@ bits 64
 
 ;________________________________
 scan2anscii:
-
     lea esi,[rel translatetable]          ;table
     xor ecx,ecx
 .search:
@@ -79,6 +78,10 @@ endoftranslatetable:
 
 
 
+
+
+
+
 ;________________________________
 scan2hex:
 
@@ -123,6 +126,10 @@ endofscan2hextable:
 
 
 
+
+
+
+
 ;传参：r8,r9,r10,r11......
 ;___________________________________
 itoa:
@@ -150,6 +157,10 @@ data2string:
 	ret
 ;___________________________________
 string:db "0123456789abcdef"
+
+
+
+
 
 
 
@@ -186,3 +197,116 @@ string2data:
 	ret
 ;_______________________________-
 value:dq 0
+
+
+
+
+
+
+
+
+;传参：r8,r9,r10,r11......
+;分析字符串，把结果放到下面等人来取
+;__________________________________________________
+explainarg:
+	mov rsi,r8
+
+
+;;;;;;;;;;;;吃掉esi指向的最开始的空格
+	mov ecx,8
+.eatspace0:
+	cmp byte [esi],0x20		;先检查
+	ja .ate0			;已经吃光了，下一步
+	inc esi				;吃一个空格
+	loop .eatspace0
+	jmp .return			;全是空格->出错了直接返回
+.ate0:
+
+
+;;;;;;;;;;;;;现在esi指向0
+.fetcharg0:
+        mov qword [rel arg0],0		;先清理
+        mov qword [rel arg0+8],0	;先清理
+        lea rdi,[rel arg0]		;edi=目标地址
+        mov ecx,16
+.continue0:
+        lodsb				;取一个
+        cmp al,0x20
+        jbe .finisharg0			;小于0x20或者
+        cmp al,0x7a
+        ja .finisharg0			;大于0x80都是错，直接返回
+        stosb				;正常的话往目的地放
+        loop .continue0
+.finisharg0:
+
+
+;;;;;;;;;;;;吃掉esi指向的中间的空格
+	mov ecx,8
+.eatspace1:
+	cmp byte [esi],0x20		;先检查
+	ja .ate1			;已经吃光了，下一步
+	inc esi				;吃一个空格
+	loop .eatspace1
+	jmp .return			;全是空格->出错了直接返回
+.ate1:
+
+
+
+;;;;;;;;;;;现在esi指向1
+.fetcharg1:
+        mov qword [rel arg1],0		;先清理
+        mov qword [rel arg1+8],0	;先清理
+        lea rdi,[rel arg1]		;edi=目标地址
+        mov ecx,16
+.continue1:
+        lodsb				;取一个
+        cmp al,0x20
+        jbe .finisharg1			;小于0x20或者
+        cmp al,0x7a
+        ja .finisharg1			;大于0x80都是错，直接返回
+        stosb				;正常的话往目的地放
+        loop .continue1
+.finisharg1:
+
+
+
+;;;;;;;;;;;;吃掉esi指向的中间的空格
+	mov ecx,8
+.eatspace2:
+	cmp byte [esi],0x20		;先检查
+	ja .ate2			;已经吃光了，下一步
+	inc esi				;吃一个空格
+	loop .eatspace2
+	jmp .return			;全是空格->出错了直接返回
+.ate2:
+
+
+;;;;;;;;;;;现在esi指向2
+.fetcharg2:
+        mov qword [rel arg2],0		;先清理
+        mov qword [rel arg2+8],0	;先清理
+        lea rdi,[rel arg2]		;edi=目标地址
+        mov ecx,16
+.continue2:
+        lodsb				;取一个
+        cmp al,0x20
+        jbe .finisharg2			;小于0x20或者
+        cmp al,0x7a
+        ja .finisharg2			;大于0x80都是错，直接返回
+        stosb				;正常的话往目的地放
+        loop .continue2
+.finisharg2:
+
+
+.return:
+	call checkandchangeline
+	ret
+;____________________________________________
+arg0msg:db "    arg0="
+arg0:times 16 db 0		;本函数运行完的输出结果
+
+arg1msg:db "    arg1="
+arg1:times 16 db 0
+
+arg2msg:db "    arg2="
+arg2:times 16 db 0

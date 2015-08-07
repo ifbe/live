@@ -5,7 +5,7 @@
 
 ;_________________picture_______________________
 f2show:
-	mov edi,0x1400000
+	mov edi,0x100000
 
 	mov rbx,[0x4fd8]
 	cmp rbx,768
