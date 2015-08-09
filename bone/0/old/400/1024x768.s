@@ -41,7 +41,7 @@ setresolution:
 
 
 paddingofscreen:
-times 0x100-(paddingofscreen-startofscreen) db 0
+times 0x400-(paddingofscreen-startofscreen) db 0
 
 
 

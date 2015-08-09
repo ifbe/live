@@ -19,11 +19,11 @@ startofenter64:
 	mov es,ax
 	cld
 
-;[0x600,0x61f]:jump rax
+;[0x610,0x61f]:jump rax
 ;[0x620,0x62f]:gdtr
 ;[0x630,0x63f]:idtr
-	mov di,0x600
-	mov cx,0x200
+	mov di,0x610
+	mov cx,0x30
 	rep stosb
 
 ;[0x2000,0x6fff]:gdt
@@ -37,10 +37,10 @@ startofenter64:
 
 
 
-;_______在0x600这个位置手工写入jmp rax这条指令_______
+;_______在0x610这个位置手工写入jmp rax这条指令_______
 	xor ax,ax
 	mov es,ax
-	mov di,0x600
+	mov di,0x610
 	mov word [es:di],0xe0ff		;e0ff=jmp rax
 ;___________________________________________________
 
@@ -181,13 +181,13 @@ where:
 
 ;Load CS,flush instruction cache
 ;内存800位置里面的东西是jmp rax,也就是跳回来到endofenter64的位置
-	jmp dword 0x0008:0x0600
+	jmp dword 0x0008:0x0610
 ;______________________________________________
 
 
 
 
 paddingofenter64:
-times 0x100-(paddingofenter64-startofenter64) db 0
+times 0x400-(paddingofenter64-startofenter64) db 0
 
 endofenter64:

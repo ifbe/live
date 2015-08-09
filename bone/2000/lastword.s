@@ -1,70 +1,68 @@
 %define screeninfo 0x1000
-%define ansciitable 0x4000
-%define buffer 0x4800
 [bits 64]
 
 
 ;________________________________________________
 lastwords:
 
-mov [buffer+8],rax
-mov [buffer+0x18],rcx
-mov [buffer+0x28],rdx
-mov [buffer+0x38],rbx
-mov [buffer+0x48],rsp
-mov [buffer+0x58],rbp
-mov [buffer+0x68],rsi
-mov [buffer+0x78],rdi
+mov [rel buffer+8],rax
+mov [rel buffer+0x18],rcx
+mov [rel buffer+0x28],rdx
+mov [rel buffer+0x38],rbx
+mov [rel buffer+0x48],rsp
+mov [rel buffer+0x58],rbp
+mov [rel buffer+0x68],rsi
+mov [rel buffer+0x78],rdi
 
-mov [buffer+0x88],r8
-mov [buffer+0x98],r9
-mov [buffer+0xa8],r10
-mov [buffer+0xb8],r11
-mov [buffer+0xc8],r12
-mov [buffer+0xd8],r13
-mov [buffer+0xe8],r14
-mov [buffer+0xf8],r15
+mov [rel buffer+0x88],r8
+mov [rel buffer+0x98],r9
+mov [rel buffer+0xa8],r10
+mov [rel buffer+0xb8],r11
+mov [rel buffer+0xc8],r12
+mov [rel buffer+0xd8],r13
+mov [rel buffer+0xe8],r14
+mov [rel buffer+0xf8],r15
 
 mov rax,cr0
-mov [buffer+0x108],rax
+mov [rel buffer+0x108],rax
 mov rax,cr2
-mov [buffer+0x128],rax
+mov [rel buffer+0x128],rax
 mov rax,cr3
-mov [buffer+0x138],rax
+mov [rel buffer+0x138],rax
 mov rax,cr4
-mov [buffer+0x148],rax
+mov [rel buffer+0x148],rax
 mov rax,cr8
-mov [buffer+0x158],rax
+mov [rel buffer+0x158],rax
 
 mov rax,dr0
-mov [buffer+0x188],rax
+mov [rel buffer+0x188],rax
 mov rax,dr1
-mov [buffer+0x198],rax
+mov [rel buffer+0x198],rax
 mov rax,dr2
-mov [buffer+0x1a8],rax
+mov [rel buffer+0x1a8],rax
 mov rax,dr3
-mov [buffer+0x1b8],rax
+mov [rel buffer+0x1b8],rax
 mov rax,dr6
-mov [buffer+0x1e8],rax
+mov [rel buffer+0x1e8],rax
 mov rax,dr7
-mov [buffer+0x1f8],rax
+mov [rel buffer+0x1f8],rax
 
 mov rax,[rsp]
-mov [buffer+0x208],rax
+mov [rel buffer+0x208],rax
 mov rax,[rsp+8]
-mov [buffer+0x218],rax
+mov [rel buffer+0x218],rax
 mov rax,[rsp+16]
-mov [buffer+0x228],rax
+mov [rel buffer+0x228],rax
 mov rax,[rsp+24]
-mov [buffer+0x238],rax
+mov [rel buffer+0x238],rax
 mov rax,[rsp+32]
-mov [buffer+0x248],rax
+mov [rel buffer+0x248],rax
 mov rax,[rsp+40]
-mov [buffer+0x258],rax
+mov [rel buffer+0x258],rax
 mov rax,[rsp+48]
-mov [buffer+0x268],rax
+mov [rel buffer+0x268],rax
 mov rax,[rsp+56]
-mov [buffer+0x278],rax
+mov [rel buffer+0x278],rax
 
 
 ;________________varities____________________
@@ -92,16 +90,13 @@ sixteenline:dq 0
 
 ;________________the end,print to screen______________
 theend:
-;mov al,0x44
-;mov edi,[screeninfo+0x28]
-;call char
 
 mov edi,[screeninfo+0x28]
 mov eax,[rel onepoint]
 shl eax,8			;*256
 lea eax,[eax*2+eax]		;*3
 add edi,eax			;256*3=768也就是屏幕第一排3/4的位置
-lea rsi,[buffer]		;项目放一块，开始地址在buffer
+lea rsi,[rel buffer]		;项目放一块，开始地址在buffer
 
 mov ecx,40
 .explainone:
@@ -155,23 +150,23 @@ out dx,ax
 
 ;_______________________________________
 leaveexception:
-mov rax,[buffer]
-mov rcx,[buffer+0x18]
-mov rdx,[buffer+0x28]
-mov rbx,[buffer+0x38]
-mov rsp,[buffer+0x48]
-mov rbp,[buffer+0x58]
-mov rsi,[buffer+0x68]
-mov rdi,[buffer+0x78]
+mov rax,[rel buffer]
+mov rcx,[rel buffer+0x18]
+mov rdx,[rel buffer+0x28]
+mov rbx,[rel buffer+0x38]
+mov rsp,[rel buffer+0x48]
+mov rbp,[rel buffer+0x58]
+mov rsi,[rel buffer+0x68]
+mov rdi,[rel buffer+0x78]
 
-mov r8,[buffer+0x88]
-mov r9,[buffer+0x98]
-mov r10,[buffer+0xa8]
-mov r11,[buffer+0xb8]
-mov r12,[buffer+0xc8]
-mov r13,[buffer+0xd8]
-mov r14,[buffer+0xe8]
-mov r15,[buffer+0xf8]
+mov r8,[rel buffer+0x88]
+mov r9,[rel buffer+0x98]
+mov r10,[rel buffer+0xa8]
+mov r11,[rel buffer+0xb8]
+mov r12,[rel buffer+0xc8]
+mov r13,[rel buffer+0xd8]
+mov r14,[rel buffer+0xe8]
+mov r15,[rel buffer+0xf8]
 
 iretq
 ;__________________________________
@@ -246,8 +241,7 @@ ret
 char:
     push rcx
 
-    ;lea esi,[rel ansciitable]
-    mov esi,ansciitable
+    lea esi,[rel ansciitable]
     movzx eax,al
     shl eax,4
     add esi,eax

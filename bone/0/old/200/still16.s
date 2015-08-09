@@ -1,7 +1,19 @@
 BITS 16
 startof16:
 
+
+
+
 ;_______关中断,设置ds=es=ss=0,设置栈开始于0x7c00__________
+	mov ax,0xb800
+	mov es,ax
+	mov di,80*2*2
+	mov ax,0x7032
+	stosw
+
+
+
+
 	cli
 	xor ax,ax    ; Set up segment registers.
 	mov ds,ax
@@ -146,6 +158,6 @@ listresolution:
 
 
 paddingof16:
-times 0x100-(paddingof16-startof16) db 0
+times 0x200-(paddingof16-startof16) db 0
 
 endof16:

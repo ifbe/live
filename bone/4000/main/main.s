@@ -1,8 +1,8 @@
 ;____________________初始化_______________________
+	call endofjarvis                ;ahci@0x4000
+
 	call f1init
 	call f4init
-
-	call endofjarvis                ;ahci@0x4000
 
 	call processevent.isf4
 ;_______________________________________________

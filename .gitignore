@@ -3,6 +3,7 @@ push
 *.o
 *.a
 *.bin
+*.efi
 *.img
 *.vhd
 *.vmdk

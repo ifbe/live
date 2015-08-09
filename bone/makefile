@@ -4,13 +4,15 @@ binary:				#linuxer only
 	make -s -C 1000
 	make -s -C 2000
 	make -s -C 4000
+	make -s -C 8000
 	nasm core.s -o core.bin
 	nasm readme -o core.img
 cross:		#windows and mac user
 	make -s -C 0
 	make -s -C 1000
 	make -s -C 2000
-	make -s -C 4000 cross
+	make -s -C 4000
+	make -s -C 8000 cross
 	nasm core.s -o core.bin
 	nasm readme -o core.img
 
@@ -46,5 +48,5 @@ parallels:
 
 clean:
 	make -s -C 4000 clean
-	rm -f */*.o */*.bin
-	rm -f *.bin *.img *.vmdk *.vhd *.dmg *.vdi
+	rm -f */*.o */*.bin */*.efi
+	rm -f *.bin *.efi *.img *.vmdk *.vhd *.dmg *.vdi

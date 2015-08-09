@@ -1,7 +1,5 @@
 %define idtr 0x830
 %define idthome 0x3000
-%define killer 0x4800+0x1c8
-%define reason 0x4800+0x1d8
 
 [bits 64]
 startofexception:
@@ -144,142 +142,142 @@ exceptioninstall:
 
 ;_____________________________________
 exception0:
-mov byte [killer],0
+mov byte [rel killer],0
 jmp lastwords
 
 exception1:
-mov byte [killer],0x1
+mov byte [rel killer],0x1
 jmp lastwords
 
 exception2:
-mov byte [killer],0x2
+mov byte [rel killer],0x2
 jmp lastwords
 
 exception3:
-mov byte [killer],0x3
+mov byte [rel killer],0x3
 jmp lastwords
 
 exception4:
-mov byte [killer],0x4
+mov byte [rel killer],0x4
 jmp lastwords
 
 exception5:
-mov byte [killer],0x5
+mov byte [rel killer],0x5
 jmp lastwords
 
 exception6:
-mov byte [killer],0x6
+mov byte [rel killer],0x6
 jmp lastwords
 
 exception7:
-mov byte [killer],0x7
+mov byte [rel killer],0x7
 jmp lastwords
 
 exception8:
-pop qword [reason]
-mov byte [killer],0x8
+pop qword [rel reason]
+mov byte [rel killer],0x8
 jmp lastwords
 
 exception9:
-mov byte [killer],0x9
+mov byte [rel killer],0x9
 jmp lastwords
 
 exceptiona:
-pop qword [reason]
-mov byte [killer],0xa
+pop qword [rel reason]
+mov byte [rel killer],0xa
 jmp lastwords
 
 exceptionb:
-pop qword [reason]
-mov byte [killer],0xb
+pop qword [rel reason]
+mov byte [rel killer],0xb
 jmp lastwords
 
 exceptionc:
-pop qword [reason]
-mov byte [killer],0xc
+pop qword [rel reason]
+mov byte [rel killer],0xc
 jmp lastwords
 
 exceptiond:
-pop qword [reason]
-mov byte [killer],0xd
+pop qword [rel reason]
+mov byte [rel killer],0xd
 jmp lastwords
 
 exceptione:
-pop qword [reason]
-mov byte [killer],0xe
+pop qword [rel reason]
+mov byte [rel killer],0xe
 jmp lastwords
 
 exceptionf:
-mov byte [killer],0xf
+mov byte [rel killer],0xf
 jmp lastwords
 
 exception10:
-mov byte [killer],0x10
+mov byte [rel killer],0x10
 jmp lastwords
 
 exception11:
-pop qword [reason]
-mov byte [killer],0x11
+pop qword [rel reason]
+mov byte [rel killer],0x11
 jmp lastwords
 
 exception12:
-mov byte [killer],0x12
+mov byte [rel killer],0x12
 jmp lastwords
 
 exception13:
-mov byte [killer],0x13
+mov byte [rel killer],0x13
 jmp lastwords
 
 exception14:
-mov byte [killer],0x14
+mov byte [rel killer],0x14
 jmp lastwords
 
 exception15:
-mov byte [killer],0x15
+mov byte [rel killer],0x15
 jmp lastwords
 
 exception16:
-mov byte [killer],0x16
+mov byte [rel killer],0x16
 jmp lastwords
 
 exception17:
-mov byte [killer],0x17
+mov byte [rel killer],0x17
 jmp lastwords
 
 exception18:
-mov byte [killer],0x18
+mov byte [rel killer],0x18
 jmp lastwords
 
 exception19:
-mov byte [killer],0x19
+mov byte [rel killer],0x19
 jmp lastwords
 
 exception1a:
-mov byte [killer],0x1a
+mov byte [rel killer],0x1a
 jmp lastwords
 
 exception1b:
-mov byte [killer],0x1b
+mov byte [rel killer],0x1b
 jmp lastwords
 
 exception1c:
-mov byte [killer],0x1c
+mov byte [rel killer],0x1c
 jmp lastwords
 
 exception1d:
-mov byte [killer],0x1d
+mov byte [rel killer],0x1d
 jmp lastwords
 
 exception1e:
-mov byte [killer],0x1e
+mov byte [rel killer],0x1e
 jmp lastwords
 
 exception1f:
-mov byte [killer],0x1f
+mov byte [rel killer],0x1f
 jmp lastwords
 
 unknown:
-mov qword [killer],0xffffffffffffffff
+mov qword [rel killer],0xffffffffffffffff
 push rax
 mov rax,0xfee000b0
 mov dword [rax],0

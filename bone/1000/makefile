@@ -1,3 +1,2 @@
 all:
-	nasm data.s -o ../data.bin
-clean:
+	nasm wrap.s -o wrap.bin

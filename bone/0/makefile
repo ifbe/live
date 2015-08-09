@@ -1,2 +1,6 @@
-all:
-	nasm cpu.s -o ../cpu.bin
+bios:
+	nasm bios.s -o cpu.bin
+uefi:
+	nasm uefi.s -o cpu.bin
+clean:
+	rm -f *.bin
