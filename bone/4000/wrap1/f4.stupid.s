@@ -235,3 +235,112 @@ printtime:
 	call say
 	ret
 ;________________________________________
+
+
+
+
+;_______________________________________
+printcpuid:
+	call getrdx
+	mov rax,rdx
+	cpuid
+
+	mov [rel preserverax],rax
+	mov [rel preserverbx],rbx
+	mov [rel preservercx],rcx
+	mov [rel preserverdx],rdx
+
+	mov r8,rax
+	call data2string
+	lea r8,[rel string+8]
+	call machinesay
+
+	mov r8,[rel preserverbx]
+	call data2string
+	lea r8,[rel string+8]
+	call machinesay
+
+	mov r8,[rel preservercx]
+	call data2string
+	lea r8,[rel string+8]
+	call machinesay
+
+	mov r8,[rel preserverdx]
+	call data2string
+	lea r8,[rel string+8]
+	call machinesay
+
+	lea r8,[rel userinput]
+	call say
+
+	ret
+;_______________________________________
+preserverax:dq 0
+preserverbx:dq 0
+preservercx:dq 0
+preserverdx:dq 0
+
+
+
+
+;___________________________________________
+timestamp:
+	rdtsc
+
+	mov r8,rdx
+	shl r8,32
+	shl rax,32
+	shr rax,32
+	add r8,rax
+	call data2string
+
+	lea r8,[rel string]
+	call machinesay
+
+	lea r8,[rel userinput]
+	call say
+
+	ret
+;___________________________________________
+
+
+
+
+;____________________________________________
+readmsr:
+	call getrdx
+	mov rcx,rdx
+	rdmsr
+
+	shl rdx,32
+	mov r8,rdx
+	shl rax,32
+	shr rax,32
+	add r8,rax
+	call data2string
+
+	lea r8,[rel string]
+	call machinesay
+
+	lea r8,[rel userinput]
+	call say
+
+	ret
+;____________________________________________
+
+
+
+
+;____________________________________________
+writemsr:
+	call rdxrax
+
+	mov rcx,rdx
+	mov rdx,rax
+	shr rdx,32
+	shl rax,32
+	shr rax,32
+	wrmsr
+
+	ret
+;____________________________________________

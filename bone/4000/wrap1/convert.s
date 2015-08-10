@@ -139,7 +139,7 @@ itoa:
 	mov qword [rel string+8],0
 
 	lea edi,[rel string+0xf]
-	mov ecx,8		;只管低32位
+	mov ecx,16		;只管低32位
 .continue:
 	mov al,bl
 	and al,0xf

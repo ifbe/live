@@ -32,6 +32,26 @@ searchhere:
 	je clear
 .skipclear:
 
+	cmp dword [esi],"cpui"
+	jne .skipcpuid
+	cmp byte [esi+4],'d'
+	je printcpuid
+.skipcpuid:
+
+	cmp word [esi],"rd"
+	jne .skiprd
+	cmp dword [esi+2],"tsc"
+	je timestamp
+	cmp dword [esi+2],"msr"
+	je readmsr
+.skiprd:
+
+	cmp word [esi],"wr"
+	jne .skipwr
+	cmp dword [esi+2],"msr"
+	je writemsr
+.skipwr:
+
 	cmp dword [esi],"int"
 	je enterinterrupt
 
