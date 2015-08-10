@@ -11,6 +11,15 @@
 searchhere:
 	lea esi,[rel arg0]
 
+	cmp dword [esi],"clea"
+	jne .skipclear
+	cmp byte [esi+4],'r'
+	je clear
+.skipclear:
+
+	cmp dword [esi],"exit"
+	je poweroff
+
 	cmp dword [esi],"powe"		;if( ( [esi]=="powe" )
 	jne .skippoweroff
 	cmp dword [esi+4],"roff"	;&& ( [esi+4]=="roff" ) )
@@ -22,15 +31,6 @@ searchhere:
 	cmp word [esi+4],"ot"
 	je .skipreboot
 .skipreboot:
-
-	cmp dword [esi],"exit"
-	je poweroff
-
-	cmp dword [esi],"clea"
-	jne .skipclear
-	cmp byte [esi+4],'r'
-	je clear
-.skipclear:
 
 	cmp dword [esi],"cpui"
 	jne .skipcpuid

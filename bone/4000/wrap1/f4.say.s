@@ -31,6 +31,10 @@ checkandchangeline:
 ;r8=arg0,r9=arg1,r10=arg2........
 ;_______________________________________________
 machinesay:
+	push r8
+	call gettime
+	pop r8
+
 	mov rdi,[consolehome+consolesize-8]		;距离buffer开头多少
 	add rdi,consolehome						;加上buffer开头地址
 
@@ -76,6 +80,8 @@ say:
 	ret
 ;___________________________________________
 time:
-	dq "20150804","220733"
+	dq "20150804","220733  "
+	db 0xa,0
 name:
 	dq "  system",":"
+	db 0xa,0

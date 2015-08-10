@@ -227,10 +227,8 @@ clear:
 ;________________________________________
 printtime:
 	lea r8,[rel time]
-	call machinesay
-	lea r8,[rel huanhang]
-	call say
-.return:
+	call machinesay				;这个函数会自动更新时间
+
 	lea r8,[rel userinput]
 	call say
 	ret

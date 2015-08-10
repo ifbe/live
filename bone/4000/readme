@@ -40,7 +40,7 @@
 
 
 ;__________________wrap(必须由"环境"提供)______________________
-%include "wrap/power.s"				;poweroff,reboot
+%include "wrap/port.s"				;poweroff,reboot
 %include "wrap/screen.s"			;点阵字符
 %include "wrap/wait.s"				;有事处理，无事睡觉
 ;_______________________________________________________________
