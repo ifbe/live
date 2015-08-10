@@ -1,6 +1,6 @@
 ;addr=0,size=1000
 ;[0,fff]
-incbin "0/cpu.bin"
+incbin "0.old/cpu.bin"
 times 0x1000-($-$$) db 0
 
 

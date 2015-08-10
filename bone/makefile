@@ -1,6 +1,6 @@
 #1:create a 64k binary,compile with gcc(linux) or x86_64-elf-gcc(other system)
 binary:				#linuxer only
-	make -s -C 0
+	make -s -C 0.old
 	make -s -C 1000
 	make -s -C 2000
 	make -s -C 4000
@@ -8,7 +8,7 @@ binary:				#linuxer only
 	nasm core.s -o core.bin
 	nasm readme -o core.img
 cross:		#windows and mac user
-	make -s -C 0
+	make -s -C 0.old
 	make -s -C 1000
 	make -s -C 2000
 	make -s -C 4000
