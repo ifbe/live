@@ -130,27 +130,27 @@ endofscan2hextable:
 
 
 
-;传参：r8,r9,r10,r11......
+;传参:r8=data,r9=destination,r10,r11......
+;变化:rdi,r9,r8,rcx,rax
 ;___________________________________
-data2string:
+hex2string:
 itoa:
-	mov rbx,r8
-	mov qword [rel string],0
-	mov qword [rel string+8],0
+	mov rdi,r9
+	mov qword [rdi],0
+	mov qword [rdi+8],0
 
-	lea edi,[rel string+0xf]
 	mov ecx,16		;只管低32位
+	cld
 .continue:
-	mov al,bl
+	rol r8,4
+	mov al,r8b
 	and al,0xf
 	add al,0x30
 	cmp al,0x3a
 	jb .skip
 	add al,0x7
 .skip:
-	shr rbx,4
-	mov [edi],al
-	dec edi
+	stosb
 	loop .continue
 
 .return:

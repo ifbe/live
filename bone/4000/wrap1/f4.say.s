@@ -80,7 +80,7 @@ say:
 	ret
 ;___________________________________________
 time:
-	dq "20150804","220733  "
+	dq "ccyymmdd","hhmmss  "
 	db 0xa,0
 name:
 	dq "  system",":"

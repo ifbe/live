@@ -131,7 +131,8 @@ searchmemory:
 	call checkandchangeline
 
 	mov r8,[rel explainedarg0]
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 	lea esi,[rel string]
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome

@@ -100,7 +100,8 @@ read:
 	call getrdx
 
 	movzx r8,byte [rdx]
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string+0xe]
 	call machinesay
@@ -112,7 +113,8 @@ read16:
 	call getrdx
 
 	movzx r8,word [rdx]
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string+0xc]
 	call machinesay
@@ -124,7 +126,8 @@ read32:
 	call getrdx
 
 	mov r8d,dword [rdx]
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string+0x8]
 	call machinesay
@@ -173,7 +176,8 @@ in8:
 	in al,dx
 
 	movzx r8,al
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string+0xe]
 	call machinesay
@@ -186,7 +190,8 @@ in16:
 	in ax,dx
 
 	movzx r8,ax
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string+0xc]
 	call machinesay
@@ -199,7 +204,8 @@ in32:
 	in eax,dx
 
 	mov r8d,eax
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string+0x8]
 	call machinesay
@@ -249,22 +255,26 @@ printcpuid:
 	mov [rel preserverdx],rdx
 
 	mov r8,rax
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 	lea r8,[rel string+8]
 	call machinesay
 
 	mov r8,[rel preserverbx]
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 	lea r8,[rel string+8]
 	call machinesay
 
 	mov r8,[rel preservercx]
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 	lea r8,[rel string+8]
 	call machinesay
 
 	mov r8,[rel preserverdx]
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 	lea r8,[rel string+8]
 	call machinesay
 
@@ -290,7 +300,8 @@ timestamp:
 	shl rax,32
 	shr rax,32
 	add r8,rax
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string]
 	call machinesay
@@ -315,7 +326,8 @@ readmsr:
 	shl rax,32
 	shr rax,32
 	add r8,rax
-	call data2string
+	lea r9,[rel string]
+	call hex2string
 
 	lea r8,[rel string]
 	call machinesay

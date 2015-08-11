@@ -21,8 +21,9 @@ out 0x64,al
 
 
 
-;入：r8,r9,r10,r11......
-;出：r8,r9,r10,r11......
+;入:r8,r9,r10,r11......
+;出:r8,r9,r10,r11......
+;变:rax,r8,r9 + hex2string
 ;_____________________________________
 gettime:
 	xor rax,rax				;must clean
@@ -63,13 +64,9 @@ gettime:
 	shl rax,8
 
 	mov r8,rax
-	call data2string
-
-	mov word [rel string+0xe],0x2020		;milesecond
-	mov rax,[rel string]
-	mov [rel time],rax
-	mov rax,[rel string+8]
-	mov [rel time+8],rax
+	lea r9,[rel time]
+	call hex2string
+	mov word [rel time+0xe],0x2020		;milesecond
 
 	ret
 ;___________________________________________
