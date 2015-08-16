@@ -1,6 +1,5 @@
 %define kbdhome 0x5000
 %define bufsize 0x1000
-%define idthome 0x3000
 [bits 64]
 
 
@@ -29,8 +28,8 @@
 ;_____________222222222222222__________________
 ;isr21
 	cli
-	lea rax,[rel keyboardisr]
-	mov edi,idthome+0x21*0x10
+	mov r8,0x21					;int 0x21	(0x20+1)
+	lea r9,[rel keyboardisr]
 	call isrinstall
 
 ;enable
@@ -40,7 +39,7 @@
 	mov dword [edi],0x10+2*0x1+1
 	mov dword [edi+0x10],0
 
-	jmp endofinterrupt
+	jmp endof8042
 ;________________________________________
 
 
@@ -70,23 +69,5 @@ iretq
 
 
 
-;___________________________________
-isrinstall:
-	stosw
-	mov dword [edi],0x8e000008
-	add edi,4
-	shr rax,16
-	stosw
-	shr rax,16
-	stosd
-	xor eax,eax
-	stosd
-
-	ret
-;____________________________________
-
-
-
-
-endofinterrupt:
+endof8042:
 sti

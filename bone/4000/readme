@@ -6,6 +6,7 @@
 
 ;_______________________init(初始化)___________________________
 %include "init/init1/input.s"		;prepare interrupt
+%include "init/init1/8254.s"		;prepare interrupt
 %include "init/init2/acpi.s"		;prepare 0x20000
 %include "init/init3/anscii.s"		;prepare 0x30000
 %include "init/init4/pciold.s"		;prepare 0x40000
@@ -40,6 +41,7 @@
 
 
 ;__________________wrap(必须由"环境"提供)______________________
+%include "wrap/interrupt.s"			;isrinstall
 %include "wrap/port.s"				;poweroff,reboot
 %include "wrap/screen.s"			;点阵字符
 %include "wrap/wait.s"				;有事处理，无事睡觉
