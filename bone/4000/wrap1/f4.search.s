@@ -29,7 +29,7 @@ searchhere:
 	cmp dword [esi],"powe"		;if( ( [esi]=="powe" )
 	jne .skippoweroff
 	cmp dword [esi+4],"roff"	;&& ( [esi+4]=="roff" ) )
-	je .skippoweroff
+	je poweroff
 .skippoweroff:
 
 	cmp dword [esi],"rebo"		;else if
