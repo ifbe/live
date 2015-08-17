@@ -26,9 +26,9 @@
 
 ;enable
 	mov edi,0xfec00000
-	mov dword [edi],0x10
+	mov dword [edi],0x10+2*2		;2?
 	mov dword [edi+0x10],0x20
-	mov dword [edi],0x10+1
+	mov dword [edi],0x10+2*2+1		;2?
 	mov dword [edi+0x10],0
 
 	jmp endof8254
@@ -40,12 +40,15 @@
 ;______________________________________
 isr32:
 	push rax
+
+	inc qword [rel innercount]
 	mov eax,0xfee000b0				;eoi
 	mov dword [eax],0
 	pop rax
 
 	iretq
 ;________________________________________
+innercount:dq 0
 
 
 

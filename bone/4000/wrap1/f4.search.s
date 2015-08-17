@@ -11,6 +11,12 @@
 searchhere:
 	lea esi,[rel arg0]
 
+	cmp dword [esi],"time"
+	je printtime
+
+	cmp dword [esi],"8254"
+	je print8254
+
 	cmp dword [esi],"clea"
 	jne .skipclear
 	cmp byte [esi+4],'r'
@@ -97,9 +103,6 @@ searchhere:
 
 	cmp dword [esi],"test"
 	je test
-
-	cmp dword [esi],"time"
-	je printtime
 
 	jmp f4event.notinhere
 ;_____________________________________

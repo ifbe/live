@@ -94,7 +94,6 @@ disable8259:
 
 ;_____________mask all interrupt__________
 	mov edi,0xfec00000
-	mov ecx,24
 	mov eax,0x10
 maskall:
 	mov [edi],eax
@@ -105,7 +104,8 @@ maskall:
 	inc eax
 	mov dword [edi+0x10],0
 
-	loop maskall
+	cmp eax,0x10+2*24
+	jb maskall
 ;____________________________________
 
 

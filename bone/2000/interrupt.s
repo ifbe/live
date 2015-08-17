@@ -1,9 +1,9 @@
-%include "apic.s"
+%include "chip/apic.s"
 
-%include "exception.s"
-%include "lastword.s"
+%include "exception/exception.s"
+%include "exception/lastword.s"
 
-%include "data.s"
+%include "data/data.s"
 
 
 
