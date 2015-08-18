@@ -133,14 +133,50 @@ endofscan2hextable:
 ;传参:r8=data,r9=destination,r10,r11......
 ;变化:rdi,r9,r8,rcx,rax
 ;___________________________________
+data2decimalstring:
+	mov rdi,r9
+	mov qword [rdi],0
+	mov qword [rdi+8],0
+
+	cld
+	mov rax,r8
+	mov ebx,10
+	mov ecx,16			;只管低32位
+.continue:
+	dec ecx
+	xor edx,edx
+	div ebx				;edxeax/ebx,result=eax,remain=edx
+	and dl,0xf
+	add dl,0x30
+	cmp dl,0x3a
+	jb .skip
+	add dl,0x7
+.skip:
+	mov [rdi+rcx],dl
+	cmp cl,0
+	ja .continue
+
+.return:
+	ret
+;___________________________________
+
+
+
+
+
+
+
+;传参:r8=data,r9=destination,r10,r11......
+;变化:rdi,r9,r8,rcx,rax
+;___________________________________
 hex2string:
 itoa:
 	mov rdi,r9
 	mov qword [rdi],0
 	mov qword [rdi+8],0
 
-	mov ecx,16		;只管低32位
 	cld
+	mov ecx,16		;只管低32位
 .continue:
 	rol r8,4
 	mov al,r8b

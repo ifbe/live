@@ -109,13 +109,21 @@ f4event:
 	mov r8,[consolehome+consolesize-8]		;距离buffer开头多少
 	add r8,consolehome+5			;加上buffer开头地址
 	call buf2arg
+
 .startsearch:
-	jmp searchhere
-.notinhere:
-	jmp searchmemory
-.notinmemory:
-	;jmp searchdisk
-.notindisk:
+.here:
+	call searchhere
+	cmp dword [rel failsignal],0x11111111
+	jne .successreturn
+.memory:
+	call searchmemory
+	cmp dword [rel failsignal],0x11111111
+	jne .successreturn
+.disk:
+	;call searchdisk
+	;cmp dword [rel failsignal],0x11111111
+	;jne .successreturn
+
 .notfound:							;哪都找不到就不找了，报告给用户如下
 	lea r8,[rel notfoundmsg]		;notfound:
 	call machinesay
@@ -125,9 +133,10 @@ f4event:
 	call say
 	lea r8,[rel arg2msg]			;arg2=
 	call say
-
 	lea r8,[rel huanhang]
 	call say
+.successreturn:
+	mov qword [rel failsignal],0
 	lea r8,[rel userinput]			;user:
 	call say
 	ret
@@ -152,6 +161,7 @@ f4event:
 .return:
 	ret
 ;___________________________________
+failsignal:dq 0
 
 
 
@@ -174,5 +184,4 @@ huanhang:
 	db 0xa,0
 padding:
 	times 0x80-(padding-userinput) db 0
-
 ;__________________________________________

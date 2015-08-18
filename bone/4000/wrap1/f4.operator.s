@@ -3,102 +3,11 @@
 
 
 
-;入:r8,r9,r10,r11......
-;出:r8,r9,r10,r11......
-;变:rax,r8,r9 + hex2string
-;_____________________________________
-gettime:
-	xor rax,rax				;must clean
-
-	mov al,0x32				;[63:56]:centry
-	out 0x70,al
-	in al,0x71
-
-	shl rax,8
-	mov al,9				;[55,48]:year
-	out 0x70,al
-	in al,0x71
-
-	shl rax,8
-	mov al,8				;[47,40]:month
-	out 0x70,al
-	in al,0x71
-
-	shl rax,8
-	mov al,7				;[39,32]:day
-	out 0x70,al
-	in al,0x71
-
-	shl rax,8
-	mov al,4				;[31,24]:hour
-	out 0x70,al
-	in al,0x71
-
-	shl rax,8
-	mov al,2				;[23,16]:minute
-	out 0x70,al
-	in al,0x71
-
-	shl rax,8
-	mov al,0				;[15,8]:second
-	out 0x70,al
-	in al,0x71
-	shl rax,8
-
-	mov r8,rax
-	lea r9,[rel time]
-	call hex2string
-	mov word [rel time+0xe],0x2020		;milesecond
-
-	ret
-
-
-
-
-printtime:
-	lea r8,[rel time]
-	call machinesay				;这个函数会自动更新时间
-
-	lea r8,[rel userinput]
-	call say
-	ret
-;________________________________________
-
-
-
-
-;___________________________________________
-print8254:
-	mov r8,[rel innercount]
-	lea r9,[rel string]
-	call hex2string
-
-	lea r8,[rel string]
-	call machinesay
-
-	lea r8,[rel userinput]
-	call say
-	ret
-;___________________________________________
-
-
-
-
-;____________________________________
-clear:
-	ret
-;_____________________________________
-
-
-
-
 ;_______________________________
 enterinterrupt:
 	mov qword [rel arg0],0
 	int3
-.return:
-	lea r8,[rel userinput]
-	call say
+
 	ret
 ;_______________________________
 
@@ -110,9 +19,7 @@ cast:
 	lea r8,[rel arg1]
 	call string2data
 	call [rel value]
-.return:
-	lea r8,[rel userinput]
-	call say
+
 	ret
 ;_______________________________
 
@@ -160,24 +67,18 @@ rdxrax:
 write:
 	call rdxrax
 	mov [rdx],al
-	jmp writereturn
+	ret
 
 
 write16:
 	call rdxrax
 	mov [rdx],ax
-	jmp writereturn
+	ret
 
 
 write32:
 	call rdxrax
 	mov [rdx],eax
-	jmp writereturn
-
-
-writereturn:
-	lea r8,[rel userinput]
-	call say
 	ret
 ;_________________________________________
 
@@ -195,7 +96,7 @@ read:
 	lea r8,[rel string+0xe]
 	call machinesay
 
-	jmp readreturn
+	ret
 
 
 read16:
@@ -208,7 +109,7 @@ read16:
 	lea r8,[rel string+0xc]
 	call machinesay
 
-	jmp readreturn
+	ret
 
 
 read32:
@@ -221,11 +122,6 @@ read32:
 	lea r8,[rel string+0x8]
 	call machinesay
 
-
-readreturn:
-	lea r8,[rel userinput]
-	call say
-
 	ret
 ;_________________________________________
 
@@ -236,23 +132,18 @@ readreturn:
 out8:
 	call rdxrax
 	out dx,al
-	jmp outreturn
+	ret
 
 
 out16:
 	call rdxrax
 	out dx,ax
-	jmp outreturn
+	ret
 
 
 out32:
 	call rdxrax
 	out dx,eax
-
-
-outreturn:
-	lea r8,[rel userinput]
-	call say
 	ret
 ;______________________________________
 
@@ -271,7 +162,7 @@ in8:
 	lea r8,[rel string+0xe]
 	call machinesay
 
-	jmp inreturn
+	ret
 
 
 in16:
@@ -285,7 +176,7 @@ in16:
 	lea r8,[rel string+0xc]
 	call machinesay
 
-	jmp inreturn
+	ret
 
 
 in32:
@@ -298,11 +189,6 @@ in32:
 
 	lea r8,[rel string+0x8]
 	call machinesay
-
-
-inreturn:
-	lea r8,[rel userinput]
-	call say
 
 	ret
 ;________________________________________
@@ -326,9 +212,6 @@ timestamp:
 	lea r8,[rel string]
 	call machinesay
 
-	lea r8,[rel userinput]
-	call say
-
 	ret
 ;___________________________________________
 
@@ -351,9 +234,6 @@ readmsr:
 
 	lea r8,[rel string]
 	call machinesay
-
-	lea r8,[rel userinput]
-	call say
 
 	ret
 ;____________________________________________
@@ -413,12 +293,109 @@ printcpuid:
 	lea r8,[rel string+8]
 	call machinesay
 
-	lea r8,[rel userinput]
-	call say
-
 	ret
 ;_______________________________________
 preserverax:dq 0
 preserverbx:dq 0
 preservercx:dq 0
-preserverdx:dq 0
+preserverdx:dq 0;入:r8,r9,r10,r11......
+
+
+
+
+;出:r8,r9,r10,r11......
+;变:rax,r8,r9 + hex2string
+;_____________________________________
+gettime:
+	xor rax,rax				;must clean
+
+	mov al,0x32				;[63:56]:centry
+	out 0x70,al
+	in al,0x71
+
+	shl rax,8
+	mov al,9				;[55,48]:year
+	out 0x70,al
+	in al,0x71
+
+	shl rax,8
+	mov al,8				;[47,40]:month
+	out 0x70,al
+	in al,0x71
+
+	shl rax,8
+	mov al,7				;[39,32]:day
+	out 0x70,al
+	in al,0x71
+
+	shl rax,8
+	mov al,4				;[31,24]:hour
+	out 0x70,al
+	in al,0x71
+
+	shl rax,8
+	mov al,2				;[23,16]:minute
+	out 0x70,al
+	in al,0x71
+
+	shl rax,8
+	mov al,0				;[15,8]:second
+	out 0x70,al
+	in al,0x71
+	shl rax,8
+
+	mov r8,rax
+	lea r9,[rel time]
+	call hex2string
+	mov word [rel time+0xe],0x2020		;milesecond
+
+	ret
+
+
+
+
+printtime:
+	lea r8,[rel time]
+	call machinesay				;这个函数会自动更新时间
+
+	ret
+;________________________________________
+
+
+
+
+;___________________________________________
+print8254:
+	mov r8,[rel innercount]
+	lea r9,[rel string]
+	call data2decimalstring
+
+	lea r8,[rel string]
+	call machinesay
+
+	ret
+;___________________________________________
+
+
+
+
+;____________________________________
+clear:
+	ret
+;_____________________________________
+
+
+
+
+;___________________________________________
+cpufreq:
+	ret
+;___________________________________________
+
+
+
+
+;___________________________________________
+memfreq:
+	ret
+;___________________________________________

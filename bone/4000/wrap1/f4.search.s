@@ -11,18 +11,6 @@
 searchhere:
 	lea esi,[rel arg0]
 
-	cmp dword [esi],"time"
-	je printtime
-
-	cmp dword [esi],"8254"
-	je print8254
-
-	cmp dword [esi],"clea"
-	jne .skipclear
-	cmp byte [esi+4],'r'
-	je clear
-.skipclear:
-
 	cmp dword [esi],"exit"
 	je poweroff
 
@@ -35,7 +23,7 @@ searchhere:
 	cmp dword [esi],"rebo"		;else if
 	jne .skipreboot
 	cmp word [esi+4],"ot"
-	je .skipreboot
+	je reboot
 .skipreboot:
 
 	cmp dword [esi],"cpui"
@@ -98,13 +86,38 @@ searchhere:
 	cmp dword [esi],"iiii"
 	je in32
 
+	cmp dword [esi],"time"
+	je printtime
+
+	cmp dword [esi],"8254"
+	je print8254
+
+	cmp dword [esi],"clea"
+	jne .skipclear
+	cmp byte [esi+4],'r'
+	je clear
+.skipclear:
+
+	cmp dword [esi],"cpuf"
+	jne .skipcpufreq
+	cmp dword [esi+4],"req"
+	je cpufreq
+.skipcpufreq:
+
+	cmp dword [esi],"memf"
+	jne .skipmemfreq
+	cmp dword [esi+4],"req"
+	je memfreq
+.skipmemfreq:
+
 	cmp word [esi],"ls"
 	je ls
 
 	cmp dword [esi],"test"
 	je test
 
-	jmp f4event.notinhere
+	mov dword [rel failsignal],0x11111111
+	ret
 ;_____________________________________
 
 
@@ -114,7 +127,7 @@ searchhere:
 ;____________________________________
 searchmemory:
 	cmp qword [rel arg0],0x20
-	jb f4event.notinmemory			;不是anscii的函数名肯定不对
+	jb .failreturn			;连名字都没有,肯定不对
 
 	mov esi,binhome
 .search:
@@ -124,8 +137,12 @@ searchmemory:
 	cmp esi,binhome+binsize
 	jb .search
 
-.notfound:
-	jmp f4event.notinmemory
+.failreturn:
+	mov dword [rel failsignal],0x11111111
+	ret
+
+
+
 
 .find:
 	mov rbx,[esi+8]
@@ -150,22 +167,9 @@ searchmemory:
 	movsq
 
 	lea rdi,[rel arg1]
-	call [rel explainedarg0]
-
-.normalreturn:
-	lea r8,[rel userinput]
-	call say
-	ret
+	jmp [rel explainedarg0]
 ;__________________________________________
 explainedarg0:dq 0	;解释完是函数地址
-
-
-
-
-;__________________________________________
-searchdisk:
-	jmp f4event.notindisk
-;________________________________________
 
 
 
@@ -185,21 +189,20 @@ test:
 	add esi,0x10
 	cmp esi,binhome+binsize
 	jb .continue
-	jmp f4event.notindisk
+	jmp .failreturn
 .load:
 	mov rdx,[esi+8]
 	lea rdi,[rel arg1]
 	call rdx
 .check:
 	cmp dword [0x2000000],0
-	je f4event.notindisk
+	je .failreturn
 .execute:
 	mov rax,0x2000000
 	call rax
 
-.return:
-	lea r8,[rel userinput]
-	call say
+.failreturn:
+	mov dword [rel failsignal],0x11111111
 	ret
 ;__________________________________
 
@@ -229,7 +232,5 @@ ls:
 	add edi,consolehome
 	jmp .continue
 .return:
-	lea r8,[rel userinput]
-	call say
 	ret
 ;_________________________
