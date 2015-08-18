@@ -55,36 +55,36 @@ searchhere:
 	cmp dword [esi],"jump"
 	je jump
 
+	cmp dword [esi],"wwww"
+	je write32
+	cmp dword [esi],"ww"
+	je write16
 	cmp dword [esi],"writ"
 	jne .skipwrite
 	cmp byte [esi+4],'e'
 	je write
 .skipwrite:
-	cmp dword [esi],"ww"
-	je write16
-	cmp dword [esi],"wwww"
-	je write32
 
-	cmp dword [esi],"read"
-	je read
-	cmp dword [esi],"rr"
-	je read16
 	cmp dword [esi],"rrrr"
 	je read32
+	cmp dword [esi],"rr"
+	je read16
+	cmp dword [esi],"read"
+	je read
 
-	cmp dword [esi],"out"
-	je out8
-	cmp dword [esi],"oo"
-	je out16
 	cmp dword [esi],"oooo"
 	je out32
+	cmp dword [esi],"oo"
+	je out16
+	cmp dword [esi],"out"
+	je out8
 
-	cmp dword [esi],"in"
-	je in8
-	cmp dword [esi],"ii"
-	je in16
 	cmp dword [esi],"iiii"
 	je in32
+	cmp dword [esi],"ii"
+	je in16
+	cmp dword [esi],"in"
+	je in8
 
 	cmp dword [esi],"time"
 	je printtime
