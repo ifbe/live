@@ -207,28 +207,29 @@ test:
 
 ;_________________________
 ls:
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
 	mov esi,filehome
 	xor ecx,ecx
+.huanhang:
+	mov edi,[consolehome+consolesize-8]
+	add edi,consolehome
 .continue:
-	cmp dword [esi],0
+	cmp dword [esi],0		;finish?
 	je .return
-	movsq
+
+	inc ecx
+	cmp ecx,0x200			;finish?
+	jae .return
+
+	movsq				;put
 	add esi,0x18
 	add edi,0x8
 
-	inc ecx
-	cmp ecx,0x200
-	jae .return
-
-	test ecx,0x7
+	test ecx,0x7			;huanhang?
 	jnz .continue
 
 	call checkandchangeline
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
-	jmp .continue
+	jmp .huanhang
+
 .return:
 	call checkandchangeline
 	ret
