@@ -112,14 +112,17 @@ f4event:
 
 .startsearch:
 .here:
+	mov dword [rel failsignal],0
 	call searchhere
 	cmp dword [rel failsignal],0x11111111
 	jne .successreturn
 .memory:
+	mov dword [rel failsignal],0
 	call searchmemory
 	cmp dword [rel failsignal],0x11111111
 	jne .successreturn
 .disk:
+	;mov dword [rel failsignal],0
 	;call searchdisk
 	;cmp dword [rel failsignal],0x11111111
 	;jne .successreturn

@@ -11,7 +11,8 @@
 %include "init/init3/anscii.s"		;prepare 0x30000
 %include "init/init4/pciold.s"		;prepare 0x40000
 %include "init/init5/usb.s"			;prepare 0x50000
-%include "init/init6/bin.s"			;prepare 0x60000
+%include "init/init6/what.s"		;prepare 0x60000
+%include "init/init7/bin.s"			;prepare 0x70000
 ;______________________________________________________________
 
 

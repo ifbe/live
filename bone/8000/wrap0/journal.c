@@ -6,7 +6,7 @@
 
 
 
-void hexadecimal(char* destaddr,QWORD data)
+int hexadecimal(char* destaddr,QWORD data)
 {
 	QWORD temp;
 	int count;
@@ -22,38 +22,24 @@ void hexadecimal(char* destaddr,QWORD data)
 		temp=temp>>4;
 		count++;
 	}
+	if(count==0)
+	{
+		*destaddr=0x30;
+		return 1;
+	}
 
 	//显示数字
-	temp=data;
-	*(QWORD*)destaddr=0x2020202020202020;
 	for(i=0;i<count;i++)
 	{
 		temp=(data&0xf) + 0x30;
 		data=data>>4;
 		if(temp>0x39)temp+=7;
 
-		destaddr[7-i]=temp;
+		destaddr[count-1-i]=temp;
 	}
-	/*
-	int i=0;
-	int signal=0;
-	for(i=0;i<16;i++)
-	{
-		ch=( argtable[0] >> (60-4*i) ) & 0xf;
-		if(ch != 0) signal++;
-		else if(signal) signal++;
 
-		if(signal !=0)
-		{
-			ch+=0x30;
-			if(ch>0x39) ch+=0x7;
-			journal[y*64+x+signal-1]=ch;
-		}
-	}
-	*/
-
+	return count;
 }
-
 
 
 
@@ -82,23 +68,24 @@ void say(char* p,...)
 	int out=0;
 	while(1)
 	{
-		//是0，字符串结束了
-		if(p[in] == '\0')break;
+		if(p[in] == '\0')break;		//是0，字符串结束了
 
-		//%d,%c,%lf,%llx.....
-		else if(p[in]=='%')
+		if(p[in]=='%')		//%d,%c,%lf,%llx.....
 		{
 			if(p[in+1]=='x')
 			{
-				hexadecimal(destaddr+out,argtable[argcount]);
-				argcount++;
 				in+=2;
-				out+=8;
+				out+=hexadecimal(destaddr+out,argtable[argcount]);
+				argcount++;
+			}
+			else
+			{
+				destaddr[out]=p[in];
+				in++;
+				out++;
 			}
 		}
-
-		//normal
-		else
+		else				//normal
 		{
 			destaddr[out]=p[in];
 			in++;

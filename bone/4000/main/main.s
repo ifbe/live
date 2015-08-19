@@ -1,5 +1,5 @@
 ;____________________初始化_______________________
-	call endofjarvis                ;ahci@0x4000
+	call endofjarvis
 
 	call f1init
 	call f4init

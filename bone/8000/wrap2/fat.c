@@ -3,13 +3,14 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define diskhome 0x400000
-#define programhome 0x2000000
-
+#define diskhome 0x200000			//[2m,3m)
 #define pbrbuffer diskhome+0x30000
 #define fatbuffer diskhome+0x40000
 #define indexbuffer diskhome+0x80000
-#define rawbuffer diskhome+0xc0000
+
+#define rawbuffer 0x300000			//[3m,4m)
+
+#define programhome 0x400000		//[4m,?)
 
 
 
@@ -337,45 +338,46 @@ void fat32(QWORD fatsector)
 
 int mountfat(QWORD sector)
 {
-	diskaddr=*(QWORD*)(0x200000+8);
-	say("partition sector:%x",sector);
+	say("fatx sector:%x",sector);
 
-        read(pbrbuffer,sector,diskaddr,1); //pbr
+	read(pbrbuffer,sector,0,1); //pbr
 
-        if( *(WORD*)(pbrbuffer+0xb) !=0x200) {
-                say("not 512B per sector,bye!");
-                return -1;
-        }
-        if( *(BYTE*)(pbrbuffer+0x10) != 2) {
-                say("not 2 fat,bye!");
-                return -2;
-        }
+	if( *(WORD*)(pbrbuffer+0xb) !=0x200)
+	{
+		say("not 512B per sector,bye!");
+		return -1;
+	}
+	if( *(BYTE*)(pbrbuffer+0x10) != 2)
+	{
+		say("not 2 fat,bye!");
+		return -2;
+	}
 
-        int similarity=50;
+	int similarity=50;
 
-        if( *(WORD*)(pbrbuffer+0x11) == 0) similarity++;         //fat32为0
-        else similarity--;
-        if( *(WORD*)(pbrbuffer+0x16) ==0) similarity++;         //fat32为0
-        else similarity--;
+	if( *(WORD*)(pbrbuffer+0x11) == 0) similarity++;         //fat32为0
+	else similarity--;
+	if( *(WORD*)(pbrbuffer+0x16) ==0) similarity++;         //fat32为0
+	else similarity--;
 
 	cachecurrent=0xffffffff;
 	cacheblock=0;
 
-        if(similarity==48)
-        {
-                say("fat16");
-                fat16(sector);
-        }
-        else if(similarity==52)
-        {
-                say("fat32");
-                fat32(sector);
-        }
-        else
-        {
-                say("seem not fatxx,bye!");
-                return -3;
-        }
+	if(similarity==48)
+	{
+		say("fat16");
+		fat16(sector);
+	}
+	else if(similarity==52)
+	{
+		say("fat32");
+		fat32(sector);
+	}
+	else
+	{
+		say("seem not fatxx,bye!");
+		return -3;
+	}
 
 	return 0;
 }

@@ -3,9 +3,10 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define programhome 0x2000000
-#define diskhome 0x400000
+#define diskhome 0x200000				//2m
 #define mbrbuffer diskhome+0x20000
+
+#define programhome 0x400000			//4m
 
 
 
@@ -17,15 +18,41 @@ void mountfat(QWORD);
 void mountext(QWORD);
 void mountntfs(QWORD);
 int read(QWORD,QWORD,QWORD,QWORD);
-void identify(QWORD,QWORD);
+void identify(QWORD);
 
 
 
 
-void loadtoy()
+static void loadtoy()
 {
-	read(programhome,0x80,*(QWORD*)(0x200000+8),0x800);
+	//目的地
+	read(programhome,0x80,0,0x800);
 }
+static void directidentify()
+{
+        identify(programhome);
+
+        BYTE* p=(BYTE*)programhome;
+        BYTE temp;
+        int i;
+        for(i=0;i<0x100;i+=2)
+        {
+                temp=p[i];
+                p[i]=p[i+1];
+                p[i+1]=temp;
+        }
+}
+static void directread(QWORD sector)
+{
+        int result;
+        result=read(programhome,sector,0,8);
+        if(result>=0) say("read sector:",sector);
+        else say("something wrong:",sector);
+}
+
+
+
+
 
 
 
@@ -72,9 +99,6 @@ QWORD explaingpt()
 	}
 }
 
-
-
-
 //从磁盘读出来的数据在[+0,+0xf]=4个*每个0x10
 //[+0]:活动标记
 //[+0x1,+0x3]:开始磁头柱面扇区
@@ -117,7 +141,6 @@ QWORD explainmbr()
 	}
 }
 
-
 static int mount(BYTE* addr)
 {
 	QWORD name=*(DWORD*)addr;
@@ -147,32 +170,10 @@ static int mount(BYTE* addr)
 }
 
 
-static void directidentify()
-{
-        QWORD diskaddr=*(QWORD*)(0x200000+8);
-
-        identify(programhome,diskaddr);
-
-        BYTE* p=(BYTE*)programhome;
-        BYTE temp;
-        int i;
-        for(i=0;i<0x100;i+=2)
-        {
-                temp=p[i];
-                p[i]=p[i+1];
-                p[i+1]=temp;
-        }
-}
 
 
-static void directread(QWORD sector)
-{
-        QWORD diskaddr=*(QWORD*)(0x200000+8);
-        int result;
-        result=read(programhome,sector,diskaddr,8);
-        if(result>=0) say("read sector:",sector);
-        else say("something wrong:",sector);
-}
+
+
 
 
 void master()
@@ -183,8 +184,8 @@ void master()
 	for(i=0;i<0x8000;i++) memory[i]=0;
 
 	//前64个扇区
-        read(mbrbuffer,0,*(QWORD*)(0x200000+8),64);
-        if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55)
+	read(mbrbuffer,0,*(QWORD*)(0x100000+8),64);
+	if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55)
 	{
 		say("bad disk",0);
 		return;
@@ -210,24 +211,24 @@ void master()
 
 	//把操作函数的位置放进/bin
 	remember(0x746e756f6d,(QWORD)mount);
-        remember(0x796669746e656469,(QWORD)directidentify);
-        remember(0x64616572,(QWORD)directread);
+	remember(0x796669746e656469,(QWORD)directidentify);
+	remember(0x64616572,(QWORD)directread);
 
 	//从/bin执行
 	//自动尝试3种分区，找到live文件夹，cd进去，全部失败就返回-1
-	int result;
-	//try fat
-	mount("fat");
-	result=use(0x6463,"live");	//cd live
-	if(result>=0) return;		//成功，滚
+	//int result;
 
-	//try ntfs
-	mount("ntfs");
-	result=use(0x6463,"live");	//cd live
-	if(result>=0) return;		//成功，滚
+	//mount("fat");	//try fat
+	//result=use(0x6463,"live");	//cd live
+	//if(result>=0) return;		//成功，滚
 
-	//try ext
-	mount("ext");
-	result=use(0x6463,"live");	//cd live
+
+	//mount("ntfs");	//try ntfs
+	//result=use(0x6463,"live");	//cd live
+	//if(result>=0) return;		//成功，滚
+
+
+	//mount("ext");	//try ext
+	//result=use(0x6463,"live");	//cd live
 					//不管了，直接滚
 }

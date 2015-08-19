@@ -1,20 +1,11 @@
 [bits 64]
-%define journalhome 0xd00000
-%define journalsize 0x100000
 
 
 
 
 ;_________________清空/journal________________
 f1init:
-	mov edi,journalhome
-	mov ecx,journalsize
-	xor rax,rax
-	rep stosb
-	mov rax,"current"
-	mov [journalhome+journalsize-0x10],rax
-
-	mov qword [rel addr],0x800		;r14 memory pointer
+	mov qword [rel addr],0xd00000		;r14 memory pointer
 	mov qword [rel offset],0x420		;r15 offset pointer
 
 	lea rax,[rel menu]

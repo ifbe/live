@@ -3,13 +3,14 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define diskhome 0x400000
-#define programhome 0x2000000		//读出文件放到哪儿
-
+#define diskhome 0x200000			//[2m,3m)
 #define pbrbuffer diskhome+0x30000
 #define inodebuffer diskhome+0x40000
 #define tablebuffer diskhome+0x80000
-#define rawbuffer diskhome+0xc0000
+
+#define rawbuffer 0x300000			//[3m,4m)
+
+#define programhome 0x400000		//[4m,?)
 
 
 
@@ -320,13 +321,11 @@ static void ext_load(BYTE* addr)
 
 int mountext(QWORD sector)
 {
-	diskaddr=*(QWORD*)(0x200000+8);
-
+	say("extx sector:%x",sector);
 	block0=sector;
-	say("ext sector:%x",sector);
 
 	//读分区前8扇区，总共0x1000字节
-        read(pbrbuffer,block0,diskaddr,0x8);	//0x1000
+	read(pbrbuffer,block0,0,0x8);	//0x1000
 
 	//检查magic值
 	if( *(WORD*)(pbrbuffer+0x438) != 0xef53 ) return -1;

@@ -277,8 +277,7 @@ typedef struct tagHBA_CMD_HEADER
 	WORD	prdtl;	// Physical region descriptor table length in entries
  
 	// DW1
-	volatile
-	DWORD	prdbc;	// Physical region descriptor byte count transferred
+	volatile DWORD prdbc;	// Physical region descriptor byte count transferred
  
 	// DW2, 3
 	DWORD	ctba;	// Command table descriptor base address

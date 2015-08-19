@@ -1,5 +1,12 @@
-%define binhome 0x6000
+%define binhome 0x70000
 %define binsize 0x1000
+
+%define diskhome 0x100000
+%define fshome 0x200000
+%define filehome 0x300000
+
+%define programhome 0x400000
+
 %define consolehome 0xc00000
 %define consolesize 0x100000
 [bits 64]
@@ -126,7 +133,8 @@ searchhere:
 ;找到就执行
 ;____________________________________
 searchmemory:
-	cmp qword [rel arg0],0x20
+	mov rax,[rel arg0]
+	cmp rax,0x20
 	jb .failreturn			;连名字都没有,肯定不对
 
 	mov esi,binhome
@@ -145,31 +153,19 @@ searchmemory:
 
 
 .find:
-	mov rbx,[esi+8]
-	mov [rel explainedarg0],rbx		;取得函数地址，保存在某处
-
-	call checkandchangeline
-
-	mov r8,[rel explainedarg0]
+	mov r8,[esi+8]
+	mov [rel addrtocall],r8		;暂时保存函数地址
 	lea r9,[rel string]
 	call hex2string
-	lea esi,[rel string]
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
-	movsq
-	movsq
 
-	mov edi,[consolehome+consolesize-8]
-	add edi,consolehome
-	add edi,16+8
-	lea rsi,[rel arg1]
-	movsq
-	movsq
+	lea r8,[rel string+8]
+	call machinesay
 
-	lea rdi,[rel arg1]
-	jmp [rel explainedarg0]
+	lea rdi,[rel arg1]			;往里传的第一个参数
+	call [rel addrtocall]
+	ret
 ;__________________________________________
-explainedarg0:dq 0	;解释完是函数地址
+addrtocall:dq 0	;解释完是函数地址
 
 
 
@@ -177,7 +173,7 @@ explainedarg0:dq 0	;解释完是函数地址
 ;__________________________________
 test:
 .cleanmemory:
-	mov edi,0x2000000				;32m
+	mov edi,programhome				;32m
 	mov ecx,0x4000
 	xor rax,rax
 	rep stosd
@@ -195,10 +191,10 @@ test:
 	lea rdi,[rel arg1]
 	call rdx
 .check:
-	cmp dword [0x2000000],0
+	cmp dword [programhome],0
 	je .failreturn
 .execute:
-	mov rax,0x2000000
+	mov rax,programhome
 	call rax
 
 .failreturn:
@@ -213,7 +209,7 @@ test:
 ls:
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
-	mov esi,0x4c0000
+	mov esi,filehome
 	xor ecx,ecx
 .continue:
 	cmp dword [esi],0
@@ -221,16 +217,19 @@ ls:
 	movsq
 	add esi,0x18
 	add edi,0x8
-	inc ecx
 
+	inc ecx
 	cmp ecx,0x200
 	jae .return
+
 	test ecx,0x7
 	jnz .continue
+
 	call checkandchangeline
 	mov edi,[consolehome+consolesize-8]
 	add edi,consolehome
 	jmp .continue
 .return:
+	call checkandchangeline
 	ret
 ;_________________________

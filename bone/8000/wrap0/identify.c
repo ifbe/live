@@ -1,11 +1,15 @@
 #include "sata.h"
 void say(char*,QWORD);
 
-int identify(DWORD edi,QWORD addr)
+int identify(DWORD edi)
 {
-	HBA_PORT* port=(HBA_PORT*)addr;
+	QWORD addr;
+	HBA_PORT* port;
+
+	addr=*(QWORD*)(0x100000+8);
+	port=(HBA_PORT*)addr;
 	port->is = (DWORD)-1;		// Clear pending interrupt bits
-	
+
 	int cmdslot;
 	int temp=(port->sact | port->ci);
         for (cmdslot=0;cmdslot<32;cmdslot++)    //cmdslots=32
@@ -58,7 +62,8 @@ int identify(DWORD edi,QWORD addr)
 	//say("is:",(QWORD)port->is);
 	unsigned int* pointer=(unsigned int*)(QWORD)(port->fb);
 
-	while (1){
+	while (1)
+	{
 		// in the PxIS port field as well (1 << 5)
 		if ((port->ci & (1<<cmdslot)) == 0) 
 			break;

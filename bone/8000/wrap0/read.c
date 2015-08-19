@@ -13,7 +13,7 @@ int find_cmdslot(HBA_PORT *port)
 		cmdslot >>= 1;
 	}
 	return -1;
-} 
+}
 void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 {
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
@@ -94,7 +94,8 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	//say("is:",(QWORD)port->is);
 	unsigned int* pointer=(unsigned int*)(QWORD)(port->fb);
 
-	while (1){
+	while (1)
+	{
 		// in the PxIS port field as well (1 << 5)
 		if ((port->ci & (1<<cmdslot)) == 0) 
 			break;
@@ -106,7 +107,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	}
 	return 0;
 }
-int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
+int read(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 {
 /*
 	QWORD i=0;
@@ -118,6 +119,8 @@ int read(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	}
 	readpart(buf+i*0x10000,from+i*128,addr,count);
 */
+	//暂时管不了多硬盘,所以指定用寻找到的第一个
+	QWORD addr=*(QWORD*)(0x100000+8);
 	QWORD i=0;
 	while(count>16)
 	{

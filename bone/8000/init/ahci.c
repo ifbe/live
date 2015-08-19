@@ -1,5 +1,10 @@
-#include "ahci.h"
-#define ahcihome 0x200000
+#define BYTE unsigned char
+#define WORD unsigned short
+#define DWORD unsigned int
+#define QWORD unsigned long long
+
+#define pcihome 0x40000
+#define ahcihome 0x100000
 #define receivefisbuffer ahcihome+0x10000
 #define cmdlistbuffer ahcihome+0x20000
 #define cmdtablebuffer ahcihome+0x30000
@@ -7,7 +12,91 @@
 
 
 
+//用了别人的函数
 void say(char* , ...);
+
+
+
+//主控就是这么做的，程序员没法改
+typedef struct tagHBA_CMD_HEADER
+{
+	// DW0
+	BYTE	cfl:5;	// Command FIS length in DWORDS, 2 ~ 16
+	BYTE	a:1;	// ATAPI
+	BYTE	w:1;	// Write, 1: H2D, 0: D2H
+	BYTE	p:1;	// Prefetchable
+
+	BYTE	r:1;	// Reset
+	BYTE	b:1;	// BIST
+	BYTE	c:1;	// Clear busy upon R_OK
+	BYTE	rsv0:1;	// Reserved
+	BYTE	pmp:4;	// Port multiplier port
+ 
+	WORD	prdtl;	// Physical region descriptor table length in entries
+ 
+	// DW1
+	volatile
+	DWORD	prdbc;	// Physical region descriptor byte count transferred
+ 
+	// DW2, 3
+	DWORD	ctba;	// Command table descriptor base address
+	DWORD	ctbau;	// Command table descriptor base address upper 32 bits
+ 
+	// DW4 - 7
+	DWORD	rsv1[4];	// Reserved
+} HBA_CMD_HEADER;
+
+typedef volatile struct tagHBA_PORT
+{
+	DWORD	clb;	// 0x00, command list base address, 1K-byte aligned
+	DWORD	clbu;	// 0x04, command list base address upper 32 bits
+	DWORD	fb;	// 0x08, FIS base address, 256-byte aligned
+	DWORD	fbu;	// 0x0C, FIS base address upper 32 bits
+	DWORD	is;	// 0x10, interrupt status
+	DWORD	ie;	// 0x14, interrupt enable
+	DWORD	cmd;	// 0x18, command and status
+	DWORD	rsv0;	// 0x1C, Reserved
+	DWORD	tfd;	// 0x20, task file data
+	DWORD	sig;	// 0x24, signature
+	DWORD	ssts;	// 0x28, SATA status (SCR0:SStatus)
+	DWORD	sctl;	// 0x2C, SATA control (SCR2:SControl)
+	DWORD	serr;	// 0x30, SATA error (SCR1:SError)
+	DWORD	sact;	// 0x34, SATA active (SCR3:SActive)
+	DWORD	ci;	// 0x38, command issue
+	DWORD	sntf;	// 0x3C, SATA notification (SCR4:SNotification)
+	DWORD	fbs;	// 0x40, FIS-based switch control
+	DWORD	rsv1[11];	// 0x44 ~ 0x6F, Reserved
+	DWORD	vendor[4];	// 0x70 ~ 0x7F, vendor specific
+} HBA_PORT;
+
+typedef volatile struct tagHBA_MEM
+{
+	// 0x00 - 0x2B, Generic Host Control
+	DWORD	cap;		// 0x00, Host capability
+	DWORD	ghc;		// 0x04, Global host control
+	DWORD	is;		// 0x08, Interrupt status
+	DWORD	pi;		// 0x0C, Port implemented
+	DWORD	vs;		// 0x10, Version
+	DWORD	ccc_ctl;	// 0x14, Command completion coalescing control
+	DWORD	ccc_pts;	// 0x18, Command completion coalescing ports
+	DWORD	em_loc;		// 0x1C, Enclosure management location
+	DWORD	em_ctl;		// 0x20, Enclosure management control
+	DWORD	cap2;		// 0x24, Host capabilities extended
+	DWORD	bohc;		// 0x28, BIOS/OS handoff control and status
+ 
+	// 0x2C - 0x9F, Reserved
+	BYTE	rsv[0xA0-0x2C];
+ 
+	// 0xA0 - 0xFF, Vendor specific registers
+	BYTE	vendor[0x100-0xA0];
+ 
+	// 0x100 - 0x10FF, Port control registers
+	HBA_PORT	ports[1];	// 1 ~ 32
+} HBA_MEM;
+
+
+
+
 
 
 
@@ -16,28 +105,28 @@ void say(char* , ...);
 //[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
 //[0x10,0x17]:portaddress of the device
 //[0x18,0x1f]:ansciiname of the device
-//本函数作用是：
-//1.返回要驱动的设备的portaddress
-//2.填上[0x18,0x1f],(为了工整好看)
-unsigned int findaddr()
+unsigned int finddevice()
 {
-	QWORD* addr=(QWORD*)0x40000;
+	QWORD* addr=(QWORD*)(pcihome);
 	int i;
 	unsigned int temp;
-	for(i=0;i<0x80;i++)		//每个0x40
+	for(i=0;i<0x80;i++)				//每个0x40
 	{
 		temp=addr[8*i+1];
 		temp&=0xffffff00;
 		if(temp==0x01060100)
 		{
-			temp=addr[8*i+2];
-			addr[8*i+3]=0x69636861;
+			addr[8*i+3]=0x69636861;			//ahci
 
-			return temp;
+			return addr[8*i+2];		//1.返回要驱动的设备的portaddress
 		}
 	}
 return 0;
 }
+
+
+
+
 
 
 
@@ -54,155 +143,47 @@ static inline unsigned int in32( unsigned short port )
                   : "=a"(ret) : "Nd"(port) );
     return ret;
 }
-
-
-//进：pci地址
-//出：内存地址
 unsigned int probepci(QWORD addr)
 {
-	say("ahci(port)@%x",addr);
+//进：pci地址
+//出：内存地址
+	unsigned int temp;
+	say("pci addr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
-	unsigned int temp=in32(0xcfc)|(1<<10)|(1<<2);
+	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
+
 	out32(0xcf8,addr+0x4);
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	say("pci status and command:%x",(QWORD)in32(0xcfc));
+	say("    pci sts&cmd:%x",(QWORD)in32(0xcfc));
 
+	//ide port
+	out32(0xcf8,addr+0x10);
+	say("    bar0:%x\n" , in32(0xcfc)&0xfffffffe );
+	out32(0xcf8,addr+0x14);
+	say("    bar1:%x\n" , in32(0xcfc)&0xfffffffe );
+	out32(0xcf8,addr+0x18);
+	say("    bar2:%x\n" , in32(0xcfc)&0xfffffffe );
+	out32(0xcf8,addr+0x1c);
+	say("    bar3:%x\n" , in32(0xcfc)&0xfffffffe );
+
+	say("}\n");
+
+	//hba addr
 	out32(0xcf8,addr+0x24);
-	addr=in32(0xcfc)&0xfffffff0;
-
-	return addr;
+	return in32(0xcfc)&0xfffffff0;
 }
 
 
 
 
-void probeahci(QWORD addr)
-{
-	say("ahci@%x",addr);
-
-	HBA_MEM* abar=(HBA_MEM*)addr;
-	abar->ghc|=0x80000000;
-	abar->ghc&=0xfffffffd;
-}
-
-
-//进：ahci内存地址
-//出：找到就返回第一个sata地址，否则0
-QWORD checkandsave(QWORD addr)
-{
-	HBA_MEM* abar=(HBA_MEM*)addr;
-
-	DWORD pi = abar->pi;
-	int count=0;
-	while(pi & 1)
-	{
-		pi >>= 1;
-		count++;
-	}
-
-	QWORD memory=ahcihome;
-	QWORD i = 0;
-	for(i=0;i<count;i++)
-	{
-	switch(abar->ports[i].sig)
-	{
-		case 0x00000101:{		//sata
-			*(QWORD*)memory=0x61746173;
-			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
-			memory+=0x10;
-			break;			//继续for循环
-		}
-		case 0xeb140101:{		//atapi
-			*(QWORD*)memory=0x6970617461;
-			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
-			memory+=0x10;
-			break;
-		}
-		case 0xc33c0101:{		//enclosure....
-			*(QWORD*)memory=0x2e2e2e6f6c636e65;
-			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
-			memory+=0x10;
-			break;
-		}
-		case 0x96690101:{		//port multiplier
-			*(QWORD*)memory=0x2e2e2e69746c756d;
-			*(QWORD*)(memory+8)=addr+0x100+i*0x80;
-			memory+=0x10;
-			break;
-		}
-	}
-	}
-
-	QWORD temp=*(QWORD*)(ahcihome+8);
-	if(temp!=0) return temp;
-	else return 0;
-}
-
-
-//进：ahci内存地址
-//出：找到就返回第一个sata地址，否则0
-//有些bios没初始化
-unsigned int findport(QWORD addr)
-{
-	unsigned int temp;
-	HBA_MEM* abar=(HBA_MEM*)addr;
-
-	//try to get port
-	temp=checkandsave(addr);
-	if(temp!=0){
-		DWORD ssts = ( (HBA_PORT*)(QWORD)temp ) -> ssts;
-		BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
-		BYTE det = ssts & 0x0F;			//[0,3]
-
-		if( (ipm != 0) && (det != 0) )
-		{return temp;}
-	}
-	say("failed to find port(try1)");
-
-	//something wrong,reset ports
-	int i;
-	char* p=(char*)(receivefisbuffer);
-	for(i=0;i<0x10000;i++) p[i]=0;
-
-	DWORD pi = abar->pi;
-	int count=0;
-	while(pi & 1)
-	{
-		pi >>= 1;
-		count++;
-	}
-
-	for(i=0;i<count;i++)
-	{
-		//32个，每个拥有256B的buffer
-		abar->ports[i].fb = receivefisbuffer+i*0x100;
-		abar->ports[i].fbu = 0;
-		abar->ports[i].cmd |=0x10;
-		abar->ports[i].cmd |=0x2;				//是1么？
-	}
-
-	//try again
-	temp=checkandsave(addr);
-	if(temp!=0){
-		DWORD ssts = ( (HBA_PORT*)(QWORD)temp ) -> ssts;
-		BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
-		BYTE det = ssts & 0x0F;			//[0,3]
-
-		if( (ipm != 0) && (det != 0) )
-		{return temp;}
-	}
-	say("failed to find port(try2)");
-
-	return 0;
-}
 
 
 
 
-void enable(HBA_PORT *port)
+void enable(HBA_PORT* port)
 {
 	//say("port->cmd before enable:%x",(QWORD)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
@@ -211,7 +192,7 @@ void enable(HBA_PORT *port)
 	port->cmd |= 1; 	//bit0,start
 	//say("port->cmd after enable:%x",(QWORD)(port->cmd));
 }
-void disable(HBA_PORT *port)
+void disable(HBA_PORT* port)
 {
 	//say("port->cmd before disable:%x",(QWORD)(port->cmd));
 	port->cmd &= 0xfffffffe;	//bit0
@@ -235,56 +216,146 @@ void disable(HBA_PORT *port)
 
 	//say("port->cmd after disable:%x",(QWORD)(port->cmd));
 }
-void probeport(QWORD addr)
+int checkport(HBA_PORT* port)
 {
-	char* p;
-	int i;
-	p=(char*)(cmdlistbuffer);
-	for(i=0;i<0x10000;i++) p[i]=0;
-	p=(char*)(cmdtablebuffer);
-	for(i=0;i<0x10000;i++) p[i]=0;
+	DWORD ssts = port -> ssts;
+	BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
+	BYTE det = ssts & 0x0F;			//[0,3]
 
-	HBA_PORT* port=(HBA_PORT*)addr;
-	disable(port);	// Stop command engine
+	if( (ipm != 0) && (det != 0) ){return 11111;}		//success
 
-	//32*32=0x400
-	port->clb =cmdlistbuffer;
-	port->clbu = 0;
- 
-	//0x100*32=0x2000=8k
-	HBA_CMD_HEADER *cmdheader=(HBA_CMD_HEADER*)(QWORD)(port->clb);
-	for (i=0; i<32; i++)
-	{
-		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
-		cmdheader[i].ctba=cmdtablebuffer+(i<<8);
-		cmdheader[i].ctbau = 0;
-	}
-	enable(port);	// Start command engine
+	return 0;		//fail
 }
+void probeahci(QWORD addr)
+{
+	HBA_MEM* abar=(HBA_MEM*)addr;
+	HBA_PORT* port;
+	HBA_CMD_HEADER* cmdheader;
+
+	QWORD temp;
+	int i,j;
+	int count=0;
+
+
+
+
+//第一步:host controller settings
+	say("memaddr:%x{\n",addr);
+	abar->ghc|=0x80000000;
+	abar->ghc&=0xfffffffd;
+
+	temp=abar->pi;		//实际多少个port
+	while(temp & 1)
+	{
+		temp >>= 1;
+		count++;
+	}
+	say("    total implemented=%x\n",count);
+
+
+
+
+//第二步:32 ports settings
+	for(i=0;i<count;i++)
+	{
+		port=(HBA_PORT*)(addr+0x100+i*0x80);
+		disable(port);	// Stop command engine
+
+		port->fb = receivefisbuffer+i*0x100;		//每个rcvdfis=0x100
+		port->fbu = 0;
+
+		port->clb =cmdlistbuffer+i*0x400;		//每个header=(32*32)*32=0x400*32=0x8000
+		port->clbu = 0;
+
+		cmdheader=(HBA_CMD_HEADER*)(QWORD)(port->clb);
+		for (j=0; j<32; j++)	//0x100*32=0x2000=8k
+		{
+			cmdheader[j].prdtl = 8;			//8 prdt entries per command table
+			cmdheader[j].ctba=cmdtablebuffer + (i*0x10000) + (j<<8);		//0x80 + 0x10*8
+			cmdheader[j].ctbau = 0;
+		}
+		enable(port);	// Start command engine
+	}
+
+
+
+
+//第三步:list all known sata devices
+	QWORD* mytable=(QWORD*)ahcihome;
+	QWORD from = 0;
+	QWORD to = 0;
+
+	for(from=0;from<32*2+8;from++)		//清空目的地内存
+	{
+		mytable[from]=0;
+	}
+
+	to=8;		//翻译到自己的容易理解的表格里面(+0:名字,+8:地址)
+	for(from=0;from<count;from++)
+	{
+		switch(abar->ports[from].sig)
+		{
+			case 0x00000101:{		//sata
+				mytable[to]=0x61746173;
+				mytable[to+1]=addr+0x100+from*0x80;
+				to+=2;
+				break;			//继续for循环
+			}
+			case 0xeb140101:{		//atapi
+				mytable[to]=0x6970617461;
+				mytable[to+1]=addr+0x100+from*0x80;
+				to+=2;
+				break;
+			}
+			case 0xc33c0101:{		//enclosure....
+				mytable[to]=0x2e2e2e6f6c636e65;
+				mytable[to+1]=addr+0x100+from*0x80;
+				to+=2;
+				break;
+			}
+			case 0x96690101:{		//port multiplier
+				mytable[to]=0x2e2e2e69746c756d;
+				mytable[to+1]=addr+0x100+from*0x80;
+				to+=2;
+				break;
+			}
+		}//switch
+	}//for
+
+	for(from=8;from<count*2+8;from++)		//把sata放到第一个
+	{
+		if( mytable[from] == 0x61746173 )
+		{
+			mytable[0]=mytable[from];
+			mytable[1]=mytable[from+1];
+			break;
+		}
+	}
+
+	say("    final result@%x\n",*(QWORD*)(ahcihome+8));
+	say("}\n");
+}
+
+
+
+
+
+
 
 
 void initahci()
 {
 	QWORD addr;
 
-	say("ahci initializing...",0);
-
 	//clear home
 	addr=ahcihome;
 	for(;addr<ahcihome+0x100000;addr++) *(BYTE*)addr=0;
 
-	addr=findaddr();		//port addr of port
+	addr=finddevice();		//get port addr of this storage device
 	if(addr==0) return;
 
 	addr=probepci(addr);		//memory addr of ahci
 	if(addr==0) return;
 
 	probeahci(addr);
-
-	addr=findport(addr);		//memory addr of port
-	if(addr==0) return;
-
-	probeport(addr);
-
-	say("");
 }

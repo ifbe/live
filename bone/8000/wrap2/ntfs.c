@@ -3,13 +3,14 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define diskhome 0x400000
-#define programhome 0x2000000
-
+#define diskhome 0x200000			//[2m,3m)
 #define pbrbuffer diskhome+0x30000
 #define mftbuffer diskhome+0x40000
 #define indexbuffer diskhome+0x80000
-#define rawbuffer diskhome+0xc0000
+
+#define rawbuffer 0x300000			//[3m,4m)
+
+#define programhome 0x400000		//[4m,?)
 
 
 
@@ -525,10 +526,10 @@ static void ntfs_load(BYTE* addr)
 
 int mountntfs(QWORD sector)
 {
-	diskaddr=*(QWORD*)(0x200000+8);
+	say("ntfs sector:%x",sector);
 
 	//读PBR，失败就返回
-        read(pbrbuffer,sector,diskaddr,1);
+	read(pbrbuffer,sector,0,1);
 	if( *(DWORD*)(pbrbuffer+3) != 0x5346544e ) return -1;
 
 	//记下PBR地址
@@ -545,7 +546,7 @@ int mountntfs(QWORD sector)
 	say("",0);
 
 	//保存开头几个mft
-        read(pbrbuffer+0x8000,ntfssector+mftcluster*clustersize,diskaddr,0x20);
+	read(pbrbuffer+0x8000,ntfssector+mftcluster*clustersize,0,0x20);
 	cachecurrent=0xffff;		//no mft cache yet
 
 	//cd /
@@ -554,7 +555,7 @@ int mountntfs(QWORD sector)
 	ntfs_cd("/");
 
 	//保存函数地址
-        remember(0x6463,(QWORD)ntfs_cd);
-        remember(0x64616f6c,(QWORD)ntfs_load);
+	remember(0x6463,(QWORD)ntfs_cd);
+	remember(0x64616f6c,(QWORD)ntfs_load);
 	return 0;
 }
