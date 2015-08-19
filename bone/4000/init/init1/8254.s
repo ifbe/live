@@ -53,5 +53,23 @@ innercount:dq 0
 
 
 
+;____________________________________________
+delay:
+	mov rax,r8
+	add rax,[rel innercount]
+
+.hltwait:
+	cmp [rel innercount],rax
+	jae .return
+	hlt
+	jmp .hltwait
+
+.return:
+	ret
+;_____________________________________________
+
+
+
+
 endof8254:
 sti
