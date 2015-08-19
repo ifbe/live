@@ -218,17 +218,17 @@ void master()
 	//自动尝试3种分区，找到live文件夹，cd进去，全部失败就返回-1
 	//int result;
 
-	//mount("fat");	//try fat
+	//mount("fat");		//try fat
 	//result=use(0x6463,"live");	//cd live
 	//if(result>=0) return;		//成功，滚
 
 
-	//mount("ntfs");	//try ntfs
+	//mount("ntfs");		//try ntfs
 	//result=use(0x6463,"live");	//cd live
 	//if(result>=0) return;		//成功，滚
 
 
-	//mount("ext");	//try ext
+	//mount("ext");		//try ext
 	//result=use(0x6463,"live");	//cd live
 					//不管了，直接滚
 }
