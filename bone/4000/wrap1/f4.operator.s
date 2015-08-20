@@ -366,12 +366,12 @@ printtime:
 
 ;___________________________________________
 print8254:
-	mov r8,[rel innercount]
-	lea r9,[rel string]
-	call data2decimalstring
-
-	lea r8,[rel string]
-	call machinesay
+;	mov r8,[rel innercount]
+;	lea r9,[rel string]
+;	call data2decimalstring
+;
+;	lea r8,[rel string]
+;	call machinesay
 
 	ret
 ;___________________________________________
@@ -389,26 +389,26 @@ clear:
 
 ;___________________________________________
 cpufreq:
-	rdtsc
-	mov [rel timestamplow],eax
-	mov [rel timestamphigh],edx
-
-	mov r8,1000/16				;		/16
-	call delay
-
-	rdtsc
-	sub eax,[rel timestamplow]
-	sub edx,[rel timestamphigh]
-	shl rdx,32
-	add edx,eax
-	shl rdx,4					;		*16
-
-	mov r8,rdx
-	lea r9,[rel string]
-	call data2decimalstring
-
-	lea r8,[rel string]
-	call machinesay
+;	rdtsc
+;	mov [rel timestamplow],eax
+;	mov [rel timestamphigh],edx
+;
+;	mov r8,1000/16				;		/16
+;	call delay
+;
+;	rdtsc
+;	sub eax,[rel timestamplow]
+;	sub edx,[rel timestamphigh]
+;	shl rdx,32
+;	add edx,eax
+;	shl rdx,4					;		*16
+;
+;	mov r8,rdx
+;	lea r9,[rel string]
+;	call data2decimalstring
+;
+;	lea r8,[rel string]
+;	call machinesay
 	ret
 ;___________________________________________
 timestamplow:dd 0

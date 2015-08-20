@@ -40,35 +40,40 @@ f4init:
 
 ;___________________________________________
 f4show:
-	mov dword [rel looptimes],0
-.lines:
-	mov edi,0x1c00000
-	mov eax,4*1024*16
-	imul eax,[rel looptimes]
-	add edi,eax
+	mov edi,0x1c00000		;目的地
 
-	mov esi,consolehome
-	mov eax,[rel looptimes]
-	shl eax,7
-	add esi,eax
+	mov esi,[consolehome+consolesize-8]
+	cmp esi,0x30*0x80
+	jb .makeitzero
+.makeitenough:
+	sub esi,0x2f*0x80
+	jmp .esidone
+.makeitzero:
+	xor esi,esi
+.esidone:
+	add esi,consolehome			;来源地
 
-	mov cl,128
-.continue:
-	mov al,[esi]
+	mov dword [rel loopy],0
+.continuey:
+	mov dword [rel loopx],0
+.continuex:
+	lodsb
 	push rsi
 	call char
 	pop rsi
-	inc esi
-	dec cl
-	jnz .continue
+	inc byte [rel loopx]
+	cmp byte [rel loopx],0x80
+	jb .continuex
 
-	inc byte [rel looptimes]
-	cmp byte [rel looptimes],0x30
-	jb .lines
+	add rdi,1024*4*15
+	inc byte [rel loopy]
+	cmp byte [rel loopy],0x30
+	jb .continuey
 
 	jmp writescreen4
 ;________________________________________
-looptimes:dd 0
+loopy:dd 0
+loopx:dd 0
 length:dq 5
 
 

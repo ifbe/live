@@ -207,30 +207,34 @@ test:
 
 ;_________________________
 ls:
-	mov esi,filehome
-	xor ecx,ecx
-.huanhang:
 	mov edi,[consolehome+consolesize-8]
+	cmp edi,consolesize-0x30*0x80
+	jb .normally
+	xor edi,edi
+	mov [consolehome+consolesize-8],edi
+.normally:
 	add edi,consolehome
+
+	mov esi,filehome		;source
+	xor ecx,ecx				;count
+
 .continue:
 	cmp dword [esi],0		;finish?
 	je .return
-
-	inc ecx
-	cmp ecx,0x200			;finish?
-	jae .return
 
 	movsq				;put
 	add esi,0x18
 	add edi,0x8
 
-	test ecx,0x7			;huanhang?
-	jnz .continue
-
-	call checkandchangeline
-	jmp .huanhang
+	inc ecx
+	cmp ecx,0x200			;finish?
+	jae .return
+	jmp .continue
 
 .return:
-	call checkandchangeline
+	add ecx,7
+	shr ecx,3			;how many wrote
+	shl ecx,7
+	add [consolehome+consolesize-8],ecx
 	ret
 ;_________________________

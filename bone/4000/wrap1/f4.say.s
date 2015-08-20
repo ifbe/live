@@ -4,25 +4,38 @@ bits 64
 
 
 
+checkandchangeline:
+	mov qword [rel length],0
+
+	cmp dword [consolehome+consolesize-8],consolesize-0x80*0x30
+	jae .restart
+
+.justadd:
+	add dword [consolehome+consolesize-8],0x80
+	ret
+
+.restart:
+	mov dword [consolehome+consolesize-8],0x80
+	ret
 
 ;_________________________________
-checkandchangeline:
-	cmp dword [consolehome+consolesize-8],0x80*47
-	jae .move
-
-	add dword [consolehome+consolesize-8],128	;no:line+1
-	jmp .return
-
-.move:				;yes:move
-	mov esi,consolehome+0x80
-	mov edi,consolehome
-	mov ecx,128*0x30
-	cld
-	rep movsb
-
-.return:
-	mov qword [rel length],0
-	ret					;now line=a blank line
+;checkandchangeline:
+;	cmp dword [consolehome+consolesize-8],0x80*47
+;	jae .move
+;
+;	add dword [consolehome+consolesize-8],128	;no:line+1
+;	jmp .return
+;
+;.move:				;yes:move
+;	mov esi,consolehome+0x80
+;	mov edi,consolehome
+;	mov ecx,128*0x30
+;	cld
+;	rep movsb
+;
+;.return:
+;	mov qword [rel length],0
+;	ret					;now line=a blank line
 ;____________________________________
 
 

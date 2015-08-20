@@ -5,8 +5,21 @@
 
 
 
+;______________________________________________________
+forever:			;i found a stupid board
+in al,0x64			;who can not use ioapic?
+test al,1			;i am debugging......
+jz forever			;and using no interrupt is ok
+
+in al,0x60
+ret
+;____________________________________________________
+
+
+
+
 ;_________________________________________________
-forever:			;不知被谁叫醒，一个个问一遍
+;forever:			;不知被谁叫醒，一个个问一遍
 
 .keyboard:			;键盘，有事？
 	mov rax,[kbdhome+bufsize-8]
