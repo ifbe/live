@@ -30,24 +30,17 @@ static void loadtoy()
 }
 static void directidentify()
 {
-        identify(programhome);
-
-        BYTE* p=(BYTE*)programhome;
-        BYTE temp;
-        int i;
-        for(i=0;i<0x100;i+=2)
-        {
-                temp=p[i];
-                p[i]=p[i+1];
-                p[i+1]=temp;
-        }
+	identify(programhome);
 }
 static void directread(QWORD sector)
 {
-        int result;
-        result=read(programhome,sector,0,8);
-        if(result>=0) say("read sector:",sector);
-        else say("something wrong:",sector);
+	int result;
+	say("reading sector:%x\n",0);
+	result=read(programhome,0,0,1);
+
+	//result=read(programhome,sector,0,8);
+	//if(result>=0) say("read sector:%x",sector);
+	//else say("something wrong:%x",sector);
 }
 
 
@@ -178,12 +171,19 @@ static int mount(BYTE* addr)
 
 void master()
 {
-	//清理内存
+	//把操作函数的位置放进/bin
+	remember(0x796669746e656469,(QWORD)directidentify);
+	remember(0x6b73696464616572,(QWORD)directread);
+	remember(0x746e756f6d,(QWORD)mount);
+
+	//we are testing ide......very unstable......
+	if(*(DWORD*)0x100000 == 0x656469)return;
+
+	//清理内存，然后读出前64个扇区
 	BYTE* memory=(BYTE*)(mbrbuffer);
 	int i;
 	for(i=0;i<0x8000;i++) memory[i]=0;
 
-	//前64个扇区
 	read(mbrbuffer,0,*(QWORD*)(0x100000+8),64);
 	if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55)
 	{
@@ -209,10 +209,6 @@ void master()
 		explainmbr();
 	}
 
-	//把操作函数的位置放进/bin
-	remember(0x746e756f6d,(QWORD)mount);
-	remember(0x796669746e656469,(QWORD)directidentify);
-	remember(0x64616572,(QWORD)directread);
 
 	//从/bin执行
 	//自动尝试3种分区，找到live文件夹，cd进去，全部失败就返回-1

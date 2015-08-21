@@ -105,7 +105,7 @@ typedef volatile struct tagHBA_MEM
 //[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
 //[0x10,0x17]:portaddress of the device
 //[0x18,0x1f]:ansciiname of the device
-unsigned int finddevice()
+static unsigned int finddevice()
 {
 	QWORD* addr=(QWORD*)(pcihome);
 	int i;
@@ -143,12 +143,12 @@ static inline unsigned int in32( unsigned short port )
                   : "=a"(ret) : "Nd"(port) );
     return ret;
 }
-unsigned int probepci(QWORD addr)
+static unsigned int probepci(QWORD addr)
 {
 //进：pci地址
 //出：内存地址
 	unsigned int temp;
-	say("pci addr:%x{\n",addr);
+	say("(ahci)pciaddr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
 	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
@@ -183,7 +183,52 @@ unsigned int probepci(QWORD addr)
 
 
 
-void enable(HBA_PORT* port)
+static void disableport(HBA_PORT* port)
+{
+	//step2:	clear status : 0x30,0x10,0x8
+	port->serr = 0x07ff0f03;		//0x30
+	port->is = 0xfd8000af;			//0x10
+
+
+
+
+	//step3:	put port in idle mode
+			//say("port->cmd before disable:%x",(QWORD)(port->cmd));
+	port->cmd &= 0xfffffffe;	//0x18,bit0
+	port->cmd &= 0xffffffef;	//0x18,bit4,FRE
+ 
+	int timeout=100000;
+	while(timeout)
+	{
+		timeout--;
+		if (port->cmd & (1<<14))continue;		//0x18,bit14,receive running
+		if (port->cmd & (1<<15))continue;		//0x18,bit15,commandlist running
+
+		break;
+	}
+	if(timeout==0){
+		say("(timeout)still running:%x",(QWORD)(port->cmd));
+		return;
+	}
+			//say("port->cmd after disable:%x",(QWORD)(port->cmd));
+
+
+
+
+	//step4:	reset port
+
+
+
+
+	//step5:	wait for device detect and communication established
+
+
+
+
+
+	//step6:	clear port serial ata error register
+}
+static void enableport(HBA_PORT* port)
 {
 	//say("port->cmd before enable:%x",(QWORD)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
@@ -192,41 +237,7 @@ void enable(HBA_PORT* port)
 	port->cmd |= 1; 	//bit0,start
 	//say("port->cmd after enable:%x",(QWORD)(port->cmd));
 }
-void disable(HBA_PORT* port)
-{
-	//say("port->cmd before disable:%x",(QWORD)(port->cmd));
-	port->cmd &= 0xfffffffe;	//bit0
-	port->cmd &= 0xffffffef;	//bit4,FRE
- 
-	int i=100000;
-	while(i)
-	{
-		i--;
-		if (port->cmd & (1<<14))	//bit14,receive running
-			continue;
-		if (port->cmd & (1<<15))	//bit15,commandlist running
-			continue;
-		break;
-	}
- 
-	if(i==0){
-		say("error!can't disable:%x",(QWORD)(port->cmd));
-		return;
-	}
-
-	//say("port->cmd after disable:%x",(QWORD)(port->cmd));
-}
-int checkport(HBA_PORT* port)
-{
-	DWORD ssts = port -> ssts;
-	BYTE ipm = (ssts >> 8) & 0x0F;		//[8,11]
-	BYTE det = ssts & 0x0F;			//[0,3]
-
-	if( (ipm != 0) && (det != 0) ){return 11111;}		//success
-
-	return 0;		//fail
-}
-void probeahci(QWORD addr)
+static void probeahci(QWORD addr)
 {
 	HBA_MEM* abar=(HBA_MEM*)addr;
 	HBA_PORT* port;
@@ -240,9 +251,10 @@ void probeahci(QWORD addr)
 
 
 //第一步:host controller settings
-	say("memaddr:%x{\n",addr);
+	say("(ahci)memaddr:%x{\n",addr);
 	abar->ghc|=0x80000000;
 	abar->ghc&=0xfffffffd;
+	abar->is = 0xffffffff;		//clear all
 
 	temp=abar->pi;		//实际多少个port
 	while(temp & 1)
@@ -259,7 +271,10 @@ void probeahci(QWORD addr)
 	for(i=0;i<count;i++)
 	{
 		port=(HBA_PORT*)(addr+0x100+i*0x80);
-		disable(port);	// Stop command engine
+		disableport(port);	// Stop command engine
+
+
+
 
 		port->fb = receivefisbuffer+i*0x100;		//每个rcvdfis=0x100
 		port->fbu = 0;
@@ -274,7 +289,11 @@ void probeahci(QWORD addr)
 			cmdheader[j].ctba=cmdtablebuffer + (i*0x10000) + (j<<8);		//0x80 + 0x10*8
 			cmdheader[j].ctbau = 0;
 		}
-		enable(port);	// Start command engine
+
+
+
+
+		enableport(port);	// Start command engine
 	}
 
 
@@ -284,7 +303,6 @@ void probeahci(QWORD addr)
 	QWORD* mytable=(QWORD*)ahcihome;
 	QWORD from = 0;
 	QWORD to = 0;
-
 	for(from=0;from<32*2+8;from++)		//清空目的地内存
 	{
 		mytable[from]=0;
@@ -293,7 +311,13 @@ void probeahci(QWORD addr)
 	to=8;		//翻译到自己的容易理解的表格里面(+0:名字,+8:地址)
 	for(from=0;from<count;from++)
 	{
-		switch(abar->ports[from].sig)
+		port=(HBA_PORT*)(addr+0x100+from*0x80);
+		DWORD ssts = port -> ssts;			//0x28
+		BYTE ipm = (ssts >> 8) & 0x0F;		//0x28.[8,11]
+		BYTE det = ssts & 0x0F;			//0x28.[0,3]
+		if( (ipm != 0) && (det != 0) )
+		{
+		switch(port->sig)
 		{
 			case 0x00000101:{		//sata
 				mytable[to]=0x61746173;
@@ -320,6 +344,7 @@ void probeahci(QWORD addr)
 				break;
 			}
 		}//switch
+		}//if this port usable
 	}//for
 
 	for(from=8;from<count*2+8;from++)		//把sata放到第一个

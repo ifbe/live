@@ -77,7 +77,10 @@ searchhere:
 	cmp dword [esi],"rr"
 	je read16
 	cmp dword [esi],"read"
+	jne .skipread
+	cmp byte [esi+4],0
 	je read
+.skipread:
 
 	cmp dword [esi],"oooo"
 	je out32

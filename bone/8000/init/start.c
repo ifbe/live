@@ -3,6 +3,8 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
+#define controllerhome 0x100000
+
 #define journalhome 0xd00000
 #define journalsize 0x100000
 
@@ -12,6 +14,7 @@
 void say(char*,...);
 
 void initahci();
+void initide();
 void master();
 
 
@@ -25,9 +28,16 @@ void start()
 	for(temp=0;temp<journalsize/8;temp++) p[temp]=0;
 	say("oh we have found a whole new world,landing...%x...%x...%x...",1,2,3);
 
-	//检查问题
+	//有ahci就用ahci
 	initahci();
-	if( (*(QWORD*)(0x100000+8)) == 0 )
+
+	//没有发现就用ide
+	temp=*(QWORD*)(controllerhome);
+	if( temp == 0 ) initide();
+
+	//什么都没有就报错返回
+	temp=*(QWORD*)(controllerhome);
+	if( temp == 0 )
 	{
 		say("no disk");
 		return;

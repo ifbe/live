@@ -32,14 +32,53 @@ int hexadecimal(char* destaddr,QWORD data)
 	for(i=0;i<count;i++)
 	{
 		temp=(data&0xf) + 0x30;
-		data=data>>4;
 		if(temp>0x39)temp+=7;
 
+		data=data>>4;
 		destaddr[count-1-i]=temp;
 	}
 
 	return count;
 }
+
+
+
+
+int decimal(char* destaddr,QWORD data)
+{
+	QWORD temp;
+	int count;
+	int i;
+
+	//检查多少个nibbie需要显示出来
+	temp=data;
+	count=0;
+	while(1)
+	{
+		if(temp==0)break;
+
+		temp=temp/10;
+		count++;
+	}
+	if(count==0)
+	{
+		*destaddr=0x30;
+		return 1;
+	}
+
+	//显示数字
+	for(i=0;i<count;i++)
+	{
+		temp=(data%10) + 0x30;
+		if(temp>0x39)temp+=7;
+
+		data=data/10;
+		destaddr[count-1-i]=temp;
+	}
+
+	return count;
+}
+
 
 
 
@@ -76,6 +115,12 @@ void say(char* p,...)
 			{
 				in+=2;
 				out+=hexadecimal(destaddr+out,argtable[argcount]);
+				argcount++;
+			}
+			else if(p[in+1]=='d')
+			{
+				in+=2;
+				out+=decimal(destaddr+out,argtable[argcount]);
 				argcount++;
 			}
 			else

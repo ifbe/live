@@ -18,35 +18,35 @@ typedef enum
 typedef struct tagFIS_REG_H2D
 {
 	// DWORD 0
-	BYTE	fis_type;	// FIS_TYPE_REG_H2D
+	BYTE	fis_type;	//0:		FIS_TYPE_REG_H2D
  
-	BYTE	pmport:4;	// Port multiplier
-	BYTE	rsv0:3;		// Reserved
-	BYTE	c:1;		// 1: Command, 0: Control
+	BYTE	pmport:4;	//1.[7,4]:		Port multiplier
+	BYTE	rsv0:3;		//1.[3,1]:		Reserved
+	BYTE	c:1;		//1.[0,0]:		1: Command, 0: Control
  
-	BYTE	command;	// Command register
-	BYTE	featurel;	// Feature register, 7:0
+	BYTE	command;	//2:		Command register
+	BYTE	featurel;	//3:		Feature register, 7:0
  
 	// DWORD 1
-	BYTE	lba0;		// LBA low register, 7:0
-	BYTE	lba1;		// LBA mid register, 15:8
-	BYTE	lba2;		// LBA high register, 23:16
-	BYTE	device;		// Device register
+	BYTE	lba0;		//4:		LBA low register, 7:0
+	BYTE	lba1;		//5:		LBA mid register, 15:8
+	BYTE	lba2;		//6:		LBA high register, 23:16
+	BYTE	device;		//7:		Device register
  
 	// DWORD 2
-	BYTE	lba3;		// LBA register, 31:24
-	BYTE	lba4;		// LBA register, 39:32
-	BYTE	lba5;		// LBA register, 47:40
-	BYTE	featureh;	// Feature register, 15:8
+	BYTE	lba3;		//8:		LBA register, 31:24
+	BYTE	lba4;		//9:		LBA register, 39:32
+	BYTE	lba5;		//a:		LBA register, 47:40
+	BYTE	featureh;	//b:		Feature register, 15:8
  
 	// DWORD 3
-	BYTE	countl;		// Count register, 7:0
-	BYTE	counth;		// Count register, 15:8
-	BYTE	icc;		// Isochronous command completion
-	BYTE	control;	// Control register
+	BYTE	countl;		//c:		Count register, 7:0
+	BYTE	counth;		//d:		Count register, 15:8
+	BYTE	icc;		//e:		Isochronous command completion
+	BYTE	control;	//f:		Control register
  
 	// DWORD 4
-	BYTE	rsv1[4];	// Reserved
+	BYTE	rsv1[4];	//[10,13]:		Reserved
 } FIS_REG_H2D;
 
 typedef struct tagFIS_REG_sdb
