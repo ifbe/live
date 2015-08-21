@@ -54,7 +54,7 @@ int identifysata(QWORD rdi,QWORD sataport)
 	int i=sizeof(CMD_TABLE);
 	for(;i>0;i--){p[i]=0;}
 	cmdtable->prdt_entry[0].dba = rdi;
-	cmdtable->prdt_entry[0].dbc = 0x200+1;	// ? bytes per sector(last 1 is)
+	cmdtable->prdt_entry[0].dbc = 0x200-1;		//bit0必须等于1 , 到底要-1还是+1?
 	//cmdtable->prdt_entry[0].i = 1;
 
 

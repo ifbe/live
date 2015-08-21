@@ -27,7 +27,13 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 {
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
-	cmdheader->prdtl = (WORD)((count-1)>>4) + 1;	// PRDT entries count
+	cmdheader->prdtl = (WORD)((count-1)>>7) + 1;	//PRDT entries count,example:
+													//13sectors    >>>>    prdt=1个
+													//0x80sectors    >>>>    prdt=1个
+													//0x93sectors    >>>>    prdt=2个
+													//0x100sectors    >>>>    prdt=2个
+													//0x173sectors    >>>>    prdt=3个
+													//0x181sectors    >>>>    prdt=4个
 	//say("ptdtl",(QWORD)cmdheader->prdtl);
 
 
@@ -46,13 +52,13 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 	for (i=0; i<cmdheader->prdtl-1; i++)
 	{
 		cmdtable->prdt_entry[i].dba = (DWORD)buf;
-		cmdtable->prdt_entry[i].dbc = 16*512+1; // 0x2000
+		cmdtable->prdt_entry[i].dbc = 0x80*0x200-1;		 //bit0必须等于1 , ????0x1ffff
 		//cmdtable->prdt_entry[i].i = 1;
-		buf += 0x2000;  // 8K words
-		count -= 16;    // 16 sectors
+		buf += 0x10000;  // 64KB words?
+		count -= 0x80;    // 16 sectors
 	}
 	cmdtable->prdt_entry[i].dba = (DWORD)buf;		// Last entry
-	cmdtable->prdt_entry[i].dbc = count*512+1;		// 512 bytes per sector
+	cmdtable->prdt_entry[i].dbc = count*0x200-1;		// 512 bytes per sector
 	//cmdtable->prdt_entry[i].i = 1;
 
 
@@ -292,13 +298,13 @@ int read(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 	{
 		QWORD addr=*(QWORD*)(idehome+8);
 		QWORD i=0;
-		while(count>16)
+		while(count>0x80)
 		{
-			readpart(buf+i*0x2000,from+i*16,addr,16);
+			readpart(buf+i*0x10000,from+i*0x80,addr,0x80);		//0x80sectors=0x10000=64KB
 			i++;
-			count-=16;
+			count-=0x80;
 		}
-		readpart(buf+i*0x2000,from+i*16,addr,count);
+		readpart(buf+i*0x10000,from+i*0x80,addr,count);
 	}
 	else if(type == 0x656469)
 	{

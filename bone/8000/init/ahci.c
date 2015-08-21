@@ -201,14 +201,16 @@ static void disableport(HBA_PORT* port)
 	while(timeout)
 	{
 		timeout--;
+		if(timeout==0)
+		{
+			say("(timeout)still running:%x",(QWORD)(port->cmd));
+			return;
+		}
+
 		if (port->cmd & (1<<14))continue;		//0x18,bit14,receive running
 		if (port->cmd & (1<<15))continue;		//0x18,bit15,commandlist running
 
 		break;
-	}
-	if(timeout==0){
-		say("(timeout)still running:%x",(QWORD)(port->cmd));
-		return;
 	}
 			//say("port->cmd after disable:%x",(QWORD)(port->cmd));
 
@@ -216,17 +218,32 @@ static void disableport(HBA_PORT* port)
 
 
 	//step4:	reset port
-
+	port->sctl |= 0x2;
+	for(timeout=0;timeout<0xffffff;timeout++)asm("nop");				//wait 1ms(5ms)
+	port->sctl &= 0xfffffffd;
 
 
 
 	//step5:	wait for device detect and communication established
+	timeout=100000;
+	while(timeout)
+	{
+		timeout--;
+		if(timeout==0)
+		{
+			//say("no device:%x",11111);
+			return;
+		}
 
+		if( (port->ssts & 0x3) == 0x3)break;
+	}
+	
 
 
 
 
 	//step6:	clear port serial ata error register
+	port->serr = 0x07ff0f03;		//0x30
 }
 static void enableport(HBA_PORT* port)
 {
@@ -286,7 +303,7 @@ static void probeahci(QWORD addr)
 		for (j=0; j<32; j++)	//0x100*32=0x2000=8k
 		{
 			cmdheader[j].prdtl = 8;			//8 prdt entries per command table
-			cmdheader[j].ctba=cmdtablebuffer + (i*0x10000) + (j<<8);		//0x80 + 0x10*8
+			cmdheader[j].ctba=cmdtablebuffer + (i*0x10000) + (j<<8);		//0x10000/0x20=0x800,(0x800-0x80)/0x10=0x78个
 			cmdheader[j].ctbau = 0;
 		}
 
