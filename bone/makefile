@@ -48,5 +48,6 @@ parallels:
 
 clean:
 	make -s -C 4000 clean
+	make -s -C 8000 clean
 	rm -f */*.o */*.bin */*.efi
 	rm -f *.bin *.efi *.img *.vmdk *.vhd *.dmg *.vdi

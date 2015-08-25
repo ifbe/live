@@ -3,10 +3,16 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define diskhome 0x400000				//2m
-#define mbrbuffer diskhome+0x20000
+#define idehome 0x100000
+#define ahcihome 0x100000
+#define xhcihome 0x200000
+#define usbhome 0x300000
 
-#define programhome 0x1000000			//4m
+#define diskhome 0x400000
+	#define mbrbuffer diskhome+0x20000
+#define fshome 0x500000
+#define dirhome 0x600000
+#define datahome 0x700000
 
 
 
@@ -26,19 +32,19 @@ void identify(QWORD);
 static void loadtoy()
 {
 	//目的地
-	read(programhome,0x80,0,0x800);
+	read(datahome,0x80,0,0x800);
 }
 static void directidentify()
 {
-	identify(programhome);
+	identify(datahome);
 }
 static void directread(QWORD sector)
 {
 	int result;
 	say("reading sector:%x\n",0);
-	result=read(programhome,0,0,1);
+	result=read(datahome,0,0,1);
 
-	//result=read(programhome,sector,0,8);
+	//result=read(datahome,sector,0,8);
 	//if(result>=0) say("read sector:%x",sector);
 	//else say("something wrong:%x",sector);
 }
@@ -194,7 +200,7 @@ void master()
 	{
 		loadtoy();
 		say("loaded toy",0);
-		int result=((int (*)())(programhome))();
+		int result=((int (*)())(datahome))();
 		say("played toy",result);
 		return;
 	}

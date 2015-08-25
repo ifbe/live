@@ -8,9 +8,9 @@
 #define mftbuffer fshome+0x40000
 #define indexbuffer fshome+0x80000
 
-#define rawbuffer 0x300000			//[3m,4m)
+#define rawbuffer 0x600000			//[3m,4m)
 
-#define programhome 0x400000		//[4m,?)
+#define programhome 0x700000		//[4m,?)
 
 
 

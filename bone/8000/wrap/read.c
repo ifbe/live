@@ -1,6 +1,140 @@
-#include "sata.h"
+#define BYTE unsigned char
+#define WORD unsigned short
+#define DWORD unsigned int
+#define QWORD unsigned long long
 
 #define idehome 0x100000
+#define ahcihome 0x100000
+#define xhcihome 0x200000
+#define usbhome 0x300000
+
+#define diskhome 0x400000
+#define fshome 0x500000
+#define dirhome 0x600000
+#define datahome 0x700000
+
+
+
+
+typedef enum
+{
+	FIS_TYPE_REG_H2D	= 0x27,	// Register FIS - host to device
+	FIS_TYPE_REG_D2H	= 0x34,	// Register FIS - device to host
+	FIS_TYPE_DMA_ACT	= 0x39,	// DMA activate FIS - device to host
+	FIS_TYPE_DMA_SETUP	= 0x41,	// DMA setup FIS - bidirectional
+	FIS_TYPE_DATA		= 0x46,	// Data FIS - bidirectional
+	FIS_TYPE_BIST		= 0x58,	// BIST activate FIS - bidirectional
+	FIS_TYPE_PIO_SETUP	= 0x5F,	// PIO setup FIS - device to host
+	FIS_TYPE_DEV_BITS	= 0xA1,	// Set device bits FIS - device to host
+} FIS_TYPE;
+typedef volatile struct tagHBA_PORT
+{
+	DWORD	clb;	// 0x00, command list base address, 1K-byte aligned
+	DWORD	clbu;	// 0x04, command list base address upper 32 bits
+	DWORD	fb;	// 0x08, FIS base address, 256-byte aligned
+	DWORD	fbu;	// 0x0C, FIS base address upper 32 bits
+	DWORD	is;	// 0x10, interrupt status
+	DWORD	ie;	// 0x14, interrupt enable
+	DWORD	cmd;	// 0x18, command and status
+	DWORD	rsv0;	// 0x1C, Reserved
+	DWORD	tfd;	// 0x20, task file data
+	DWORD	sig;	// 0x24, signature
+	DWORD	ssts;	// 0x28, SATA status (SCR0:SStatus)
+	DWORD	sctl;	// 0x2C, SATA control (SCR2:SControl)
+	DWORD	serr;	// 0x30, SATA error (SCR1:SError)
+	DWORD	sact;	// 0x34, SATA active (SCR3:SActive)
+	DWORD	ci;	// 0x38, command issue
+	DWORD	sntf;	// 0x3C, SATA notification (SCR4:SNotification)
+	DWORD	fbs;	// 0x40, FIS-based switch control
+	DWORD	rsv1[11];	// 0x44 ~ 0x6F, Reserved
+	DWORD	vendor[4];	// 0x70 ~ 0x7F, vendor specific
+} HBA_PORT;
+typedef struct tagHBA_CMD_HEADER
+{
+	// DW0
+	BYTE	cfl:5;	// Command FIS length in DWORDS, 2 ~ 16
+	BYTE	a:1;	// ATAPI
+	BYTE	w:1;	// Write, 1: H2D, 0: D2H
+	BYTE	p:1;	// Prefetchable
+
+	BYTE	r:1;	// Reset
+	BYTE	b:1;	// BIST
+	BYTE	c:1;	// Clear busy upon R_OK
+	BYTE	rsv0:1;	// Reserved
+	BYTE	pmp:4;	// Port multiplier port
+ 
+	WORD	prdtl;	// Physical region descriptor table length in entries
+ 
+	// DW1
+	volatile DWORD prdbc;	// Physical region descriptor byte count transferred
+ 
+	// DW2, 3
+	DWORD	ctba;	// Command table descriptor base address
+	DWORD	ctbau;	// Command table descriptor base address upper 32 bits
+ 
+	// DW4 - 7
+	DWORD	rsv1[4];	// Reserved
+} HBA_CMD_HEADER;
+typedef struct tagFIS_REG_H2D
+{
+	// DWORD 0
+	BYTE	fis_type;	//0:		FIS_TYPE_REG_H2D
+ 
+	BYTE	pmport:4;	//1.[7,4]:		Port multiplier
+	BYTE	rsv0:3;		//1.[3,1]:		Reserved
+	BYTE	c:1;		//1.[0,0]:		1: Command, 0: Control
+ 
+	BYTE	command;	//2:		Command register
+	BYTE	featurel;	//3:		Feature register, 7:0
+ 
+	// DWORD 1
+	BYTE	lba0;		//4:		LBA low register, 7:0
+	BYTE	lba1;		//5:		LBA mid register, 15:8
+	BYTE	lba2;		//6:		LBA high register, 23:16
+	BYTE	device;		//7:		Device register
+ 
+	// DWORD 2
+	BYTE	lba3;		//8:		LBA register, 31:24
+	BYTE	lba4;		//9:		LBA register, 39:32
+	BYTE	lba5;		//a:		LBA register, 47:40
+	BYTE	featureh;	//b:		Feature register, 15:8
+ 
+	// DWORD 3
+	BYTE	countl;		//c:		Count register, 7:0
+	BYTE	counth;		//d:		Count register, 15:8
+	BYTE	icc;		//e:		Isochronous command completion
+	BYTE	control;	//f:		Control register
+ 
+	// DWORD 4
+	BYTE	rsv1[4];	//[10,13]:		Reserved
+} FIS_REG_H2D;
+typedef struct tagHBA_PRDT_ENTRY
+{
+	DWORD	dba;		// Data base address
+	DWORD	dbau;		// Data base address upper 32 bits
+	DWORD	rsv0;		// Reserved
+ 
+	// DW3
+	DWORD	dbc:22;		// Byte count, 4M max
+	DWORD	rsv1:9;		// Reserved
+	DWORD	i:1;		// Interrupt on completion
+}HBA_PRDT_ENTRY;
+typedef struct tagHBA_CMD_TBL
+{
+	// 0x00
+	BYTE	cfis[64];	// Command FIS
+ 
+	// 0x40
+	BYTE	acmd[16];	// ATAPI command, 12 or 16 bytes
+ 
+	// 0x50
+	BYTE	rsv[48];	// Reserved
+ 
+	// 0x80
+	HBA_PRDT_ENTRY	prdt_entry[1];
+	// Physical region descriptor table entries, 0 ~ 65535
+	// 0xffff个，每个0x18,总共0x180000=1.5M
+}CMD_TABLE;
 
 
 
