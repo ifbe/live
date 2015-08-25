@@ -8,7 +8,7 @@ times 0x1000-($-$$) db 0
 
 ;addr=1000,size=1000
 ;[1000,1fff]
-incbin "1000/wrap.bin"
+incbin "1000/data.bin"
 times 0x2000-($-$$) db 0
 
 

@@ -1,2 +1,2 @@
 all:
-	nasm wrap.s -o wrap.bin
+	nasm data.s -o data.bin

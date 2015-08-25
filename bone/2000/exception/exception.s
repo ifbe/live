@@ -2,7 +2,9 @@
 %define idthome 0x3000
 
 [bits 64]
-startofexception:
+startofexceptionhandler:
+
+
 
 
 ;_______________________________________
