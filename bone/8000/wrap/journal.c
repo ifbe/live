@@ -109,7 +109,13 @@ void say(char* p,...)
 	{
 		if(p[in] == '\0')break;		//是0，字符串结束了
 
-		if(p[in]=='%')		//%d,%c,%lf,%llx.....
+		else if(p[in]==0x9)
+		{
+			*(DWORD*)(destaddr+out)=0x20202020;
+			in++;
+			out+=4;
+		}
+		else if(p[in]=='%')		//%d,%c,%lf,%llx.....
 		{
 			if(p[in+1]=='x')
 			{

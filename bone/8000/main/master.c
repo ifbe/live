@@ -3,10 +3,10 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define diskhome 0x200000				//2m
+#define diskhome 0x400000				//2m
 #define mbrbuffer diskhome+0x20000
 
-#define programhome 0x400000			//4m
+#define programhome 0x1000000			//4m
 
 
 

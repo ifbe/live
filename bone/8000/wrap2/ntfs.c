@@ -3,10 +3,10 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define diskhome 0x200000			//[2m,3m)
-#define pbrbuffer diskhome+0x30000
-#define mftbuffer diskhome+0x40000
-#define indexbuffer diskhome+0x80000
+#define fshome 0x500000			//[2m,3m)
+#define pbrbuffer fshome+0x30000
+#define mftbuffer fshome+0x40000
+#define indexbuffer fshome+0x80000
 
 #define rawbuffer 0x300000			//[3m,4m)
 

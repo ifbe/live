@@ -15,6 +15,9 @@ void say(char*,...);
 
 void initahci();
 void initide();
+void initxhci();
+void initusb();
+
 void master();
 
 
@@ -27,6 +30,10 @@ void start()
 	QWORD temp;
 	for(temp=0;temp<journalsize/8;temp++) p[temp]=0;
 	say("oh we have found a whole new world,landing...%x...%x...%x...",1,2,3);
+
+	initxhci();
+	initusb();
+	return;
 
 	//有ahci就用ahci
 	initahci();
