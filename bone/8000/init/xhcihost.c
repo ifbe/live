@@ -423,7 +423,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	//xhci正在运行吗
 	if( (usbstatus&0x1) == 0)		//HCH位为0，即正在运行
 	{
-		say("	running,stopping\n");
+		say("		running,stopping\n");
 
 		//按下停止按钮
 		*(DWORD*)operational=usbcommand&0xfffffffe;
@@ -436,7 +436,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 		usbstatus=*(DWORD*)(operational+4);
 		if( (usbstatus&0x1) == 0)	//HCH位为0，即正在运行
 		{
-			say("	not stop\n");
+			say("		not stop\n");
 			return -2;
 		}
 	}
@@ -487,7 +487,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	say("		dcbaa:%x\n",dcbahome);
 	*(DWORD*)(dcbahome) = scratchpadhome;		//用了宏，加括号
 	*(DWORD*)(dcbahome+4)=0;					//高位
-	say("		scratchpad:",scratchpadhome);
+	say("		scratchpad:%x\n",scratchpadhome);
 
 	//command linktrb:lastone point to firstone
 	*(QWORD*)(cmdringhome+0xfff*0x10)=cmdringhome;
@@ -517,8 +517,8 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 
 	//-------------define event ring-----------
 	//build the "event ring segment table"
-	*(DWORD*)(ersthome)=eventringhome;
-	*(DWORD*)(ersthome+0x8)=0x1000;				//0x1000*0x10=0x10000
+	*(QWORD*)(ersthome)=eventringhome + 1;
+	*(QWORD*)(ersthome+0x8)=0x100;		//0x1000*0x10=0x10000
 
 	//ERSTSZ
 	*(DWORD*)(runtime+0x28)=1;
@@ -541,7 +541,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	//IMAN
 	*(DWORD*)(runtime+0x20) = (*(DWORD*)(runtime+0x20)) | 0x2;
 
-	say("		event ring@\n",eventringhome);
+	say("		event ring@%x\n",eventringhome);
 
 
 

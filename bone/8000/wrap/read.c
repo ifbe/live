@@ -274,7 +274,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	while (1)
 	{
 		timeout++;
-		if(timeout>0xfffff)
+		if(timeout>0xffffff)
 		{
 			say("(timeout2)port->ci=%x",temp);
 			return -22;
