@@ -517,8 +517,9 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 
 	//-------------define event ring-----------
 	//build the "event ring segment table"
-	*(QWORD*)(ersthome)=eventringhome + 1;
+	*(QWORD*)(ersthome)=eventringhome;
 	*(QWORD*)(ersthome+0x8)=0x100;		//0x1000*0x10=0x10000
+						//but!!!my asus n55 must set it below 0x100
 
 	//ERSTSZ
 	*(DWORD*)(runtime+0x28)=1;
