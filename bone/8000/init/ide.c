@@ -34,6 +34,25 @@ static unsigned int finddevice()
 	}
 return 0;
 }
+static void rememberharddisk(QWORD name,QWORD command,QWORD control)
+{
+	QWORD* p=(QWORD*)idehome;
+	int i;
+
+	//最多0x1000字节,每0x40字节一个记录
+	//所以最多挂满64个sata设备,正常人不会挂那么多sata设备吧?
+	//多了直接覆盖......
+	//(如果实在超过这个数量,其实有0x10000字节可以用)
+	for( i=0; i<0x1000/8; i+=8 )
+	{
+		if( p[i] == 0 )break;
+	}
+
+	//已经找到了空地，放东西
+	p[i]=name;
+	p[i+2]=command;
+	p[i+4]=control;
+}
 
 
 
@@ -57,6 +76,7 @@ static unsigned int probepci(QWORD addr)
 //?：pci地址
 //出：?存地址
 	unsigned int temp;
+	unsigned int bar0,bar1;
 	say("(ide)pciaddr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
@@ -66,18 +86,17 @@ static unsigned int probepci(QWORD addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	say("    pci sts&cmd:%x",(QWORD)in32(0xcfc));
+	temp=(QWORD)in32(0xcfc);
+	say("    pci sts&cmd:%x",temp);
 
 	//ide port
 	out32(0xcf8,addr+0x10);
-	temp=in32(0xcfc)&0xfffffffe;
-	*(QWORD*)(idehome+0x10)=temp;		//command
-	say("    (command)bar0:%x\n",temp);
+	bar0=in32(0xcfc)&0xfffffffe;
+	say("    (command)bar0:%x\n",bar0);
 
 	out32(0xcf8,addr+0x14);
-	temp=in32(0xcfc)&0xfffffffe;
-	*(QWORD*)(idehome+0x20)=temp;		//control
-	say("    (control)bar1:%x\n",temp);
+	bar1=in32(0xcfc)&0xfffffffe;
+	say("    (control)bar1:%x\n",bar1);
 
 	out32(0xcf8,addr+0x18);
 	temp=in32(0xcfc)&0xfffffffe;
@@ -87,9 +106,8 @@ static unsigned int probepci(QWORD addr)
 	temp=in32(0xcfc)&0xfffffffe;
 	say("    bar3:%x\n",temp);
 
-	//asdfasdfasdfasdf
-	*(QWORD*)(idehome)=0x656469;
-
+	//找到了，放到自己的表格里
+	rememberharddisk(0x656469,bar0,bar1);
 	say("}\n");
 }
 
@@ -103,10 +121,6 @@ static unsigned int probepci(QWORD addr)
 void initide()
 {
 	QWORD addr;
-
-	//clear home
-	addr=idehome;
-	for(;addr<idehome+0x100000;addr++) *(BYTE*)addr=0;
 
 	//find device
 	addr=finddevice();		//get port addr of this storage device

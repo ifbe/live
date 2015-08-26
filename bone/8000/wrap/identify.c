@@ -375,11 +375,11 @@ int identifyide(QWORD rdi)
 
 int identify(QWORD rdi)
 {
-	QWORD type=*(QWORD*)idehome;
+	QWORD type=*(QWORD*)diskhome;
 	QWORD temp=0;
 	if(type == 0x61746173)					//sata
 	{
-		temp=*(QWORD*)(idehome+8);
+		temp=*(QWORD*)(diskhome+8);
 		identifysata(rdi,temp);
 	}
 	else if(type == 0x656469)				//ide

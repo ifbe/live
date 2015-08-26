@@ -12,7 +12,7 @@ rep movsb
 jmp endofansciitable
 
 paddingofcode:
-times 0x400-(paddingofcode-startofdata) db 0
+times 0x40-(paddingofcode-startofdata) db 0
 
 
 
@@ -38,8 +38,19 @@ dq "/pci","0x40000",0,0
 dq "/usb","0x50000",0,0
 dq "/?","0x60000",0,0
 dq "/bin","0x70000",0,0
-dq "^_^","-.-","-_-","-?-"
+dq "-_-","-.-","-_-","-?-"
 dq 0,0,0,0,0,0,0,0
+
+dq "/ahci","0x100000",0,0
+dq "/xhci","0x200000",0,0
+dq "/usb","0x300000",0,0
+dq "/disk","0x400000",0,0
+dq "/fs","0x500000",0,0
+dq "/dir","0x600000",0,0
+dq "/buffer","0x700000",0,0
+dq "^_^","^.^","^,^","^.^"
+dq 0,0,0,0,0,0,0,0
+
 
 
 

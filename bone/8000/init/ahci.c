@@ -325,7 +325,7 @@ static void probeahci(QWORD addr)
 		mytable[from]=0;
 	}
 
-	to=8;		//翻译到自己的容易理解的表格里面(+0:名字,+8:地址)
+	to=0;		//翻译到自己的容易理解的表格里面(+0:名字,+8:地址)
 	for(from=0;from<count;from++)
 	{
 		port=(HBA_PORT*)(addr+0x100+from*0x80);
@@ -337,44 +337,33 @@ static void probeahci(QWORD addr)
 		switch(port->sig)
 		{
 			case 0x00000101:{		//sata
-				mytable[to]=0x61746173;
-				mytable[to+1]=addr+0x100+from*0x80;
-				to+=2;
+				mytable[to*8]=0x61746173;
+				mytable[to*8+1]=addr+0x100+from*0x80;
+				to+=8;
 				break;			//继续for循环
 			}
 			case 0xeb140101:{		//atapi
-				mytable[to]=0x6970617461;
-				mytable[to+1]=addr+0x100+from*0x80;
-				to+=2;
+				mytable[to*8]=0x6970617461;
+				mytable[to*8+1]=addr+0x100+from*0x80;
+				to+=8;
 				break;
 			}
 			case 0xc33c0101:{		//enclosure....
-				mytable[to]=0x2e2e2e6f6c636e65;
-				mytable[to+1]=addr+0x100+from*0x80;
-				to+=2;
+				mytable[to*8]=0x2e2e2e6f6c636e65;
+				mytable[to*8+1]=addr+0x100+from*0x80;
+				to+=8;
 				break;
 			}
 			case 0x96690101:{		//port multiplier
-				mytable[to]=0x2e2e2e69746c756d;
-				mytable[to+1]=addr+0x100+from*0x80;
-				to+=2;
+				mytable[to*8]=0x2e2e2e69746c756d;
+				mytable[to*8+1]=addr+0x100+from*0x80;
+				to+=8;
 				break;
 			}
 		}//switch
 		}//if this port usable
 	}//for
 
-	for(from=8;from<count*2+8;from++)		//把sata放到第一个
-	{
-		if( mytable[from] == 0x61746173 )
-		{
-			mytable[0]=mytable[from];
-			mytable[1]=mytable[from+1];
-			break;
-		}
-	}
-
-	say("    final result@%x\n",*(QWORD*)(ahcihome+8));
 	say("}\n");
 }
 

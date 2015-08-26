@@ -9,6 +9,7 @@
 #define usbhome 0x300000
 
 #define diskhome 0x400000
+	#define partitionhome diskhome+0x10000
 	#define mbrbuffer diskhome+0x20000
 #define fshome 0x500000
 #define dirhome 0x600000
@@ -29,11 +30,6 @@ void identify(QWORD);
 
 
 
-static void loadtoy()
-{
-	//目的地
-	read(datahome,0x80,0,0x800);
-}
 static void directidentify()
 {
 	identify(datahome);
@@ -71,7 +67,7 @@ static void directread(QWORD sector)
 QWORD explaingpt()
 {
 	say("gpt disk",0);
-	QWORD* our=(QWORD*)diskhome;
+	QWORD* our=(QWORD*)(partitionhome);
 	QWORD* raw=(QWORD*)(mbrbuffer+0x400);
 	int i;
 	for(i=0;i<0x200;i++) our[i]=0;
@@ -114,7 +110,7 @@ QWORD explainmbr()
 {
 	say("mbr disk",0);
 	QWORD raw=mbrbuffer+0x1be;
-	BYTE* our=(BYTE*)diskhome;
+	BYTE* our=(BYTE*)(partitionhome);
 	int i;
 	for(i=0;i<0x1000;i++) our[i]=0;
 
@@ -144,7 +140,7 @@ static int mount(BYTE* addr)
 {
 	QWORD name=*(DWORD*)addr;
 
-	QWORD* memory=(QWORD*)diskhome;
+	QWORD* memory=(QWORD*)(partitionhome);
 	QWORD offset=0;
 	int i;
 	for(i=0;i<0x80;i+=8)
@@ -177,35 +173,51 @@ static int mount(BYTE* addr)
 
 void master()
 {
-	//把操作函数的位置放进/bin
+	QWORD from,to,temp;
+
+	//一.首先找到已经能用的硬盘
+	to=diskhome;
+	for(;to<diskhome+0x100000;to+=4)	//清理内存
+	{
+		*(DWORD*)to=0;
+	}
+
+	from=ahcihome;
+	to=diskhome;
+	for(; from<(ahcihome+0x1000); from+=0x40)
+	{
+		temp=*(QWORD*)from;
+		if(temp != 0)
+		{
+			//把所有已经发现的"硬盘设备"放在diskhome里面
+			*(QWORD*)(to+0) = *(QWORD*)(from+0);
+			*(QWORD*)(to+8) = *(QWORD*)(from+8);
+			*(QWORD*)(to+0x10) = *(QWORD*)(from+0x10);
+			to+=0x40;
+		}
+	}
+
+
+
+
+	//二.把操作函数的位置放进/bin以便在终端里直接调
 	remember(0x796669746e656469,(QWORD)directidentify);
 	remember(0x6b73696464616572,(QWORD)directread);
 	remember(0x746e756f6d,(QWORD)mount);
 
-	//we are testing ide......very unstable......
-	if(*(DWORD*)0x100000 == 0x656469)return;
 
-	//清理内存，然后读出前64个扇区
-	BYTE* memory=(BYTE*)(mbrbuffer);
-	int i;
-	for(i=0;i<0x8000;i++) memory[i]=0;
 
-	read(mbrbuffer,0,*(QWORD*)(0x100000+8),64);
+
+	//三.然后读出前64个扇区,再解释分区表
+	if(*(DWORD*)(diskhome) == 0x656469)return;
+
+	read(mbrbuffer,0,0,64);
 	if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55)
 	{
 		say("bad disk",0);
 		return;
 	}
-	if(*(DWORD*)(mbrbuffer+0x1c0)==0x74736574)
-	{
-		loadtoy();
-		say("loaded toy",0);
-		int result=((int (*)())(datahome))();
-		say("played toy",result);
-		return;
-	}
 
-	//解释分区表
 	if(*(QWORD*)(mbrbuffer+0x200)==0x5452415020494645)
 	{
 		explaingpt();
@@ -216,8 +228,9 @@ void master()
 	}
 
 
-	//从/bin执行
-	//自动尝试3种分区，找到live文件夹，cd进去，全部失败就返回-1
+
+
+	//自动尝试(脑袋已经在内存里,身体暂时还在硬盘里......)
 	//int result;
 
 	//mount("fat");		//try fat

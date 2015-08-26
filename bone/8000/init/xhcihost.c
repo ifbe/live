@@ -6,8 +6,11 @@
 #define pcihome 0x40000
 
 #define xhcihome 0x200000
-#define dcbahome xhcihome+0x10000
-#define ersthome xhcihome+0x20000
+#define ersthome xhcihome+0x10000
+
+#define dcbahome xhcihome+0x20000
+#define scratchpadhome xhcihome+0x30000
+
 #define cmdringhome xhcihome+0x40000
 #define eventringhome xhcihome+0x80000
 
@@ -67,7 +70,7 @@ static inline unsigned int in32( unsigned short port )
 	unsigned int ret;
 	asm volatile( "inl %1, %0"  : "=a"(ret) : "Nd"(port) );
 	return ret;
-}
+}/*
 void explaincapability()
 {
 say("pci cap{");
@@ -205,13 +208,14 @@ break;
 say("}\n",0);
 
 }
+*/
 
 
 
 
 QWORD probepci()
 {
-	say("xhci(port)@%x\n",xhciport);
+	say("(xhci)portaddr:%x{\n",xhciport);
 
 	//disable pin interrupt+enable bus mastering
 	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
@@ -251,13 +255,13 @@ int ownership(QWORD addr)
 	temp&=0x1000000;
 	if(temp == 0x1000000)
 	{
-		say("grabing ownership");
+		say("	grabing ownership");
 
 		temp=*(DWORD*)addr;
 		temp&=0x10000;
 		if(temp == 0)
 		{
-			say("bios gone");
+			say("	bios gone");
 			return 0;
 		}
 	}
@@ -277,21 +281,21 @@ void supportedprotocol(QWORD addr)
 	//say("first:",first);
 	if(first<0x100)		//[0,0xff]
 	{
-		say("usb?\n");
+		say("	usb?\n");
 	}
 	else if(first<=0x200)	//[0x100,0x1ff]
 	{
-		say("usb1:%x\n",start);
+		say("	usb1:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=1;
 	}
 	else if(first<=0x300)	//[0x200,0x2ff]
 	{
-		say("usb2:%x\n",start);
+		say("	usb2:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=2;
 	}
 	else			//[0x300,0x3ff]
 	{
-		say("usb3:%x\n",start);
+		say("	usb3:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=3;
 	}
 }
@@ -303,15 +307,15 @@ void explainxecp(QWORD addr)
 {
 	DWORD temp;
 
-	say("explain xecp@%x{\n",addr);
+	say("	explain xecp@%x{\n",addr);
 	while(1)
 	{
-		say("@%x\n",addr);
+		say("	@%x\n",addr);
 		temp=*(DWORD*)addr;
 		BYTE type=temp&0xff;
 		QWORD next=(temp>>6)&0x3fc;
 
-		say("cap:%x\n",type);
+		say("	cap:%x\n",type);
 		switch(type)
 		{
 			case 1:{
@@ -330,18 +334,18 @@ void explainxecp(QWORD addr)
 
 
 failed:
-	say("}\n");
+	say("	}\n");
 }
+
 
 
 
 int probexhci()
 {
-say("xhci@%x\n",xhciaddr);
+say("(xhci)memaddr:%x{\n",xhciaddr);
 
 //基本信息
-say("base information{");
-
+//say("base information{");
 	QWORD version=(*(DWORD*)xhciaddr) >> 16;
 	QWORD caplength=(*(DWORD*)xhciaddr) & 0xffff;
 
@@ -353,18 +357,17 @@ say("base information{");
 	volatile QWORD operational=xhciaddr+caplength;
 	QWORD runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
 
-	say("	version:%x\n",version);
-	say("	caplength:%x\n",caplength);
+	//say("	version:%x\n",version);
+	//say("	caplength:%x\n",caplength);
 
-	say("	hcsparams1:%x\n",hcsparams1);
-	say("	hcsparams2:%x\n",hcsparams2);
-	say("	hcsparams3:%x\n",hcsparams3);
-	say("	capparams:%x\n",capparams);
+	//say("	hcsparams1:%x\n",hcsparams1);
+	//say("	hcsparams2:%x\n",hcsparams2);
+	//say("	hcsparams3:%x\n",hcsparams3);
+	//say("	capparams:%x\n",capparams);
 
-	say("	operational@%x\n",operational);
-	say("	runtime@%x\n",runtime);
-
-say("}\n",0);
+	//say("	operational@%x\n",operational);
+	//say("	runtime@%x\n",runtime);
+//say("}\n",0);
 
 
 
@@ -377,8 +380,7 @@ say("}\n",0);
 
 
 //打印bios初始化完后的状态
-say("before we destory everything{\n");
-
+//say("before we destory everything{\n");
 	QWORD usbcommand=*(DWORD*)operational;
 	QWORD usbstatus=*(DWORD*)(operational+4);
 	QWORD pagesize=0x1000;
@@ -400,29 +402,28 @@ say("before we destory everything{\n");
 		pagesize<<1;
 	}
 
-	say("	usbcommand:%x\n",usbcommand);
-	say("	usbstatus:%x\n",usbstatus);
-	say("	pagesize:%x\n",pagesize);
-	say("	crcr:%x\n",crcr);
-	say("	dcbaa:%x\n",dcbaa);
-	say("	config:%x\n",config);
+	//say("	usbcommand:%x\n",usbcommand);
+	//say("	usbstatus:%x\n",usbstatus);
+	//say("	pagesize:%x\n",pagesize);
+	//say("	crcr:%x\n",crcr);
+	//say("	dcbaa:%x\n",dcbaa);
+	//say("	config:%x\n",config);
+//say("}\n",0);
 
 
-say("}\n",0);
 
 
-
-say("init xhci{",0);
 //----------------------------1.xhci复位------------------------------
 //init system io memory map,if supported
 //xhci reset,wait until CNR flag is 0
 //--------------------------------------------------------------------
-say("1.stop&reset");
+	say("	init xhci{",0);
+	say("	1.stop&reset");
 
 	//xhci正在运行吗
 	if( (usbstatus&0x1) == 0)		//HCH位为0，即正在运行
 	{
-		say("	it's running,it'll stop\n");
+		say("	running,stopping\n");
 
 		//按下停止按钮
 		*(DWORD*)operational=usbcommand&0xfffffffe;
@@ -464,9 +465,8 @@ say("1.stop&reset");
 	}
 
 	//好像第一步成功了
-	say("	command:%x\n",usbcommand);
-	say("	status:%x\n",usbstatus);
-	say("	ok!\n");
+	//say("	command:%x\n",usbcommand);
+	//say("	status:%x\n",usbstatus);
 
 
 
@@ -476,20 +476,18 @@ say("1.stop&reset");
 //program the dcbaap
 //program crcr,point to addr of first trb in command ring
 //----------------------------------------------------------
-say("2.maxslot&dcbaa&crcr:");
-
+	say("	2.maxslot&dcbaa&crcr:");
 	//maxslot=deviceslots
 	*(DWORD*)(operational+0x38)=(*(DWORD*)(xhciaddr+4)) &0xff;
-	say("	maxslot:%x\n",*(DWORD*)(operational+0x38) );
+	say("		maxslot:%x\n",*(DWORD*)(operational+0x38) );
 
-	//dcbaa
+	//dcbaa(scratchpad)
 	*(DWORD*)(operational+0x30)=dcbahome;
 	*(DWORD*)(operational+0x34)=0;
-	say("	dcbaa:%x\n",*(DWORD*)(operational+0x30) );
-
-	//scratchpad
-	//*(DWORD*)dcbahome=dcbahome+0x8000;
-	//say("	scratchpad:",dcbahome+0x8000);
+	say("		dcbaa:%x\n",dcbahome);
+	*(DWORD*)(dcbahome) = scratchpadhome;		//用了宏，加括号
+	*(DWORD*)(dcbahome+4)=0;					//高位
+	say("		scratchpad:",scratchpadhome);
 
 	//command linktrb:lastone point to firstone
 	*(QWORD*)(cmdringhome+0xfff*0x10)=cmdringhome;
@@ -499,31 +497,23 @@ say("2.maxslot&dcbaa&crcr:");
 	//crcr
 	*(DWORD*)(operational+0x18)=cmdringhome+1;
 	*(DWORD*)(operational+0x1c)=0;
-	say("	crcr:%x\n",*(DWORD*)(operational+0x18));
+	say("		crcr:%x\n",cmdringhome+1);
 
 
 
 
-//-----------------------3.中断----------------------
+//-----------------------3.中断,eventring----------------------
 //msix table,message addr,message data,enable vector
 //allocate&init msix pending bit array
 //point table&pba offset to message control table and pending bit array
 //init message control register of msix capability structure
 //-------------------------------------------------
-//say("3.interrupt");
+	say("	3.interrupt&eventring\n");
 
 	//setupisr(xhciaddr);
-
 	//----------------------if(msix)--------------------------
 	//----------------------if(msi)--------------------------
 	//----------------------if(intx)--------------------------
-
-
-
-
-//--------------------4.eventring---------------------------
-//------------------------------------------------------
-say("4.eventring\n");
 
 	//-------------define event ring-----------
 	//build the "event ring segment table"
@@ -551,7 +541,7 @@ say("4.eventring\n");
 	//IMAN
 	*(DWORD*)(runtime+0x20) = (*(DWORD*)(runtime+0x20)) | 0x2;
 
-	say("	event ring done\n");
+	say("		event ring@\n",eventringhome);
 
 
 
@@ -559,7 +549,7 @@ say("4.eventring\n");
 //---------------------xhci启动---------------------
 //write usbcmd,turn host controller on
 //-------------------------------------------------
-say("5.turnon\n");
+	say("	4.turnon\n");
 	//turn on
 	*(DWORD*)operational = (*(DWORD*)operational) | 0x1;
 
@@ -568,8 +558,13 @@ say("5.turnon\n");
 	while(wait3--)asm("nop");
 
 	//
-	say("	command:%x\n",*(DWORD*)operational);
-	say("	status:%x\n",*(DWORD*)(operational+4));
+	//say("	command:%x\n",*(DWORD*)operational);
+	//say("	status:%x\n",*(DWORD*)(operational+4));
+
+	say("	}\n");
+
+
+
 
 say("}\n",0);
 return 0;
@@ -600,7 +595,7 @@ void initxhci()
 	*(QWORD*)(xhcihome+8)=xhciaddr;			//0x????????
 
 	//xhci
-	if(probexhci()<0) goto end;
+	probexhci();
 
 
 

@@ -32,25 +32,16 @@ void start()
 	for(temp=0;temp<journalsize/8;temp++) p[temp]=0;
 	say("oh we have found a whole new world,landing...%x...%x...%x...",1,2,3);
 
-	//有ahci就用ahci
+	//初始化，然后把找到的设备列一个清单
 	initahci();
 
-	//没有发现就用ide
-	temp=*(QWORD*)(ahcihome);
-	if( temp == 0 ) initide();
+	//初始化，然后放进清单
+	initide();
 
-	//xhci
+	//xhcihost,xhciport(hub+基本的询问)
 	initxhci();
 	initusb();
 
-	//什么都没有就报错返回
-	temp=*(QWORD*)(ahcihome);
-	if( temp == 0 )
-	{
-		say("no disk");
-		return;
-	}
-
-	//读分区
+	//自己找磁盘,找到了就自己挂分区
 	master();
 }

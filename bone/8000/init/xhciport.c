@@ -6,9 +6,10 @@
 #define usbinfo 0x5000		//	/usb
 
 #define xhcihome 0x200000
-#define dcbahome xhcihome+0x10000
+#define ersthome xhcihome+0x10000
 
-#define ersthome xhcihome+0x20000
+#define dcbahome xhcihome+0x20000
+	//#define scratchpadhome xhcihome+0x30000
 
 #define cmdringhome xhcihome+0x40000
 #define eventringhome xhcihome+0x80000
@@ -65,7 +66,7 @@ void sendpacket(QWORD ringaddr)
 	QWORD enqueue=*(QWORD*)(ringaddr+0xff0);
 	DWORD* p=(DWORD*)(ringaddr+enqueue);
 
-	say("(enqueue before:%x)\n",enqueue);
+	//say("(enqueue before:%x)\n",enqueue);
 	if(packet.bmrequesttype>=0x80)
 	{
 		//setup stage
@@ -113,7 +114,7 @@ void sendpacket(QWORD ringaddr)
 		//cycle取反
 	}
 	*(QWORD*)(ringaddr+0xff0)=enqueue;
-	say("(enqueue after:%x)\n",enqueue);
+	//say("(enqueue after:%x)\n",enqueue);
 }
 
 
@@ -175,26 +176,38 @@ int waitevent(QWORD wantedslot,QWORD wantedtype)
 			return -1;
 		}
 
-		//拿出一个
+	
+
+
+		//拿出一个,cycle不对就回到while(1)
 		fourth=*(DWORD*)(eventringdequeue+0xc);
 		cycle=fourth & 0x1;
 		if(cycle != eventringcycle) continue;
 
-		//到这里说明这次的cycle对了
+	
+
+
+		//cycle对了，检查completion code
+		//正常就往下走，否则返回失败
 		first=*(DWORD*)(eventringdequeue);
 		second=*(DWORD*)(eventringdequeue+4);
 		third=*(DWORD*)(eventringdequeue+8);
-		say("(event@%x)%x,%x,%x,%x\n",eventringdequeue,first,second,third,fourth);
+		//say("(event@%x)%x,%x,%x,%x\n",eventringdequeue,first,second,third,fourth);
 		eventringdequeue+=0x10;
+		if( (third >> 24) != 0x1 )return -1;
+
 		//*(DWORD*)(runtime+0x38)=eventringdequeue | 8;
 		//*(DWORD*)(runtime+0x3c)=0;
+
+	
+
 
 		//如果想等host事件
 		slot=fourth>>24;
 		type=(fourth>>10)&0x3f;
 		if(wantedslot == 0)
 		{
-			if(type == wantedtype)				//正是想要的
+			if(type == wantedtype)		//正是想要的
 			{
 				if(type==0x21)
 				{
@@ -207,6 +220,9 @@ int waitevent(QWORD wantedslot,QWORD wantedtype)
 				else return 1;
 			}
 		}
+
+	
+
 
 		//如果想等device事件
 		else
@@ -236,7 +252,9 @@ static QWORD interval;
 void explaindescriptor(QWORD addr)
 {
 	DWORD type=*(BYTE*)(addr+1);
-	if(	(type==0)|((type>7)&(type<0x21))|(type>0x29)	) return;
+	if(type==0)return;
+	//say("type:%x\n",type);
+	//if(	(type==0)|((type>7)&(type<0x21))|(type>0x29)	) return;
 
 	volatile DWORD i;
 	switch(type)
@@ -250,167 +268,206 @@ void explaindescriptor(QWORD addr)
 		wmaxpacket=0;
 		interval=0;
 
-		say("device@%x\n",addr);
-		say("blength:%x\n",*(BYTE*)addr);
-		say("type:%x\n",*(BYTE*)(addr+1));
-		say("bcdusb:%x\n",*(WORD*)(addr+2));
+		say("(desc 1)device@%x{\n",addr);
+		//say("blength:%x\n",*(BYTE*)addr);
+		//say("type:%x\n",*(BYTE*)(addr+1));
+		//say("bcdusb:%x\n",*(WORD*)(addr+2));
 
-		classcode=*(BYTE*)(addr+4);			//!
-		say("bclass:%x\n",classcode);
+		//classcode=*(BYTE*)(addr+4);			//!
+		//say("bclass:%x\n",classcode);
 
-		say("bsubclass:%x\n",*(BYTE*)(addr+5));
+		//say("bsubclass:%x\n",*(BYTE*)(addr+5));
 
-		deviceprotocol=*(BYTE*)(addr+6);		//!
-		say("bprotocol:%x\n",deviceprotocol);
+		//deviceprotocol=*(BYTE*)(addr+6);		//!
+		//say("bprotocol:%x\n",deviceprotocol);
 
-		say("bpacketsize:%x\n",*(BYTE*)(addr+7));
+		say("	bpacketsize:%x\n",*(BYTE*)(addr+7));
 
 		vendor=*(WORD*)(addr+8);			//!
-		say("vendor:%x\n",vendor);
+		say("	vendor:%x\n",vendor);
 
 		product=*(WORD*)(addr+0xa);			//!
-		say("product:%x\n",product);
+		say("	product:%x\n",product);
 
-		say("bcddevice:%x\n",*(WORD*)(addr+0xc));
+		//say("	bcddevice:%x\n",*(WORD*)(addr+0xc));
 
 		//i=*(BYTE*)(addr+0xe);
 		//stringtoread[i]=1;
-		//say("imanufacturer:%x\n",i);
+		//say("	imanufacturer:%x\n",i);
 
 		//i=*(BYTE*)(addr+0xf);
 		//stringtoread[i]=1;
-		//say("iproduct:%x\n",i);
+		//say("	iproduct:%x\n",i);
 
 		//i=*(BYTE*)(addr+0x10);
 		//stringtoread[i]=1;
-		//say("iserial:%x\n",i);
+		//say("	iserial:%x\n",i);
 
-		say("bnumconf:%x\n",*(BYTE*)(addr+0x11));
-
+		say("	bnumconf:%x\n",*(BYTE*)(addr+0x11));
+		say("}\n");
 		break;
 	}
 	case 2:	//配置描述符
 	{
-		say("conf@%x\n",addr);
-		say("blength:%x\n",*(BYTE*)addr);
-		say("type:%x\n",*(BYTE*)(addr+1));
-		say("wlength:%x\n",*(WORD*)(addr+2));
-		say("bnuminterface:%x\n",*(BYTE*)(addr+4));
-		say("bvalue:%x\n",*(BYTE*)(addr+5));
+		say("(desc 2)conf@%x{\n",addr);
+		//say("	blength:%x\n",*(BYTE*)addr);
+		//say("	type:%x\n",*(BYTE*)(addr+1));
+		//say("	wlength:%x\n",*(WORD*)(addr+2));
+		say("	bnuminterface:%x\n",*(BYTE*)(addr+4));
+		//say("	bvalue:%x\n",*(BYTE*)(addr+5));
 		//i=*(BYTE*)(addr+0x6);
 		//stringtoread[i]=1;
-		//say("i:",i);
-		BYTE bmattribute=*(BYTE*)(addr+7);
-		say("bmattribute:%x\n",bmattribute);
-		if( (bmattribute&0x40) ==0x40 ) say("    self powered");
-		if( (bmattribute&0x20) ==0x20 ) say("    remote wake");
-		say("bmaxpower:%x\n",*(BYTE*)(addr+8));
+		//say("	i:",i);
+		//BYTE bmattribute=*(BYTE*)(addr+7);
+		//say("	bmattribute:%x\n",bmattribute);
+		//if( (bmattribute&0x40) ==0x40 ) say("	self powered");
+		//if( (bmattribute&0x20) ==0x20 ) say("	remote wake");
+		//say("	bmaxpower:%x\n",*(BYTE*)(addr+8));
 
 		DWORD totallength=*(WORD*)(addr+2);
-		DWORD offset=0;
+		say("	wlength:%x\n",totallength);
+		DWORD offset=9;
+		DWORD nextlen,nexttype;
 		while(1)
 		{
-			if(offset>totallength) break;
-			if( *(BYTE*)(addr+offset) <8) break;
-			offset+=*(BYTE*)(addr+offset);
+			//偏移超过总长度肯定错了
+			if(offset>=totallength) break;
+
+			//拿出下一个的长度和种类
+			//用的递归,所以要是里面再出现type2的错误desc,可能会死着...
+			nextlen=*(BYTE*)(addr+offset);
+			nexttype=*(BYTE*)(addr+offset);
+			//say("	@%x:(%x,%x)\n",offset,nextlen,nexttype);
+			if(nexttype==2)break;
+
+			//一切正常,解释下一个表
 			explaindescriptor(addr+offset);
+
+			//下一轮循环
+			offset+=nextlen;
 		}
 
+		say("}\n");
+		break;
+	}
+	case 3:	//接口描述符
+	{
+		say("(desc 3)string@%x{\n",addr);
+
+		say("	blength:%x\n",*(BYTE*)(addr));
+		WORD language=*(WORD*)(addr+2);
+		say("	language:%x\n",language);
+
+		say("}\n");
 		break;
 	}
 	case 4:	//接口描述符
 	{
-		say("interface@%x\n",addr);
-		say("length:%x\n",*(BYTE*)addr);
-		say("type:%x\n",*(BYTE*)(addr+1));
-		say("binterfacenum:%x\n",*(BYTE*)(addr+2));
-		say("balternatesetting:%x\n",*(BYTE*)(addr+3));
-		say("bnumendpoint:%x\n",*(BYTE*)(addr+4));
+		say("	(desc 4)interface@%x{\n",addr);
+		//say("	length:%x\n",*(BYTE*)addr);
+		//say("	type:%x\n",*(BYTE*)(addr+1));
+		say("		binterfacenum:%x\n",*(BYTE*)(addr+2));
+		say("		balternatesetting:%x\n",*(BYTE*)(addr+3));
+		say("		bnumendpoint:%x\n",*(BYTE*)(addr+4));
 
-		interfaceclass=*(BYTE*)(addr+5);
-		say("bclass:%x\n",interfaceclass);
-		say("bsubclass:%x\n",*(BYTE*)(addr+6));
-		say("bprotol:%x\n",*(BYTE*)(addr+7));
+		//interfaceclass=*(BYTE*)(addr+5);
+		//say("		bclass:%x\n",interfaceclass);
+		//say("		bsubclass:%x\n",*(BYTE*)(addr+6));
+		//say("		bprotol:%x\n",*(BYTE*)(addr+7));
 
 		//i=*(BYTE*)(addr+0x8);
 		//stringtoread[i]=1;
-		//say("i:%x\n",i);
+		//say("		i:%x\n",i);
 
+		say("	}\n");
 		break;
 	}
 	case 5:	//端点描述符
 	{
-		say("endpoint@%x\n",addr);
-		say("blength:%x\n",*(BYTE*)addr);
-		say("type:%x\n",*(BYTE*)(addr+1));
+		say("	(desc 5)endpoint@%x{\n",addr);
+		//say("		blength:%x\n",*(BYTE*)addr);
+		//say("		type:%x\n",*(BYTE*)(addr+1));
 
 		BYTE endpoint=*(BYTE*)(addr+2);
-		say("    endpoint:%x\n",endpoint&0xf);
-		if(endpoint>0x80){say("    in");}
-		else{say("    out");}
-
 		BYTE eptype=*(BYTE*)(addr+3);
-		if(eptype==0) say("    control");
-		else if(eptype==1) say("    isochronous");
-		else if(eptype==2) say("    bulk");
-		else say("    interrupt");
+		say("		ep:%x\n",endpoint&0xf);
+		if(endpoint>0x80)
+		{
+			if(eptype==0) say("		in,control");
+			else if(eptype==1) say("		in,isochronous");
+			else if(eptype==2) say("		in,bulk");
+			else say("		in,interrupt");
+		}
+		else
+		{
+			if(eptype==0) say("		out,control");
+			else if(eptype==1) say("		out,isochronous");
+			else if(eptype==2) say("		out,bulk");
+			else say("		out,interrupt");
+		}
 
-		wmaxpacket=*(WORD*)(addr+4);
-		say("wmaxpacket:%x\n",wmaxpacket);
-		interval=*(BYTE*)(addr+6);
-		say("binterval:%x\n",interval);
 
+		//wmaxpacket=*(WORD*)(addr+4);
+		//say("	wmaxpacket:%x\n",wmaxpacket);
+		//interval=*(BYTE*)(addr+6);
+		//say("	binterval:%x\n",interval);
+
+		say("	}\n");
 		break;
 	}
-/*
 	case 6:	//设备限定描述符
 	{
-		say("    blength:%x\n",*(BYTE*)addr);
-		say("    bdescriptortype:%x\n",*(BYTE*)(addr+1));
-		say("    bcdusb:%x\n",*(WORD*)(addr+2));
-		say("    bdeviceclass:%x\n",*(BYTE*)(addr+4));
-		say("    bdevicesubclass:%x\n",*(BYTE*)(addr+5));
-		say("    bdeviceprotocol:%x\n",*(BYTE*)(addr+6));
-		say("    bmaxpacketsize0:%x\n",*(BYTE*)(addr+7));
-		say("    bnumconfigurations:%x\n",*(BYTE*)(addr+8));
+		say("	(desc 6)@%x{\n",addr);
+		//say("	blength:%x\n",*(BYTE*)addr);
+		//say("	bdescriptortype:%x\n",*(BYTE*)(addr+1));
+		//say("	bcdusb:%x\n",*(WORD*)(addr+2));
+		//say("	bdeviceclass:%x\n",*(BYTE*)(addr+4));
+		//say("	bdevicesubclass:%x\n",*(BYTE*)(addr+5));
+		//say("	bdeviceprotocol:%x\n",*(BYTE*)(addr+6));
+		//say("	bmaxpacketsize0:%x\n",*(BYTE*)(addr+7));
+		//say("	bnumconfigurations:%x\n",*(BYTE*)(addr+8));
 		break;
 	}
 	case 7:	//其他速率配置描述符
 	{
-		say("    blength:%x\n",*(BYTE*)addr);
-		say("    bdescriptortype:%x\n",*(BYTE*)(addr+1));
-		say("    wtotallength:%x\n",*(WORD*)(addr+2));
-		say("    bnuminterfaces:%x\n",*(BYTE*)(addr+4));
-		say("    bconfigurationvalue:%x\n",*(BYTE*)(addr+5));
-		say("    iconfiguration:%x\n",*(BYTE*)(addr+6));
-		say("    bmattributes:%x\n",*(BYTE*)(addr+7));
-		say("    bmaxpower:%x\n",*(BYTE*)(addr+8));
+		say("	(desc 7)@%x{\n",addr);
+		//say("	blength:%x\n",*(BYTE*)addr);
+		//say("	bdescriptortype:%x\n",*(BYTE*)(addr+1));
+		//say("	wtotallength:%x\n",*(WORD*)(addr+2));
+		//say("	bnuminterfaces:%x\n",*(BYTE*)(addr+4));
+		//say("	bconfigurationvalue:%x\n",*(BYTE*)(addr+5));
+		//say("	iconfiguration:%x\n",*(BYTE*)(addr+6));
+		//say("	bmattributes:%x\n",*(BYTE*)(addr+7));
+		//say("	bmaxpower:%x\n",*(BYTE*)(addr+8));
 		break;
 	}
-*/
 	case 0x21:	//hid设备描述符
 	{
-		say("hid@%x\n",addr);
-		//say("blength:",*(BYTE*)addr);
-		//say("type:",*(BYTE*)(addr+1));
-		//say("bcdhid:",*(WORD*)(addr+2));
-		//say("bcountrycode:",*(BYTE*)(addr+4));
-		//say("bnumdescriptor:",*(BYTE*)(addr+5));
+		say("	(desc 21)hid@%x{\n",addr);
+		//say("		blength:",*(BYTE*)addr);
+		//say("		type:",*(BYTE*)(addr+1));
+		//say("		bcdhid:",*(WORD*)(addr+2));
+		//say("		bcountrycode:",*(BYTE*)(addr+4));
+		//say("		bnumdescriptor:",*(BYTE*)(addr+5));
 
-		//say("btype:",*(BYTE*)(addr+6));
-		//say("wlength:",*(WORD*)(addr+7));
-		//say("btype:",*(BYTE*)(addr+9));
-		//say("wlength:",*(WORD*)(addr+10));
+		//say("		btype:",*(BYTE*)(addr+6));
+		//say("		wlength:",*(WORD*)(addr+7));
+		//say("		btype:",*(BYTE*)(addr+9));
+		//say("		wlength:",*(WORD*)(addr+10));
 
 		//reportsize=*(WORD*)(addr+7);
-		//say("",0);
 
+		say("	}\n");
 		break;
+	}
+	default:
+	{
+		say("	(desc ?)unknown@%x{\n",type,addr);
 	}
 	}
 }
 
-
+/*
 void recorddevice(QWORD vidpid,QWORD class,QWORD position,QWORD speed,QWORD slot)
 {
 	QWORD* p=(QWORD*)usbinfo;
@@ -427,9 +484,12 @@ void recorddevice(QWORD vidpid,QWORD class,QWORD position,QWORD speed,QWORD slot
 			break;
 		}
 	}
-}
+}*/
 
 
+
+
+/*
 void explainhub(QWORD addr)
 {
 	say("hub@%x\n",addr);
@@ -447,8 +507,11 @@ void explainhub(QWORD addr)
         say("bremoveandpowermask:%x\n",*(BYTE*)(addr+7));
 	say("",0);
 }
+*/
 
 
+
+/*
 void fixinterval(QWORD* interval,QWORD speed)
 {
 	//if(speed==0) say("undefined speed:",speed);
@@ -485,6 +548,7 @@ void fixinterval(QWORD* interval,QWORD speed)
 	say("fixed interval:%x\n",val);		//[3,11]
 	*interval=val;
 }
+*/
 
 
 
@@ -510,7 +574,7 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 		say("bad slotnum:%x\n",slot);
 		goto failed;
 	}
-	say("obtained slot:%x\n",slot);
+	say("slot obtained:%x\n",slot);
 	//-------------------------------------------
 
 
@@ -526,7 +590,7 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 	QWORD data11=slotcontext+0x9000;
 	QWORD inputcontext=slotcontext+0xf000;
 	DWORD maxpacketsize;
-	say("slot %x@%x\n",slot,slotcontext);
+	say("	slot context@%x\n",slotcontext);
 
 	//clear context
 	int i=0;
@@ -564,86 +628,45 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 	DWORD slotstate=(*(DWORD*)(slotcontext+0xc))>>27;
 	DWORD epstate=(*(DWORD*)(slotcontext+contextsize))&0x3;
 	if(slotstate==2) say("slot addressed");
-	else say("slot state:%x\n",slotstate);
+	else say("	slot state:%x\n",slotstate);
 	if(epstate == 0)
 	{
-		say("ep0 wrong");
+		say("	ep0 wrong");
 		goto failed;
 	}
-	//____________________________________________________
+	say("	ep0ring@%x\n",ep0ring);
+	//------------------------------------------------
 
 
 
 
-	//________________get descriptor______________________
-	//first read(to obtain maxsize)
-	//say("getting packetsize....",0);
-/*
-	say("getting device desc(0x8 bytes)......\n");
-	packet.bmrequesttype=0x80;
-	packet.brequest=6;
-	packet.wvalue=0x100;
-	packet.windex=0;
-	packet.wlength=8;
-	packet.buffer=data0;
-	sendpacket(ep0ring);
-	ring(slot,1);
-	if(waitevent(slot,1)<0) goto failed;
-*/
-
-
-/*
-	//evaluate(change packetsize)
-	DWORD packetsize=*(BYTE*)(data0+7);
-	say("(evaluating)for packetsize:%x\n",packetsize);
-	pcontext=(DWORD*)(slotcontext+contextsize);
-	//pcontext[0]=0;
-	pcontext[1]=(packetsize<<16)+(4<<3)+6;
-	//pcontext[0]=ep0ring+1;
-	//pcontext[0]=0;
-	//pcontext[0]=0x40;
-
-	command(slotcontext,0,0, (slot<<24)+(13<<10) );
-	if(waitevent(0,0x21)<0) goto failed;
-
-	slotstate=(*(DWORD*)(slotcontext+0xc))>>27; //if2,addressed
-	epstate=(*(DWORD*)(slotcontext+contextsize))&0x3;
-	if(slotstate==2) say("slot evaluated");
-	else say("slot state:%x\n",slotstate);
-	if(epstate==0){
-		say("ep0 wrong\n");
-		goto failed;
-	}
-	//--------------------------------------------
-*/
-
-
-
-	say("getting device desc(0x12 bytes)......\n");
+	//_______________device descriptor__________________
+	//say("getting device desc(0x12 bytes)......\n");
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x100;
 	packet.windex=0;
 	packet.wlength=0x12;
-	packet.buffer=data0;
+	packet.buffer=data0+0x100;
 	sendpacket(ep0ring);
 	ring(slot,1);
 	if(waitevent(slot,1)<0) goto failed;
-	explaindescriptor(data0);
+	explaindescriptor(data0+0x100);
+	//___________________________________________________
 
 
 
 
-	//------------------get descriptor-----------------
+	//----------------configuration descriptor-----------
 	//say("3.descriptors:",0);
 	//[data0+0x100]:configure descriptor
-	say("getting conf desc......\n");
+	//say("getting conf desc......\n");
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x200;
 	packet.windex=0;
 	packet.wlength=0x9;
-	packet.buffer=data0+0x100;
+	packet.buffer=data0+0x200;
 	sendpacket(ep0ring);
 	ring(slot,1);
 	if(waitevent(slot,1)<0) goto failed;
@@ -652,65 +675,52 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 	sendpacket(ep0ring);
 	ring(slot,1);
 	if(waitevent(slot,1)<0) goto failed;
+	explaindescriptor(data0+0x200);
 
-	explaindescriptor(data0+0x100);
 
 
-	//[buffer+0x200]:string descriptors
+
+	//----------------string descriptors----------------
 	//say("string descriptor...",0);
-	//packet.bmrequesttype=0x80;
-	//packet.brequest=6;
-	//packet.wvalue=0x300;
-	//packet.windex=0;
-	//packet.wlength=0xff;
-	//packet.buffer=data0+0x200;
-	//sendpacket(ep0ring,&packet);
-	//ring(slot,1);
-	//if(waitevent(slot,1)<0) goto failed;
+	packet.bmrequesttype=0x80;
+	packet.brequest=6;
+	packet.wvalue=0x300;
+	packet.windex=0;				//语言id
+	packet.wlength=4;
+	packet.buffer=data0+0x300;
+	sendpacket(ep0ring);
+	ring(slot,1);
+	if(waitevent(slot,1)<0) goto failed;
 
-	//packet.windex=*(WORD*)(data0+0x202);
-	//DWORD temp=1;
-	//for(;temp<8;temp++)		//所有字符串描述符
-	//{
-	//if(stringtoread[temp]!=0)
-	//{
-	//	packet.wvalue=0x300+temp;
-	//	packet.buffer=data0+0x200+temp*0x40;
-	//	sendpacket(ep0ring,&packet);
-	//	ring(slot,1);
-	//	waitevent(slot,1);	//不用管成功失败
-	//}
-	//}
+	/*
+	int wantedindex=1;
+	for()
+	{
+		packet.windex=*(WORD*)(data0+0x302);		//从上一步的结果里取出第一个语言
+		packet.wvalue=0x300+wantedindex;			//0x300+这种语言下的索引号
+		sendpacket(ep0ring);						//为了拿到实际长度
+		ring(slot,1);
+		if(waitevent(slot,1)<0) goto failed;
+
+		packet.wlength=*(BYTE*)(data0+0x300);		//从上一步的结果里取出正确的长度
+		sendpacket(ep0ring);
+		ring(slot,1);
+		if(waitevent(slot,1)<0) goto failed;
+		explaindescriptor(data0+0x300);
+	}
+	*/
 	//--------------------------------------------
 
 
 
-
-	//--------------------------------------
-	//say("get configuration...",0);
-	//packet.bmrequesttype=0x80;
-	//packet.brequest=8;
-	//packet.wvalue=0;
-	//packet.windex=0;
-	//packet.wlength=1;
-	//packet.buffer=data0+0x500;
-	//sendpacket(ep0ring,&packet);
-	//ring(slot,1);
-	//if(waitevent(slot,1)<0) goto failed;
-
-	//say("configure:",*(BYTE*)(data0+0x500));
-	//------------------------------------
-
-
-
-
+/*
 	recorddevice(
 	vendor+(product<<16),			//+0
 	classcode+(interfaceclass<<32),		//+8
 	rootport+(routestring<<32),		//+10
 	speed,					//+18
 	slot);					//+20
-
+*/
 
 	failed:
 	return;
@@ -933,25 +943,25 @@ void roothub()
 		childaddr=portbase+childport*0x10-0x10;
 		DWORD portsc=*(DWORD*)childaddr;
 		say("root port:%x@%x{\n",childport,childaddr);
-		say("portsc:%x\n",portsc);
+		say("portsc(before):%x\n",portsc);
 
 		if( (portsc&0x1) == 0x1)
 		{
-			//判断enable，如果enable就不需要reset
-			
-			
-			
-			
-			//------------第0步:reset(不知道为什么要两次)---------
-			//收到change event的时候仍然可能没有reset好，所以要自己等不能相信hc
-			temp=*(DWORD*)(childaddr);
-			temp=temp&0xfffffffd;
-			temp=temp|0x10;
-			*(DWORD*)(childaddr)=temp;
+			//进来再判断enable(bit2)
+			//已经enable说明大概是3.0设备跳过这一步
+			//否则要自己reset
+			//收到change event的时候仍然没有reset好，要一直等到bit4=0
+			if( (portsc&0x2) == 0)
+			{
+				temp=*(DWORD*)(childaddr);
+				temp=temp&0xfffffffd;
+				temp=temp|0x10;
+				*(DWORD*)(childaddr)=temp;
 
-			int i;
-			for(i=0;i<0xfffffff;i++)asm("nop");
-			waitevent(0,0x22);
+				int i;
+				for(i=0;i<0xfffffff;i++)asm("nop");
+				waitevent(0,0x22);
+			}
 			//---------------------------------------------
 
 
@@ -960,15 +970,15 @@ void roothub()
 			//---------第一步:初始化，读取并记录设备信息--------
 			//asm("int3");
 			temp=*(DWORD*)(childaddr);
-			say("status(reset1):%x\n",temp);
-			say("linkstate:%x\n",(temp>>5)&0xf);
+			say("portsc(reset1):%x\n",temp);
+			say("	linkstate:%x\n",(temp>>5)&0xf);
 
 			temp=(temp>>10)&0xf;
-			if(temp == 4)say("superspeed:4");
-			else if(temp ==3)say("highspeed:3");
-			else if(temp == 2)say("fullspeed:2");
-			else if(temp == 1)say("lowspeed:1");
-			else say("speed:%x",temp);
+			if(temp == 4)say("	superspeed:4");
+			else if(temp ==3)say("	highspeed:3");
+			else if(temp == 2)say("	fullspeed:2");
+			else if(temp == 1)say("	lowspeed:1");
+			else say("	speed:%x",temp);
 
 			hello(childport,0,temp);
 			//---------------------------------------
@@ -976,8 +986,8 @@ void roothub()
 
 
 
-			//---------第二步:是hub就交给hub()----------
-			//---------不是hub就把这个初始化完的东西放着不管----
+			//---------第二步:是hub就交给hub(),键鼠就交给inputer()----------
+			//---------否则就放在那不管,直接跑去处理下一个port----
 			//if(classcode==9&&interfaceclass==9)
 			//{
 			//	normalhub(childport,0,(portsc>>10)&0xf,slot);
@@ -998,7 +1008,7 @@ void initusb()
 	//拿到xhci的mmio地址
 	QWORD xhciaddr=*(QWORD*)(xhcihome+8);		//xhci地址我放在这儿了
 	if(xhciaddr==0) return;
-	say("xhci@%x\n",xhciaddr);
+	say("xhci@%x{\n",xhciaddr);
 
 
 
@@ -1018,7 +1028,7 @@ void initusb()
 	
 	volatile QWORD temp=*(DWORD*)(xhciaddr+0x18);
 	runtime=xhciaddr+temp;
-	say("runtime@%x\n",runtime);
+	say("	runtime@%x\n",runtime);
 
 
 
@@ -1026,7 +1036,7 @@ void initusb()
 	//doorbell位置
 	temp=(*(DWORD*)(xhciaddr+0x14));
 	doorbell=xhciaddr+temp;
-	say("doorbell@%x\n",doorbell);
+	say("	doorbell@%x\n",doorbell);
 
 
 
@@ -1034,11 +1044,11 @@ void initusb()
 	//port们集中在哪儿,总共多少个port
 	temp=(*(DWORD*)xhciaddr) & 0xffff;	//caplength
 	portbase=xhciaddr+temp+0x400;
-	say("portbase@%x\n",portbase);
+	say("	portbase@%x\n",portbase);
 
 	temp=*(DWORD*)(xhciaddr+4);		//hcsparams1
 	portcount=temp>>24;
-	say("portcount:%x\n",portcount);
+	say("	portcount:%x\n",portcount);
 
 
 
@@ -1047,7 +1057,8 @@ void initusb()
 	temp=*(DWORD*)(xhciaddr+0x10);		//capparams
 	contextsize=0x20;
 	if((temp&0x4) == 0x4) contextsize*=2;
-	say("contextsize:%x\n",contextsize);
+	say("	contextsize:%x\n",contextsize);
+	say("}");
 
 
 

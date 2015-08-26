@@ -427,10 +427,10 @@ void readide(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 int read(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 {
 	//暂时管不了多硬盘,所以指定用寻找到的第一个
-	QWORD type=*(QWORD*)idehome;
+	QWORD type=*(QWORD*)diskhome;
 	if(type == 0x61746173)
 	{
-		QWORD addr=*(QWORD*)(idehome+8);
+		QWORD addr=*(QWORD*)(diskhome+8);
 		QWORD i=0;
 		while(count>0x80)
 		{
