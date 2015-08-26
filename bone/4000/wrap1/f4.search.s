@@ -1,11 +1,10 @@
 %define binhome 0x70000
 %define binsize 0x1000
 
-%define diskhome 0x100000
-%define fshome 0x200000
-%define filehome 0x300000
-
-%define programhome 0x400000
+%define diskhome 0x400000
+%define fshome 0x500000
+%define dirhome 0x600000
+%define filehome 0x700000
 
 %define consolehome 0xc00000
 %define consolesize 0x100000
@@ -176,7 +175,7 @@ addrtocall:dq 0	;解释完是函数地址
 ;__________________________________
 test:
 .cleanmemory:
-	mov edi,programhome				;32m
+	mov edi,filehome				;32m
 	mov ecx,0x4000
 	xor rax,rax
 	rep stosd
@@ -194,10 +193,10 @@ test:
 	lea rdi,[rel arg1]
 	call rdx
 .check:
-	cmp dword [programhome],0
+	cmp dword [filehome],0
 	je .failreturn
 .execute:
-	mov rax,programhome
+	mov rax,filehome
 	call rax
 
 .failreturn:
@@ -218,8 +217,8 @@ ls:
 .normally:
 	add edi,consolehome
 
-	mov esi,filehome		;source
-	xor ecx,ecx				;count
+	mov esi,dirhome			;source
+	xor ecx,ecx			;count
 
 .continue:
 	cmp dword [esi],0		;finish?
