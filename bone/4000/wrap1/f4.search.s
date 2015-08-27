@@ -1,13 +1,5 @@
 %define binhome 0x70000
 %define binsize 0x1000
-
-%define diskhome 0x400000
-%define fshome 0x500000
-%define dirhome 0x600000
-%define filehome 0x700000
-
-%define consolehome 0xc00000
-%define consolesize 0x100000
 [bits 64]
 
 
@@ -120,10 +112,17 @@ searchhere:
 .skipmemfreq:
 
 	cmp word [esi],"ls"
-	je ls
-
-	cmp dword [esi],"test"
-	je test
+	jne .skipls
+	cmp dword [esi+2],"pci"
+	je lspci
+	cmp dword [esi+2],"ahci"
+	je lsahci
+	cmp dword [esi+2],"usb"
+	je lsusb
+	cmp dword [esi+2],"disk"
+	je lsdisk
+	jmp ls
+.skipls:
 
 	mov dword [rel failsignal],0x11111111
 	ret
@@ -158,7 +157,7 @@ searchmemory:
 	mov r8,[esi+8]
 	mov [rel addrtocall],r8		;暂时保存函数地址
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string+8]
 	call machinesay
@@ -172,71 +171,7 @@ addrtocall:dq 0	;解释完是函数地址
 
 
 
-;__________________________________
-test:
-.cleanmemory:
-	mov edi,filehome				;32m
-	mov ecx,0x4000
-	xor rax,rax
-	rep stosd
-
-	mov esi,binhome
-.continue:
-	cmp dword [esi],"load"
-	je .load
-	add esi,0x10
-	cmp esi,binhome+binsize
-	jb .continue
-	jmp .failreturn
-.load:
-	mov rdx,[esi+8]
-	lea rdi,[rel arg1]
-	call rdx
-.check:
-	cmp dword [filehome],0
-	je .failreturn
-.execute:
-	mov rax,filehome
-	call rax
-
-.failreturn:
-	mov dword [rel failsignal],0x11111111
+;___________________________________________
+searchdisk:
 	ret
-;__________________________________
-
-
-
-
-;_________________________
-ls:
-	mov edi,[consolehome+consolesize-8]
-	cmp edi,consolesize-0x30*0x80
-	jb .normally
-	xor edi,edi
-	mov [consolehome+consolesize-8],edi
-.normally:
-	add edi,consolehome
-
-	mov esi,dirhome			;source
-	xor ecx,ecx			;count
-
-.continue:
-	cmp dword [esi],0		;finish?
-	je .return
-
-	movsq				;put
-	add esi,0x18
-	add edi,0x8
-
-	inc ecx
-	cmp ecx,0x200			;finish?
-	jae .return
-	jmp .continue
-
-.return:
-	add ecx,7
-	shr ecx,3			;how many wrote
-	shl ecx,7
-	add [consolehome+consolesize-8],ecx
-	ret
-;_________________________
+;___________________________________________

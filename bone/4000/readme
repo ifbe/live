@@ -32,6 +32,7 @@
 
 ;________________wrap1(在wrap基础上由软件实现)_________________
 %include "wrap1/f1.operator.s"
+%include "wrap1/f4.list.s"
 %include "wrap1/f4.operator.s"
 %include "wrap1/f4.search.s"
 %include "wrap1/f4.say.s"

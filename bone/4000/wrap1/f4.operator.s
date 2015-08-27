@@ -91,7 +91,7 @@ read:
 
 	movzx r8,byte [rdx]
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string+0xe]
 	call machinesay
@@ -104,7 +104,7 @@ read16:
 
 	movzx r8,word [rdx]
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string+0xc]
 	call machinesay
@@ -117,7 +117,7 @@ read32:
 
 	mov r8d,dword [rdx]
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string+0x8]
 	call machinesay
@@ -157,7 +157,7 @@ in8:
 
 	movzx r8,al
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string+0xe]
 	call machinesay
@@ -171,7 +171,7 @@ in16:
 
 	movzx r8,ax
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string+0xc]
 	call machinesay
@@ -185,7 +185,7 @@ in32:
 
 	mov r8d,eax
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string+0x8]
 	call machinesay
@@ -207,7 +207,7 @@ timestamp:
 	shr rax,32
 	add r8,rax
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string]
 	call machinesay
@@ -230,7 +230,7 @@ readmsr:
 	shr rax,32
 	add r8,rax
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 
 	lea r8,[rel string]
 	call machinesay
@@ -271,25 +271,25 @@ printcpuid:
 
 	mov r8,rax
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 	lea r8,[rel string+8]
 	call machinesay
 
 	mov r8,[rel preserverbx]
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 	lea r8,[rel string+8]
 	call machinesay
 
 	mov r8,[rel preservercx]
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 	lea r8,[rel string+8]
 	call machinesay
 
 	mov r8,[rel preserverdx]
 	lea r9,[rel string]
-	call hex2string
+	call data2hexstring
 	lea r8,[rel string+8]
 	call machinesay
 
@@ -304,7 +304,7 @@ preserverdx:dq 0;入:r8,r9,r10,r11......
 
 
 ;出:r8,r9,r10,r11......
-;变:rax,r8,r9 + hex2string
+;变:rax,r8,r9 + data2hexstring
 ;_____________________________________
 gettime:
 	xor rax,rax				;must clean
@@ -346,7 +346,7 @@ gettime:
 
 	mov r8,rax
 	lea r9,[rel time]
-	call hex2string
+	call data2hexstring
 	mov word [rel time+0xe],0x2020		;milesecond
 
 	ret

@@ -3,8 +3,6 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define usbinfo 0x5000		//	/usb
-
 #define xhcihome 0x200000
 #define ersthome xhcihome+0x10000
 
@@ -42,6 +40,9 @@ volatile static QWORD cmdringenqueue;
 volatile static QWORD cmdringcycle;
 volatile static QWORD doorbell;
 
+
+
+
 struct setup{
 	BYTE bmrequesttype;	//	0x80
 	BYTE brequest;		//	0x6
@@ -52,14 +53,6 @@ struct setup{
 	QWORD buffer;
 };
 static struct setup packet;
-
-
-
-
-
-
-
-
 void sendpacket(QWORD ringaddr)
 {
 	//得到这次往哪儿写
@@ -116,20 +109,21 @@ void sendpacket(QWORD ringaddr)
 	*(QWORD*)(ringaddr+0xff0)=enqueue;
 	//say("(enqueue after:%x)\n",enqueue);
 }
-
-
-
-
-void ring(int slot,int endpoint)
+void usbcommand(BYTE bmrequesttype,BYTE brequest,WORD wvalue,WORD windex,WORD wlength,QWORD buffer)
 {
-	*(DWORD*)(doorbell+4*slot)=endpoint;
+	packet.bmrequesttype=bmrequesttype;
+	packet.brequest=brequest;
+	packet.wvalue=wvalue;
+	packet.windex=windex;
+	packet.wlength=wlength;
+	packet.buffer=buffer;
 }
 
 
 
 
 //直接在command ring上写TRB（1个TRB=4个DWORD）,然后处理enqueue指针，最后ring
-void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
+void hostcommand(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 {
 	DWORD* pointer=(DWORD*)(cmdringenqueue);
 
@@ -151,11 +145,20 @@ void command(DWORD d0,DWORD d1,DWORD d2,DWORD d3)
 	}
 
 	//处理完了，敲门铃
-	ring(0,0);
+	//ring(0,0);
+	*(DWORD*)(doorbell)=0;
 }
 
 
 
+
+
+
+
+void ring(int slot,int endpoint)
+{
+	*(DWORD*)(doorbell+4*slot)=endpoint;
+}
 
 
 
@@ -192,10 +195,17 @@ int waitevent(QWORD wantedslot,QWORD wantedtype)
 		first=*(DWORD*)(eventringdequeue);
 		second=*(DWORD*)(eventringdequeue+4);
 		third=*(DWORD*)(eventringdequeue+8);
-		//say("(event@%x)%x,%x,%x,%x\n",eventringdequeue,first,second,third,fourth);
-		eventringdequeue+=0x10;
-		if( (third >> 24) != 0x1 )return -1;
+		if( (third >> 24) != 0x1 )
+		{
+			say("(error event@%x)%x,%x,%x,%x\n",eventringdequeue,first,second,third,fourth);
+			return -1;
+		}
 
+
+
+
+		//没出错,给xhci报告当前erdp
+		eventringdequeue+=0x10;
 		//*(DWORD*)(runtime+0x38)=eventringdequeue | 8;
 		//*(DWORD*)(runtime+0x3c)=0;
 
@@ -240,14 +250,14 @@ int waitevent(QWORD wantedslot,QWORD wantedtype)
 
 
 //以下是提取自descriptor的最重要信息，每次只被这个函数更新,就像人记笔记......
-static QWORD vendor;
-static QWORD product;
-static QWORD classcode;
-static QWORD interfaceclass;
-static QWORD deviceprotocol;
+//static QWORD vendor;
+//static QWORD product;
+//static QWORD classcode;
+//static QWORD interfaceclass;
+//static QWORD deviceprotocol;
 
-static QWORD wmaxpacket;
-static QWORD interval;
+//static QWORD wmaxpacket;
+//static QWORD interval;
 //static BYTE stringtoread[8];
 void explaindescriptor(QWORD addr)
 {
@@ -264,9 +274,6 @@ void explaindescriptor(QWORD addr)
 		//这是第一个被读取的描述符，所以几个变量在这里清零最好
 		//classcode=0;	//这个就不必了，马上就变掉
 		//for(i=0;i<8;i++) stringtoread[i]=0;
-		interfaceclass=0;
-		wmaxpacket=0;
-		interval=0;
 
 		say("(desc 1)device@%x{\n",addr);
 		//say("blength:%x\n",*(BYTE*)addr);
@@ -282,12 +289,8 @@ void explaindescriptor(QWORD addr)
 		//say("bprotocol:%x\n",deviceprotocol);
 
 		say("	bpacketsize:%x\n",*(BYTE*)(addr+7));
-
-		vendor=*(WORD*)(addr+8);			//!
-		say("	vendor:%x\n",vendor);
-
-		product=*(WORD*)(addr+0xa);			//!
-		say("	product:%x\n",product);
+		say("	vendor:%x\n",*(WORD*)(addr+8));
+		say("	product:%x\n",*(WORD*)(addr+0xa));
 
 		//say("	bcddevice:%x\n",*(WORD*)(addr+0xc));
 
@@ -467,10 +470,10 @@ void explaindescriptor(QWORD addr)
 	}
 }
 
-/*
+
 void recorddevice(QWORD vidpid,QWORD class,QWORD position,QWORD speed,QWORD slot)
 {
-	QWORD* p=(QWORD*)usbinfo;
+	QWORD* p=(QWORD*)(usbhome);
 	int i=0;
 	for(i=0;i<0x200;i+=8)
 	{
@@ -484,7 +487,7 @@ void recorddevice(QWORD vidpid,QWORD class,QWORD position,QWORD speed,QWORD slot
 			break;
 		}
 	}
-}*/
+}
 
 
 
@@ -566,7 +569,7 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 
 	//---------------obtain slot------------------
 	//say("1.enable slot...",0);
-	command(0,0,0, (9<<10) );
+	hostcommand(0,0,0, (9<<10) );
 	QWORD slot=waitevent(0,0x21);
 	if(slot<=0) goto failed;
 	if(slot>=0x10)
@@ -621,7 +624,7 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 	*(DWORD*)(dcbahome+slot*8+4)=0;
 
 	//发送command
-	command(inputcontext,0,0, (slot<<24)+(11<<10) );
+	hostcommand(inputcontext,0,0, (slot<<24)+(11<<10) );
 	if(waitevent(0,0x21)<0) goto failed;
 
 	//if2,addressed
@@ -652,6 +655,7 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 	ring(slot,1);
 	if(waitevent(slot,1)<0) goto failed;
 	explaindescriptor(data0+0x100);
+	QWORD vendorproduct=*(DWORD*)(data0+0x108);
 	//___________________________________________________
 
 
@@ -713,14 +717,14 @@ void hello(QWORD rootport,QWORD routestring,DWORD speed)
 
 
 
-/*
+
 	recorddevice(
-	vendor+(product<<16),			//+0
-	classcode+(interfaceclass<<32),		//+8
-	rootport+(routestring<<32),		//+10
-	speed,					//+18
-	slot);					//+20
-*/
+	vendorproduct,						//+0		//vendor+(product<<16)
+	0,									//+8
+	rootport+(routestring<<32),			//+10
+	speed,								//+18
+	slot);								//+20
+
 
 	failed:
 	return;
@@ -797,7 +801,7 @@ void normalhub(QWORD rootport,QWORD routestring,QWORD speed,QWORD slot)
 	context.d2|=0;		//(ttt<<16)+(ttportnum<<8)+(tthubslot);
 	writecontext(slotcontext,1,&context);
 
-	command(slotcontext,0,0, (slot<<24)+(13<<10) );
+	hostcommand(slotcontext,0,0, (slot<<24)+(13<<10) );
 	if(waitevent(0,0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(slotcontext+0x80c))>>27; //if2,addressed
@@ -825,7 +829,7 @@ void normalhub(QWORD rootport,QWORD routestring,QWORD speed,QWORD slot)
 	context.d4=0x80008;
 	writecontext(slotcontext,4,&context);		//ep1.1
 
-	command(slotcontext,0,0, (slot<<24)+(12<<10) );
+	hostcommand(slotcontext,0,0, (slot<<24)+(12<<10) );
 	if(waitevent(0,0x21)<0) goto failed;
 
 	slotstate=(*(DWORD*)(slotcontext+0x80c))>>27;
@@ -945,12 +949,12 @@ void roothub()
 		say("root port:%x@%x{\n",childport,childaddr);
 		say("portsc(before):%x\n",portsc);
 
-		if( (portsc&0x1) == 0x1)
+		if( (portsc&0x1) == 0x1)		//里面有东西
 		{
-			//进来再判断enable(bit2)
-			//已经enable说明大概是3.0设备跳过这一步
-			//否则要自己reset
-			//收到change event的时候仍然没有reset好，要一直等到bit4=0
+			//进来再判断enable位(bit2)
+			//=1说明大概是3.0设备,否则是<=2.0的设备需要手动reset
+			//reset之后，从默认的disable状态变成enable状态
+			//收到change event的时候仍然没有reset好,要一直等到bit4=0
 			if( (portsc&0x2) == 0)
 			{
 				temp=*(DWORD*)(childaddr);
@@ -958,16 +962,17 @@ void roothub()
 				temp=temp|0x10;
 				*(DWORD*)(childaddr)=temp;
 
-				int i;
+				int i;			//todo:改成疯狂读取检查bit4
 				for(i=0;i<0xfffffff;i++)asm("nop");
 				waitevent(0,0x22);
 			}
+			//todo:检查错误
 			//---------------------------------------------
 
 
 
 
-			//---------第一步:初始化，读取并记录设备信息--------
+			//---------第一步:初始化，读取并记录基本信息--------
 			//asm("int3");
 			temp=*(DWORD*)(childaddr);
 			say("portsc(reset1):%x\n",temp);

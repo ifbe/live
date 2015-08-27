@@ -8,7 +8,7 @@ binary:
 	init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
 	main/master.o \
 	wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
-	wrap1/remember.o wrap1/else.o \
+	wrap1/convert.o wrap1/remember.o \
 	wrap/journal.o wrap/identify.o wrap/read.o \
 	-o extremities.bin
 cross:
@@ -21,7 +21,7 @@ cross:
 	init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
 	main/master.o \
 	wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
-	wrap1/remember.o wrap1/else.o \
+	wrap1/convert.o wrap1/remember.o \
 	wrap/journal.o wrap/identify.o wrap/read.o \
 	-o extremities.bin
 clean:

@@ -169,7 +169,7 @@ data2decimalstring:
 ;传参:r8=data,r9=destination,r10,r11......
 ;变化:rdi,r9,r8,rcx,rax
 ;___________________________________
-hex2string:
+data2hexstring:
 itoa:
 	mov rdi,r9
 	mov qword [rdi],0

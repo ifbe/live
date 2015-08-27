@@ -18,7 +18,7 @@
 void remember(QWORD,QWORD);
 void say(char* , ...);
 void read(QWORD,QWORD,QWORD,QWORD);
-void str2data(BYTE* str,QWORD* data);
+void string2data(BYTE* str,QWORD* data);
 void zero2blank(QWORD* name);
 void small2capital(QWORD* name);
 
@@ -115,7 +115,7 @@ static int fat16_cd(BYTE* addr)
 	QWORD p=indexbuffer;
 	int i;
 
-	str2data(addr,&name);
+	string2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
 say("name:%x",name);
@@ -159,7 +159,7 @@ say("name:%x",name);
 static void fat16_load(BYTE* addr)
 {
 	QWORD name=0;
-	str2data(addr,&name);
+	string2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
 
@@ -246,7 +246,7 @@ static int fat32_cd(BYTE* addr)
 	QWORD p=indexbuffer;
 	int i;
 
-	str2data(addr,&name);
+	string2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
 
@@ -292,7 +292,7 @@ static int fat32_cd(BYTE* addr)
 static void fat32_load(BYTE* addr)
 {
 	QWORD name=0;
-	str2data(addr,&name);
+	string2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
 

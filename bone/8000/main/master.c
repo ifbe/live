@@ -24,8 +24,14 @@ void say(char*,QWORD);
 void mountfat(QWORD);
 void mountext(QWORD);
 void mountntfs(QWORD);
+
+void string2data(BYTE* str,QWORD* data);
+
 int read(QWORD,QWORD,QWORD,QWORD);
 void identify(QWORD);
+
+void hostcommand(DWORD,DWORD,DWORD,DWORD);
+void usbcommand(BYTE bmrequesttype,BYTE brequest,WORD wvalue,WORD windex,WORD wlength,QWORD buffer);
 
 
 
@@ -44,10 +50,35 @@ static void directread(QWORD sector)
 	//if(result>=0) say("read sector:%x",sector);
 	//else say("something wrong:%x",sector);
 }
+static void directhostcmd(char* arg0,char* arg1,char* arg2,char* arg3)
+{
+	QWORD dword0,dword1,dword2,dword3;
+	string2data(arg0,&dword0);
+	string2data(arg1,&dword1);
+	string2data(arg2,&dword2);
+	string2data(arg3,&dword3);
+	hostcommand(dword0,dword1,dword2,dword3);
+}
+static void directusbcmd(char* arg0,char* arg1,char* arg2,char* arg3,char* arg4,char* arg5)
+{
+	QWORD bmrequesttype;
+	QWORD brequest;
+	QWORD wvalue;
+	QWORD windex;
+	QWORD wlength;
+	QWORD buffer;
 
+	//检查错误
 
-
-
+	//发给选中的设备
+	string2data(arg0,&bmrequesttype);
+	string2data(arg1,&brequest);
+	string2data(arg2,&wvalue);
+	string2data(arg3,&windex);
+	string2data(arg4,&wlength);
+	string2data(arg5,&buffer);
+	usbcommand(bmrequesttype, brequest, wvalue, windex, wlength, buffer);
+}
 
 
 
@@ -201,9 +232,11 @@ void master()
 
 
 	//二.把操作函数的位置放进/bin以便在终端里直接调
-	remember(0x796669746e656469,(QWORD)directidentify);
-	remember(0x6b73696464616572,(QWORD)directread);
-	remember(0x746e756f6d,(QWORD)mount);
+	remember(0x746e756f6d,		(QWORD)mount);
+	remember(0x796669746e656469,		(QWORD)directidentify);
+	remember(0x6b73696464616572,		(QWORD)directread);
+	remember(0x646d6374736f68,		(QWORD)directhostcmd);
+	remember(0x646d63627375,		(QWORD)directusbcmd);
 
 
 

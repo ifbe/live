@@ -18,7 +18,7 @@
 void remember(QWORD first,QWORD second);
 void say(char* , ...);
 void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
-void str2data(BYTE* str,QWORD* data);
+void string2data(BYTE* str,QWORD* data);
 void blank2zero(QWORD* name);
 
 
@@ -433,7 +433,7 @@ static int ntfs_cd(BYTE* addr)
 	int i;
 
 	//传进来的名字处理一下
-	str2data(addr,&name);
+	string2data(addr,&name);
 	blank2zero(&name);
 
 	//几种特殊的名字
@@ -496,7 +496,7 @@ static void ntfs_load(BYTE* addr)
 	int i;
 
 	//处理名字
-	str2data(addr,&name);
+	string2data(addr,&name);
 	blank2zero(&name);
 
 	//搜索

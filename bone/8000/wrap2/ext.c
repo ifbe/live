@@ -19,7 +19,7 @@ void remember(QWORD first,QWORD second);
 void say(char* , ...);
 void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
 void blank2zero(QWORD* name);
-void str2data(BYTE* str,QWORD* data);
+void string2data(BYTE* str,QWORD* data);
 
 
 
@@ -247,7 +247,7 @@ static int ext_cd(BYTE* addr)
 	QWORD number=0;
 
 	//传进来的名字处理一下
-	str2data(addr,&name);
+	string2data(addr,&name);
 	blank2zero(&name);
 
 	//找inode
@@ -298,7 +298,7 @@ static void ext_load(BYTE* addr)
 	QWORD number=0;
 
 	//处理名字
-	str2data(addr,&name);
+	string2data(addr,&name);
 	blank2zero(&name);
 
 	for(i=0;i<0x200;i+=4)
