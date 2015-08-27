@@ -429,7 +429,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 		*(DWORD*)operational=usbcommand&0xfffffffe;
 
 		//等一会
-		QWORD wait1=0xffffff;
+		QWORD wait1=0xfffffff;
 		for(;wait1>0;wait1--) asm("nop");
 
 		//xhci停了吗
@@ -554,9 +554,9 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	//turn on
 	*(DWORD*)operational = (*(DWORD*)operational) | 0x1;
 
-	//wait for 100ms?
-	QWORD wait3=0xffffff;
-	while(wait3--)asm("nop");
+	//不用等?
+	//QWORD wait3=0xffffff;
+	//while(wait3--)asm("nop");
 
 	//
 	//say("	command:%x\n",*(DWORD*)operational);
