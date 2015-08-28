@@ -37,8 +37,10 @@ f2show:
 	add rdi,4096
 	loop .continue
 
-	jmp writescreen2
+	mov rbp,[rel rgbabase]
+	jmp writescreen
 ;_________________________________________
+rgbabase:dq 0x1c00000			;16m+4m
 
 
 
@@ -53,7 +55,7 @@ f2event:
 	cmp al,0x48
 	jne .notup
 
-	sub qword [rel jpegbase],0x10000
+	sub qword [rel rgbabase],0x10000
 	ret
 .notup:
 
@@ -61,7 +63,7 @@ f2event:
 	cmp al,0x50
 	jne .notdown
 
-	add qword [rel jpegbase],0x10000
+	add qword [rel rgbabase],0x10000
 	ret
 .notdown:
 

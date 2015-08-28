@@ -28,7 +28,8 @@ f1show:
 	call [rel hexoranscii]
 	call [rel mouseormenu]
 
-	jmp writescreen0
+    mov rbp,0x1000000				;[16m,20m)
+	jmp writescreen
 ;_____________________________________________
 mouseormenu:dq 0
 hexoranscii:dq 0

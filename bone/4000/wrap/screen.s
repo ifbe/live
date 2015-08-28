@@ -42,12 +42,11 @@ char:
 	cmp al,0x80
 	jae .blank
 	cmp al,0x20
-	jb .blank
-	call character
-	ret
+	ja .put
 
-	.blank:
+.blank:
 	mov al,0x20
+.put:
 	call character
 	ret
 ;____________________________________
@@ -86,9 +85,9 @@ dumprbx:
 	mov ecx,16
 	mov byte [rel firstnonzero],0
 .getaddress:
-        rol rbx,4
-        mov al,bl
-        and al,0x0f
+	rol rbx,4
+	mov al,bl
+	and al,0x0f
 
 	cmp byte [rel firstnonzero],0		;have first non zero?
 	ja .print
@@ -102,11 +101,11 @@ dumprbx:
 	mov byte [rel firstnonzero],1
 
 	.print:
-        push rbx
-        push rcx
-        call character
-        pop rcx
-        pop rbx
+		push rbx
+		push rcx
+		call character
+		pop rcx
+		pop rbx
 	loop .getaddress
 
 	ret
@@ -122,34 +121,14 @@ firstnonzero: db 0
 
 
 
-;_____________________________________________
-writescreen0:
-    mov esi,0x1000000				;[16m,20m)
-    mov edi,[screeninfo+0x28]
-    mov bl,[screeninfo+0x19]
-    shr bl,3
-    movzx ebx,bl
-    mov ecx,1024*768
-.continue:
-    lodsd
-    mov [edi],eax
-    add edi,ebx
-    loop .continue
-
-	ret
-;_____________________________________________
-
-
-
-
-;_________________________________________
-writescreen2:
-	mov esi,[rel jpegbase]
+;____________________________________
+writescreen:
+	mov rsi,rbp
 	mov edi,[screeninfo+0x28]
 	mov bl,[screeninfo+0x19]
 	shr bl,3
 	movzx ebx,bl
-	mov ecx,1024*768
+	mov ecx,1024*767
 .continuescreen:
 	lodsd
 	mov [edi],eax
@@ -157,45 +136,58 @@ writescreen2:
 	loop .continuescreen
 
 	ret
-;_________________________________________
-jpegbase:dq 0x1400000
+;____________________________________
 
 
 
 
+;rbp是内存里面rgb图像的地址,临时用rbp传一下以后会改
+;r8~r15用来传参,传进来4个都是坐标值(0,0)~(1024,768)
+;r8=leftx,r9=rightx,r10=upy,r11=downy
 ;_____________________________________________
-writescreen3:
-	mov esi,0x1800000
-	mov edi,[screeninfo+0x28]
+updatescreen:
+.debug:
+	mov [0x600],r8d
+	mov [0x604],r9d
+	mov [0x608],r10d
+	mov [0x60c],r11d
+
+.check:
+	cmp r8,r9					;if(leftx>=rightx)return
+	jae .return
+	cmp r10,r11					;if(upy>=downy)return
+	jae .return
+	cmp r9,1024					;if(rightx>=1024)return
+	jae .return
+	cmp r11,768				;if(downy>=768)return
+	jae .return
+
+.getvariety:
 	mov bl,[screeninfo+0x19]
 	shr bl,3
-	movzx ebx,bl
-	mov ecx,1024*768
-.continue:
-	lodsd
+	movzx ebx,bl				;ebx=byte per pixel
+
+.continuey:
+	mov edi,[screeninfo+0x28]
+	add edi,512*4
+	mov rsi,r10					;upy
+	shl rsi,10+2				;*1024*4
+	add rsi,rbp					;+base
+
+	mov rcx,r9					;rightx
+	sub rcx,r8					;leftx
+.continuex:
+	mov eax,[esi]
+	add esi,4
 	mov [edi],eax
 	add edi,ebx
-	loop .continue
+	loop .continuex
 
+	inc r10
+	cmp r10,r11
+	;add edi,1024*4-8*4
+	jb .continuey
+
+.return:
 	ret
 ;______________________________________________
-
-
-
-
-;_____________________________________________
-writescreen4:
-	mov esi,0x1c00000
-	mov edi,[screeninfo+0x28]
-	mov bl,[screeninfo+0x19]
-	shr bl,3
-	movzx ebx,bl
-	mov ecx,1024*768
-.continuescreen:
-	lodsd
-	mov [edi],eax
-	add edi,ebx
-	loop .continuescreen
-
-	ret
-;________________________________________________

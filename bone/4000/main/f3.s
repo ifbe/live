@@ -10,7 +10,8 @@ f3show:
 	mov rax,0x88888888
 	rep stosd
 
-	jmp writescreen3
+	mov rbp,0x1800000
+	jmp writescreen
 ;_______________________________________________________
 
 

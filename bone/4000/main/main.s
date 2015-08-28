@@ -4,7 +4,7 @@
 	call f1init
 	call f4init
 
-	call processevent.isf4
+	call processevent.showf4
 ;_______________________________________________
 
 
@@ -21,7 +21,7 @@ showsomething:
 waitevent:
 	call forever
 
-dispatch:
+dispatchevent:
 	call processevent
 
 againandagain:
@@ -33,11 +33,14 @@ againandagain:
 
 ;_________________________________________________
 printworld:
-	call [rel screenwhat]
+	call [rel whosscreen]
+
 	;do something(for example:start menu)
+	;call showmouse
+
 	ret
 ;___________________________________________________
-screenwhat:dq 0
+whosscreen:dq 0
 
 
 
@@ -47,59 +50,85 @@ processevent:
 .f1:
 	cmp al,0x3b
 	jne .notf1
-.isf1:
+.showf1:
 	lea rax,[rel f1show]
-	mov [rel screenwhat],rax
+	mov [rel whosscreen],rax
+
 	lea rax,[rel f1event]
-	mov [rel whoevent],rax
+	mov [rel whosevent],rax
+
 	ret
 .notf1:
+
+
+
 
 .f2:
 	cmp al,0x3c
 	jne .notf2
-.isf2:
+.showf2:
 	lea rax,[rel f2show]
-	mov [rel screenwhat],rax
+	mov [rel whosscreen],rax
+
 	lea rax,[rel f2event]
-	mov [rel whoevent],rax
+	mov [rel whosevent],rax
+
 	ret
 .notf2:
+
+
+
 
 .f3:
 	cmp al,0x3d
 	jne .notf3
-.isf3:
+.showf3:
 	lea rax,[rel f3show]
-	mov [rel screenwhat],rax
+	mov [rel whosscreen],rax
+
 	lea rax,[rel f3event]
-	mov [rel whoevent],rax
+	mov [rel whosevent],rax
+
 	ret
 .notf3:
+
+
+
 
 .f4:
 	cmp al,0x3e
 	jne .notf4
-.isf4:
+.showf4:
 	lea rax,[rel f4show]
-	mov [rel screenwhat],rax
+	mov [rel whosscreen],rax
+
 	lea rax,[rel f4event]
-	mov [rel whoevent],rax
+	mov [rel whosevent],rax
+
+	mov qword [rel f4change],0xffff			;默认全部刷上屏幕
 	ret
 .notf4:
+
+
+
 
 .f5:
 	cmp al,0x3f
 	jne .notf5
-.isf5:
+.showf5:
 	lea rax,[rel f5show]
-	mov [rel screenwhat],rax
+	mov [rel whosscreen],rax
+
 	lea rax,[rel f5event]
-	mov [rel whoevent],rax
+	mov [rel whosevent],rax
+
 	ret
 .notf5:
 
+
+
+
 .otherkey:
-	jmp [rel whoevent]
+	jmp [rel whosevent]
 ;___________________________________________
-whoevent:dq 0
+whosevent:dq 0
