@@ -158,9 +158,9 @@ updatescreen:
 	cmp r10,r11				;if(upy>=downy)return
 	jae .return
 	cmp r9,1024				;if(rightx>=1024)return
-	jae .return
+	ja .return
 	cmp r11,768				;if(downy>=768)return
-	jae .return
+	ja .return
 
 .getvariety:
 	mov bl,[screeninfo+0x19]

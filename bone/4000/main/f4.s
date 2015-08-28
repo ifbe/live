@@ -113,7 +113,7 @@ f4showone:
 	lea r11,[r10+16]		;downy
 
 	mov edi,ecx
-	shl edi,3+2								;总共8个点，每个点4byte
+	shl edi,2+3								;总共8个点，每个点4byte
 	add edi,0x1c00000+1024*4*16*47			;显示区在哪
 	call char
 
