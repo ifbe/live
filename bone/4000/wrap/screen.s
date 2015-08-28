@@ -153,11 +153,11 @@ updatescreen:
 	mov [0x60c],r11d
 
 .check:
-	cmp r8,r9					;if(leftx>=rightx)return
+	cmp r8,r9				;if(leftx>=rightx)return
 	jae .return
-	cmp r10,r11					;if(upy>=downy)return
+	cmp r10,r11				;if(upy>=downy)return
 	jae .return
-	cmp r9,1024					;if(rightx>=1024)return
+	cmp r9,1024				;if(rightx>=1024)return
 	jae .return
 	cmp r11,768				;if(downy>=768)return
 	jae .return
@@ -168,14 +168,25 @@ updatescreen:
 	movzx ebx,bl				;ebx=byte per pixel
 
 .continuey:
-	mov edi,[screeninfo+0x28]
-	add edi,512*4
-	mov rsi,r10					;upy
-	shl rsi,10+2				;*1024*4
-	add rsi,rbp					;+base
+	mov edi,[screeninfo+0x28]		;dest base
+	mov eax,ebx
+	shl eax,10
+	mul r10d
+	add edi,eax				;+upx*1024*bpp
+	mov eax,ebx
+	mul r8d
+	add edi,eax				;+leftx*bpp
 
-	mov rcx,r9					;rightx
-	sub rcx,r8					;leftx
+	mov rsi,rbp				;source base
+	mov rax,r10
+	shl rax,10+2
+	add rsi,rax				;+upx*1024*4
+	mov rax,r8
+	shl rax,2
+	add rsi,rax				;+leftx*4
+
+	mov rcx,r9				;rightx
+	sub rcx,r8				;leftx
 .continuex:
 	mov eax,[esi]
 	add esi,4
@@ -185,7 +196,6 @@ updatescreen:
 
 	inc r10
 	cmp r10,r11
-	;add edi,1024*4-8*4
 	jb .continuey
 
 .return:

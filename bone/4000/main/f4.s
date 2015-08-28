@@ -82,24 +82,24 @@ f4showall:
 ;_________________________________________
 f4showone:
 	;int3
-	mov edx,[consolehome+consolesize-8]		;edx=y*0x80
-	mov ecx,[rel f4change]					;ecx=x
+	mov edx,[consolehome+consolesize-8]	;edx=y*0x80
+	mov ecx,[rel f4change]			;ecx=x
 
 	lea esi,[ecx+edx]
 	add esi,consolehome
-	mov al,[esi]							;al=that byte
-	mov al,'@'
+	mov al,[esi]				;al=that byte
+	;mov al,'@'
 
-	cmp edx,0x30*0x80						;buffer里面有48行吗
+	cmp edx,0x30*0x80			;buffer里面有48行吗
 	jae .atlastline
 
 .atmiddle:									;48行以内在屏幕中间
 	mov r10,rdx
 	shr r10,7-4				;upy=y*16=edx/0x80*16
-	lea r11,[r10+16]		;downy
+	lea r11,[r10+16]			;downy
 
 	mov rdi,r10
-	shl edi,10+2			;yoffset=upy*1024*4
+	shl edi,10+2				;yoffset=upy*1024*4
 	mov rbx,rcx
 	shl rbx,3+2				;xoffset=leftx
 	add edi,ebx
@@ -235,11 +235,12 @@ f4event:
 	add ebx,consolehome
 	add ebx,[rel length]
 	mov [ebx],al					;新增一个字节
-	inc byte [rel length]
 
 	mov al,[rel length]
 	movzx rax,al
 	mov [rel f4change],rax		;告诉显示者我改了哪个字节
+
+	inc byte [rel length]
 
 
 
