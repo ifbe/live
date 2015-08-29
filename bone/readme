@@ -57,16 +57,22 @@
 ;gcc负责翻译成.o文件
 ;ld负责把一大堆.o文件合成一个.bin给cpu玩
 ;#######################################################
-;[10 0000,1f ffff]    [1m,2m)    kernel code
-;[20 0000,2f ffff]    [2m,3m)    ahci driver
-;[30 0000,3f ffff]    [3m,4m)    filesystem driver
+;[10 0000,1f ffff]    [1m,2m)    ahci driver   
+;[20 0000,2f ffff]    [2m,3m)    xhci host driver
+;[30 0000,3f ffff]    [3m,4m)    xhci port driver
 
-;[40 0000,8f ffff]    [4m,12m)    --------------------
+;[30 0000,3f ffff]    [3m,4m)    disk list
+;[30 0000,3f ffff]    [3m,4m)    fs buffer
+;[30 0000,3f ffff]    [3m,4m)    disk list
+;[30 0000,3f ffff]    [3m,4m)    data buffer
 
-;[c0 0000,cf ffff]    [12m,13m)    console
-;[d0 0000,df ffff]    [13m,14m)    journal
-;[e0 0000,ef ffff]    [14m,15m)    something else
+;[40 0000,8f ffff]    [8m,12m)    ---------not used--------
+
+;[c0 0000,cf ffff]    [12m,13m)    console buffer
+;[d0 0000,df ffff]    [13m,14m)    journal buffer
+;[e0 0000,ef ffff]    [14m,15m)    --------not used--------
 ;[f0 0000,ff ffff]    [15m,16m)    isa hole
+
 ;[100 0000,13f ffff]    [16m,20m)    1024*1024*rgba pixel data
 ;[140 0000,17f ffff]    [20m,24m)    1024*1024*rgba pixel data
 ;[180 0000,1bf ffff]    [24m,28m)    1024*1024*rgba pixel data
