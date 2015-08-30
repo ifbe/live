@@ -12,7 +12,7 @@
 
 
 
-void say(char*,...);
+void diary(char*,...);
 
 void initahci();
 void initide();
@@ -30,7 +30,7 @@ void start()
 	QWORD* p=(QWORD*)(journalhome);
 	QWORD temp;
 	for(temp=0;temp<journalsize/8;temp++) p[temp]=0;
-	say("oh we have found a whole new world,landing...%x...%x...%x...",1,2,3);
+	diary("oh we have found a whole new world,landing...%x...%x...%x...",1,2,3);
 
 	//初始化，然后把找到的设备列一个清单
 	initahci();

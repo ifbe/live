@@ -13,7 +13,7 @@
 
 
 //用了别人的函数
-void say(char* , ...);
+void diary(char* , ...);
 
 
 
@@ -148,7 +148,7 @@ static unsigned int probepci(QWORD addr)
 //进：pci地址
 //出：内存地址
 	unsigned int temp;
-	say("(ahci)pciaddr:%x{\n",addr);
+	diary("(ahci)pciaddr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
 	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
@@ -157,19 +157,19 @@ static unsigned int probepci(QWORD addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	say("    pci sts&cmd:%x",(QWORD)in32(0xcfc));
+	diary("    pci sts&cmd:%x",(QWORD)in32(0xcfc));
 
 	//ide port
 	out32(0xcf8,addr+0x10);
-	say("    bar0:%x\n" , in32(0xcfc)&0xfffffffe );
+	diary("    bar0:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x14);
-	say("    bar1:%x\n" , in32(0xcfc)&0xfffffffe );
+	diary("    bar1:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x18);
-	say("    bar2:%x\n" , in32(0xcfc)&0xfffffffe );
+	diary("    bar2:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x1c);
-	say("    bar3:%x\n" , in32(0xcfc)&0xfffffffe );
+	diary("    bar3:%x\n" , in32(0xcfc)&0xfffffffe );
 
-	say("}\n");
+	diary("}\n");
 
 	//hba addr
 	out32(0xcf8,addr+0x24);
@@ -193,7 +193,7 @@ static void disableport(HBA_PORT* port)
 
 
 	//step3:	put port in idle mode
-			//say("port->cmd before disable:%x",(QWORD)(port->cmd));
+			//diary("port->cmd before disable:%x",(QWORD)(port->cmd));
 	port->cmd &= 0xfffffffe;	//0x18,bit0
 	port->cmd &= 0xffffffef;	//0x18,bit4,FRE
  
@@ -203,7 +203,7 @@ static void disableport(HBA_PORT* port)
 		timeout--;
 		if(timeout==0)
 		{
-			say("(timeout)still running:%x",(QWORD)(port->cmd));
+			diary("(timeout)still running:%x",(QWORD)(port->cmd));
 			return;
 		}
 
@@ -212,7 +212,7 @@ static void disableport(HBA_PORT* port)
 
 		break;
 	}
-			//say("port->cmd after disable:%x",(QWORD)(port->cmd));
+			//diary("port->cmd after disable:%x",(QWORD)(port->cmd));
 
 
 
@@ -231,7 +231,7 @@ static void disableport(HBA_PORT* port)
 		timeout--;
 		if(timeout==0)
 		{
-			//say("no device:%x",11111);
+			//diary("no device:%x",11111);
 			return;
 		}
 
@@ -247,12 +247,12 @@ static void disableport(HBA_PORT* port)
 }
 static void enableport(HBA_PORT* port)
 {
-	//say("port->cmd before enable:%x",(QWORD)(port->cmd));
+	//diary("port->cmd before enable:%x",(QWORD)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
  
 	port->cmd |= 1<<4;	//bit4,receive enable
 	port->cmd |= 1; 	//bit0,start
-	//say("port->cmd after enable:%x",(QWORD)(port->cmd));
+	//diary("port->cmd after enable:%x",(QWORD)(port->cmd));
 }
 static void probeahci(QWORD addr)
 {
@@ -268,7 +268,7 @@ static void probeahci(QWORD addr)
 
 
 //第一步:host controller settings
-	say("(ahci)memaddr:%x{\n",addr);
+	diary("(ahci)memaddr:%x{\n",addr);
 	abar->ghc|=0x80000000;
 	abar->ghc&=0xfffffffd;
 	abar->is = 0xffffffff;		//clear all
@@ -279,7 +279,7 @@ static void probeahci(QWORD addr)
 		temp >>= 1;
 		count++;
 	}
-	say("    total implemented=%x\n",count);
+	diary("    total implemented=%x\n",count);
 
 
 
@@ -364,7 +364,7 @@ static void probeahci(QWORD addr)
 		}//if this port usable
 	}//for
 
-	say("}\n");
+	diary("}\n");
 }
 
 

@@ -16,7 +16,7 @@
 
 
 void remember(QWORD first,QWORD second);
-void say(char* , ...);
+void diary(char* , ...);
 void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
 void blank2zero(QWORD* name);
 void string2data(BYTE* str,QWORD* data);
@@ -67,9 +67,9 @@ void checkinodecache(QWORD inode)
 	cacheblock&=0xfffffffffffc0000;
 	if(cachecurrent == cacheblock) return;
 
-	say("inode:%x",inode);
-	say("cacheblock:%x",cacheblock);
-	say("{");
+	diary("inode:%x",inode);
+	diary("cacheblock:%x",cacheblock);
+	diary("{");
 
 
 	//那一块第一个inode的号
@@ -79,23 +79,23 @@ void checkinodecache(QWORD inode)
 	{
 		if(rdi>=inodebuffer+0x40000) break;
 
-		say("i:%x",inode);
+		diary("i:%x",inode);
 
 		//此inode在第几块组
 		QWORD groupnum=(inode-1)/inodepergroup;
-		say("group number:%x",groupnum);
+		diary("group number:%x",groupnum);
 
 		//组内偏移（多少扇区）
 		QWORD groupoffset=((inode-1) % inodepergroup)/(0x200/inodesize);
-		say("group offset:%x",groupoffset);
+		diary("group offset:%x",groupoffset);
 
 		//得到这一组的块编号
 		QWORD inodeblock=getinodeblock(groupnum);
-		say("inode block:%x",inodeblock);
+		diary("inode block:%x",inodeblock);
 
 		//计算从哪一块开始
 		QWORD where=block0+inodeblock*blocksize+groupoffset;
-		say("sector:%x",where);
+		diary("sector:%x",where);
 
 		//计算读多少块
 		QWORD count;
@@ -118,7 +118,7 @@ void checkinodecache(QWORD inode)
 				count=(inodebuffer+0x40000-rdi)/0x200;
 			}
 		}
-		say("count:%x",count);
+		diary("count:%x",count);
 
 		//read inode table
 	        read(rdi,where,diskaddr,count);
@@ -128,7 +128,7 @@ void checkinodecache(QWORD inode)
 	}
 
 	cachecurrent=cacheblock;
-	say("}",0);
+	diary("}",0);
 }
 
 
@@ -139,7 +139,7 @@ void explaininode(QWORD rdi,QWORD inode)
 
 	checkinodecache(inode);
 
-	say("inode:%x",inode);
+	diary("inode:%x",inode);
 
 	//(inode-1)%(0x40000/inodesize)
 	rsi=inodebuffer+((inode-1)*inodesize)%0x40000;
@@ -147,8 +147,8 @@ void explaininode(QWORD rdi,QWORD inode)
 	//检查是不是软链接
 	WORD temp=(*(WORD*)rsi)&0xf000;
 	if(temp == 0xa000){
-		say("softlink:");
-		say((char*)(rsi+0x28));
+		diary("softlink:");
+		diary((char*)(rsi+0x28));
 		return;
 	}
 
@@ -158,27 +158,27 @@ void explaininode(QWORD rdi,QWORD inode)
 	{
 		QWORD numbers;
 
-		say("extend@%x",rsi);
+		diary("extend@%x",rsi);
 		numbers=*(WORD*)(rsi+2);
-		say("numbers:%x",numbers);
+		diary("numbers:%x",numbers);
 
-		say("{");
+		diary("{");
 		rsi+=12;
 		for(i=0;i<numbers;i++)
 		{
 			QWORD temp1;
 			QWORD temp2;
-			say("    @%x",rsi);
+			diary("    @%x",rsi);
 
 			temp1=*(DWORD*)(rsi+8);
 			temp1+= *(WORD*)(rsi+6);
 			temp1*=blocksize;
 			temp1+=block0;
-			say("    sector:%x",temp1);
+			diary("    sector:%x",temp1);
 
 			temp2=*(WORD*)(rsi+4);
 			temp2*=blocksize;
-			say("    count:%x",temp2);
+			diary("    count:%x",temp2);
 
 			rsi+=12;
 
@@ -186,22 +186,22 @@ void explaininode(QWORD rdi,QWORD inode)
 			rdi+=0x200*blocksize;
 		}
 
-		say("}");
+		diary("}");
 	}
 	else
 	{
-	say("old@%x",rsi);
-	say("{",0);
+	diary("old@%x",rsi);
+	diary("{",0);
 /*
 	for(i=0;i<8;i++)
 	{
 		if(*(DWORD*)rsi != 0)
 		{
 			QWORD temp;
-			say("    pointer@",rsi);
+			diary("    pointer@",rsi);
 
 			temp=block0+(*(DWORD*)rsi)*blocksize;
-			say("sector:",temp);
+			diary("sector:",temp);
 
 		        read(rdi,temp,diskaddr,blocksize);
 			rdi+=0x200*blocksize;
@@ -210,7 +210,7 @@ void explaininode(QWORD rdi,QWORD inode)
 		rsi+=4;
 	}
 */
-	say("}",0);
+	diary("}",0);
 	}
 }
 
@@ -270,7 +270,7 @@ static int ext_cd(BYTE* addr)
 			}
 			if(number == 0)
 			{
-				say("not found:%x",name);
+				diary("not found:%x",name);
 				return -1;
 			}
 		}
@@ -311,7 +311,7 @@ static void ext_load(BYTE* addr)
 	}
 	if(number == 0)
 	{
-		say("not found");
+		diary("not found");
 		return;
 	}
 
@@ -321,7 +321,7 @@ static void ext_load(BYTE* addr)
 
 int mountext(QWORD sector)
 {
-	say("extx sector:%x",sector);
+	diary("extx sector:%x",sector);
 	block0=sector;
 
 	//读分区前8扇区，总共0x1000字节
@@ -333,18 +333,18 @@ int mountext(QWORD sector)
 	//变量们
 	blocksize=*(DWORD*)(pbrbuffer+0x418);	//就不另开个temp变量了
 	blocksize=( 1<<(blocksize+10) )/0x200;
-	say("sectorperblock:%x",blocksize);
+	diary("sectorperblock:%x",blocksize);
 	groupsize=( *(DWORD*)(pbrbuffer+0x420) )*blocksize;
-	say("sectorpergroup:%x",groupsize);
+	diary("sectorpergroup:%x",groupsize);
 	inodepergroup=*(DWORD*)(pbrbuffer+0x428);
-	say("inodepergroup:%x",inodepergroup);
+	diary("inodepergroup:%x",inodepergroup);
 	inodesize=*(WORD*)(pbrbuffer+0x458);
-	say("byteperinode:%x",inodesize);
+	diary("byteperinode:%x",inodesize);
 
 	//inode table缓存
 	cachecurrent=0xffffffff;
 	cacheblock=0;
-	say("");
+	diary("");
 
 	//cd /
 	ext_cd("/");

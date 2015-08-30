@@ -140,7 +140,7 @@ typedef struct tagHBA_CMD_TBL
 
 
 
-void say(char*,...);
+void diary(char*,...);
 
 
 
@@ -165,12 +165,12 @@ int identifysata(QWORD rdi,QWORD sataport)
 	}
 	if (cmdslot == 32)
 	{
-		say("error:no cmdslot",0);
+		diary("error:no cmdslot",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
-					//say("cmdslot:",(QWORD)cmdslot);
-					//say("cmdheader:",(QWORD)cmdheader);
+					//diary("cmdslot:",(QWORD)cmdslot);
+					//diary("cmdheader:",(QWORD)cmdheader);
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(DWORD);//Command FIS size
 	cmdheader->w = 0;		// Read from device
 	cmdheader->prdtl=1;
@@ -181,7 +181,7 @@ int identifysata(QWORD rdi,QWORD sataport)
 
 	//make the table
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
-					//say("cmdtable(comheader->ctba):",(QWORD)cmdtable);
+					//diary("cmdtable(comheader->ctba):",(QWORD)cmdtable);
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE);
 	for(;i>0;i--){p[i]=0;}
@@ -210,7 +210,7 @@ int identifysata(QWORD rdi,QWORD sataport)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			say("(timeout1)port->tfd:%x",(QWORD)port->tfd);
+			diary("(timeout1)port->tfd:%x",(QWORD)port->tfd);
 			return -1;
 		}
 
@@ -221,7 +221,7 @@ int identifysata(QWORD rdi,QWORD sataport)
 
 		break;
 	}
-	//say("is:",(QWORD)port->is);
+	//diary("is:",(QWORD)port->is);
 	//unsigned int* pointer=(unsigned int*)(QWORD)(port->fb);
 
 
@@ -235,14 +235,14 @@ int identifysata(QWORD rdi,QWORD sataport)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			say("(timeout2)ci=%x,prdbc=%x",temp,cmdheader->prdbc);
+			diary("(timeout2)ci=%x,prdbc=%x",temp,cmdheader->prdbc);
 			return -2;
 		}
 
 		temp=port->is;
 		if (temp & 0x40000000)	// Task file error
 		{
-			say("port error 1");
+			diary("port error 1");
 			return -9;
 		}
 
@@ -294,13 +294,13 @@ int identifyide(QWORD rdi)
 	//channel reset
 	out8(control+2,4);
 	out16(0x80,0x1111);		//out8(0xeb,0)
-	say("out %x %x\n",control+2,4);
+	diary("out %x %x\n",control+2,4);
 
 	out8(control+2,0);
-	say("out %x %x\n",control+2,0);
+	diary("out %x %x\n",control+2,0);
 
 	out8(command+6,0xa0);
-	say("out %x %x\n",command+6,0xa0);
+	diary("out %x %x\n",command+6,0xa0);
 
 	//50:hd exist
 	i=0;
@@ -309,7 +309,7 @@ int identifyide(QWORD rdi)
 		i++;
 		if(i>0xfffff)
 		{
-			say("device not ready:%x\n",temp);
+			diary("device not ready:%x\n",temp);
 			return -1;
 		}
 
@@ -326,11 +326,11 @@ int identifyide(QWORD rdi)
 
 	//mode
 	out8(command+6,0xe0);
-	say("out %x %x\n",command+6,0xe0);
+	diary("out %x %x\n",command+6,0xe0);
 
 	//start reading
 	out8(command+7,0xec);
-	say("out %x %x\n",command+7,0xec);
+	diary("out %x %x\n",command+7,0xec);
 
 	//check hd data ready?
 	i=0;
@@ -339,7 +339,7 @@ int identifyide(QWORD rdi)
 		i++;
 		if(i>0xfffff)
 		{
-			say("data not ready!\n");
+			diary("data not ready!\n");
 			return -2;
 		}
 
@@ -351,7 +351,7 @@ int identifyide(QWORD rdi)
 	}
 
 	//read data
-	say("reading data\n");
+	diary("reading data\n");
 	for(i=0;i<0x100;i++)
 	{
 		temp=in8(command+7);
@@ -362,7 +362,7 @@ int identifyide(QWORD rdi)
 		dest[i]=temp;
 	}
 
-	if(i < 0x100) say("not finished:%x\n",i);
+	if(i < 0x100) diary("not finished:%x\n",i);
 	return 1;
 }
 
@@ -397,10 +397,10 @@ int identify(QWORD rdi)
 		p[i]=p[i+1];
 		p[i+1]=temp;
 	}
-	say((char*)(datahome+20));
+	diary((char*)(datahome+20));
 
 	//size
 	temp=*(QWORD*)(datahome+200);
-	say("%dGB(%xsectors)",temp>>21,temp);
+	diary("%dGB(%xsectors)",temp>>21,temp);
 	return temp;
 }

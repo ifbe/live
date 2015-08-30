@@ -18,12 +18,14 @@
 
 
 
-int use(QWORD,char*);
-void remember(QWORD,QWORD);
-void say(char*,QWORD);
+void diary(char*,QWORD);
+
 void mountfat(QWORD);
 void mountext(QWORD);
 void mountntfs(QWORD);
+
+int use(QWORD,char*);
+void remember(QWORD,QWORD);
 
 void string2data(BYTE* str,QWORD* data);
 
@@ -43,12 +45,12 @@ static void directidentify()
 static void directread(QWORD sector)
 {
 	int result;
-	say("reading sector:%x\n",0);
+	diary("reading sector:%x\n",0);
 	result=read(datahome,0,0,1);
 
 	//result=read(datahome,sector,0,8);
-	//if(result>=0) say("read sector:%x",sector);
-	//else say("something wrong:%x",sector);
+	//if(result>=0) diary("read sector:%x",sector);
+	//else diary("something wrong:%x",sector);
 }
 static void directhostcmd(char* arg0,char* arg1,char* arg2,char* arg3)
 {
@@ -97,7 +99,7 @@ static void directusbcmd(char* arg0,char* arg1,char* arg2,char* arg3,char* arg4,
 //[0x18,0x3f]:空
 QWORD explaingpt()
 {
-	say("gpt disk",0);
+	diary("gpt disk",0);
 	QWORD* our=(QWORD*)(partitionhome);
 	QWORD* raw=(QWORD*)(mbrbuffer+0x400);
 	int i;
@@ -139,7 +141,7 @@ QWORD explaingpt()
 //[0x18,0x3f]:空
 QWORD explainmbr()
 {
-	say("mbr disk",0);
+	diary("mbr disk",0);
 	QWORD raw=mbrbuffer+0x1be;
 	BYTE* our=(BYTE*)(partitionhome);
 	int i;
@@ -184,7 +186,7 @@ static int mount(BYTE* addr)
 	}
 	if(i>=0x80)
 	{
-		say("partition not found",0);
+		diary("partition not found",0);
 		return -1;
 	}
 
@@ -247,7 +249,7 @@ void master()
 	read(mbrbuffer,0,0,64);
 	if(*(WORD*)(mbrbuffer+0x1fe)!=0xAA55)
 	{
-		say("bad disk",0);
+		diary("bad disk",0);
 		return;
 	}
 

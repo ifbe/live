@@ -24,7 +24,7 @@ static QWORD xhciaddr=0;
 
 
 //用了别人的函数
-void say(char* , ...);
+void diary(char* , ...);
 
 
 
@@ -73,7 +73,7 @@ static inline unsigned int in32( unsigned short port )
 }/*
 void explaincapability()
 {
-say("pci cap{");
+diary("pci cap{");
 
 	DWORD offset;
 	DWORD temp;
@@ -98,15 +98,15 @@ say("pci cap{");
 			temp=in32(0xcfc);
 			if( (temp&0x800000) ==0 )
 			{
-			say("32bit msi@%x",offset);
+			diary("32bit msi@%x",offset);
 
 			//before
 			out32(0xcf8,xhciport+offset);
-			say("	control:%x\n",in32(0xcfc));
+			diary("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			say("	addr:%x\n",in32(0xcfc));
+			diary("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+8);
-			say("	data:%x\n",in32(0xcfc));
+			diary("	data:%x\n",in32(0xcfc));
 
 			//do something
 			out32(0xcf8,xhciport+offset+8);
@@ -118,22 +118,22 @@ say("pci cap{");
 
 			//after
 			out32(0xcf8,xhciport+offset);
-			say("	control:%x\n",in32(0xcfc));
+			diary("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			say("	addr:%x\n",in32(0xcfc));
+			diary("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+8);
-			say("	data:%x\n",in32(0xcfc));
+			diary("	data:%x\n",in32(0xcfc));
 			}
 			else
 			{
-			say("64bit msi@",offset);
+			diary("64bit msi@",offset);
 
 			out32(0xcf8,xhciport+offset);
-			say("	control:%x\n",in32(0xcfc));
+			diary("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			say("	addr:%x\n",in32(0xcfc));
+			diary("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+0xc);
-			say("	data:%x\n",in32(0xcfc));
+			diary("	data:%x\n",in32(0xcfc));
 
 			out32(0xcf8,xhciport+offset+0xc);
 			out32(0xcfc,0x20);
@@ -143,18 +143,18 @@ say("pci cap{");
 			out32(0xcfc,temp|0x10000);
 
 			out32(0xcf8,xhciport+offset);
-			say("	control:%x\n",in32(0xcfc));
+			diary("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			say("	addr:%x\n",in32(0xcfc));
+			diary("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+0xc);
-			say("	data:%x\n",in32(0xcfc));
+			diary("	data:%x\n",in32(0xcfc));
 			}
 			break;
 		}
 
 		case 0x11:
 		{
-			say("msix@%x\n",offset);
+			diary("msix@%x\n",offset);
 break;
 			DWORD msixcontrol;
 			DWORD* msixtable;
@@ -175,9 +175,9 @@ break;
 			out32(0xcf8,xhciport+offset);
 			msixcontrol=in32(0xcfc);
 
-			say("	msix control:%x\n",msixcontrol);
-			say("	msix table@%x\n",msixtable);
-			say("	pending table@%x\n",pendingtable);
+			diary("	msix control:%x\n",msixcontrol);
+			diary("	msix table@%x\n",msixtable);
+			diary("	pending table@%x\n",pendingtable);
 
 			//msixtable[0],addrlow,addrhigh,vector,control
 			msixtable[0]=0xfee00000;
@@ -185,17 +185,17 @@ break;
 			msixtable[2]=0x20;
 			msixtable[3]=msixtable[3]&0xfffffffe;
 
-			say("	@0:%x\n",msixtable[0]);
-			say("	@4:%x\n",msixtable[1]);
-			say("	@8:%x\n",msixtable[2]);
-			say("	@c:%x\n",msixtable[3]);
+			diary("	@0:%x\n",msixtable[0]);
+			diary("	@4:%x\n",msixtable[1]);
+			diary("	@8:%x\n",msixtable[2]);
+			diary("	@c:%x\n",msixtable[3]);
 
 			break;
 		}
 
 		default:
 		{
-			say("unknown type:%x\n",type);
+			diary("unknown type:%x\n",type);
 		}
 	}
 	
@@ -205,7 +205,7 @@ break;
 	offset=next;
 	}
 	
-say("}\n",0);
+diary("}\n",0);
 
 }
 */
@@ -215,7 +215,7 @@ say("}\n",0);
 
 QWORD probepci()
 {
-	say("(xhci)portaddr:%x{\n",xhciport);
+	diary("(xhci)portaddr:%x{\n",xhciport);
 
 	//disable pin interrupt+enable bus mastering
 	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
@@ -225,7 +225,7 @@ QWORD probepci()
 	out32(0xcfc,temp);
 
 	out32(0xcf8,xhciport+0x4);
-	say("	sts&cmd:%x\n",(QWORD)in32(0xcfc));
+	diary("	sts&cmd:%x\n",(QWORD)in32(0xcfc));
 
 	//deal with capability list
 	//explaincapability();
@@ -233,7 +233,7 @@ QWORD probepci()
 	//get xhciaddr from bar0
 	out32(0xcf8,xhciport+0x10);
 	xhciaddr=in32(0xcfc)&0xfffffff0;
-	say("}\n");
+	diary("}\n");
 }
 
 
@@ -255,18 +255,18 @@ int ownership(QWORD addr)
 	temp&=0x1000000;
 	if(temp == 0x1000000)
 	{
-		say("	grabing ownership");
+		diary("	grabing ownership");
 
 		temp=*(DWORD*)addr;
 		temp&=0x10000;
 		if(temp == 0)
 		{
-			say("	bios gone");
+			diary("	bios gone");
 			return 0;
 		}
 	}
 
-	say("	failed");
+	diary("	failed");
 	return -1;
 }
 void supportedprotocol(QWORD addr)
@@ -278,24 +278,24 @@ void supportedprotocol(QWORD addr)
 	QWORD start=third & 0xff;
 	QWORD count=(third>>8) & 0xff;
 
-	//say("first:",first);
+	//diary("first:",first);
 	if(first<0x100)		//[0,0xff]
 	{
-		say("	usb?\n");
+		diary("	usb?\n");
 	}
 	else if(first<=0x200)	//[0x100,0x1ff]
 	{
-		say("	usb1:%x\n",start);
+		diary("	usb1:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=1;
 	}
 	else if(first<=0x300)	//[0x200,0x2ff]
 	{
-		say("	usb2:%x\n",start);
+		diary("	usb2:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=2;
 	}
 	else			//[0x300,0x3ff]
 	{
-		say("	usb3:%x\n",start);
+		diary("	usb3:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=3;
 	}
 }
@@ -307,15 +307,15 @@ void explainxecp(QWORD addr)
 {
 	DWORD temp;
 
-	say("	explain xecp@%x{\n",addr);
+	diary("	explain xecp@%x{\n",addr);
 	while(1)
 	{
-		say("	@%x\n",addr);
+		diary("	@%x\n",addr);
 		temp=*(DWORD*)addr;
 		BYTE type=temp&0xff;
 		QWORD next=(temp>>6)&0x3fc;
 
-		say("	cap:%x\n",type);
+		diary("	cap:%x\n",type);
 		switch(type)
 		{
 			case 1:{
@@ -334,7 +334,7 @@ void explainxecp(QWORD addr)
 
 
 failed:
-	say("	}\n");
+	diary("	}\n");
 }
 
 
@@ -342,10 +342,10 @@ failed:
 
 int probexhci()
 {
-say("(xhci)memaddr:%x{\n",xhciaddr);
+diary("(xhci)memaddr:%x{\n",xhciaddr);
 
 //基本信息
-//say("base information{");
+//diary("base information{");
 	QWORD version=(*(DWORD*)xhciaddr) >> 16;
 	QWORD caplength=(*(DWORD*)xhciaddr) & 0xffff;
 
@@ -357,17 +357,17 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	volatile QWORD operational=xhciaddr+caplength;
 	QWORD runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
 
-	//say("	version:%x\n",version);
-	//say("	caplength:%x\n",caplength);
+	//diary("	version:%x\n",version);
+	//diary("	caplength:%x\n",caplength);
 
-	//say("	hcsparams1:%x\n",hcsparams1);
-	//say("	hcsparams2:%x\n",hcsparams2);
-	//say("	hcsparams3:%x\n",hcsparams3);
-	//say("	capparams:%x\n",capparams);
+	//diary("	hcsparams1:%x\n",hcsparams1);
+	//diary("	hcsparams2:%x\n",hcsparams2);
+	//diary("	hcsparams3:%x\n",hcsparams3);
+	//diary("	capparams:%x\n",capparams);
 
-	//say("	operational@%x\n",operational);
-	//say("	runtime@%x\n",runtime);
-//say("}\n",0);
+	//diary("	operational@%x\n",operational);
+	//diary("	runtime@%x\n",runtime);
+//diary("}\n",0);
 
 
 
@@ -380,7 +380,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 
 
 //打印bios初始化完后的状态
-//say("before we destory everything{\n");
+//diary("before we destory everything{\n");
 	QWORD usbcommand=*(DWORD*)operational;
 	QWORD usbstatus=*(DWORD*)(operational+4);
 	QWORD pagesize=0x1000;
@@ -393,7 +393,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	while(1)
 	{
 		if(psz == 0){
-			say("psz:",psz);
+			diary("psz:",psz);
 			return -1;
 		}
 		if(psz == 1) break;
@@ -402,13 +402,13 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 		pagesize<<1;
 	}
 
-	//say("	usbcommand:%x\n",usbcommand);
-	//say("	usbstatus:%x\n",usbstatus);
-	//say("	pagesize:%x\n",pagesize);
-	//say("	crcr:%x\n",crcr);
-	//say("	dcbaa:%x\n",dcbaa);
-	//say("	config:%x\n",config);
-//say("}\n",0);
+	//diary("	usbcommand:%x\n",usbcommand);
+	//diary("	usbstatus:%x\n",usbstatus);
+	//diary("	pagesize:%x\n",pagesize);
+	//diary("	crcr:%x\n",crcr);
+	//diary("	dcbaa:%x\n",dcbaa);
+	//diary("	config:%x\n",config);
+//diary("}\n",0);
 
 
 
@@ -417,13 +417,13 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 //init system io memory map,if supported
 //xhci reset,wait until CNR flag is 0
 //--------------------------------------------------------------------
-	say("	init xhci{",0);
-	say("	1.stop&reset");
+	diary("	init xhci{",0);
+	diary("	1.stop&reset");
 
 	//xhci正在运行吗
 	if( (usbstatus&0x1) == 0)		//HCH位为0，即正在运行
 	{
-		say("		running,stopping\n");
+		diary("		running,stopping\n");
 
 		//按下停止按钮
 		*(DWORD*)operational=usbcommand&0xfffffffe;
@@ -436,7 +436,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 		usbstatus=*(DWORD*)(operational+4);
 		if( (usbstatus&0x1) == 0)	//HCH位为0，即正在运行
 		{
-			say("		not stop\n");
+			diary("		not stop\n");
 			return -2;
 		}
 	}
@@ -452,7 +452,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	usbcommand=*(DWORD*)(operational);
 	if((usbcommand&0x2) == 2)
 	{
-		say("	reset failed:%x\n",usbcommand);
+		diary("	reset failed:%x\n",usbcommand);
 		return -3;
 	}
 
@@ -460,13 +460,13 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	usbstatus=*(DWORD*)(operational+4);
 	if( (usbstatus&0x800) == 0x800 )
 	{
-		say("	controller not ready:%x\n",usbstatus);
+		diary("	controller not ready:%x\n",usbstatus);
 		return -4;
 	}
 
 	//好像第一步成功了
-	//say("	command:%x\n",usbcommand);
-	//say("	status:%x\n",usbstatus);
+	//diary("	command:%x\n",usbcommand);
+	//diary("	status:%x\n",usbstatus);
 
 
 
@@ -476,18 +476,18 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 //program the dcbaap
 //program crcr,point to addr of first trb in command ring
 //----------------------------------------------------------
-	say("	2.maxslot&dcbaa&crcr:");
+	diary("	2.maxslot&dcbaa&crcr:");
 	//maxslot=deviceslots
 	*(DWORD*)(operational+0x38)=(*(DWORD*)(xhciaddr+4)) &0xff;
-	say("		maxslot:%x\n",*(DWORD*)(operational+0x38) );
+	diary("		maxslot:%x\n",*(DWORD*)(operational+0x38) );
 
 	//dcbaa(scratchpad)
 	*(DWORD*)(operational+0x30)=dcbahome;
 	*(DWORD*)(operational+0x34)=0;
-	say("		dcbaa:%x\n",dcbahome);
+	diary("		dcbaa:%x\n",dcbahome);
 	*(DWORD*)(dcbahome) = scratchpadhome;		//用了宏，加括号
 	*(DWORD*)(dcbahome+4)=0;					//高位
-	say("		scratchpad:%x\n",scratchpadhome);
+	diary("		scratchpad:%x\n",scratchpadhome);
 
 	//command linktrb:lastone point to firstone
 	*(QWORD*)(cmdringhome+0xfff*0x10)=cmdringhome;
@@ -497,7 +497,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	//crcr
 	*(DWORD*)(operational+0x18)=cmdringhome+1;
 	*(DWORD*)(operational+0x1c)=0;
-	say("		crcr:%x\n",cmdringhome+1);
+	diary("		crcr:%x\n",cmdringhome+1);
 
 
 
@@ -508,7 +508,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 //point table&pba offset to message control table and pending bit array
 //init message control register of msix capability structure
 //-------------------------------------------------
-	say("	3.interrupt&eventring\n");
+	diary("	3.interrupt&eventring\n");
 
 	//setupisr(xhciaddr);
 	//----------------------if(msix)--------------------------
@@ -542,7 +542,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	//IMAN
 	*(DWORD*)(runtime+0x20) = (*(DWORD*)(runtime+0x20)) | 0x2;
 
-	say("		event ring@%x\n",eventringhome);
+	diary("		event ring@%x\n",eventringhome);
 
 
 
@@ -550,7 +550,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 //---------------------xhci启动---------------------
 //write usbcmd,turn host controller on
 //-------------------------------------------------
-	say("	4.turnon\n");
+	diary("	4.turnon\n");
 	//turn on
 	*(DWORD*)operational = (*(DWORD*)operational) | 0x1;
 
@@ -559,15 +559,15 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	//while(wait3--)asm("nop");
 
 	//
-	//say("	command:%x\n",*(DWORD*)operational);
-	//say("	status:%x\n",*(DWORD*)(operational+4));
+	//diary("	command:%x\n",*(DWORD*)operational);
+	//diary("	status:%x\n",*(DWORD*)(operational+4));
 
-	say("	}\n");
-
-
+	diary("	}\n");
 
 
-say("}\n",0);
+
+
+diary("}\n",0);
 return 0;
 }
 
@@ -602,5 +602,5 @@ void initxhci()
 
 
 end:		//就一行空白
-	say("\n");
+	diary("\n");
 }

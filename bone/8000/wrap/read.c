@@ -139,7 +139,7 @@ typedef struct tagHBA_CMD_TBL
 
 
 
-void say(char*,...);
+void diary(char*,...);
 
 
 
@@ -168,13 +168,13 @@ void maketable(QWORD buf,QWORD from,HBA_CMD_HEADER* cmdheader,DWORD count)
 													//0x100sectors    >>>>    prdt=2个
 													//0x173sectors    >>>>    prdt=3个
 													//0x181sectors    >>>>    prdt=4个
-	//say("ptdtl",(QWORD)cmdheader->prdtl);
+	//diary("ptdtl",(QWORD)cmdheader->prdtl);
 
 
 
 
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(QWORD)cmdheader->ctba;
-								//say("cmdtable@",(QWORD)cmdtable);
+								//diary("cmdtable@",(QWORD)cmdtable);
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
 	for(;i>0;i--){p[i]=0;}
@@ -232,12 +232,12 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1)
 	{
-		say("error:no cmdslot",0);
+		diary("error:no cmdslot",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
-	//say("cmdslot:",(QWORD)cmdslot);
-	//say("cmdheader:",(QWORD)cmdheader);
+	//diary("cmdslot:",(QWORD)cmdslot);
+	//diary("cmdheader:",(QWORD)cmdheader);
 
 
 
@@ -251,7 +251,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			say("(timeout1)port->tfd:%x",(QWORD)port->tfd);
+			diary("(timeout1)port->tfd:%x",(QWORD)port->tfd);
 			return -11;
 		}
 
@@ -262,7 +262,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 
 		break;
 	}
-	//say("is:",(QWORD)port->is);
+	//diary("is:",(QWORD)port->is);
 	//unsigned int* pointer=(unsigned int*)(QWORD)(port->fb);
 
 
@@ -276,7 +276,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 		timeout++;
 		if(timeout>0xffffff)
 		{
-			say("(timeout2)port->ci=%x",temp);
+			diary("(timeout2)port->ci=%x",temp);
 			return -22;
 		}
 
@@ -284,7 +284,7 @@ int readpart(QWORD buf,QWORD from,QWORD addr,DWORD count)
 		temp=port->is;
 		if (temp & 0x40000000)	// Task file error
 		{
-			say("port error 1",0);
+			diary("port error 1",0);
 			return -33;
 		}
 
@@ -335,13 +335,13 @@ void readide(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 	//channel reset
 	out8(control+2,4);
 	out16(0x80,0x1111);		//out8(0xeb,0)
-	say("out %x %x\n",control+2,4);
+	diary("out %x %x\n",control+2,4);
 
 	out8(control+2,0);
-	say("out %x %x\n",control+2,0);
+	diary("out %x %x\n",control+2,0);
 
 	out8(command+6,0xa0);
-	say("out %x %x\n",command+6,0xa0);
+	diary("out %x %x\n",command+6,0xa0);
 
 	//50:hd exist
 	i=0;
@@ -350,7 +350,7 @@ void readide(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 		i++;
 		if(i>0xfffff)
 		{
-			say("device not ready:%x\n",temp);
+			diary("device not ready:%x\n",temp);
 			return;
 		}
 
@@ -361,21 +361,21 @@ void readide(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 
 	//count
 	out8(command+2,count&0xff);
-	say("total:%x\n",count);
+	diary("total:%x\n",count);
 
 	//lba
 	out8(command+3,from&0xff);
 	out8(command+4,(from>>8)&0xff);
 	out8(command+5,(from>>16)&0xff);
-	say("lba:%x\n",from);
+	diary("lba:%x\n",from);
 
 	//mode
 	out8(command+6,0xe0);
-	say("out %x %x\n",command+6,0xe0);
+	diary("out %x %x\n",command+6,0xe0);
 
 	//start reading
 	out8(command+7,0x20);
-	say("out %x %x\n",command+7,0x20);
+	diary("out %x %x\n",command+7,0x20);
 
 	//check hd data ready?
 	i=0;
@@ -384,7 +384,7 @@ void readide(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 		i++;
 		if(i>0xfffff)
 		{
-			say("data not ready!\n");
+			diary("data not ready!\n");
 			return;
 		}
 
@@ -395,14 +395,14 @@ void readide(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 		break;
 		//if( (temp&0x1) == 0x1 )
 		//{
-		//	say("read error:%x\n",temp);
+		//	diary("read error:%x\n",temp);
 		//	return;
 		//}
 		//else break;
 	}
 
 	//read data
-	say("reading data\n");
+	diary("reading data\n");
 	for(i=0;i<0x200;i+=2)
 	{
 		temp=in8(command+7);
@@ -414,7 +414,7 @@ void readide(QWORD buf,QWORD from,QWORD notcare,DWORD count)
 		dest[i+1]=(temp>>8)&0xff;
 	}
 
-	if(i < 0x200) say("not finished:%x\n",i);
+	if(i < 0x200) diary("not finished:%x\n",i);
 }
 
 

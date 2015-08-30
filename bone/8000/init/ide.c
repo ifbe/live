@@ -11,7 +11,7 @@
 
 
 //用了别人的函数
-void say(char* , ...);
+void diary(char* , ...);
 
 
 
@@ -77,7 +77,7 @@ static unsigned int probepci(QWORD addr)
 //出：?存地址
 	unsigned int temp;
 	unsigned int bar0,bar1;
-	say("(ide)pciaddr:%x{\n",addr);
+	diary("(ide)pciaddr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
 	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
@@ -87,28 +87,28 @@ static unsigned int probepci(QWORD addr)
 
 	out32(0xcf8,addr+0x4);
 	temp=(QWORD)in32(0xcfc);
-	say("    pci sts&cmd:%x",temp);
+	diary("    pci sts&cmd:%x",temp);
 
 	//ide port
 	out32(0xcf8,addr+0x10);
 	bar0=in32(0xcfc)&0xfffffffe;
-	say("    (command)bar0:%x\n",bar0);
+	diary("    (command)bar0:%x\n",bar0);
 
 	out32(0xcf8,addr+0x14);
 	bar1=in32(0xcfc)&0xfffffffe;
-	say("    (control)bar1:%x\n",bar1);
+	diary("    (control)bar1:%x\n",bar1);
 
 	out32(0xcf8,addr+0x18);
 	temp=in32(0xcfc)&0xfffffffe;
-	say("    bar2:%x\n",temp);
+	diary("    bar2:%x\n",temp);
 
 	out32(0xcf8,addr+0x1c);
 	temp=in32(0xcfc)&0xfffffffe;
-	say("    bar3:%x\n",temp);
+	diary("    bar3:%x\n",temp);
 
 	//找到了，放到自己的表格里
 	rememberharddisk(0x656469,bar0,bar1);
-	say("}\n");
+	diary("}\n");
 }
 
 

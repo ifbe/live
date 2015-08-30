@@ -82,7 +82,12 @@ int decimal(char* destaddr,QWORD data)
 
 
 
-void say(char* p,...)
+//void say(char* p,...)
+
+
+
+
+void diary(char* p,...)
 {
 	//保存传入的寄存器值
 	register unsigned long long rsi asm("rsi");

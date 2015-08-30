@@ -16,7 +16,7 @@
 
 
 void remember(QWORD,QWORD);
-void say(char* , ...);
+void diary(char* , ...);
 void read(QWORD,QWORD,QWORD,QWORD);
 void string2data(BYTE* str,QWORD* data);
 void zero2blank(QWORD* name);
@@ -42,7 +42,7 @@ void checkfatcache()	//put cache in +0x40000
 	for(i=0;i<0x40;i++){
 		read(fatbuffer+i*0x1000,fat0+cacheblock*0x200+8*i,diskaddr,8);
 	}
-	say("cacheblock:%x",cacheblock);
+	diary("cacheblock:%x",cacheblock);
 	cachecurrent=cacheblock;
 }
 
@@ -77,7 +77,7 @@ void dir2raw()
 
 void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 {
-	say("cluster:%x",source);
+	diary("cluster:%x",source);
 
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
@@ -87,12 +87,12 @@ void fat16_data(QWORD dest,QWORD source)	//destine,clusternum
 
 		source=(QWORD)(*(WORD*)(fatbuffer+2*source));
 
-		if(source<2){say("impossible cluster:%x",source);return;}
-		if(source==0xfff7){say("bad cluster:%x",source);return;}
+		if(source<2){diary("impossible cluster:%x",source);return;}
+		if(source==0xfff7){diary("bad cluster:%x",source);return;}
 		if(source>=0xfff8) break;
 	}
 
-	say("count:%x",rdi-dest);
+	diary("count:%x",rdi-dest);
 }
 
 
@@ -101,10 +101,10 @@ void fat16_root()
 	BYTE* memory=(BYTE*)(indexbuffer);
 	int i;
 	for(i=0;i<0x80000;i++) memory[i]=0;
-	say("cd %x",fat0+fatsize*2);
+	diary("cd %x",fat0+fatsize*2);
 	read(indexbuffer,fat0+fatsize*2,diskaddr,32);
 	dir2raw();
-	say("");
+	diary("");
 }
 
 
@@ -118,7 +118,7 @@ static int fat16_cd(BYTE* addr)
 	string2data(addr,&name);
 	zero2blank(&name);
 	small2capital(&name);
-say("name:%x",name);
+diary("name:%x",name);
 
 	if( (name&0xff) == 0x2f)
 	{
@@ -136,7 +136,7 @@ say("name:%x",name);
 		}
 		if(p==indexbuffer+0x800)
 		{
-			say("directory not found");
+			diary("directory not found");
 			return -1;
 		}
 		directory=(QWORD)(*(WORD*)(p+0x1a)); //fat16,only 16bit
@@ -170,7 +170,7 @@ static void fat16_load(BYTE* addr)
 	}
 	if(p==indexbuffer+0x40000)
 	{
-		say("file not found,bye!");
+		diary("file not found,bye!");
 		return;
 	}
 
@@ -183,14 +183,14 @@ void fat16(QWORD fatsector)
 {
 	//QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
 	fatsize=(QWORD)( *(WORD*)(pbrbuffer+0x16) );
-	say("fatsize:%x",fatsize);
+	diary("fatsize:%x",fatsize);
 	fat0=fatsector + (QWORD)( *(WORD*)(pbrbuffer+0xe) );
-	say("fat0:%x",fat0);
+	diary("fat0:%x",fat0);
 	clustersize=(QWORD)( *(BYTE*)(pbrbuffer+0xd) );
-	say("clustersize:%x",clustersize);
+	diary("clustersize:%x",clustersize);
 	cluster0=fat0+fatsize*2+32-clustersize*2;
-	say("cluster0:",cluster0);
-	say("");
+	diary("cluster0:",cluster0);
+	diary("");
 
 	checkfatcache();
 	fat16_cd("/");
@@ -204,7 +204,7 @@ void fat16(QWORD fatsector)
 
 void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 {
-	say("cluster:%x",source);
+	diary("cluster:%x",source);
 
 	QWORD rdi=dest;
 	while(rdi<dest+0x80000)
@@ -217,12 +217,12 @@ void fat32_data(QWORD dest,QWORD source)		//destine,clusternum
 
 		source=(QWORD)(*(DWORD*)(fatbuffer+4*(source%0x10000)));
 
-		if(source<2){say("impossible cluster:%x",source);return;}
-		if(source==0x0ffffff7){say("bad cluster:%x",source);return;}
+		if(source<2){diary("impossible cluster:%x",source);return;}
+		if(source==0x0ffffff7){diary("bad cluster:%x",source);return;}
 		if(source>=0x0ffffff8) break;
 	}
-	say("count:",rdi-dest);
-	say("",0);
+	diary("count:",rdi-dest);
+	diary("",0);
 }
 
 
@@ -232,10 +232,10 @@ void fat32_root()
 	int i;
 	for(i=0;i<0x80000;i++) memory[i]=0;
 
-	say("cd root:%x",cluster0+clustersize*2);
+	diary("cd root:%x",cluster0+clustersize*2);
 	read(indexbuffer,cluster0+clustersize*2,diskaddr,32);
 	dir2raw();
-	say("");
+	diary("");
 }
 
 
@@ -262,7 +262,7 @@ static int fat32_cd(BYTE* addr)
 		}
 		if(p==indexbuffer+clustersize*0x200)
 		{
-			say("directory not found:%x",p);
+			diary("directory not found:%x",p);
 			return -1;
 		}
 		directory=((QWORD)(*(WORD*)(p+0x14)))<<16; //high 16bit
@@ -303,7 +303,7 @@ static void fat32_load(BYTE* addr)
 	}
 	if(p==indexbuffer+clustersize*0x200)
 	{
-		say("file not found,bye!");
+		diary("file not found,bye!");
 		return;
 	}
 
@@ -318,13 +318,13 @@ void fat32(QWORD fatsector)
 {
 	//QWORD fatsector=(QWORD)( *(DWORD*)(pbrbuffer+0x1c) );
 	fatsize=(QWORD)( *(DWORD*)(pbrbuffer+0x24) );
-	say("fatsize:%x",fatsize);
+	diary("fatsize:%x",fatsize);
 	fat0=fatsector + (QWORD)( *(WORD*)(pbrbuffer+0xe) );
-	say("fat0:%x",fat0);
+	diary("fat0:%x",fat0);
 	clustersize=(QWORD)( *(BYTE*)(pbrbuffer+0xd) );
-	say("clustersize:%x",clustersize);
+	diary("clustersize:%x",clustersize);
 	cluster0=fat0+fatsize*2-clustersize*2;
-	say("cluster0:%x",cluster0);
+	diary("cluster0:%x",cluster0);
 
 	checkfatcache();
 	fat32_cd("/");
@@ -338,18 +338,18 @@ void fat32(QWORD fatsector)
 
 int mountfat(QWORD sector)
 {
-	say("fatx sector:%x",sector);
+	diary("fatx sector:%x",sector);
 
 	read(pbrbuffer,sector,0,1); //pbr
 
 	if( *(WORD*)(pbrbuffer+0xb) !=0x200)
 	{
-		say("not 512B per sector,bye!");
+		diary("not 512B per sector,bye!");
 		return -1;
 	}
 	if( *(BYTE*)(pbrbuffer+0x10) != 2)
 	{
-		say("not 2 fat,bye!");
+		diary("not 2 fat,bye!");
 		return -2;
 	}
 
@@ -365,17 +365,17 @@ int mountfat(QWORD sector)
 
 	if(similarity==48)
 	{
-		say("fat16");
+		diary("fat16");
 		fat16(sector);
 	}
 	else if(similarity==52)
 	{
-		say("fat32");
+		diary("fat32");
 		fat32(sector);
 	}
 	else
 	{
-		say("seem not fatxx,bye!");
+		diary("seem not fatxx,bye!");
 		return -3;
 	}
 
