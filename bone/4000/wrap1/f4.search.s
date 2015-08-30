@@ -163,6 +163,11 @@ searchmemory:
 	call machinesay
 
 	lea rdi,[rel arg1]			;往里传的第一个参数
+	lea rsi,[rel arg2]			;往里传的第一个参数
+	lea rdx,[rel arg3]			;往里传的第一个参数
+	lea rcx,[rel arg4]			;往里传的第一个参数
+	lea r8,[rel arg5]			;往里传的第一个参数
+	lea r9,[rel arg6]			;往里传的第一个参数
 	call [rel addrtocall]
 	ret
 ;__________________________________________

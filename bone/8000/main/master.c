@@ -18,8 +18,6 @@
 
 
 
-void diary(char*,QWORD);
-
 void mountfat(QWORD);
 void mountext(QWORD);
 void mountntfs(QWORD);
@@ -34,6 +32,9 @@ void identify(QWORD);
 
 void hostcommand(DWORD,DWORD,DWORD,DWORD);
 void usbcommand(BYTE bmrequesttype,BYTE brequest,WORD wvalue,WORD windex,WORD wlength,QWORD buffer);
+
+void say(char*,...);
+void diary(char*,...);
 
 
 
@@ -80,6 +81,35 @@ static void directusbcmd(char* arg0,char* arg1,char* arg2,char* arg3,char* arg4,
 	string2data(arg4,&wlength);
 	string2data(arg5,&buffer);
 	usbcommand(bmrequesttype, brequest, wvalue, windex, wlength, buffer);
+}
+static void directsay(char* first,char* second,char* third,char* fourth,char* fifth,char* sixth)
+{
+	//gcc传参是rdi,rsi,rdx,rcx,r8,r9,为了不用栈传参所以最多只能传6个参数
+	char temp;
+	int i;
+	char arg0[16+24];
+	QWORD qword1,qword2,qword3,qword4,qword5;
+
+	//arg0
+	for(i=0;i<16;i++)
+	{
+		temp=first[i];
+		if(temp==0)break;
+
+		arg0[i]=temp;
+	}
+	*(QWORD*)(arg0+i)=0x7825202c7825202c;			//, %x, %x
+	*(QWORD*)(arg0+i+8)=0x7825202c7825202c;			//, %x, %x
+	*(QWORD*)(arg0+i+0x10)=0x0000000a7825202c;			//, %x\n\0
+
+	//arg1,arg2,arg3,arg4,arg5
+	string2data(second,&qword1);
+	string2data(third,&qword2);
+	string2data(fourth,&qword3);
+	string2data(fifth,&qword4);
+	string2data(sixth,&qword5);
+
+	say(arg0,qword1,qword2,qword3,qword4,qword5);
 }
 
 
@@ -239,6 +269,7 @@ void master()
 	remember(0x6b73696464616572,		(QWORD)directread);
 	remember(0x646d6374736f68,		(QWORD)directhostcmd);
 	remember(0x646d63627375,		(QWORD)directusbcmd);
+	remember(0x796173,		(QWORD)directsay);
 
 
 

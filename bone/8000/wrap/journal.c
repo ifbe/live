@@ -1,7 +1,11 @@
-#define journalhome 0xd00000
-#define journalsize 0x100000
 #define QWORD unsigned long long
 #define DWORD unsigned int
+
+#define consolehome 0xc00000
+#define consolesize 0x100000
+
+#define journalhome 0xd00000
+#define journalsize 0x100000
 
 
 
@@ -82,7 +86,75 @@ int decimal(char* destaddr,QWORD data)
 
 
 
-//void say(char* p,...)
+void say(char* p,...)
+{
+	//保存传入的寄存器值
+	register unsigned long long rsi asm("rsi");
+	register unsigned long long rdx asm("rdx");
+	register unsigned long long rcx asm("rcx");
+	register unsigned long long r8 asm("r8");
+	register unsigned long long r9 asm("r9");
+	unsigned long long argtable[5]={rsi,rdx,rcx,r8,r9};
+	int argcount=0;
+
+	//这次往哪儿写（要确保不写到指定以外的地方）
+	unsigned long long temp=*(QWORD*)(consolehome+consolesize-8);
+	if(temp>=consolesize-0x80)
+	{
+		temp=0;
+		*(QWORD*)(consolehome+consolesize-8)=0;
+	}
+	char* destaddr=(char*)(consolehome+temp);
+
+	//把传入的字符串写进buffer里面
+	*(QWORD*)(destaddr)=0x4645444342413938;				//time
+	*(QWORD*)(destaddr+8)=0x3736353433323130;
+	*(QWORD*)(destaddr+0x10)=0x7473616d20202020;				//name
+	*(QWORD*)(destaddr+0x18)=0x2020202020207265;
+	int in=0;
+	int out=32;
+	while(1)
+	{
+		if(p[in] == '\0')break;		//是0，字符串结束了
+
+		else if(p[in]==0x9)
+		{
+			*(DWORD*)(destaddr+out)=0x20202020;
+			in++;
+			out+=4;
+		}
+		else if(p[in]=='%')		//%d,%c,%lf,%llx.....
+		{
+			if(p[in+1]=='x')
+			{
+				in+=2;
+				out+=hexadecimal(destaddr+out,argtable[argcount]);
+				argcount++;
+			}
+			else if(p[in+1]=='d')
+			{
+				in+=2;
+				out+=decimal(destaddr+out,argtable[argcount]);
+				argcount++;
+			}
+			else
+			{
+				destaddr[out]=p[in];
+				in++;
+				out++;
+			}
+		}
+		else				//normal
+		{
+			destaddr[out]=p[in];
+			in++;
+			out++;
+		}
+
+	}//while(1)finish
+
+	*(QWORD*)(consolehome+consolesize-8)+=0x80;
+}
 
 
 

@@ -247,104 +247,77 @@ value:dq 0
 ;分析字符串，把结果放到下面等人来取
 ;__________________________________________________
 buf2arg:
-	mov rsi,r8					;buffer地址
-	mov qword [rel arg0],0		;先清理
-	mov qword [rel arg0+8],0
-	mov qword [rel arg1],0
-	mov qword [rel arg1+8],0
-	mov qword [rel arg2],0
-	mov qword [rel arg2+8],0
+.cleanup:					;每次进来,清掉所有上次的结果
+	xor rax,rax
+	lea rdi,[rel arg0]
+	mov ecx,16*8
+	cld
+	rep stosb
 
 
-;;;;;;;;;;;;吃掉esi指向的最开始的空格
-	mov ecx,8
-.eatspace0:
+
+
+.getargs:					;从r8得到传入地址,尝试从里面去除8个arg
+	mov rsi,r8				;buffer地址
+
+	lea rdi,[rel arg0]		;edi=目标地址
+	call .eatandget
+	lea rdi,[rel arg1]		;edi=目标地址
+	call .eatandget
+	lea rdi,[rel arg2]		;edi=目标地址
+	call .eatandget
+	lea rdi,[rel arg3]		;edi=目标地址
+	call .eatandget
+	lea rdi,[rel arg4]		;edi=目标地址
+	call .eatandget
+	lea rdi,[rel arg5]		;edi=目标地址
+	call .eatandget
+	lea rdi,[rel arg6]		;edi=目标地址
+	call .eatandget
+	lea rdi,[rel arg7]		;edi=目标地址
+	call .eatandget
+
+	ret
+
+
+
+
+
+
+.eatandget:					;吃掉esi指向的最开始的空格
+	mov ecx,0x10
+.continueeat:
 	cmp byte [esi],0x20		;先检查
-	ja .ate0			;已经吃光了，下一步
-	inc esi				;吃一个空格
-	loop .eatspace0
-	jmp .return			;全是空格->出错了直接返回
-.ate0:
+	ja .fetcharg0			;已经吃光了，下一步
+	inc esi					;吃一个空格
+	loop .continueeat
+
+;连续16个空数据 -> 后面不会再有arg了直接返回
+	pop rax					;不是跳回上面!!!是这个函数直接返回!!!
+	ret
 
 
-;;;;;;;;;;;;;现在esi指向0
-.fetcharg0:
-        lea rdi,[rel arg0]		;edi=目标地址
-        mov ecx,16
+
+
+
+.fetcharg0:					;现在esi指向arg0
+	mov ecx,16
 .continue0:
-        lodsb				;取一个
-        cmp al,0x20
-        jbe .finisharg0			;小于0x20或者
-        cmp al,0x7a
-        ja .finisharg0			;大于0x80都是错，直接返回
-        stosb				;正常的话往目的地放
-        loop .continue0
-.finisharg0:
-
-
-;;;;;;;;;;;;吃掉esi指向的中间的空格
-	mov ecx,8
-.eatspace1:
-	cmp byte [esi],0x20		;先检查
-	ja .ate1			;已经吃光了，下一步
-	inc esi				;吃一个空格
-	loop .eatspace1
-	jmp .return			;全是空格->出错了直接返回
-.ate1:
-
-
-
-;;;;;;;;;;;现在esi指向1
-.fetcharg1:
-        lea rdi,[rel arg1]		;edi=目标地址
-        mov ecx,16
-.continue1:
-        lodsb				;取一个
-        cmp al,0x20
-        jbe .finisharg1			;小于0x20或者
-        cmp al,0x7a
-        ja .finisharg1			;大于0x80都是错，直接返回
-        stosb				;正常的话往目的地放
-        loop .continue1
-.finisharg1:
-
-
-
-;;;;;;;;;;;;吃掉esi指向的中间的空格
-	mov ecx,8
-.eatspace2:
-	cmp byte [esi],0x20		;先检查
-	ja .ate2			;已经吃光了，下一步
-	inc esi				;吃一个空格
-	loop .eatspace2
-	jmp .return			;全是空格->出错了直接返回
-.ate2:
-
-
-;;;;;;;;;;;现在esi指向2
-.fetcharg2:
-        lea rdi,[rel arg2]		;edi=目标地址
-        mov ecx,16
-.continue2:
-        lodsb				;取一个
-        cmp al,0x20
-        jbe .finisharg2			;小于0x20或者
-        cmp al,0x7a
-        ja .finisharg2			;大于0x80都是错，直接返回
-        stosb				;正常的话往目的地放
-        loop .continue2
-.finisharg2:
-
-
+	lodsb					;取一个
+	cmp al,0x20
+	jbe .return				;小于0x20或者
+	cmp al,0x7a
+	ja .return				;大于0x80都是错，直接返回
+	stosb					;正常的话往目的地放
+	loop .continue0
 .return:
-	call checkandchangeline
 	ret
 ;____________________________________________
-arg0msg:db "    arg0="
 arg0:times 16 db 0		;本函数运行完的输出结果
-
-arg1msg:db "    arg1="
-arg1:times 16 db 0
-
-arg2msg:db "    arg2="
+arg1:times 16 db 0		;会超过8个???
 arg2:times 16 db 0
+arg3:times 16 db 0
+arg4:times 16 db 0
+arg5:times 16 db 0
+arg6:times 16 db 0
+arg7:times 16 db 0

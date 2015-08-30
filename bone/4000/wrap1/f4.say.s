@@ -96,5 +96,5 @@ time:
 	dq "ccyymmdd","hhmmss  "
 	db 0xa,0
 name:
-	dq "  system",":"
+	dq "    syst","em:"
 	db 0xa,0
