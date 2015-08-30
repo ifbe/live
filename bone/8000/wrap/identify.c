@@ -140,6 +140,8 @@ typedef struct tagHBA_CMD_TBL
 
 
 
+//告诉编译器这俩函数长什么样
+void say(char*,...);
 void diary(char*,...);
 
 
@@ -397,10 +399,10 @@ int identify(QWORD rdi)
 		p[i]=p[i+1];
 		p[i+1]=temp;
 	}
-	diary((char*)(datahome+20));
+	say((char*)(datahome+20));
 
 	//size
 	temp=*(QWORD*)(datahome+200);
-	diary("%dGB(%xsectors)",temp>>21,temp);
+	say("%dGB(%xsectors)",temp>>21,temp);
 	return temp;
 }
