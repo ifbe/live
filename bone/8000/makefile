@@ -7,7 +7,7 @@ binary:
 	ld -T link.ld init/start.o \
 	init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
 	main/master.o \
-	wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
+	wrap2/parttable.o wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
 	wrap1/convert.o wrap1/remember.o \
 	wrap/journal.o wrap/identify.o wrap/read.o \
 	-o extremities.bin
@@ -20,7 +20,7 @@ cross:
 	x86_64-elf-ld -T link.ld init/start.o \
 	init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
 	main/master.o \
-	wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
+	wrap2/parttable.o wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
 	wrap1/convert.o wrap1/remember.o \
 	wrap/journal.o wrap/identify.o wrap/read.o \
 	-o extremities.bin

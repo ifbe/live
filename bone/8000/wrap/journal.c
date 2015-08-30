@@ -87,11 +87,11 @@ int decimal(char* dest,QWORD data)
 
 
 //		~=sprintf();
-void arg2string(char* source,char* dest,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
+void arg2string(QWORD* argtable,char* dest)
 {
 	//保存传入的参数
-	QWORD argtable[5]={arg1,arg2,arg3,arg4,arg5};
-	int argcount=0;
+	char* source=(char*)(argtable[0]);			//0号是source字符串位置
+	int argcount=1;			//从1号开始
 
 	//把传入的字符串写进buffer里面
 	int in=0;
@@ -141,8 +141,11 @@ void arg2string(char* source,char* dest,QWORD arg1,QWORD arg2,QWORD arg3,QWORD a
 
 
 
-void say(char* source,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
+void say(QWORD arg0,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
 {
+	//保存传进来的6个参数
+	QWORD argtable[6]={arg0,arg1,arg2,arg3,arg4,arg5};
+
 	//这次往哪儿写（要确保不写到指定以外的地方）
 	unsigned long long temp=*(QWORD*)(consolehome+consolesize-8);
 	if(temp>=consolesize-0x80)
@@ -157,7 +160,8 @@ void say(char* source,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
 	*(QWORD*)(dest+8)=0x3736353433323130;
 	*(QWORD*)(dest+0x10)=0x7473616d20202020;				//name
 	*(QWORD*)(dest+0x18)=0x2020202020207265;
-	arg2string(source,dest+32,arg1,arg2,arg3,arg4,arg5);
+
+	arg2string(argtable,dest+32);
 
 	//这里有点特殊,要自己更新屏幕,还是让后面的函数自己整屏得刷新
 	//updatescreen(leftx,rightx,upy,downy);
@@ -165,8 +169,11 @@ void say(char* source,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
 	//下一次怎办
 	*(QWORD*)(consolehome+consolesize-8)+=0x80;
 }
-void diary(char* source,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
+void diary(QWORD arg0,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
 {
+	//保存传进来的6个参数
+	QWORD argtable[6]={arg0,arg1,arg2,arg3,arg4,arg5};
+
 	//这次往哪儿写（要确保不写到指定以外的地方）
 	unsigned long long temp=*(QWORD*)(journalhome+journalsize-8);
 	if(temp>=journalsize-0x40)
@@ -177,7 +184,7 @@ void diary(char* source,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
 	char* dest=(char*)(journalhome+temp);
 
 	//往里写
-	arg2string(source,dest,arg1,arg2,arg3,arg4,arg5);
+	arg2string(argtable,dest);
 
 	//下一次怎办
 	*(QWORD*)(journalhome+journalsize-8)+=0x40;

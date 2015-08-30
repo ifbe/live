@@ -375,7 +375,7 @@ int identifyide(QWORD rdi)
 
 
 
-int identify(QWORD rdi)
+void identify(QWORD rdi)
 {
 	QWORD type=*(QWORD*)diskhome;
 	QWORD temp=0;
@@ -389,20 +389,4 @@ int identify(QWORD rdi)
 		identifyide(rdi);
 	}
 	//todo:		U盘
-
-	//SN，调转字节序
-	char* p=(char*)datahome;
-	int i;
-	for(i=0x14;i<0x60;i+=2)
-	{
-		temp=p[i];
-		p[i]=p[i+1];
-		p[i+1]=temp;
-	}
-	say((char*)(datahome+20));
-
-	//size
-	temp=*(QWORD*)(datahome+200);
-	say("%dGB(%xsectors)",temp>>21,temp);
-	return temp;
 }
