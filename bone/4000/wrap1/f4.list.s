@@ -1,5 +1,6 @@
 %define pcihome 0x40000
 %define acpihome 0x50000
+%define binhome 0x70000
 
 %define ahcihome 0x100000
 %define xhcihome 0x200000
@@ -171,6 +172,75 @@ lsacpi:
 ;__________________________________
 acpidest:dq 0
 acpioffset:dq 0
+
+
+
+
+;__________________________________
+lsbin:
+	mov edi,[consolehome+consolesize-8]
+	cmp edi,consolesize-0x30*0x80
+	jb .normally
+	xor edi,edi
+	mov [consolehome+consolesize-8],edi
+.normally:
+	add edi,consolehome
+
+	mov dword [rel bindest],edi
+	mov dword [rel binoffset],0
+	cld
+
+
+
+
+;while(1)
+;{
+.continue:
+
+	;if(binoffset>0x1000)break;
+	mov eax,[rel binoffset]
+	cmp eax,0x1000				;不直接比，因为下面用到eax
+	jae .return
+
+	;if(this==0)break;
+	mov esi,binhome
+	add esi,eax
+	cmp dword [esi],0					;[binhome+offset]=0?
+	je .return
+
+	;put
+	mov esi,[rel binoffset]			;[binhome+offset+0]
+	add esi,binhome
+	mov edi,[rel bindest]
+	movsq
+
+	mov esi,[rel binoffset]			;[binhome+offset+8]
+	add esi,binhome+8
+	mov r8,[esi]
+	lea r9,[rel string]
+	call data2hexstring
+	mov rax,[rel string+8]
+	mov edi,[rel bindest]
+	add edi,0x10
+	stosq
+
+	;next
+	add dword [rel bindest],0x80
+	add dword [rel binoffset],0x10
+	jmp .continue
+;}
+
+
+
+
+.return:
+	mov eax,[rel bindest]
+	sub eax,consolehome
+	mov [consolehome+consolesize-8],eax
+	ret
+;__________________________________
+bindest:dq 0
+binoffset:dq 0
 
 
 

@@ -117,6 +117,8 @@ searchhere:
 	je lspci
 	cmp dword [esi+2],"acpi"
 	je lsacpi
+	cmp dword [esi+2],"bin"
+	je lsbin
 	cmp dword [esi+2],"ahci"
 	je lsahci
 	cmp dword [esi+2],"usb"
