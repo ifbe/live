@@ -1,12 +1,16 @@
-BITS 16
+%define vesahome 0x2000
 
-
+[BITS 16]
 startofscreen:
+
+
+
+
 ;_________________________________
-	mov si,0x1000
+	mov si,vesahome
 searchresolution:
 	add si,0x20
-	cmp si,0x1fff
+	cmp si,vesahome+0xfff
 	ja endofscreen
 	mov eax,[si+0x12]
 	cmp eax,0x03000400
@@ -20,13 +24,13 @@ searchresolution:
 
 ;__________________________________
 setresolution:
-	sub si,0x1000
+	sub si,vesahome
 	shr si,5
 	push si
 
 	mov cx,si
 	mov ch,1
-	mov di,0x1000
+	mov di,vesahome
 	mov ax,0x4f01
 	int 0x10
 

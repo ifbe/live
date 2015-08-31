@@ -5,14 +5,12 @@
 
 
 ;_______________________init(初始化)___________________________
-;%include "init/init1/input.s"		;prepare interrupt
-;%include "init/init1/8254.s"		;prepare interrupt
-%include "init/init2/acpi.s"		;prepare 0x20000
-%include "init/init3/anscii.s"		;prepare 0x30000
-%include "init/init4/pciold.s"		;prepare 0x40000
-%include "init/init5/usb.s"			;prepare 0x50000
-%include "init/init6/what.s"		;prepare 0x60000
-%include "init/init7/bin.s"			;prepare 0x70000
+;%include "init/input.s"		;prepare interrupt
+;%include "init/8254.s"		;prepare interrupt
+%include "init/3.anscii.s"		;prepare 0x30000
+%include "init/4.pciold.s"		;prepare 0x40000
+%include "init/5.acpi.s"		;prepare 0x50000
+%include "init/7.bin.s"			;prepare 0x70000
 ;______________________________________________________________
 
 

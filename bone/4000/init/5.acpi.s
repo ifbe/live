@@ -1,12 +1,13 @@
-;/acpi translate
-%define acpihome 0x20000
+%define acpihome 0x50000
+%define thatport 0xffc
+%define thatdata 0xffe
 [BITS 64]
 
 
 startofacpi:
 ;______________________clear____________________________
     mov edi,acpihome
-    mov ecx,0x4000
+    mov ecx,0x1000
     xor rax,rax
     rep stosd
 ;____________________________________________________
@@ -80,8 +81,8 @@ xsdt:
 .xsdttable:			;把每个表翻译到指定地方（di）
     mov esi,[eax]
     mov [edi+0x8],esi
-    movsq
-    add edi,0x8
+    movsd
+    add edi,0xc
     add eax,0x8
     sub cl,8
     cmp cl,0
@@ -170,14 +171,14 @@ finds5:
     mov al,[edx+8]		;edx=_s5_addr
     shl ax,10
     stosq
-    mov [0x4fe],ax
+    mov [0xffe],ax
 
     mov eax,"port"
     stosq
     xor rax,rax
     mov ax,[esi+0x40]           ;data=[facpaddr+0x40]
     stosq
-    mov [0x4fc],ax
+    mov [0xffc],ax
 
     ret
 

@@ -1,15 +1,16 @@
-%define slowdata 0x4000
-%define ansciihome 0x30000
+%define slowanscii 0x3000
+%define fastanscii 0x30000
+[bits 64]
 
 optimizeanscii:
-	mov esi,slowdata
-	mov edi,ansciihome
+	mov esi,slowanscii
+	mov edi,fastanscii
 
 .continue:
 	mov bl,[esi]
 	inc esi
-
 	mov ecx,8
+
 .eighttimes:
 	xor eax,eax
 	shl bl,1
@@ -20,5 +21,5 @@ optimizeanscii:
 	stosd
 	loop .eighttimes
 
-	cmp esi,0x4800
+	cmp esi,slowanscii+0x800
 	jb .continue

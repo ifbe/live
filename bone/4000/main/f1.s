@@ -1,3 +1,4 @@
+%define journalhome 0xd00000
 [bits 64]
 
 
@@ -5,8 +6,8 @@
 
 ;_________________清空/journal________________
 f1init:
-	mov qword [rel addr],0xd00000		;r14 memory pointer
-	mov qword [rel offset],0x420		;r15 offset pointer
+	mov qword [rel addr],journalhome		;r14 memory pointer
+	mov qword [rel offset],0x420			;r15 offset pointer
 
 	lea rax,[rel menu]
 	mov [rel mouseormenu],rax

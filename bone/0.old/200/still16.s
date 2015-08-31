@@ -1,4 +1,7 @@
-BITS 16
+%define meminfo 0x1000
+%define vesainfo 0x2000
+
+[BITS 16]
 startof16:
 
 
@@ -117,8 +120,8 @@ cmos:
 
 
 
-;____________e820 @ 800___________
-	mov di,0x800
+;____________e820 @ 1000___________
+	mov di,meminfo
 	xor ebx,ebx
 e820:
 	mov eax,0xe820
@@ -129,7 +132,7 @@ e820:
 	cmp eax,0x534d4150
 	jne e820finish
 	add di,0x20
-	cmp di,0x1000
+	cmp di,meminfo+0x1000
 	jae e820finish
 	cmp ebx,0
 	jne e820
@@ -142,7 +145,7 @@ e820finish:
 
 ;______________列出vesa模式________________
 	mov cx,0x101
-	mov di,0x1020
+	mov di,vesainfo+0x20
 
 listresolution:
 	mov ax,0x4f01

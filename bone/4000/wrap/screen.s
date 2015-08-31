@@ -1,36 +1,81 @@
-%define screeninfo 0x1000
+%define screeninfo 0x2000
 %define ansciihome 0x30000
 [bits 64]
 
 
 
 
-;_________________________________
-character:
+;__________________________________________
+;al字母，di显存位置
+slowcharacter:
     push rcx
 
-    movzx eax,al
-    shl eax,9
-    lea esi,[eax+ansciihome]
+    mov esi,0x3000
+	movzx eax,al
+    shl eax,4
+    add esi,eax
 
+    mov ecx,16
+.first:
+    xor dx,dx
+    mov dl,[esi]
+    inc esi
+    ;___________ 
+.second:
+    xor rax,rax
+    not rax
+    shl dl,1
+    jc .skip
+    xor eax,eax
+.skip:
+    mov [edi],eax
+    add edi,4
+    inc dh
+    cmp dh,8
+    jb .second
+    ;___________
+
+    sub edi,32
+    add edi,1024*4
+    loop .first
+
+sub edi,1024*4*16
+add edi,32
+
+pop rcx
+ret
+;__________________________________________________
+
+
+
+
+;_________________________________
+fastcharacter:
+character:
+	push rdi
+    push rcx
+
+    movzx esi,al
+    shl esi,9
+    add esi,ansciihome
     xor ecx,ecx
-.lines:		;每排8个DWORD=4个QWORD
-    lodsq
-    mov [edi+ecx],rax
-    lodsq
-    mov [edi+ecx+8],rax
-    lodsq
-    mov [edi+ecx+16],rax
-    lodsq
-    mov [edi+ecx+24],rax
+	cld
 
-    add ecx,1024*4
-    cmp ecx,1024*4*16
+.lines:		;每排8个DWORD=4个QWORD
+	movsq
+	movsq
+	movsq
+	movsq
+	add edi,(1024-8)*4
+
+    inc rcx
+    cmp ecx,16
     jna .lines
 
 .return:
-    add edi,32
     pop rcx
+	pop rdi
+    add edi,32
     ret
 ;____________________________________
 
@@ -146,11 +191,11 @@ writescreen:
 ;r8=leftx,r9=rightx,r10=upy,r11=downy
 ;_____________________________________________
 updatescreen:
-.debug:
-	mov [0x600],r8d
-	mov [0x604],r9d
-	mov [0x608],r10d
-	mov [0x60c],r11d
+;.debug:
+	;mov [?],r8d
+	;mov [?],r9d
+	;mov [?],r10d
+	;mov [?],r11d
 
 .check:
 	cmp r8,r9				;if(leftx>=rightx)return

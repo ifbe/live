@@ -1,3 +1,4 @@
+%define birthrecord 0x600
 [ORG 0x7c00]              ; add to offsets
 startofmbr:
 
@@ -50,24 +51,27 @@ startofmbr:
 	xor ebx,ebx
 
 	mov ax,cs
-	shl eax,4			;拿到cs<<4
+	shl eax,4						;拿到cs<<4
 	call whereami
 whereami:
-	pop bx				;拿到ip
+	pop bx							;拿到ip
 	add eax,ebx
 	sub eax,whereami-startofmbr
-	mov [0x600],eax		;拿到本程序被加载到的实际位置
+
+									;拿到本程序被加载到的实际位置
+									;注意不能放在800的位置(原因不明)
+	mov [birthrecord],eax
 
 	shr eax,4
-	mov ds,ax			;ds
+	mov ds,ax						;ds
 	mov ax,0x1000
-	mov es,ax			;es
-	mov cx,0x7f00		;cx=(0x10000-0x200)/2
+	mov es,ax						;es
+	mov cx,0x8000					;cx=(0x10000-0x200)/2
 
-	cmp word [0x602],0
+	cmp word [birthrecord+2],0
 	je reversemove
-		mov si,0x200			;si
-		mov di,si			;di
+		mov si,0					;si
+		mov di,si					;di
 		cld
 		rep movsw
 		jmp 0x1000:0x0200

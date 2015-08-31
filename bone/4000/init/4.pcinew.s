@@ -1,3 +1,4 @@
+%define pcihome 0x40000
 [BITS 64]
 
 
@@ -23,7 +24,7 @@ pcie:
 pcienew:
     mov esi,[esi+0x8]           ;["MCFG"-0x8]=mcfg address
     mov esi,[esi+0x2c]          ;[mcfg+0x2c]=pcie base
-    mov edi,0x5000
+    mov edi,pcihome+0x10000
     mov ecx,0xffff
 
 .newenumeration:
@@ -39,7 +40,7 @@ pcienew:
 
 .next:
     add esi,0x1000
-    cmp edi,0x5fff
+    cmp edi,pcihome+0x10000
     ja endofpci
     loop .newenumeration
 ;________________________________

@@ -1,7 +1,10 @@
 %define pcihome 0x40000
+%define acpihome 0x50000
+
 %define ahcihome 0x100000
 %define xhcihome 0x200000
 %define usbhome 0x300000
+
 %define diskhome 0x400000
 %define fshome 0x500000
 %define dirhome 0x600000
@@ -99,6 +102,75 @@ lspci:
 ;__________________________________
 pcidest:dq 0
 pcioffset:dq 0
+
+
+
+
+;__________________________________
+lsacpi:
+	mov edi,[consolehome+consolesize-8]
+	cmp edi,consolesize-0x30*0x80
+	jb .normally
+	xor edi,edi
+	mov [consolehome+consolesize-8],edi
+.normally:
+	add edi,consolehome
+
+	mov dword [rel acpidest],edi
+	mov dword [rel acpioffset],0
+	cld
+
+
+
+
+;while(1)
+;{
+.continue:
+
+	;if(acpioffset>0x1000)break;
+	mov eax,[rel acpioffset]
+	cmp eax,0x1000				;不直接比，因为下面用到eax
+	jae .return
+
+	;if(this==0)break;
+	mov esi,acpihome
+	add esi,eax
+	cmp dword [esi],0					;[acpihome+offset]=0?
+	je .return
+
+	;put
+	mov esi,[rel acpioffset]			;[acpihome+offset+0]
+	add esi,acpihome
+	mov edi,[rel acpidest]
+	movsq
+
+	mov esi,[rel acpioffset]			;[acpihome+offset+8]
+	add esi,acpihome+8
+	mov r8,[esi]
+	lea r9,[rel string]
+	call data2hexstring
+	mov rax,[rel string+8]
+	mov edi,[rel acpidest]
+	add edi,0x10
+	stosq
+
+	;next
+	add dword [rel acpidest],0x80
+	add dword [rel acpioffset],0x10
+	jmp .continue
+;}
+
+
+
+
+.return:
+	mov eax,[rel acpidest]
+	sub eax,consolehome
+	mov [consolehome+consolesize-8],eax
+	ret
+;__________________________________
+acpidest:dq 0
+acpioffset:dq 0
 
 
 

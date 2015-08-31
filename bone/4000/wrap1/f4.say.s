@@ -1,6 +1,7 @@
 %define consolehome 0xc00000
 %define consolesize 0x100000
-bits 64
+[bits 64]
+
 
 
 

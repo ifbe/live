@@ -9,7 +9,7 @@ startofprepare64:
 	mov fs,ax
 	mov gs,ax
 	mov ss,ax
-	mov rsp,0xa0000          ;..........16MB..........be careful
+	mov rsp,0xa0000          ;.........@640K........be careful
 ;__________________________________
 
 
@@ -18,7 +18,7 @@ startofprepare64:
 ;_______________clear [80000,98000]______________
 	mov rdi,0x80000
 	xor rax,rax
-	mov ecx,0x3000
+	mov ecx,0x4000
 	cld
 	stosq
 ;_______________________________________________

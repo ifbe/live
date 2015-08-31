@@ -1,5 +1,5 @@
-%define idtr 0x830
-%define idthome 0x3000
+%define idtr 0x850
+%define idthome 0x5000
 
 [bits 64]
 startofexceptionhandler:

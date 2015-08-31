@@ -180,7 +180,7 @@
 ;[0,3ff]    [0,1023]    real mode interrupt vector table
 ;[400,4ff]    [1024,1279]    bios data area
 ;[500,57f]    [1280,1535]    cmos dump from port 0x70 and 0x71
-;[600,7ff]    [1536,2047]    discriptor table for cpu
+;[600,7ff]    [1536,2047]    bornhome
 ;       600:where i was born
 ;		610:jmp rax
 ;		620:gdtr

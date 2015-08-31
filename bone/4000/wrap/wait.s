@@ -1,4 +1,4 @@
-%define kbdhome 0x5000
+%define kbdhome 0x20000
 %define bufsize 0x1000
 [bits 64]
 

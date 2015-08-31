@@ -3,8 +3,8 @@ bits 64
 
 ;__________________________
 poweroff:
-mov dx,[0x4fc]
-mov ax,[0x4fe]
+mov dx,[0xffc]
+mov ax,[0xffe]
 or ax,0x2000
 out dx,ax
 ;__________________________

@@ -115,13 +115,16 @@ searchhere:
 	jne .skipls
 	cmp dword [esi+2],"pci"
 	je lspci
+	cmp dword [esi+2],"acpi"
+	je lsacpi
 	cmp dword [esi+2],"ahci"
 	je lsahci
 	cmp dword [esi+2],"usb"
 	je lsusb
 	cmp dword [esi+2],"disk"
 	je lsdisk
-	jmp ls
+	cmp byte [esi+2],0
+	je ls
 .skipls:
 
 	mov dword [rel failsignal],0x11111111

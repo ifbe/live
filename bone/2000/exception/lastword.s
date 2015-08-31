@@ -1,5 +1,8 @@
-%define screeninfo 0x1000
-%define ansciitable 0x4000
+%define screeninfo 0x2000
+%define ansciitable 0x3000
+
+%define thatport 0xffc
+%define thatdata 0xffe
 [bits 64]
 
 
@@ -140,8 +143,8 @@ jmp whatthen
 
 ;____________________________________
 turnoff:
-mov dx,[0x4fc]
-mov ax,[0x4fe]
+mov dx,[thatport]
+mov ax,[thatdata]
 or ax,0x2000
 out dx,ax
 ;_________________________________________

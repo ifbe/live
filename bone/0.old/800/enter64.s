@@ -1,3 +1,15 @@
+%define bornhome 0x800
+%define jmprax 0x810
+
+%define gdtr 0x840
+%define idtr 0x850
+%define gdthome 0x4000
+%define idthome 0x5000
+
+%define temppd 0x6000
+%define temppdpt 0x7000
+%define temppml4 0x3000
+
 [BITS 16]
 startofenter64:
 
@@ -19,17 +31,16 @@ startofenter64:
 	mov es,ax
 	cld
 
-;[0x610,0x61f]:jump rax
-;[0x620,0x62f]:gdtr
-;[0x630,0x63f]:idtr
-	mov di,0x610
-	mov cx,0x30
+;[+0x10,+0x1f]:jump rax
+;[+0x40,+0x4f]:gdtr
+;[+0x50,+0x5f]:idtr
+	mov di,gdtr
+	mov cx,0x40
 	rep stosb
 
-;[0x2000,0x6fff]:gdt
-;[0x3000,0x3fff]:idt
-;[0x4000,0x6fff]:pml4,pdpt,pd
-	mov di,0x2000
+;[0x4000,0x4fff]:gdt
+;[0x5000,0x5fff]:idt
+	mov di,0x3000
 	mov cx,0x5000
 	rep stosb
 ;_________________________________________________
@@ -37,10 +48,10 @@ startofenter64:
 
 
 
-;_______在0x610这个位置手工写入jmp rax这条指令_______
+;_______在0x810这个位置手工写入jmp rax这条指令_______
 	xor ax,ax
 	mov es,ax
-	mov di,0x610
+	mov di,jmprax
 	mov word [es:di],0xe0ff		;e0ff=jmp rax
 ;___________________________________________________
 
@@ -48,8 +59,8 @@ startofenter64:
 
 
 ;_______________global descriptor table_____________ 
-;gdt表位于0x2000
-	mov di,0x2000
+;gdt表位于
+	mov di,gdthome
 
 ;第一个:必须是空描述符
 	xor eax,eax
@@ -70,16 +81,16 @@ startofenter64:
 
 
 
-;gdtr位于0x620
-	mov di,0x620
+;gdtr位于
+	mov di,gdtr
 ;gdtr.size=gdt表的总长度-1
 	mov ax,0x17
-	stosw	;dw $-GDT-1	16bit Size
+	stosw					;dw $-GDT-1	16bit Size
 ;gdtr.addr=gdt表的位置
-	mov eax,0x2000
-	stosd	;low 32bit
+	mov eax,gdthome
+	stosd					;low 32bit
 	xor eax,eax
-	stosd	;high 32bit
+	stosd					;high 32bit
 ;______________________________________________
 
 
@@ -94,13 +105,13 @@ startofenter64:
 	nop
 
 ;一个空的IDTR,任何可屏蔽中断都会三重错误
-	mov di,0x630	;now es=0
+	mov di,idtr			;now es=0
 	xor eax,eax
-	stosw		;length
-	stosd		;base
+	stosw				;length
+	stosd				;base
 
 ;lidt指令
-	lidt [0x630]	;load pointer
+	lidt [idtr]		;load pointer
 ;_______________________________________________
  
 
@@ -108,13 +119,13 @@ startofenter64:
 
 ;__________映射2MB的地址空间足够pre kernel用了________
 ;在pd里面写0|0x83
-	mov word [0x6000],0x83
+	mov word [temppd],0x83					;temppd=0x6000
 
 ;把pd的地址放入pdpt(0x91000)(9000:1000)
-	mov word [0x5000],0x6003
+	mov word [temppdpt],temppd | 3			;temppd=0x6000,temppdpt=0x7000
 
 ;把pdpt的地址放入pml4(0x90000)(9000:0000)
-	 mov word [0x4000],0x5003
+	 mov word [temppml4],temppdpt | 3				;temppdpt=0x7000,temppml4=0x3000
 ;______________________________________________________
 
 
@@ -125,7 +136,7 @@ startofenter64:
 	mov eax,10100000b
 	mov cr4, eax
 ;Point CR3 at the PML4.
-	mov edx,0x4000
+	mov edx,temppml4
 	mov cr3, edx
 ;读出msr寄存器,然后把它的long mode enable位设置为1
 	mov ecx,0xC0000080        ;Read from the EFER MSR. 
@@ -177,11 +188,11 @@ where:
 	add eax,endofenter64-where
 
 ;Load pointer (a32 because over 64k)
-	a32 lgdt [0x620]
+	a32 lgdt [gdtr]
 
 ;Load CS,flush instruction cache
 ;内存800位置里面的东西是jmp rax,也就是跳回来到endofenter64的位置
-	jmp dword 0x0008:0x0610
+	jmp dword 0x0008:jmprax
 ;______________________________________________
 
 
