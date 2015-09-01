@@ -3,9 +3,9 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define pcihome 0x40000
+#define pcihome 0x60000
 
-#define xhcihome 0x200000
+#define xhcihome 0x600000
 #define ersthome xhcihome+0x10000
 
 #define dcbahome xhcihome+0x20000

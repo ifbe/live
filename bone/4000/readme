@@ -8,8 +8,10 @@
 ;%include "init/input.s"		;prepare interrupt
 ;%include "init/8254.s"		;prepare interrupt
 %include "init/3.anscii.s"		;prepare 0x30000
-%include "init/4.pciold.s"		;prepare 0x40000
-%include "init/5.acpi.s"		;prepare 0x50000
+
+%include "init/4.acpi.s"		;prepare 0x40000
+;%include "init/5.irq.s"
+%include "init/6.pciold.s"		;prepare 0x60000
 %include "init/7.bin.s"			;prepare 0x70000
 ;______________________________________________________________
 

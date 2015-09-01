@@ -3,8 +3,8 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define pcihome 0x40000
-#define ahcihome 0x100000
+#define pcihome 0x60000
+#define ahcihome 0x400000
 #define receivefisbuffer ahcihome+0x10000
 #define cmdlistbuffer ahcihome+0x20000
 #define cmdtablebuffer ahcihome+0x30000

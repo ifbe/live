@@ -9,9 +9,6 @@
 ;[4000,7fff]    [16k,32k)    汇编,界面以及一些极底层的小命令
 ;[8000,ffff]    [32k,64k)    纯c,硬盘/u盘/网盘驱动代码,ext/fat/hfs/ntfs文件系统代码
 
-
-
-
 ;内存分布:
 ;[0,fff]    [0,4k)    bios自己的信息以及从bios拿到的信息
 ;[1000,ffff]    [4k,64k)    gdt,idt等
@@ -31,19 +28,11 @@
 
 
 
-
-
-
-
-
-
-
-
 ;################core.bin文件分布(具体)###################
 ;#########################################################
 ;#######################################################
 ;#########################################################
-;为了从bios启动
+;[0,fff]:为了从bios启动
 ;0.old/:
 ;	0/:
 ;		mbr.s
@@ -57,37 +46,24 @@
 ;		enter64.s
 ;		prepare64.s
 
-
-
-
-;为了从efi启动
+;[0,fff]:为了从efi启动
 ;0.new/:
 ;	efistub.s
 
-
-
-
-;前一半是简单的anscii字符串,后一半是anscii点阵表
+;[1000,1fff]:前一半是简单的anscii字符串,后一半是anscii点阵表
 ;1000/:
 ;	data.s
 
-
-
-
-;这里只干一件事:32个异常的中断处理函数
-;默认的处理方法是蓝屏丢出所有寄存器
+;[2000,3fff]:这里只干一件事:32个异常的中断处理函数
 ;2000/:
 ;	chip:
 ;		apic.s
 ;		pic.s
 ;	exception:
 ;		exceptions.s
-;		lastword.s
+;		lastword.s			;默认的处理方法是蓝屏丢出所有寄存器
 
-
-
-
-;这里必须用汇编,因为奇怪的功能用C要多写好长的代码，
+;[4000,7fff]:这里必须用汇编,因为奇怪的功能用C要多写好长的代码，
 ;比如jmp/call/in/out/rdmsr/wrmsr/cpuid等等
 ;而且没有必要的交叉混杂被编译器折磨实在浪费生命。
 ;4000/:
@@ -127,9 +103,7 @@
 ;		screen.s
 ;		wait.s
 
-
-
-
+;[8000,ffff]:这里是用纯C写的驱动
 ;gcc负责把.c翻译成.o文件
 ;ld负责把一大堆.o文件合成一个.bin给cpu玩
 ;8000/:
@@ -164,76 +138,59 @@
 
 
 
-
-
-
-
-
-
-
-
 ;####################内存分布(具体)#######################
 ;#########################################################
 ;#######################################################
 ;#########################################################
-;这里是BIOS遗留下来的"有关这个世界的线索"
+;>>>>>>>>>>>[0,fff]:这里是BIOS遗留下来的"有关这个世界的线索"
 ;[0,3ff]    [0,1023]    real mode interrupt vector table
 ;[400,4ff]    [1024,1279]    bios data area
 ;[500,57f]    [1280,1535]    cmos dump from port 0x70 and 0x71
 ;[600,7ff]    [1536,2047]    bornhome
-;       600:where i was born
-;		610:jmp rax
-;		620:gdtr
-;		630:idtr
-;[800,fff]    [2048,4095]    e820 memory infomation
+;[800,fff]    [2048,4095]
+;				+10:jmp rax
+;				+40:gdtr
+;				+50:idtr
+;				[ffc,ffd]    PM1a
+;				[ffe,fff]    s5data
 
+;>>>>>>>>>>>>[1000,7fff]:这里大部分是一堆纯数据,CPU需要这些信息来好好干活
+;[1000,1fff]    [4096,9191]    e820 memory infomation
+;[2000,2fff]    [8192,12288]    screen infomation
+;[3000,3fff]    [12288,16383]    anscii table and pml4
 
+;[4000,4fff]    [16384,20479]    gdt
+;[5000,5fff]    [20480,24579]    idt
+;[6000,6fff]    [24580,28671]    old page directory
+;[7000,7fff]    [28672,32768]    old page directory pointer table
 
-
-;这里大部分是不需要看懂的纯数据
-;CPU需要这些信息来"做一个好孩子"
-;[1000,1fff]    [4096,8191]    screen infomation
-;[2000,2fff]    [8192,12288]    gdt
-;[3000,3fff]    [12288,16383]    idt
-;[4000,4fff]    [16384,20479]    old page map level 4 -> anscii table
-;[5000,5fff]    [20480,24575]    old page directory pointer table -> kbd buffer
-;[6000,6fff]    [24576,28671]    old page directory
-;[7000,7fff]    [28672,32767]    old page table
-
-
-
-
-;pre kernel area
+;;>>>>>>>>>>>>[1000,9ffff]:pre kernel area
 ;[10000,1ffff]    [64k,128k)    /pre kernel code	;core.bin扔进内存就能活着
-;[20000,2ffff]    [128k,192k)    /acpi
+;[20000,2ffff]    [128k,192k)    空着
 ;[30000,3ffff]    [192k,256k)    /anscii
-;[40000,4ffff]    [256k,320k)    /pci
-;[50000,5ffff]    [320k,384k)    /usb
-;[60000,6ffff]    [384k,448k)    /bin
-;[70000,7ffff]    [448k,512k)    /disk
+;[40000,4ffff]    [256k,320k)    /acpi
+;[50000,5ffff]    [320k,384k)    /irq table
+;[60000,6ffff]    [384k,448k)    /pci
+;[70000,7ffff]    [448k,512k)    /bin
 ;[80000,8ffff]    [512k,576k)    pd
 ;[90000,90fff]    [576k,580k)    pml4
 ;[91000,91fff]    [580k,584k)    pdpt
 ;[92000~9fff8]:stack
 
-
-
-
-;kernel area,到了这里就是海阔天空啦
-;纯C的世界想怎么造都行
-;[10 0000,1f ffff]    [1m,2m)    ahci driver
-;[20 0000,2f ffff]    [2m,3m)    xhci host driver
-;[30 0000,3f ffff]    [3m,4m)    xhci port driver
+;;>>>>>>>>>>>>[100000,ffffff]:kernel area,到了这里就是海阔天空啦,纯C的世界想怎么造都行
+;[10 0000,1f ffff]    [1m,2m)    kernel code
+;[20 0000,2f ffff]    [2m,3m)
+;[30 0000,3f ffff]    [3m,4m)
 
 ;[40 0000,4f ffff]    [4m,5m)
-;[50 0000,5f ffff]    [5m,6m)
-;[60 0000,6f ffff]    [8m,7m)
-;[70 0000,7f ffff]    [7m,8m)
+;[50 0000,5f ffff]    [5m,6m)    ahci driver
+;[60 0000,6f ffff]    [8m,7m)    xhci host driver
+;[70 0000,7f ffff]    [7m,8m)    xhci port driver
 
-;[30 0000,3f ffff]    [8m,9m)    disk list
-;[30 0000,3f ffff]    [9m,10m)    fs buffer
-;[30 0000,3f ffff]    [10m,11m)    disk list
-;[30 0000,3f ffff]    [11m,12m)    data buffer
+;[80 0000,8f ffff]    [8m,9m)    disk list
+;[90 0000,9f ffff]    [9m,10m)    fs buffer
+;[a0 0000,af ffff]    [10m,11m)    disk list
+;[b0 0000,bf ffff]    [11m,12m)    data buffer
 
 ;[c0 0000,cf ffff]    [12m,13m)    console buffer
 ;[d0 0000,df ffff]    [13m,14m)    journal buffer

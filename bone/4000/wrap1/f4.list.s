@@ -1,15 +1,15 @@
-%define pcihome 0x40000
-%define acpihome 0x50000
+%define acpihome 0x40000
+%define pcihome 0x60000
 %define binhome 0x70000
 
-%define ahcihome 0x100000
-%define xhcihome 0x200000
-%define usbhome 0x300000
+%define ahcihome 0x400000
+%define xhcihome 0x600000
+%define usbhome 0x700000
 
-%define diskhome 0x400000
-%define fshome 0x500000
-%define dirhome 0x600000
-%define filehome 0x700000
+%define diskhome 0x800000
+%define fshome 0x900000
+%define dirhome 0xa00000
+%define filehome 0xb00000
 
 %define consolehome 0xc00000
 %define consolesize 0x100000

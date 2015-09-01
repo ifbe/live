@@ -3,7 +3,7 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define xhcihome 0x200000
+#define xhcihome 0x600000
 #define ersthome xhcihome+0x10000
 
 #define dcbahome xhcihome+0x20000
@@ -12,7 +12,7 @@
 #define cmdringhome xhcihome+0x40000
 #define eventringhome xhcihome+0x80000
 
-#define usbhome 0x300000
+#define usbhome 0x700000
 	//0:			//+0:		incontext,+800:outcontext
 				//+1000:	device infomation
 	//1:ep0			//+2000:	ep0 ring

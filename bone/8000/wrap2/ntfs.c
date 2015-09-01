@@ -3,14 +3,14 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define fshome 0x500000			//[2m,3m)
+#define fshome 0x900000			//[2m,3m)
 #define pbrbuffer fshome+0x30000
 #define mftbuffer fshome+0x40000
 #define indexbuffer fshome+0x80000
 
-#define rawbuffer 0x600000			//[3m,4m)
+#define rawbuffer 0xa00000			//[3m,4m)
 
-#define programhome 0x700000		//[4m,?)
+#define programhome 0xb00000		//[4m,?)
 
 
 

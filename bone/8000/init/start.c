@@ -3,8 +3,8 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define idehome 0x100000
-#define ahcihome 0x100000
+#define idehome 0x400000
+#define ahcihome 0x400000
 
 #define journalhome 0xd00000
 #define journalsize 0x100000

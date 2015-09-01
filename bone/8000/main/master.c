@@ -3,17 +3,17 @@
 #define DWORD unsigned int
 #define QWORD unsigned long long
 
-#define idehome 0x100000
-#define ahcihome 0x100000
-#define xhcihome 0x200000
-#define usbhome 0x300000
+#define idehome 0x400000
+#define ahcihome 0x400000
+#define xhcihome 0x600000
+#define usbhome 0x700000
 
-#define diskhome 0x400000
+#define diskhome 0x800000
 	#define partitionhome diskhome+0x10000
 	#define mbrbuffer diskhome+0x20000
-#define fshome 0x500000
-#define dirhome 0x600000
-#define datahome 0x700000
+#define fshome 0x900000
+#define dirhome 0xa00000
+#define datahome 0xb00000
 
 
 

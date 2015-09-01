@@ -1,4 +1,4 @@
-%define acpihome 0x50000
+%define acpihome 0x40000
 %define thatport 0xffc
 %define thatdata 0xffe
 [BITS 64]
