@@ -20,29 +20,41 @@
 
 ;_________________main(使用wrap?里面的函数)___________________
 %include "main/main.s"				;main loop
-%include "main/f1.s"				;一维
-%include "main/f2.s"				;二维
-%include "main/f3.s"				;三维
-%include "main/f4.s"				;终端
-%include "main/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
 ;_______________________________________________________________
 
 
 
 
-;________________wrap1(在wrap基础上由软件实现)_________________
-%include "wrap1/f1.operator.s"
-%include "wrap1/f4.list.s"
-%include "wrap1/f4.operator.s"
-%include "wrap1/f4.search.s"
-%include "wrap1/f4.say.s"
+;________________wrap1(在wrap1,wrap基础上由软件实现)_________________
+%include "wrap2/f1.s"				;一维
+%include "wrap2/f1.change.s"
+%include "wrap2/f1.float.s"
+%include "wrap2/f1.operator.s"
+
+%include "wrap2/f2.s"				;二维
+
+%include "wrap2/f3.s"				;三维
+
+%include "wrap2/f4.s"				;终端
+%include "wrap2/f4.list.s"
+%include "wrap2/f4.operator.s"
+%include "wrap2/f4.search.s"
+%include "wrap2/f4.say.s"
+
+%include "wrap2/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
+;________________________________________________________________
+
+
+
+
+;___________________wrap1(各种转换各种数学)________________________
 %include "wrap1/convert.s"			;各种必须的恶心的转换
 ;______________________________________________________________
 
 
 
 
-;__________________wrap(必须由"环境"提供)______________________
+;__________________wrap(必须由"系统或环境"提供)______________________
 %include "wrap/interrupt.s"			;isrinstall
 %include "wrap/port.s"				;poweroff,reboot
 %include "wrap/screen.s"			;点阵字符

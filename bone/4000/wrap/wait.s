@@ -6,20 +6,20 @@
 
 
 ;______________________________________________________
-forever:			;i found a stupid board
-in al,0x64			;who can not use ioapic?
-test al,1			;i am debugging......
-jz forever			;and using no interrupt is ok
+waitevent:					;i found a stupid mother board
+	in al,0x64
+	test al,1				;i am debugging......
+	jz waitevent			;use no interrupt for now
 
-in al,0x60
-ret
+	in al,0x60
+	ret
 ;____________________________________________________
 
 
 
 
 ;_________________________________________________
-;forever:			;不知被谁叫醒，一个个问一遍
+;waitevent:			;不知被谁叫醒，一个个问一遍
 
 .keyboard:			;键盘，有事？
 	mov rax,[kbdhome+bufsize-8]
@@ -31,7 +31,7 @@ ret
 
 .sleep:				;什么事都没有，那就睡觉吧，等着被唤醒
 	hlt				;todo:不要一碰就醒，戳的使劲一些才醒就好了
-	jmp forever
+	jmp waitevent
 ;_________________________________________________
 
 

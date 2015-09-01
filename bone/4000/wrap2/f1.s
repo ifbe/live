@@ -11,6 +11,7 @@ f1init:
 
 	lea rax,[rel menu]
 	mov [rel mouseormenu],rax
+
 	lea rax,[rel dumpanscii]
 	mov [rel hexoranscii],rax
 

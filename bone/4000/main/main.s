@@ -18,8 +18,8 @@
 showsomething:
 	call printworld
 
-waitevent:
-	call forever
+forever:
+	call waitevent
 
 dispatchevent:
 	call processevent
@@ -36,11 +36,11 @@ printworld:
 	call [rel whosscreen]
 
 	;do something(for example:start menu)
+	;call printforeground
 	;call showmouse
 
 	ret
 ;___________________________________________________
-whosscreen:dq 0
 
 
 
@@ -131,4 +131,5 @@ processevent:
 .otherkey:
 	jmp [rel whosevent]
 ;___________________________________________
+whosscreen:dq 0
 whosevent:dq 0
