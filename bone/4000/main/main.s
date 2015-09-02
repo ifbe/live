@@ -2,6 +2,8 @@
 	call endofjarvis
 
 	call f1init
+	call f2init
+	call f3init
 	call f4init
 
 	call processevent.showf4

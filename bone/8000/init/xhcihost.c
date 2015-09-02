@@ -241,33 +241,36 @@ QWORD probepci()
 
 int ownership(QWORD addr)
 {
-	QWORD temp=*(DWORD*)addr;
-
 	//set hc os owned semaphore
-	*(DWORD*)addr=temp|0x1000000;
+	int timeout;
+	volatile DWORD* temp=(DWORD*)addr;
+	temp[0]=temp[0] | 0x1000000;
 
-	//等一会
-	QWORD waiter=0xffffff;
-	for(;waiter>0;waiter--) asm("nop");
 
-	//时间到了，看看控制权到手没
-	temp=*(DWORD*)addr;
-	temp&=0x1000000;
-	if(temp == 0x1000000)
+
+
+	//看看控制权到手没
+	timeout=0;
+	while(1)
 	{
-		diary("	grabing ownership");
-
-		temp=*(DWORD*)addr;
-		temp&=0x10000;
-		if(temp == 0)
+		timeout++;
+		if(timeout > 0xffffff)
 		{
-			diary("	bios gone");
-			return 0;
+			diary("	failed to get ownership");
+			return -1;
+		}
+
+
+		//
+		if( (temp[0]&0x1000000) == 0x1000000 )
+		{
+			if( (temp[0]&0x10000) == 0 )
+			{
+				diary("	bios gone");
+				return 1;
+			}
 		}
 	}
-
-	diary("	failed");
-	return -1;
 }
 void supportedprotocol(QWORD addr)
 {
@@ -597,6 +600,9 @@ void initxhci()
 
 	//xhci
 	probexhci();
+
+	//initusb
+	initusb();
 
 
 

@@ -166,16 +166,17 @@ void ring(int slot,int endpoint)
 
 int waitevent(QWORD wantedslot,QWORD wantedtype)
 {
-	DWORD first,second,third,fourth;
-	DWORD cycle,slot,type;
-	volatile QWORD timeout=0;
+	volatile DWORD* thisevent;
+	QWORD timeout=0;
 	while(1)
 	{
+		thisevent=(DWORD*)eventringdequeue;
+
 		//等太久就不等了
 		timeout++;
-		if(timeout>0xfffffff)
+		if(timeout>0xffffff)
 		{
-			diary("(timeout@%x)%x\n",eventringdequeue,fourth);
+			diary("(timeout@%x)\n",thisevent);
 			return -1;
 		}
 
@@ -183,21 +184,17 @@ int waitevent(QWORD wantedslot,QWORD wantedtype)
 
 
 		//拿出一个,cycle不对就回到while(1)
-		fourth=*(DWORD*)(eventringdequeue+0xc);
-		cycle=fourth & 0x1;
-		if(cycle != eventringcycle) continue;
+		if( (thisevent[3] & 0x1) != eventringcycle ) continue;
 
 	
 
 
 		//cycle对了，检查completion code
 		//正常就往下走，否则返回失败
-		first=*(DWORD*)(eventringdequeue);
-		second=*(DWORD*)(eventringdequeue+4);
-		third=*(DWORD*)(eventringdequeue+8);
-		if( (third >> 24) != 0x1 )
+		if( (thisevent[2] >> 24) != 0x1 )
 		{
-			diary("(error event@%x)%x,%x,%x,%x\n",eventringdequeue,first,second,third,fourth);
+			diary("(error event@%x)%x,%x,%x,%x\n",thisevent,
+			thisevent[0],thisevent[1],thisevent[2],thisevent[3]);
 			return -1;
 		}
 
@@ -213,8 +210,8 @@ int waitevent(QWORD wantedslot,QWORD wantedtype)
 
 
 		//如果想等host事件
-		slot=fourth>>24;
-		type=(fourth>>10)&0x3f;
+		DWORD slot=thisevent[3]>>24;
+		DWORD type=(thisevent[3]>>10)&0x3f;
 		if(wantedslot == 0)
 		{
 			if(type == wantedtype)		//正是想要的
@@ -225,7 +222,7 @@ int waitevent(QWORD wantedslot,QWORD wantedtype)
 					//就直接返回slot号
 					//enable slot需要得到这个slot号
 					//这个值肯定大于0
-					return fourth >> 24;
+					return thisevent[3] >> 24;
 				}
 				else return 1;
 			}
@@ -936,70 +933,107 @@ failed:
 
 static QWORD portbase;
 static QWORD portcount;
+int resetport(volatile DWORD* childaddr)
+{
+	int i;
+
+	//gcc please i am begging you......do not try to optimize my code......
+	childaddr[0]=childaddr[0]|0x10;
+
+	//wait for PR=0
+	i=0;
+	while(1)
+	{
+		i++;
+		if(i>0xffffffff)return -1;
+
+		//portsc=*(DWORD*)(childaddr);
+		if( (childaddr[0] & 0x10) == 0 )break;
+	}
+	diary("pr done\n");
+
+	//wait for enable=1
+	i=0;
+	while(1)
+	{
+		i++;
+		if(i>0xffffffff)return -3;
+
+		//portsc=*(DWORD*)(childaddr);
+		if( (childaddr[0] & 0x2) == 0x2 )break;
+	}
+	diary("enable done\n");
+
+	//wait for portchange event
+	if(waitevent(0,0x22) <= 0)return -2;
+	diary("event done\n");
+
+	//nothing wrong haha
+	return 1;
+}
 void roothub()
 {
 	//用xhci spec里面的root port reset等办法处理port,得到port信息
 	QWORD childport;
-	QWORD childaddr;
-	QWORD temp;
+	volatile DWORD* childaddr;
 	for(childport=1;childport<=portcount;childport++)
 	{
-		childaddr=portbase+childport*0x10-0x10;
-		DWORD portsc=*(DWORD*)childaddr;
+		//gcc please i am begging you......do not try to optimize my code......
+		//check
+		childaddr=(DWORD*)(portbase+childport*0x10-0x10);
 		diary("root port:%x@%x{\n",childport,childaddr);
-		diary("portsc(before):%x\n",portsc);
+		diary("portsc(before):%x\n",childaddr[0]);
+		if( ( childaddr[0] & 0x1 ) == 0)goto thisfinish;
 
-		if( (portsc&0x1) == 0x1)		//里面有东西
+
+
+
+		//进来再判断enable位(bit2)
+		//=1说明大概是3.0设备,否则是<=2.0的设备需要手动reset
+		//reset之后，从默认的disable状态变成enable状态
+		//收到change event的时候仍然没有reset好,要一直等到bit4=0
+		if( ( childaddr[0] & 0x2 ) == 0)
 		{
-			//进来再判断enable位(bit2)
-			//=1说明大概是3.0设备,否则是<=2.0的设备需要手动reset
-			//reset之后，从默认的disable状态变成enable状态
-			//收到change event的时候仍然没有reset好,要一直等到bit4=0
-			if( (portsc&0x2) == 0)
+			if( resetport(childaddr) <= 0 )
 			{
-				temp=*(DWORD*)(childaddr);
-				temp=temp&0xfffffffd;
-				temp=temp|0x10;
-				*(DWORD*)(childaddr)=temp;
-
-				int i;			//todo:改成疯狂读取检查bit4
-				for(i=0;i<0xfffffff;i++)asm("nop");
-				waitevent(0,0x22);
+				diary("reset failed");
+				goto thisfinish;
 			}
-			//todo:检查错误
-			//---------------------------------------------
-
-
-
-
-			//---------第一步:初始化，读取并记录基本信息--------
-			//asm("int3");
-			temp=*(DWORD*)(childaddr);
-			diary("portsc(reset1):%x\n",temp);
-			diary("	linkstate:%x\n",(temp>>5)&0xf);
-
-			temp=(temp>>10)&0xf;
-			if(temp == 4)diary("	superspeed:4");
-			else if(temp ==3)diary("	highspeed:3");
-			else if(temp == 2)diary("	fullspeed:2");
-			else if(temp == 1)diary("	lowspeed:1");
-			else diary("	speed:%x",temp);
-
-			hello(childport,0,temp);
-			//---------------------------------------
-
-
-
-
-			//---------第二步:是hub就交给hub(),键鼠就交给inputer()----------
-			//---------否则就放在那不管,直接跑去处理下一个port----
-			//if(classcode==9&&interfaceclass==9)
-			//{
-			//	normalhub(childport,0,(portsc>>10)&0xf,slot);
-			//}
-			//-------------------------------------
+			diary("portsc(reset1):%x\n",childaddr[0]);
 		}
+		//todo:检查错误
+		//---------------------------------------------
 
+
+
+
+		//---------第一步:初始化，读取并记录基本信息--------
+		diary("	linkstate:%x\n",( childaddr[0] >> 5 ) & 0xf);
+
+		DWORD speed=( childaddr[0] >> 10 ) & 0xf;
+		if(speed == 4)diary("	superspeed:4");
+		else if(speed ==3)diary("	highspeed:3");
+		else if(speed == 2)diary("	fullspeed:2");
+		else if(speed == 1)diary("	lowspeed:1");
+		else diary("	speed:%x",speed);
+		hello(childport,0,speed);
+		//---------------------------------------
+
+
+
+
+		//---------第二步:是hub就交给hub(),键鼠就交给inputer()----------
+		//---------否则就放在那不管,直接跑去处理下一个port----
+		//if(classcode==9&&interfaceclass==9)
+		//{
+		//	normalhub(childport,0,(portsc>>10)&0xf,slot);
+		//}
+		//-------------------------------------
+
+
+
+
+thisfinish:
 		diary("}");
 	}
 	return;

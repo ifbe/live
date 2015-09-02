@@ -35,6 +35,8 @@ void identify(QWORD);
 
 void hostcommand(DWORD,DWORD,DWORD,DWORD);
 void usbcommand(BYTE bmrequesttype,BYTE brequest,WORD wvalue,WORD windex,WORD wlength,QWORD buffer);
+void initxhci();
+void initahci();
 
 void say(char*,...);
 void diary(char*,...);
@@ -128,6 +130,14 @@ static void directusbcmd(char* arg0,char* arg1,char* arg2,char* arg3,char* arg4,
 	string2data(arg5,&buffer);
 	usbcommand(bmrequesttype, brequest, wvalue, windex, wlength, buffer);
 }
+static void directinitxhci()
+{
+	initxhci();
+}
+static void directinitahci()
+{
+	initahci();
+}
 static void directsay(char* first,char* second,char* third,char* fourth,char* fifth,char* sixth)
 {
 	say(first);
@@ -180,6 +190,8 @@ void master()
 	remember(0x6b73696464616572,		(QWORD)directread);
 	remember(0x646d6374736f68,		(QWORD)directhostcmd);
 	remember(0x646d63627375,		(QWORD)directusbcmd);
+	remember(0x6963686174696e69,		(QWORD)directinitahci);
+	remember(0x6963687874696e69,		(QWORD)directinitxhci);
 	remember(0x796173,		(QWORD)directsay);
 
 
