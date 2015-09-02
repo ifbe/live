@@ -33,6 +33,7 @@ f1show:
     mov rbp,0x1000000				;[16m,20m)
 	jmp writescreen
 ;_____________________________________________
+f1change:dq 0
 mouseormenu:dq 0
 hexoranscii:dq 0
 
@@ -54,6 +55,7 @@ f1event:
 .esc:
 	cmp al,0x01
 	jne .notesc
+
 	inc byte [rel esckey]
 	test byte [rel esckey],1
 	jnz .escanscii

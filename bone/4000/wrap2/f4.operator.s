@@ -64,7 +64,7 @@ rdxrax:
 
 
 ;_________________________________________
-write:
+write8:
 	call rdxrax
 	mov [rdx],al
 	ret
@@ -86,7 +86,7 @@ write32:
 
 
 ;________________________________________
-read:
+read8:
 	call getrdx
 
 	movzx r8,byte [rdx]

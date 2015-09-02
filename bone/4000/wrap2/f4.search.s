@@ -59,8 +59,12 @@ searchhere:
 	je write16
 	cmp dword [esi],"writ"
 	jne .skipwrite
-	cmp byte [esi+4],'e'
-	je write
+		cmp dword [esi+4],"e32"
+		je write32
+		cmp dword [esi+4],"e16"
+		je write16
+		cmp dword [esi+4],"e"
+		je write8
 .skipwrite:
 
 	cmp dword [esi],"rrrr"
@@ -69,20 +73,35 @@ searchhere:
 	je read16
 	cmp dword [esi],"read"
 	jne .skipread
-	cmp byte [esi+4],0
-	je read
+		cmp dword [esi+4],"32"
+		je read32
+		cmp dword [esi+4],"16"
+		je read16
+		cmp byte [esi+4],0
+		je read8
 .skipread:
 
 	cmp dword [esi],"oooo"
 	je out32
 	cmp dword [esi],"oo"
 	je out16
-	cmp dword [esi],"out"
-	je out8
+	cmp word [esi],"ou"
+	jne .skipout
+		cmp dword [esi+2],"t32"
+		je out32
+		cmp dword [esi+2],"t16"
+		je out16
+		cmp word [esi+2],"t"
+		je out8
+.skipout:
 
 	cmp dword [esi],"iiii"
 	je in32
 	cmp dword [esi],"ii"
+	je in16
+	cmp dword [esi],"in32"
+	je in32
+	cmp dword [esi],"in16"
 	je in16
 	cmp dword [esi],"in"
 	je in8
@@ -113,18 +132,22 @@ searchhere:
 
 	cmp word [esi],"ls"
 	jne .skipls
-	cmp dword [esi+2],"pci"
-	je lspci
-	cmp dword [esi+2],"acpi"
+	cmp dword [esi+2],"acpi"		;40000
 	je lsacpi
-	cmp dword [esi+2],"bin"
+	cmp dword [esi+2],"pci"			;60000
+	je lspci
+	cmp dword [esi+2],"bin"			;70000
 	je lsbin
-	cmp dword [esi+2],"ahci"
+	cmp dword [esi+2],"ahci"		;400000
 	je lsahci
-	cmp dword [esi+2],"usb"
+	cmp dword [esi+2],"xhci"		;600000
+	je lsxhci
+	cmp dword [esi+2],"usb"			;700000
 	je lsusb
-	cmp dword [esi+2],"disk"
+	cmp dword [esi+2],"disk"		;800000
 	je lsdisk
+	cmp dword [esi+2],"fs"			;900000
+	je lsfs
 	cmp byte [esi+2],0
 	je ls
 .skipls:

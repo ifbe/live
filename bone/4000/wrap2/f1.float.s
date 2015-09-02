@@ -6,30 +6,29 @@
 ;___________________________________
 mouse:
 	mov edi,0x1000000
+
 	mov eax,[rel offset]
-	mov bl,0x40
-	div bl
+	shr eax,6					;商
+	shl eax,10+2+4
+	add edi,eax
 
-	movzx ebx,ah           ;余数
-	imul ebx,32
-	shl ebx,1
-	add edi,ebx
-
-	movzx eax,al           ;商
-	imul eax,4*1024*16
+	mov eax,[rel offset]
+	and eax,0x3f				;余数
+	shl eax,6
 	add edi,eax
 
 	mov ecx,16
-.first:
-	xor edx,edx
-.second:
-	not dword [edi+edx]
-	add edx,4
-	cmp edx,64
-	jb .second
-
+.continue:
+	not qword [edi]
+	not qword [edi+8]
+	not qword [edi+16]
+	not qword [edi+24]
+	not qword [edi+32]
+	not qword [edi+40]
+	not qword [edi+48]
+	not qword [edi+56]
 	add edi,4*1024
-	loop .first
+	loop .continue
 
 	ret
 ;___________________________________
@@ -40,6 +39,7 @@ mouse:
 ;_____________________________________
 menu:
 	call mouse
+
 .menurow:
 	mov rbx,[rel offset]
 	and rbx,0xffffffffffffffc0
@@ -65,7 +65,8 @@ menu:
 	mov [rel menuaddr],rbx
 
 
-	mov rbx,[rel menuaddr]
+
+
 .backcolor:
 	mov edi,ebx
 	mov ecx,0x100
@@ -84,7 +85,9 @@ menu:
 	jb .backcolor
 
 
-somewords:
+
+
+.somewords:
 	lea esi,[rel message0]
 	mov dword [rel menuoffset],0x8000
 .entries:
@@ -112,7 +115,10 @@ somewords:
 	mov rbx,[rel input]
 	call dumprbx
 
-choose:
+
+
+
+.choose:
 	mov edi,[rel chosen]
 	shl edi,17
 	add edi,[rel menuaddr]
