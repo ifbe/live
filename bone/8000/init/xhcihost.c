@@ -25,6 +25,7 @@ static QWORD xhciaddr=0;
 
 //用了别人的函数
 void diary(char* , ...);
+void initusb();
 
 
 
@@ -583,11 +584,6 @@ return 0;
 
 void initxhci()
 {
-	//clean home(1m)
-	BYTE* p=(BYTE*)(xhcihome);
-	int i;
-	for(i=0;i<0x100000;i++) p[i]=0;
-
 	//find pci address
 	findxhci();
 	if(xhciport==0) goto end;
@@ -595,14 +591,20 @@ void initxhci()
 	//pci部分
 	probepci();
 	if(xhciaddr==0) goto end;
-	*(QWORD*)(xhcihome)=0x69636878;			//xhci
-	*(QWORD*)(xhcihome+8)=xhciaddr;			//0x????????
 
-	//xhci
+	//stop xhci
+	//probexhci();
+
+	//clean home(1m)
+	BYTE* p=(BYTE*)(xhcihome);
+	int i;
+	for(i=0;i<0x100000;i++) p[i]=0;
+
+	//start xhci
 	probexhci();
 
 	//initusb
-	initusb();
+	initusb(xhciaddr);
 
 
 

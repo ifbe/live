@@ -1042,10 +1042,9 @@ thisfinish:
 
 
 
-void initusb()
+void initusb(QWORD xhciaddr)
 {
 	//拿到xhci的mmio地址
-	QWORD xhciaddr=*(QWORD*)(xhcihome+8);		//xhci地址我放在这儿了
 	if(xhciaddr==0) return;
 	diary("xhci@%x{\n",xhciaddr);
 
@@ -1064,7 +1063,8 @@ void initusb()
 
 
 
-	
+
+	//runtime
 	volatile QWORD temp=*(DWORD*)(xhciaddr+0x18);
 	runtime=xhciaddr+temp;
 	diary("	runtime@%x\n",runtime);
