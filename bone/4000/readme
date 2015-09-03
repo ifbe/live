@@ -27,8 +27,8 @@
 
 ;________________wrap1(在wrap1,wrap基础上由软件实现)_________________
 %include "wrap2/f1.s"				;一维
-%include "wrap2/f1.float.s"
-%include "wrap2/f1.operator.s"
+%include "wrap2/f1.background.s"
+%include "wrap2/f1.foreground.s"
 
 %include "wrap2/f2.s"				;二维
 

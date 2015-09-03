@@ -158,6 +158,7 @@ f4event:
 .enter:
 	cmp al,0x1c
 	jne .notenter
+
 .convert:
 	mov r8,[consolehome+consolesize-8]		;距离buffer开头多少
 	add r8,consolehome+5			;加上buffer开头地址
@@ -184,14 +185,15 @@ f4event:
 .notfound:							;哪都找不到就不找了，报告给用户如下
 	lea r8,[rel notfoundmsg]		;notfound:
 	call machinesay
-	;lea r8,[rel arg0msg]			;arg0=
-	;call say
-	;lea r8,[rel arg1msg]			;arg1=
-	;call say
-	;lea r8,[rel arg2msg]			;arg2=
-	;call say
-	;lea r8,[rel huanhang]
-	;call say
+		;lea r8,[rel arg0msg]			;arg0=
+		;call say
+		;lea r8,[rel arg1msg]			;arg1=
+		;call say
+		;lea r8,[rel arg2msg]			;arg2=
+		;call say
+		;lea r8,[rel huanhang]
+		;call say
+
 .successreturn:
 	mov qword [rel failsignal],0
 	lea r8,[rel userinput]			;user:

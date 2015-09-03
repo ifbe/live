@@ -223,3 +223,106 @@ dumphex64:
 	ret
 ;_______________________________
 pcimust32:dd 0
+
+
+
+
+;_____________________________________________
+f1backgroundevent:
+
+
+
+
+.left:
+	cmp al,0x4b
+	jne .notleft
+
+.leftcheck:
+	mov rax,[rel offset]				;mov bl,0x40;div bl
+	and al,0x3f
+	cmp al,0
+	je .leftedge
+
+.leftnormal:
+	dec qword [rel offset]
+
+	;mov rax,al
+	;mov dword [rel f1change],0			;只刷新offset对应的屏幕位置
+	ret
+
+.leftedge:
+    cmp qword [rel addr],0x800
+    jb .return							;什么都不用刷新
+
+    sub qword [rel addr],0x800
+
+	;mov dword [rel f1change],0xffff	;全部要刷新
+    ret
+
+.notleft:
+
+
+
+
+.right:
+	cmp al,0x4d
+	jne .notright
+
+	mov rax,[rel offset]
+	mov bl,0x40
+	div bl
+	cmp ah,0x3f
+	je .rightequal
+	inc qword [rel offset]
+	ret
+.rightequal:
+    add qword [rel addr],0x800
+    ret
+.notright:
+
+
+
+
+.up:
+	cmp al,0x48
+	jne .notup
+
+	cmp qword [rel offset],0x40
+	jb .upbelow
+	sub qword [rel offset],0x40
+	ret
+.upbelow:
+    cmp qword [rel addr],0x40
+    jb .return
+    sub qword [rel addr],0x40
+    ret
+.notup:
+
+
+
+
+.down:
+	cmp al,0x50
+	jne .notdown
+
+	cmp qword [rel offset],0xbbf
+	ja .downabove
+	add qword [rel offset],0x40
+	ret
+.downabove:
+    add qword [rel addr],0x40
+    ret
+.notdown:
+
+
+
+
+.other:
+	;在本页里面搜索~
+
+
+
+
+.return:
+	ret
+;________________________________________________

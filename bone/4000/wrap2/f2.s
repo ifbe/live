@@ -59,10 +59,31 @@ rgbabase:dq 0x1c00000			;16m+4m
 
 ;_________________________________________
 f2event:
+
+.left:
+	cmp al,0x4b
+	jne .notleft
+
+	cmp qword [rel rgbabase],0x400000
+	jb .return
+	sub qword [rel rgbabase],0x400000
+	ret
+.notleft:
+
+.right:
+	cmp al,0x4d
+	jne .notright
+
+	add qword [rel rgbabase],0x400000
+	ret
+.notright:
+
 .up:
 	cmp al,0x48
 	jne .notup
 
+	cmp qword [rel rgbabase],0x10000
+	jb .return
 	sub qword [rel rgbabase],0x10000
 	ret
 .notup:
@@ -75,6 +96,6 @@ f2event:
 	ret
 .notdown:
 
-.other:
+.return:
 	ret
 ;________________________________________

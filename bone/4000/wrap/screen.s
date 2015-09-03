@@ -197,6 +197,9 @@ updatescreen:
 	;mov [?],r10d
 	;mov [?],r11d
 
+
+
+
 .check:
 	cmp r8,r9				;if(leftx>=rightx)return
 	jae .return
@@ -207,10 +210,16 @@ updatescreen:
 	cmp r11,768				;if(downy>=768)return
 	ja .return
 
+
+
+
 .getvariety:
 	mov bl,[screeninfo+0x19]
 	shr bl,3
 	movzx ebx,bl				;ebx=byte per pixel
+
+
+
 
 .continuey:
 	mov edi,[screeninfo+0x28]		;dest base
@@ -243,6 +252,159 @@ updatescreen:
 	cmp r10,r11
 	jb .continuey
 
+
+
+
 .return:
 	ret
 ;______________________________________________
+
+
+
+
+
+
+
+
+;r8(rdi):dest
+;				(z<<32)+(y<<16)+x
+;				0x 0000 0200 0100
+;				(256,512,0)
+
+;r9(rsi):source
+;				(z<<32)+(y<<16)+x
+;				0x 0000 0010 0000
+;				(0,16,0)
+
+;r10(rdx):length
+;				(zres<<32)+(yres<<16)+xres
+;				0x 0100 0300 0400
+;				1024*768*512
+
+;r11(rcx):count
+;				(zcount<<32)+(ycount<<16)+xcount
+;				0x 0001 0010 0010
+;				16*16*1
+
+;r12(r8):addr
+;				rel mousedata
+
+;__________________________________________
+updatearea:
+
+
+
+
+;ebx=byte per pixel
+	mov bl,[screeninfo+0x19]
+	shr bl,3
+	movzx rbx,bl
+
+
+
+
+.destination:					;r8
+	mov edi,[screeninfo+0x28]
+
+	;mov rax,r8
+	;shr rax,32
+	;movzx rax,ax				;rax=z
+	;shl rax,10+10				;rax=z*1024*1024
+	;imul rbx					;rax=z*1024*1024*bpp
+	;add rdi,rax
+
+	mov rax,r8
+	shr rax,16
+	movzx rax,ax				;rax=y
+	shl eax,10					;rax=y*1024
+	mul ebx						;rax=y*1024*bpp
+	add edi,eax
+
+	mov rax,r8
+	movzx rax,ax				;rax=x
+	mul ebx						;rax=x*bpp
+	add edi,eax
+
+
+
+
+.source:						;r9
+	mov rsi,r12
+
+	;mov rax,r9
+	;shr rax,32
+	;movzx rax,ax
+	;......ax*xres*yres
+	;shl rax,2
+	;add rsi,rax
+
+	mov rax,r9
+	shr rax,16
+	movzx rax,ax				;rax=y
+	mov rcx,r10
+	movzx rcx,cx
+	mul ecx						;rax=y*xres
+	shl eax,2					;rax=y*xres*4
+	add esi,eax
+
+	mov rax,r9
+	movzx rax,ax				;rax=x
+	shl rax,2					;rax=x*4
+	add esi,eax
+
+
+
+
+;	for(y=0;y<ycount;y++)			ycount=(r11>>16)&0xffff
+;		for(x=0;x<xcount;x++)		xcount=r11&0xffff
+;			[rdi + y*1024*bpp + x] = [rsi + y*xres*4 + x*4]
+.okdoit:
+	mov [rel .updatecount],r11
+
+.continuey:
+	mov cx,r11w
+	movzx rcx,cx
+
+.continuex:
+	;放一行数据
+	mov eax,[esi]
+	mov [edi],eax
+	add esi,4
+	add edi,ebx
+	loop .continuex
+
+	;下一次的di
+	mov ax,r11w
+	movzx rax,ax
+	mul ebx
+	sub edi,eax			;edi -= xcount * bpp
+	mov eax,ebx
+	shl eax,10
+	add edi,eax			;edi += 1024 * bpp
+
+	;下一次的si
+	mov ax,r11w
+	movzx rax,ax
+	shl rax,2
+	sub esi,eax			;esi -= xcount * 4
+	mov ax,r10w
+	movzx rax,ax
+	shl rax,2
+	add esi,eax			;esi += xres * 4
+
+	;进不进入下一次
+	dec word [rel .ycount]
+	cmp word [rel .ycount],0
+	ja .continuey
+
+
+
+
+.return:
+	ret
+;__________________________________________
+.updatecount:
+.xcount:dw 0
+.ycount:dw 0
+.zcount:dw 0
+.reserved:dw 0

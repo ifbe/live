@@ -3,42 +3,8 @@
 
 
 
-;___________________________________
-mouse:
-	mov edi,0x1000000
-
-	mov eax,[rel offset]
-	shr eax,6					;商
-	shl eax,10+2+4
-	add edi,eax
-
-	mov eax,[rel offset]
-	and eax,0x3f				;余数
-	shl eax,6
-	add edi,eax
-
-	mov ecx,16
-.continue:
-	not qword [edi]
-	not qword [edi+8]
-	not qword [edi+16]
-	not qword [edi+24]
-	not qword [edi+32]
-	not qword [edi+40]
-	not qword [edi+48]
-	not qword [edi+56]
-	add edi,4*1024
-	loop .continue
-
-	ret
-;___________________________________
-
-
-
-
 ;_____________________________________
 menu:
-	call mouse
 
 .menurow:
 	mov rbx,[rel offset]
@@ -143,6 +109,92 @@ menuaddr dq 0
 menuoffset:dq 0
 
 
+
+
+;____________________________________
+f1foregroundevent:
+
+.up:
+	cmp al,0x48
+	jne .notup
+
+	dec byte [rel chosen]
+	and byte [rel chosen],0x7
+	ret
+.notup:
+
+
+
+
+.down:
+	cmp al,0x50
+	jne .notdown
+
+	inc byte [rel chosen]
+	and byte [rel chosen],0x7
+	ret
+.notdown:
+
+
+
+
+.enter:
+	cmp al,0x1c
+	jne .notenter
+
+	test byte [rel esckey],1
+	jnz .return
+	cmp byte [rel chosen],0
+	je changeaddress
+	cmp byte [rel chosen],1
+	je changesector
+	cmp byte [rel chosen],2
+	je changeoffset
+	cmp byte [rel chosen],4
+	je searchinthisscreen
+	cmp byte [rel chosen],5
+	je changememory
+	cmp byte [rel chosen],6
+	je changeview
+	cmp byte [rel chosen],7
+	je poweroff
+	ret
+.notenter:
+
+
+
+
+.backspace:
+	cmp al,0xe
+	jne .notbackspace
+
+	shr qword [rel input],4
+	ret
+.notbackspace:
+
+
+
+
+.other:
+	call scan2hex
+
+	cmp al,0xf					;<0x30
+	ja .return
+
+	shl qword [rel input],4
+	add [rel input],al
+
+
+
+
+.return:
+	ret
+;______________________________________
+input:dq 0
+
+
+
+
 ;_____________________________
 message0:
 db "address:        "
@@ -154,7 +206,3 @@ db "change          "
 db "anscii/hex      "
 db "poweroff        "
 ;________________________________
-addr:dq 0
-sector:dq 0
-offset:dq 0
-input:dq 0

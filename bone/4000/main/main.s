@@ -59,7 +59,8 @@ processevent:
 	lea rax,[rel f1event]
 	mov [rel whosevent],rax
 
-	mov qword [rel f1change],0xffff			;默认全部刷上屏幕
+	mov qword [rel f1changebg],0xffff			;默认全部刷上屏幕
+	mov qword [rel f1changefg],0xffff			;默认全部刷上屏幕
 	ret
 .notf1:
 
