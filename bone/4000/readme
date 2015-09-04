@@ -29,6 +29,8 @@
 %include "wrap2/f1.s"				;一维
 %include "wrap2/f1.background.s"
 %include "wrap2/f1.foreground.s"
+%include "wrap2/f1.menu.s"
+%include "wrap2/f1.mouse.s"
 
 %include "wrap2/f2.s"				;二维
 

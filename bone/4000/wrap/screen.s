@@ -190,73 +190,73 @@ writescreen:
 ;r8~r15用来传参,传进来4个都是坐标值(0,0)~(1024,768)
 ;r8=leftx,r9=rightx,r10=upy,r11=downy
 ;_____________________________________________
-updatescreen:
+;updateugly:
 ;.debug:
-	;mov [?],r8d
-	;mov [?],r9d
-	;mov [?],r10d
-	;mov [?],r11d
+;	mov [?],r8d
+;	mov [?],r9d
+;	mov [?],r10d
+;	mov [?],r11d
 
 
 
 
-.check:
-	cmp r8,r9				;if(leftx>=rightx)return
-	jae .return
-	cmp r10,r11				;if(upy>=downy)return
-	jae .return
-	cmp r9,1024				;if(rightx>=1024)return
-	ja .return
-	cmp r11,768				;if(downy>=768)return
-	ja .return
+;.check:
+;	cmp r8,r9				;if(leftx>=rightx)return
+;	jae .return
+;	cmp r10,r11				;if(upy>=downy)return
+;	jae .return
+;	cmp r9,1024				;if(rightx>=1024)return
+;	ja .return
+;	cmp r11,768				;if(downy>=768)return
+;	ja .return
 
 
 
 
-.getvariety:
-	mov bl,[screeninfo+0x19]
-	shr bl,3
-	movzx ebx,bl				;ebx=byte per pixel
+;.getvariety:
+;	mov bl,[screeninfo+0x19]
+;	shr bl,3
+;	movzx ebx,bl				;ebx=byte per pixel
 
 
 
 
-.continuey:
-	mov edi,[screeninfo+0x28]		;dest base
-	mov eax,ebx
-	shl eax,10
-	mul r10d
-	add edi,eax				;+upx*1024*bpp
-	mov eax,ebx
-	mul r8d
-	add edi,eax				;+leftx*bpp
+;.continuey:
+;	mov edi,[screeninfo+0x28]		;dest base
+;	mov eax,ebx
+;	shl eax,10
+;	mul r10d
+;	add edi,eax				;+upx*1024*bpp
+;	mov eax,ebx
+;	mul r8d
+;	add edi,eax				;+leftx*bpp
 
-	mov rsi,rbp				;source base
-	mov rax,r10
-	shl rax,10+2
-	add rsi,rax				;+upx*1024*4
-	mov rax,r8
-	shl rax,2
-	add rsi,rax				;+leftx*4
+;	mov rsi,rbp				;source base
+;	mov rax,r10
+;	shl rax,10+2
+;	add rsi,rax				;+upx*1024*4
+;	mov rax,r8
+;	shl rax,2
+;	add rsi,rax				;+leftx*4
 
-	mov rcx,r9				;rightx
-	sub rcx,r8				;leftx
-.continuex:
-	mov eax,[esi]
-	add esi,4
-	mov [edi],eax
-	add edi,ebx
-	loop .continuex
+;	mov rcx,r9				;rightx
+;	sub rcx,r8				;leftx
+;.continuex:
+;	mov eax,[esi]
+;	add esi,4
+;	mov [edi],eax
+;	add edi,ebx
+;	loop .continuex
 
-	inc r10
-	cmp r10,r11
-	jb .continuey
-
-
+;	inc r10
+;	cmp r10,r11
+;	jb .continuey
 
 
-.return:
-	ret
+
+
+;.return:
+;	ret
 ;______________________________________________
 
 
@@ -290,7 +290,7 @@ updatescreen:
 ;				rel mousedata
 
 ;__________________________________________
-updatearea:
+updatescreen:
 
 
 
@@ -362,8 +362,7 @@ updatearea:
 	mov [rel .updatecount],r11
 
 .continuey:
-	mov cx,r11w
-	movzx rcx,cx
+	movzx rcx,r11w
 
 .continuex:
 	;放一行数据
@@ -374,8 +373,7 @@ updatearea:
 	loop .continuex
 
 	;下一次的di
-	mov ax,r11w
-	movzx rax,ax
+	movzx rax,r11w
 	mul ebx
 	sub edi,eax			;edi -= xcount * bpp
 	mov eax,ebx
@@ -383,12 +381,10 @@ updatearea:
 	add edi,eax			;edi += 1024 * bpp
 
 	;下一次的si
-	mov ax,r11w
-	movzx rax,ax
+	movzx rax,r11w
 	shl rax,2
 	sub esi,eax			;esi -= xcount * 4
-	mov ax,r10w
-	movzx rax,ax
+	movzx rax,r10w
 	shl rax,2
 	add esi,eax			;esi += xres * 4
 

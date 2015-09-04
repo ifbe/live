@@ -82,26 +82,36 @@ f4showall:
 ;_________________________________________
 f4showone:
 	;int3
-	mov edx,[consolehome+consolesize-8]	;edx=y*0x80
-	mov ecx,[rel f4change]			;ecx=x
+	mov edx,[consolehome+consolesize-8]		;edx=y*0x80
+	mov ecx,[rel f4change]					;ecx=x
 
 	lea esi,[ecx+edx]
 	add esi,consolehome
-	mov al,[esi]				;al=that byte
+	mov al,[esi]							;al=that byte
 	;mov al,'@'
 
-	cmp edx,0x30*0x80			;buffer里面有48行吗
+	cmp edx,0x30*0x80						;buffer里面有48行吗
 	jae .atlastline
 
 .atmiddle:									;48行以内在屏幕中间
-	mov r10,rdx
-	shr r10,7-4				;upy=y*16=edx/0x80*16
-	lea r11,[r10+16]			;downy
+	;mov r10,rdx
+	;shr r10,7-4							;upy=y*16=edx/0x80*16
+	;lea r11,[r10+16]						;downy
+	;mov rdi,r10
 
-	mov rdi,r10
-	shl edi,10+2				;yoffset=upy*1024*4
+	mov r8,rdx
+	shr r8,7
+	shl r8,4
+
+	mov rdi,r8
+	shl edi,10+2							;yoffset=upy*1024*4
+	shl r8,16
+
 	mov rbx,rcx
-	shl rbx,3+2				;xoffset=leftx
+	shl rbx,3
+	add r8,rbx
+
+	shl rbx,2								;xoffset=leftx
 	add edi,ebx
 	add edi,0x1c00000
 	call char
@@ -109,21 +119,32 @@ f4showone:
 	jmp .ok
 
 .atlastline:								;超过48行在最底下一行
-	mov r10,768-16			;upy
-	lea r11,[r10+16]		;downy
+	;mov r10,768-16			;upy
+	;lea r11,[r10+16]		;downy
+
+	mov r8,(0x2f0<<16)
 
 	mov edi,ecx
-	shl edi,2+3								;总共8个点，每个点4byte
+	shl edi,3
+	add r8,rdi
+
+	shl edi,2								;总共8个点，每个点4byte
 	add edi,0x1c00000+1024*4*16*47			;显示区在哪
 	call char
 
 
 .ok:
-	mov r8,[rel f4change]	;leftx
-	shl r8,3
-	lea r9,[r8+8]			;rightx
+	;mov r8,[rel f4change]	;leftx
+	;shl r8,3
+	;lea r9,[r8+8]			;rightx
 
-	mov rbp,0x1c00000
+	;mov rbp,0x1c00000
+	;jmp updatescreen
+
+	mov r9,r8
+	mov r10,0x03000400		;1024 * 768
+	mov r11,0x00100008		;8*16
+	mov r12,0x1c00000
 	jmp updatescreen
 ;__________________________________________
 

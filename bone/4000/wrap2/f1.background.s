@@ -227,12 +227,31 @@ pcimust32:dd 0
 
 
 
+
+
+
+
+;_______________________________________
+f1showbackground:
+	cmp dword [rel offsetold],0xffff
+	jb .skip
+
+	call [rel hexoranscii]
+
+    mov rbp,0x1000000				;[16m,20m)
+	call writescreen
+
+.skip:
+	ret
+;_______________________________________
+addr:dq 0				;当前页面位置
+sector:dq 0				;扇区号
+
+
+
+
 ;_____________________________________________
 f1backgroundevent:
-
-
-
-
 .left:
 	cmp al,0x4b
 	jne .notleft
@@ -244,19 +263,19 @@ f1backgroundevent:
 	je .leftedge
 
 .leftnormal:
-	dec qword [rel offset]
+	mov rax,[rel offset]
+	mov [rel offsetold],rax			;只刷新offset对应的屏幕位置
 
-	;mov rax,al
-	;mov dword [rel f1change],0			;只刷新offset对应的屏幕位置
+	dec qword [rel offset]
 	ret
 
 .leftedge:
     cmp qword [rel addr],0x800
     jb .return							;什么都不用刷新
 
-    sub qword [rel addr],0x800
+	mov dword [rel offsetold],0xffff	;全部要刷新
 
-	;mov dword [rel f1change],0xffff	;全部要刷新
+    sub qword [rel addr],0x800
     ret
 
 .notleft:
@@ -268,16 +287,25 @@ f1backgroundevent:
 	cmp al,0x4d
 	jne .notright
 
+.rightcheck:
 	mov rax,[rel offset]
-	mov bl,0x40
-	div bl
-	cmp ah,0x3f
-	je .rightequal
+	and al,0x3f
+	cmp al,0x3f
+	je .rightedge
+
+.rightnormal:
+	mov rax,[rel offset]
+	mov [rel offsetold],rax
+
 	inc qword [rel offset]
 	ret
-.rightequal:
+
+.rightedge:
+	mov dword [rel offsetold],0xffff
+
     add qword [rel addr],0x800
     ret
+
 .notright:
 
 
@@ -287,15 +315,26 @@ f1backgroundevent:
 	cmp al,0x48
 	jne .notup
 
+.upcheck:
 	cmp qword [rel offset],0x40
-	jb .upbelow
+	jb .upedge
+
+.upnormal:
+	mov rax,[rel offset]
+	mov [rel offsetold],rax
+
 	sub qword [rel offset],0x40
 	ret
-.upbelow:
+
+.upedge:
     cmp qword [rel addr],0x40
     jb .return
+
+	mov dword [rel offsetold],0xffff
+
     sub qword [rel addr],0x40
     ret
+
 .notup:
 
 
@@ -305,13 +344,23 @@ f1backgroundevent:
 	cmp al,0x50
 	jne .notdown
 
+.downcheck:
 	cmp qword [rel offset],0xbbf
-	ja .downabove
+	ja .downedge
+
+.downnormal:
+	mov rax,[rel offset]
+	mov [rel offsetold],rax
+
 	add qword [rel offset],0x40
 	ret
-.downabove:
+
+.downedge:
+	mov dword [rel offsetold],0xffff
+
     add qword [rel addr],0x40
     ret
+
 .notdown:
 
 
