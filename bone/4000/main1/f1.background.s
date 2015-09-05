@@ -107,26 +107,3 @@ dumphex64:
 	ret
 ;_______________________________
 pcimust32:dd 0
-
-
-
-
-
-
-
-
-;_______________________________________
-f1showbackground:
-	cmp dword [rel offsetold],0xffff
-	jb .skip
-
-	call [rel hexoranscii]
-
-    mov rbp,0x1000000				;[16m,20m)
-	call writescreen
-
-.skip:
-	ret
-;_______________________________________
-addr:dq 0				;当前页面位置
-sector:dq 0				;扇区号

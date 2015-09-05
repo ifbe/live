@@ -24,16 +24,67 @@ f1init:
 
 ;_________________________________________________
 f1show:
-	call f1showbackground
-	call f1showforeground
+.background:
+	cmp dword [rel offsetold],0xffff
+	jb .skipbackground
 
+	call [rel hexoranscii]
+
+    mov rbp,0x1000000				;[16m,20m)
+	call writescreen
+.skipbackground:
+
+
+
+
+.foreground:
+.clean:
+	mov r8,[rel offsetold]
+	cmp r8,0xffff
+	jae .skipclean
+
+	shr r8,6
+	shl r8,4+16						;(y<<16)
+	mov r8w,[rel offsetold]
+	and r8w,0x3f
+	shl r8w,4						;(x)
+	call cleanmouse
+	call cleanmenu
+.skipclean:
+
+
+
+
+.newmouse:
+	mov r8,[rel offset]
+	shr r8,6
+	shl r8,4+16						;(y<<16)
+	mov r8w,[rel offset]
+	and r8w,0x3f
+	shl r8w,4						;(x)
+	call mousenew
+
+.newmenu:
+	add r8,0x00100010
+	call menu
+
+
+
+
+.return:
 	ret
 ;_____________________________________________
 hexoranscii:dq 0
 
+addr:dq 0				;当前页面位置
+;sector:dq 0				;扇区号
+
+offsetold:dq 0
+offset:dq 0				;“鼠标”位置
 
 
- 
+
+
 
 
 

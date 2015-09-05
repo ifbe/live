@@ -28,7 +28,6 @@
 ;________________main1(在wrap1,wrap基础上由软件实现)_________________
 %include "main1/f1.s"				;一维
 %include "main1/f1.background.s"
-%include "main1/f1.foreground.s"
 %include "main1/f1.menu.s"
 %include "main1/f1.mouse.s"
 
@@ -48,7 +47,8 @@
 
 
 ;___________________main(真正干活的人)_________________
-%include "main/operator.s"
+%include "main/f1.operator.s"
+%include "main/f4.operator.s"
 ;______________________________________________________
 
 
