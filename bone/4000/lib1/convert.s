@@ -166,19 +166,20 @@ data2decimalstring:
 
 
 
-;传参:r8=data,r9=destination,r10,r11......
+;传参:r8=data,r9=destination......
 ;变化:rdi,r9,r8,rcx,rax
 ;___________________________________
 data2hexstring:
 itoa:
 	mov rdi,r9
-	mov qword [rdi],0
-	mov qword [rdi+8],0
-
+	mov dword [rdi],0x20202020
+	mov dword [rdi+4],0x20202020
+	mov dword [rdi+8],0x20202020
+	mov dword [rdi+0xc],0x20202020
+	mov ecx,15		;只管低32位
 	cld
-	mov ecx,16		;只管低32位
+
 .continue:
-	rol r8,4
 	mov al,r8b
 	and al,0xf
 	add al,0x30
@@ -186,8 +187,17 @@ itoa:
 	jb .skip
 	add al,0x7
 .skip:
-	stosb
-	loop .continue
+	mov [edi+ecx],al
+
+	shr r8,4
+	cmp r8,0
+	je .return
+
+	cmp ecx,0
+	je .return
+
+	dec ecx
+	jmp .continue
 
 .return:
 	ret

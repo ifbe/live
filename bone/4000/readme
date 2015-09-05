@@ -18,48 +18,54 @@
 
 
 
-;_________________main(使用wrap?里面的函数)___________________
-%include "main/main.s"				;main loop
+;_________________ui(使用wrap?里面的函数)___________________
+%include "ui/ui.s"					;main loop
 ;_______________________________________________________________
 
 
 
 
-;________________wrap1(在wrap1,wrap基础上由软件实现)_________________
-%include "wrap2/f1.s"				;一维
-%include "wrap2/f1.background.s"
-%include "wrap2/f1.foreground.s"
-%include "wrap2/f1.menu.s"
-%include "wrap2/f1.mouse.s"
+;________________main1(在wrap1,wrap基础上由软件实现)_________________
+%include "main1/f1.s"				;一维
+%include "main1/f1.background.s"
+%include "main1/f1.foreground.s"
+%include "main1/f1.menu.s"
+%include "main1/f1.mouse.s"
 
-%include "wrap2/f2.s"				;二维
+%include "main1/f2.s"				;二维
 
-%include "wrap2/f3.s"				;三维
+%include "main1/f3.s"				;三维
 
-%include "wrap2/f4.s"				;终端
-%include "wrap2/f4.list.s"
-%include "wrap2/f4.operator.s"
-%include "wrap2/f4.search.s"
-%include "wrap2/f4.say.s"
+%include "main1/f4.s"				;终端
+%include "main1/f4.list.s"
+%include "main1/f4.search.s"
+%include "main1/f4.say.s"
 
-%include "wrap2/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
+%include "main1/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
 ;________________________________________________________________
 
 
 
 
-;___________________wrap1(各种转换各种数学)________________________
-%include "wrap1/convert.s"			;各种必须的恶心的转换
+;___________________main(真正干活的人)_________________
+%include "main/operator.s"
+;______________________________________________________
+
+
+
+
+;___________________lib1(各种转换各种数学)________________________
+%include "lib1/convert.s"			;各种必须的恶心的转换
 ;______________________________________________________________
 
 
 
 
-;__________________wrap(必须由"系统或环境"提供)______________________
-%include "wrap/interrupt.s"			;isrinstall
-%include "wrap/port.s"				;poweroff,reboot
-%include "wrap/screen.s"			;点阵字符
-%include "wrap/wait.s"				;有事处理，无事睡觉
+;__________________lib(必须由"系统或环境"提供)______________________
+%include "lib/interrupt.s"			;isrinstall
+%include "lib/port.s"				;poweroff,reboot
+%include "lib/screen.s"			;点阵字符
+%include "lib/wait.s"				;有事处理，无事睡觉
 ;_______________________________________________________________
 
 
