@@ -44,6 +44,9 @@ machinesay:
 
 	mov qword [rel length],0x20					;总共写了0x20字节
 
+
+
+
 say:
 	mov rdi,[consolehome+consolesize-8]		;距离buffer开头多少
 	add rdi,consolehome						;加上buffer开头地址

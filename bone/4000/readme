@@ -20,42 +20,37 @@
 
 
 
-;_______________________(主界面)main_______________________
+;_______________________(主循环)main_____________________
 %include "main/main.s"
-%include "main/f1.s"				;一维
-%include "main/f2.s"				;二维
-%include "main/f3.s"				;三维
-%include "main/f4.s"				;终端
-%include "main/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
+;________________________________________________________
+
+
+
+
+;_______________________(主界面)libui________________________
+%include "libui/f1.s"				;一维
+%include "libui/f2.s"				;二维
+%include "libui/f3.s"				;三维
+%include "libui/f4.s"				;终端
+%include "libui/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
 ;______________________________________________________
 
 
 
 
-;____________________(界面的组成部分)soft1______________________
-%include "libsoft1/f1.background.s"
-%include "libsoft1/f1.menu.s"
-%include "libsoft1/f1.mouse.s"
-
-%include "libsoft1/f4.list.s"
-%include "libsoft1/f4.search.s"
-%include "libsoft1/f4.say.s"
-;______________________________________________________________
-
-
-
-
-;_______________________(实际做事的)soft__________________________
+;_________________(实际做事的)soft library_______________________
+%include "libsoft/f1.background.s"
+%include "libsoft/f1.menu.s"
+%include "libsoft/f1.mouse.s"
 %include "libsoft/f1.operator.s"
+
+%include "libsoft/f4.list.s"
+%include "libsoft/f4.say.s"
+%include "libsoft/f4.search.s"
 %include "libsoft/f4.operator.s"
+
+%include "libsoft/convert.s"			;各种必须的恶心的转换
 ;_______________________________________________________________
-
-
-
-
-;______________(各种转换库函数)hard library 1__________________
-%include "libhard1/convert.s"			;各种必须的恶心的转换
-;______________________________________________________________
 
 
 
