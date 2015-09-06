@@ -1,4 +1,4 @@
 linux:
-	gcc -c -fPIC -O2 master.c
+	gcc -c -fPIC -O2 main.c
 cross:
-	x86_64-elf-gcc -c -fPIC -O2 master.c
+	x86_64-elf-gcc -c -fPIC -O2 main.c

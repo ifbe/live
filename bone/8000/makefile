@@ -1,28 +1,34 @@
 binary:
 	make -s -C init linux
-	make -s -C wrap linux
-	make -s -C wrap1 linux
-	make -s -C wrap2 linux
+	make -s -C libhard linux
+	make -s -C libhard1 linux
+	make -s -C libsoft linux
+	make -s -C libsoft1 linux
 	make -s -C main linux
-	ld -T link.ld init/start.o \
-	init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
-	main/master.o \
-	wrap2/parttable.o wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
-	wrap1/convert.o wrap1/remember.o \
-	wrap/journal.o wrap/identify.o wrap/read.o \
+
+	ld -T link.ld \
+	init/start.o init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
+	main/main.o \
+	libsoft1/parttable.o libsoft1/fat.o libsoft1/ntfs.o libsoft1/ext.o \
+	libsoft/remember.o \
+	libhard1/convert.o \
+	libhard/journal.o libhard/identify.o libhard/read.o \
 	-o extremities.bin
 cross:
 	make -s -C init cross
-	make -s -C wrap cross
-	make -s -C wrap1 cross
-	make -s -C wrap2 cross
+	make -s -C libhard cross
+	make -s -C libhard1 cross
+	make -s -C libsoft cross
+	make -s -C libsoft1 cross
 	make -s -C main cross
-	x86_64-elf-ld -T link.ld init/start.o \
-	init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
-	main/master.o \
-	wrap2/parttable.o wrap2/fat.o wrap2/ntfs.o wrap2/ext.o \
-	wrap1/convert.o wrap1/remember.o \
-	wrap/journal.o wrap/identify.o wrap/read.o \
+
+	x86_64-elf-ld -T link.ld \
+	init/start.o init/ide.o init/ahci.o init/xhcihost.o init/xhciport.o \
+	main/main.o \
+	libsoft1/parttable.o libsoft1/fat.o libsoft1/ntfs.o libsoft1/ext.o \
+	libsoft/remember.o \
+	libhard1/convert.o \
+	libhard/journal.o libhard/identify.o libhard/read.o \
 	-o extremities.bin
 clean:
 	rm -f */*.o *.bin

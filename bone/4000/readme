@@ -4,7 +4,7 @@
 
 
 
-;_______________________init(初始化)___________________________
+;_______________________(初始化)init___________________________
 ;%include "init/input.s"		;prepare interrupt
 ;%include "init/8254.s"		;prepare interrupt
 %include "init/3.anscii.s"		;prepare 0x30000
@@ -13,59 +13,58 @@
 ;%include "init/5.irq.s"
 %include "init/6.pciold.s"		;prepare 0x60000
 %include "init/7.bin.s"			;prepare 0x70000
+
+%include "init/start.s"					;main loop
 ;______________________________________________________________
 
 
 
 
-;_________________ui(使用wrap?里面的函数)___________________
-%include "ui/ui.s"					;main loop
-;_______________________________________________________________
-
-
-
-
-;________________main1(在wrap1,wrap基础上由软件实现)_________________
-%include "main1/f1.s"				;一维
-%include "main1/f1.background.s"
-%include "main1/f1.menu.s"
-%include "main1/f1.mouse.s"
-
-%include "main1/f2.s"				;二维
-
-%include "main1/f3.s"				;三维
-
-%include "main1/f4.s"				;终端
-%include "main1/f4.list.s"
-%include "main1/f4.search.s"
-%include "main1/f4.say.s"
-
-%include "main1/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
-;________________________________________________________________
-
-
-
-
-;___________________main(真正干活的人)_________________
-%include "main/f1.operator.s"
-%include "main/f4.operator.s"
+;_______________________(主界面)main_______________________
+%include "main/main.s"
+%include "main/f1.s"				;一维
+%include "main/f2.s"				;二维
+%include "main/f3.s"				;三维
+%include "main/f4.s"				;终端
+%include "main/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
 ;______________________________________________________
 
 
 
 
-;___________________lib1(各种转换各种数学)________________________
-%include "lib1/convert.s"			;各种必须的恶心的转换
+;____________________(界面的组成部分)soft1______________________
+%include "libsoft1/f1.background.s"
+%include "libsoft1/f1.menu.s"
+%include "libsoft1/f1.mouse.s"
+
+%include "libsoft1/f4.list.s"
+%include "libsoft1/f4.search.s"
+%include "libsoft1/f4.say.s"
 ;______________________________________________________________
 
 
 
 
-;__________________lib(必须由"系统或环境"提供)______________________
-%include "lib/interrupt.s"			;isrinstall
-%include "lib/port.s"				;poweroff,reboot
-%include "lib/screen.s"			;点阵字符
-%include "lib/wait.s"				;有事处理，无事睡觉
+;_______________________(实际做事的)soft__________________________
+%include "libsoft/f1.operator.s"
+%include "libsoft/f4.operator.s"
+;_______________________________________________________________
+
+
+
+
+;______________(各种转换库函数)hard library 1__________________
+%include "libhard1/convert.s"			;各种必须的恶心的转换
+;______________________________________________________________
+
+
+
+
+;_________(必须由"系统或环境"提供的库函数)hard library___________
+%include "libhard/interrupt.s"			;isrinstall
+%include "libhard/port.s"				;poweroff,reboot
+%include "libhard/screen.s"			;点阵字符
+%include "libhard/wait.s"				;有事处理，无事睡觉
 ;_______________________________________________________________
 
 
