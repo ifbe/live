@@ -55,7 +55,7 @@ f1show:
 
 
 
-.newmouse:
+.new:
 	mov r8,[rel offset]
 	shr r8,6
 	shl r8,4+16						;(y<<16)
@@ -63,9 +63,6 @@ f1show:
 	and r8w,0x3f
 	shl r8w,4						;(x)
 	call mousenew
-
-.newmenu:
-	add r8,0x00100010
 	call menu
 
 

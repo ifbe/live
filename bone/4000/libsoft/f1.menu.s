@@ -4,15 +4,103 @@
 
 
 
+;________________________________________
+fixxy:
+	add r8,0x00100010
+
+	cmp r8w,1024-256
+	jna .skipx
+	sub r8w,256+16
+.skipx:
+
+	cmp r8,(768-64+16)<<16
+	jb .skipy
+	sub r8,(64+16)<<16
+.skipy:
+
+.return:
+	ret
+;__________________________________________
+
+
+
+	
 ;__________________________________________
 cleanmenu:
-	add r8,0x00100010
+	call fixxy
 	mov r9,r8
 	mov r10,0x03000400				;xres,yres
 	mov r11,0x00400100				;xcount,ycount
 	mov r12,0x1000000				;sourceaddr
 	jmp updatescreen				;先把上一次改掉的地方还原
 ;___________________________________________
+
+
+
+
+;[0x1300000,0x13fffff]:f1foreground(4*256*64=64KB)
+;_____________________________________
+menu:
+	call fixxy
+	push r8
+
+.anscii:
+	lea r9,[rel message0]
+	mov r8,0x1300000
+	call menuanscii16
+	mov r8,0x1300000+4*256*16
+	call menuanscii16
+	mov r8,0x1300000+4*256*16*2
+	call menuanscii16
+	mov r8,0x1300000+4*256*16*3
+	call menuanscii16
+
+
+
+
+.data:
+	mov r8,[rel addr]
+	lea r9,[rel string]
+	call data2hexstring
+	mov r8,0x1300000+4*128
+	lea r9,[rel string]
+	call menuanscii16
+
+	mov r8,[rel offset]
+	lea r9,[rel string]
+	call data2hexstring
+	mov r8,0x1300000+4*128+4*256*16
+	lea r9,[rel string]
+	call menuanscii16
+
+	mov r8,[rel input]
+	lea r9,[rel string]
+	call data2hexstring
+	mov r8,0x1300000+4*128+4*256*16*2
+	lea r9,[rel string]
+	call menuanscii16
+
+	mov r8,0xffffffffffffffff
+	lea r9,[rel string]
+	call data2hexstring
+	mov r8,0x1300000+4*128+4*256*16*3
+	lea r9,[rel string]
+	call menuanscii16
+
+
+
+
+.screen:
+	pop r8
+	xor r9,r9
+	mov r10,0x00400100
+	mov r11,0x00400100
+	mov r12,0x1300000
+	call updatescreen
+
+	ret
+;___________________________________________
+chosen:dq 0
 
 
 
@@ -75,72 +163,6 @@ menuanscii16:
 	call menuanscii
 	ret
 ;_____________________________________
-
-
-
-
-;[0x1300000,0x13fffff]:f1foreground(4*256*64=64KB)
-;_____________________________________
-menu:
-	push r8
-
-.anscii:
-	lea r9,[rel message0]
-	mov r8,0x1300000
-	call menuanscii16
-	mov r8,0x1300000+4*256*16
-	call menuanscii16
-	mov r8,0x1300000+4*256*16*2
-	call menuanscii16
-	mov r8,0x1300000+4*256*16*3
-	call menuanscii16
-
-
-
-
-.data:
-	mov r8,[rel addr]
-	lea r9,[rel string]
-	call data2hexstring
-	mov r8,0x1300000+4*128
-	lea r9,[rel string]
-	call menuanscii16
-
-	mov r8,[rel offset]
-	lea r9,[rel string]
-	call data2hexstring
-	mov r8,0x1300000+4*128+4*256*16
-	lea r9,[rel string]
-	call menuanscii16
-
-	mov r8,[rel input]
-	lea r9,[rel string]
-	call data2hexstring
-	mov r8,0x1300000+4*128+4*256*16*2
-	lea r9,[rel string]
-	call menuanscii16
-
-	mov r8,0xffffffffffffffff
-	lea r9,[rel string]
-	call data2hexstring
-	mov r8,0x1300000+4*128+4*256*16*3
-	lea r9,[rel string]
-	call menuanscii16
-
-
-
-
-.screen:
-	pop r8
-	xor r9,r9
-	mov r10,0x00400100
-	mov r11,0x00400100
-	mov r12,0x1300000
-	call updatescreen
-
-	ret
-;___________________________________________
-chosen:dq 0
 
 
 
