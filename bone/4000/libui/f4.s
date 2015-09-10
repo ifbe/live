@@ -180,48 +180,8 @@ f4event:
 	cmp al,0x1c
 	jne .notenter
 
-.convert:
-	mov r8,[consolehome+consolesize-8]		;距离buffer开头多少
-	add r8,consolehome+5			;加上buffer开头地址
-	call buf2arg
-	call checkandchangeline
-
-.startsearch:
-.here:
-	mov dword [rel failsignal],0
-	call searchhere
-	cmp dword [rel failsignal],0x11111111
-	jne .successreturn
-.memory:
-	mov dword [rel failsignal],0
-	call searchmemory
-	cmp dword [rel failsignal],0x11111111
-	jne .successreturn
-.disk:
-	;mov dword [rel failsignal],0
-	;call searchdisk
-	;cmp dword [rel failsignal],0x11111111
-	;jne .successreturn
-
-.notfound:							;哪都找不到就不找了，报告给用户如下
-	lea r8,[rel notfoundmsg]		;notfound:
-	call machinesay
-		;lea r8,[rel arg0msg]			;arg0=
-		;call say
-		;lea r8,[rel arg1msg]			;arg1=
-		;call say
-		;lea r8,[rel arg2msg]			;arg2=
-		;call say
-		;lea r8,[rel huanhang]
-		;call say
-
-.successreturn:
-	mov qword [rel failsignal],0
-	lea r8,[rel userinput]			;user:
-	call say
-
+	call f4explain
 	mov qword [rel f4change],0xffff
-	ret
 .notenter:
 
 
@@ -272,7 +232,6 @@ f4event:
 .return:
 	ret
 ;___________________________________
-failsignal:dq 0
 
 
 

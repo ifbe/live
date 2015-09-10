@@ -5,13 +5,15 @@
 
 ;____________________________________
 changeaddress:
-	mov rax,[rel input]
+	lea r8,[rel arg1]
+	call string2data
+
+	mov rax,[rel value]
 	mov rbx,rax
 	and rax,0xfffffffffffffc00
 	and rbx,0x3ff
 	mov [rel addr],rax
 	mov [rel offset],rbx
-	mov qword [rel input],0
 	ret
 ;___________________________________
 
@@ -20,13 +22,52 @@ changeaddress:
 
 ;________________________________
 changememory:
-	mov eax,[rel input]
+	lea r8,[rel arg1]
+	call string2data
+
+	mov eax,[rel value]
 	mov rdi,[rel addr]
 	add rdi,[rel offset]
 	mov [rdi],eax
-	mov qword [rel input],0
 	ret
 ;_______________________________
+
+
+
+
+;______________________________________
+searchinthisscreen:
+	lea r8,[rel arg1]
+	call string2data
+
+	mov al,[rel value]
+	mov edi,[rel addr]
+	xor ecx,ecx
+
+.continue:
+	cmp [edi+ecx],al
+	je .findit
+
+	inc ecx
+	cmp ecx,0xc00
+	jb .continue
+	ret
+
+.findit:
+	mov [rel offset],rcx
+	ret
+;___________________________________
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -99,23 +140,3 @@ changememory:
 ;	;?
 ;__________________________________
 ;viewmode:dd 1
-
-
-
-
-;______________________________________
-searchinthisscreen:
-	mov eax,[rel input]
-	mov edi,[rel addr]
-	mov ebx,0
-.loopsearch:
-	cmp [edi+ebx],eax
-	je .findit
-	inc ebx
-	cmp ebx,0xc00
-	jb .loopsearch
-	ret
-.findit:
-	mov [rel offset],rbx
-	ret
-;___________________________________

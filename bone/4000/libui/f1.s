@@ -10,7 +10,7 @@ f1init:
 	mov qword [rel offset],0x420			;r15 offset pointer
 
 	lea rax,[rel dumpanscii]
-	mov [rel hexoranscii],rax
+	mov [rel printmethod],rax
 
 	ret
 ;_______________________________________________
@@ -28,7 +28,7 @@ f1show:
 	cmp dword [rel offsetold],0xffff
 	jb .skipbackground
 
-	call [rel hexoranscii]
+	call [rel printmethod]
 
     mov rbp,0x1000000				;[16m,20m)
 	call writescreen
@@ -71,10 +71,9 @@ f1show:
 .return:
 	ret
 ;_____________________________________________
-hexoranscii:dq 0
+printmethod:dq 0
 
 addr:dq 0				;当前页面位置
-;sector:dq 0				;扇区号
 
 offsetold:dq 0
 offset:dq 0				;“鼠标”位置
@@ -105,11 +104,11 @@ f1event:
 	jz .anscii
 .hex:
 	lea rax,[rel dumphex]
-	mov [rel hexoranscii],rax
+	mov [rel printmethod],rax
 	ret
 .anscii:
 	lea rax,[rel dumpanscii]
-	mov [rel hexoranscii],rax
+	mov [rel printmethod],rax
 	ret
 .nottab:
 
@@ -226,65 +225,13 @@ f1event:
 
 
 
-.enter:
-	cmp al,0x1c
-	jne .notenter
-
-	mov dword [rel offsetold],0xfffff
-
-	jmp changeaddress
-
-	ret
-.notenter:
-
-
-
-
-.backspace:
-	cmp al,0xe
-	jne .notbackspace
-
-	shr qword [rel input],4
-
-	mov rax,[rel offset]
-	mov [rel offsetold],rax
-
-	ret
-.notbackspace:
-
-
-
-
 .other:
-	call scan2hex
+	jmp f4menumessage
 
-	cmp al,0xf					;<0x30
-	ja .return
-
-	shl qword [rel input],4
-	add [rel input],al
-
-	mov rax,[rel offset]
-	mov [rel offsetold],rax
-
-	;cmp byte [rel chosen],1
-	;je changesector
-	;cmp byte [rel chosen],2
-	;je changeoffset
-	;cmp byte [rel chosen],4
-	;je searchinthisscreen
-	;cmp byte [rel chosen],5
-	;je changememory
-	;cmp byte [rel chosen],6
-	;je changeview
-	;cmp byte [rel chosen],7
-	;je poweroff
 
 
 
 .return:
 	ret
 ;____________________________________________________
-input:dq 0
-
 tabkey:db 0				;dumpanscii还是dumphex

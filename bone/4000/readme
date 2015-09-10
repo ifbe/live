@@ -29,26 +29,25 @@
 
 ;_______________________(主界面)libui________________________
 %include "libui/f1.s"				;一维
+%include "libui/f1.background.s"
+%include "libui/f1.menu.s"
+%include "libui/f1.mouse.s"
 %include "libui/f2.s"				;二维
 %include "libui/f3.s"				;三维
 %include "libui/f4.s"				;终端
 %include "libui/f5.s"				;要是屏幕设置失败，会留在0xb8000模式
+%include "libui/f4.list.s"
+%include "libui/f4.say.s"
 ;______________________________________________________
 
 
 
 
 ;_________________(实际做事的)soft library_______________________
-%include "libsoft/f1.background.s"
-%include "libsoft/f1.menu.s"
-%include "libsoft/f1.mouse.s"
+%include "libsoft/f1.explain.s"
 %include "libsoft/f1.operator.s"
-
-%include "libsoft/f4.list.s"
-%include "libsoft/f4.say.s"
-%include "libsoft/f4.search.s"
+%include "libsoft/f4.explain.s"
 %include "libsoft/f4.operator.s"
-
 %include "libsoft/convert.s"			;各种必须的恶心的转换
 ;_______________________________________________________________
 
