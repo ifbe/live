@@ -15,6 +15,9 @@
 #define dirhome 0xa00000
 #define datahome 0xb00000
 
+#define eventhome 0xc00000
+#define consolehome 0xd00000
+#define journalhome 0xe00000
 
 
 
@@ -37,6 +40,7 @@ void hostcommand(DWORD,DWORD,DWORD,DWORD);
 void usbcommand(BYTE bmrequesttype,BYTE brequest,WORD wvalue,WORD windex,WORD wlength,QWORD buffer);
 void initxhci();
 void initahci();
+void initide();
 
 void say(char*,...);
 void diary(char*,...);
@@ -155,7 +159,36 @@ static void directsay(char* first,char* second,char* third,char* fourth,char* fi
 
 
 
-void master()
+void something()
+{
+	//0.清空日志内存
+	QWORD* p=(QWORD*)(journalhome);
+	QWORD temp;
+	for(temp=0;temp<0x20000;temp++) p[temp]=0;
+	diary("oh we have found a whole new world,landing...%x...%x...%x...",3,2,1);
+
+	//二.把操作函数的位置放进/bin以便在终端里直接调
+	remember(0x746e756f6d,		(QWORD)mount);
+	remember(0x796669746e656469,		(QWORD)directidentify);
+	remember(0x6b73696464616572,		(QWORD)directread);
+	remember(0x646d6374736f68,		(QWORD)directhostcmd);
+	remember(0x646d63627375,		(QWORD)directusbcmd);
+	remember(0x6963686174696e69,		(QWORD)directinitahci);
+	remember(0x6963687874696e69,		(QWORD)directinitxhci);
+	remember(0x796173,		(QWORD)directsay);
+}
+void inithardware()
+{
+	//初始化，然后把找到的设备列一个清单
+	initahci();
+
+	//初始化，然后放进清单
+	initide();
+
+	//xhcihost,xhciport(hub+基本的询问)
+	initxhci();
+}
+void initsoftware()
 {
 	QWORD from,to,temp;
 
@@ -181,22 +214,6 @@ void master()
 		}
 	}
 
-
-
-
-	//二.把操作函数的位置放进/bin以便在终端里直接调
-	remember(0x746e756f6d,		(QWORD)mount);
-	remember(0x796669746e656469,		(QWORD)directidentify);
-	remember(0x6b73696464616572,		(QWORD)directread);
-	remember(0x646d6374736f68,		(QWORD)directhostcmd);
-	remember(0x646d63627375,		(QWORD)directusbcmd);
-	remember(0x6963686174696e69,		(QWORD)directinitahci);
-	remember(0x6963687874696e69,		(QWORD)directinitxhci);
-	remember(0x796173,		(QWORD)directsay);
-
-
-
-
 	//三.然后读出前64个扇区,再解释分区表
 	if(*(DWORD*)(diskhome) == 0x656469)return;
 
@@ -215,24 +232,45 @@ void master()
 	{
 		explainmbr(mbrbuffer+0x1be,partitionhome);
 	}
-
-
-
-
+}
+/*
+void autotry()
+{
 	//自动尝试(脑袋已经在内存里,身体暂时还在硬盘里......)
-	//int result;
+	int result;
 
-	//mount("fat");		//try fat
-	//result=use(0x6463,"live");	//cd live
-	//if(result>=0) return;		//成功，滚
-
-
-	//mount("ntfs");		//try ntfs
-	//result=use(0x6463,"live");	//cd live
-	//if(result>=0) return;		//成功，滚
+	mount("fat");		//try fat
+	result=use(0x6463,"live");	//cd live
+	if(result>=0) return;		//成功，滚
 
 
-	//mount("ext");		//try ext
-	//result=use(0x6463,"live");	//cd live
+	mount("ntfs");		//try ntfs
+	result=use(0x6463,"live");	//cd live
+	if(result>=0) return;		//成功，滚
+
+
+	mount("ext");		//try ext
+	result=use(0x6463,"live");	//cd live
 					//不管了，直接滚
+}
+*/
+
+
+
+
+
+void main()
+{
+	something();
+
+	//1.初始化硬件
+	inithardware();
+
+	//2.初始化软件
+	initsoftware();
+
+	//3.初始化界面
+
+	//4.
+	//autotry()
 }

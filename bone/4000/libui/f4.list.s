@@ -11,7 +11,7 @@
 %define dirhome 0xa00000
 %define filehome 0xb00000
 
-%define consolehome 0xc00000
+%define consolehome 0xd00000
 %define consolesize 0x100000
 [bits 64]
 

@@ -1,4 +1,4 @@
-%define consolehome 0xc00000
+%define consolehome 0xd00000
 %define consolesize 0x100000
 [bits 64]
 
@@ -181,7 +181,9 @@ f4event:
 	jne .notenter
 
 	call f4explain
+
 	mov qword [rel f4change],0xffff
+	ret
 .notenter:
 
 
