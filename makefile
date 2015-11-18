@@ -5,16 +5,16 @@ binary:				#linuxer only
 	make -s -C 2000
 	make -s -C 4000
 	make -s -C 8000
-	nasm core.s -o core.bin
-	nasm readme -o core.img
+	nasm corebin.s -o core.bin
+	nasm coreimg.s -o core.img
 cross:		#windows and mac user
 	make -s -C 0.old
 	make -s -C 1000
 	make -s -C 2000
 	make -s -C 4000
 	make -s -C 8000 cross
-	nasm core.s -o core.bin
-	nasm readme -o core.img
+	nasm corebin.s -o core.bin
+	nasm coreimg.s -o core.img
 
 
 
