@@ -1,0 +1,143 @@
+//(2^8)*(2^8)*(2^8)*(2^2)=2^(8+8+8+2)=2^26B=64*1024*1024B=64M
+#include<stdio.h>
+#define u64 long long
+double cosine(double x);
+double sine(double x);
+static double d=0.3,e=0.6,f=0;
+
+
+void init()
+{
+	//int* p;
+	int x,y,z;
+
+//[64M,128M],原点：0x6000000,4B*0x100*0x100*0x100=0x4000000=64M
+//for(p=(int*)0x400000;p<(int*)0x800000;p++){*p=0x0;}
+//for(x=-128;x<0;x++) *(int*)(u64)(0x6000000+x*4)=(int)(256+x);
+//for(x=0;x<128;x++) *(int*)(u64)(0x6000000+x*4)=(int)x;
+//for(y=-128;y<0;y++) *(int*)(u64)(0x6000000+y*4*256)=((int)(256+y))<<8;
+//for(y=0;y<128;y++) *(int*)(u64)(0x6000000+y*4*256)=((int)y)<<8;
+//for(z=-128;z<0;z++) *(int*)(u64)(0x6000000+z*4*256*256)=((int)(256+z))<<16;
+//for(z=0;z<128;z++) *(int*)(u64)(0x6000000+z*4*256*256)=((int)z)<<16;
+	//*(int*)(u64)(0x6000000+4*x+4*y*256+4*z*256*256)=0xffffff;
+
+
+	for(x=-128;x<128;x++)
+	{
+		for(y=-128;y<128;y++)
+		{
+			for(z=-128;z<128;z++)
+			{
+				coordinate(x,y,z,0);
+			}
+		}
+	}
+	for(x=25;x<50;x++)
+	{
+		for(y=-10;y<10;y++)
+		{
+			for(z=-20;z<20;z++)
+			{
+				coordinate(x,y,z,0xffffffff);
+			}
+		}
+	}
+	for(x=-128;x<128;x++)
+	{
+		coordinate(x,0,0,0xff);
+	}
+	for(y=-128;y<128;y++)
+	{
+		coordinate(0,y,0,0xff00);
+	}
+	for(z=-128;z<128;z++)
+	{
+		coordinate(0,0,z,0xff0000);
+	}
+}
+
+
+void display()
+{
+	int u,v,w;	//眼中坐标
+	int x,y,z;	//世界坐标
+	double cd=cosine(d);
+	double ce=cosine(e);
+	double cf=cosine(f);
+	double sd=sine(d);
+	double se=sine(e);
+	double sf=sine(f);
+
+	for(v=-128;v<128;v++)
+	{
+	for(u=-128;u<128;u++)
+	{
+		unsigned int color=0;
+		for(w=-128;w<128;w++)
+		{
+			x=(int)(ce*cf*(double)u+(sd*se*cf-cd*sf)*(double)v+(sd*sf+cd*se*cf)*(double)w);
+			y=(int)(ce*sf*(double)u+(cd*cf+sd*se*sf)*(double)v+(cd*se*sf-sd*cf)*(double)w);
+			z=(int)(se*(double)u+sd*ce*(double)v+cd*ce*(double)w);
+			//int* world=(int*)(u64)((z*256*256+y*256+x)*4+0x6000000);
+			if(x>=-128&&x<128&&y>=-128&&y<128&&z>=-128&&z<128)
+			{
+				unsigned int temp=readcoordinate(x,y,z);
+				if(temp!=0)
+				{
+					color=temp;
+					printf("(%d,%d,%d):%x\n",x,y,z,color);
+					//printf("%d,%d,%d\n",x,y,z);
+				}
+				break;
+			}
+		}
+		//printf("color:%d\n",color);
+		point(u+512,384-v,color);
+	}
+	}
+	writescreen();
+}
+void main()
+{
+	init();
+	while(1)
+	{
+		display();
+		int key=waitevent();
+		switch(key)
+		{
+			case -1:return;
+			case 0x1b:return;
+			case 0x40000050:		//left
+			{
+				d=d+0.01;
+				break;
+			}
+			case 0x4000004f:		//right
+			{
+				d=d-0.01;
+				break;
+			}
+			case 0x40000052:		//up
+			{
+				e=e-0.01;
+				break;
+			}
+			case 0x40000051:		//down
+			{
+				e=e+0.01;
+				break;
+			}
+			case 0x33:
+			{
+				f=f-0.01;
+				break;
+			}
+			case 0x34:
+			{
+				f=f+0.01;
+				break;
+			}
+		}
+	}
+}

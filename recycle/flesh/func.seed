@@ -1,0 +1,127 @@
+#name:	game//2048/main/2048.c
+#size:	6707(0x1a33)
+cubie
+{
+	160;j<
+	point
+	point
+	160;i<
+	point
+	point
+	point
+	decimal
+}
+power
+{
+}
+init
+{
+	table[random
+	4][random
+	power
+	random
+}
+printworld
+{
+	cubie
+	writescreen
+}
+newone
+{
+	random
+	power
+	random
+}
+left
+{
+	newone
+}
+right
+{
+	newone
+}
+up
+{
+	newone
+}
+down
+{
+	newone
+}
+main
+{
+	init
+	printworld
+	waitevent
+	left
+	right
+	up
+	down
+}
+
+
+
+
+#name:	game//2048/main/anscii.c
+#size:	12658(0x3172)
+anscii
+{
+	point
+	point
+	point
+	point
+}
+decimal
+{
+	anscii
+	anscii
+}
+string
+{
+	anscii
+}
+
+
+
+
+#name:	game//2048/wrap/bare/input.c
+#size:	1786(0x6fa)
+convert
+{
+	return
+}
+compare
+{
+}
+sleep
+{
+	asm
+}
+waitevent
+{
+	compare
+	sleep
+	convert
+}
+
+
+
+
+#name:	game//2048/wrap/bare/random.c
+#size:	158(0x9e)
+random
+{
+}
+
+
+
+
+#name:	game//2048/wrap/bare/screen.c
+#size:	241(0xf1)
+point
+{
+	base+
+}
+writescreen
+{
+}

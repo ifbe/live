@@ -1,0 +1,41 @@
+#name:	wrap//bare/input.c
+#size:	1786(0x6fa)
+convert
+{
+	return
+}
+compare
+{
+}
+sleep
+{
+	asm
+}
+waitevent
+{
+	compare
+	sleep
+	convert
+}
+
+
+
+
+#name:	wrap//bare/random.c
+#size:	158(0x9e)
+random
+{
+}
+
+
+
+
+#name:	wrap//bare/screen.c
+#size:	241(0xf1)
+point
+{
+	base+
+}
+writescreen
+{
+}

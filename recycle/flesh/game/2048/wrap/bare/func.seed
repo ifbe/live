@@ -1,0 +1,55 @@
+#name:	./input.c
+#size:	1786(0x6fa)
+convert
+{
+	return
+}
+compare
+{
+}
+sleep
+{
+	asm
+}
+waitevent
+{
+	compare
+	sleep
+	convert
+}
+
+
+
+
+#name:	./random.c
+#size:	158(0x9e)
+random
+{
+}
+
+
+
+
+#name:	./screen.c
+#size:	241(0xf1)
+point
+{
+	base+
+}
+writescreen
+{
+}
+
+
+
+
+#name:	./start.c
+#size:	30(0x1e)
+start
+{
+	main
+}
+
+
+
+
