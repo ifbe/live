@@ -307,47 +307,45 @@ preserverdx:dq 0;入:r8,r9,r10,r11......
 ;变:rax,r8,r9 + data2hexstring
 ;_____________________________________
 gettime:
-	xor rax,rax				;must clean
+	xor rax,rax				;[63,56]:zero
 
-	mov al,0x32				;[63:56]:centry
+	mov al,0x32				;[55,48]:centry
 	out 0x70,al
 	in al,0x71
 
 	shl rax,8
-	mov al,9				;[55,48]:year
+	mov al,9				;[47,40]:year
 	out 0x70,al
 	in al,0x71
 
 	shl rax,8
-	mov al,8				;[47,40]:month
+	mov al,8				;[3f,32]:month
 	out 0x70,al
 	in al,0x71
 
 	shl rax,8
-	mov al,7				;[39,32]:day
+	mov al,7				;[31,24]:day
 	out 0x70,al
 	in al,0x71
 
 	shl rax,8
-	mov al,4				;[31,24]:hour
+	mov al,4				;[23,16]:hour
 	out 0x70,al
 	in al,0x71
 
 	shl rax,8
-	mov al,2				;[23,16]:minute
+	mov al,2				;[15,8]:minute
 	out 0x70,al
 	in al,0x71
 
 	shl rax,8
-	mov al,0				;[15,8]:second
+	mov al,0				;[7,0]:second
 	out 0x70,al
 	in al,0x71
-	shl rax,8
 
 	mov r8,rax
 	lea r9,[rel time]
 	call data2hexstring
-	mov word [rel time+0xe],0x2020		;milesecond
 
 	ret
 

@@ -32,7 +32,7 @@ img2vmdk:
 
 #test
 kvm:
-	sh -c "tool/kvm $(shell pwd)/core.img"
+	tool/kvm $(shell pwd)/core.img
 qemu:
 	tool/qemu $(shell pwd)/core.img
 bochs:

@@ -2,7 +2,7 @@
 dir=`dirname $0`
 
 
-sudo qemu-kvm \
+sudo kvm \
 -monitor stdio \
 -smp 2 \
 -m 512 \
