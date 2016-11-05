@@ -2,8 +2,8 @@
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
-#define journalhome 0xd00000
-#define window 0x1000000
+#define journalhome 0x100000	//1m
+#define window 0x1000000		//16m
 //libboot
 void initconsole();
 void diary(char*,...);

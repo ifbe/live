@@ -1,42 +1,50 @@
-#define BYTE unsigned char
-#define WORD unsigned short
-#define DWORD unsigned int
-#define QWORD unsigned long long
-
-#define pcihome 0x60000
-
+#define u8 unsigned char
+#define u16 unsigned short
+#define u32 unsigned int
+#define u64 unsigned long long
 #define idehome 0x400000
 
 
 
 
 //用了别人的函数
+u32 in32(u32 addr);
+void out32(u32 port, u32 addr);
 void diary(char* , ...);
 
 
 
 
-static unsigned int finddevice()
+static unsigned int searchpci()
 {
-	QWORD* addr=(QWORD*)(pcihome);
-	int i;
-	unsigned int temp;
-	for(i=0;i<0x80;i++)				//每?0x40
+	int bus,slot,func;
+	u32 temp,data;
+	for(bus=0;bus<256;bus++)
 	{
-		temp=addr[8*i+1];
-		temp&=0xffff0000;
-		if(temp==0x01010000)
+		for(slot=0;slot<32;slot++)
 		{
-			addr[8*i+3]=0x656469;			//ide
+			for(func=0;func<8;func++)
+			{
+				temp = 0x80000000 | (bus<<16) | (slot<<11) + (func<<8) + 8;
+				out32(0xcf8, temp);
 
-			return addr[8*i+2];		//1.返回要??的??的portaddress
+				data = in32(0xcfc);
+				if((data>>16) == 0x0101)
+				{
+					return temp & 0xffffff00;
+				}
+			}
 		}
 	}
-return 0;
+	return 0;
 }
-static void rememberharddisk(QWORD name,QWORD command,QWORD control)
+
+
+
+
+static void rememberharddisk(u64 name,u64 command,u64 control)
 {
-	QWORD* p=(QWORD*)idehome;
+	u64* p=(u64*)idehome;
 	int i;
 
 	//最多0x1000字节,每0x40字节一个记录
@@ -53,25 +61,7 @@ static void rememberharddisk(QWORD name,QWORD command,QWORD control)
 	p[i+2]=command;
 	p[i+4]=control;
 }
-
-
-
-
-
-
-
-
-static inline void out32( unsigned short port, unsigned int val )
-{
-    asm volatile( "outl %0, %1" : : "a"(val), "Nd"(port) );
-}
-static inline unsigned int in32( unsigned short port )
-{
-    unsigned int ret;
-    asm volatile( "inl %1, %0"  : "=a"(ret) : "Nd"(port) );
-    return ret;
-}
-static unsigned int probepci(QWORD addr)
+static unsigned int probepci(u64 addr)
 {
 //?：pci地址
 //出：?存地址
@@ -86,7 +76,7 @@ static unsigned int probepci(QWORD addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	temp=(QWORD)in32(0xcfc);
+	temp=(u64)in32(0xcfc);
 	diary("    pci sts&cmd:%x",temp);
 
 	//ide port
@@ -120,14 +110,14 @@ static unsigned int probepci(QWORD addr)
 
 void initide()
 {
-	QWORD addr;
+	u64 addr;
 	diary("@initide");
 
 	//find device
-	addr=finddevice();		//get port addr of this storage device
-	if(addr==0) return;
+	addr = searchpci();		//get port addr of this storage device
+	if(addr == 0) return;
 
 	//probe pci
-	addr=probepci(addr);		//memory addr of ahci
-	if(addr==0) return;
+	addr = probepci(addr);		//memory addr of ahci
+	if(addr == 0) return;
 }

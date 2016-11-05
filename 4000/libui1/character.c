@@ -28,6 +28,6 @@ void showprint()
 
 void initcharacter(void* addr)
 {
-	logaddr = (void*)0xe00000;
+	logaddr = (void*)0x100000;
 	window = addr;
 }

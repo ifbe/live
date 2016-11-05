@@ -2,22 +2,22 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 #define QWORD unsigned long long
-
+//libboot
+#define journalhome 0x100000
+//libhard
 #define idehome 0x400000
 #define ahcihome 0x400000
 #define xhcihome 0x600000
 #define usbhome 0x700000
-
+//libsoft
 #define diskhome 0x800000
 	#define partitionhome diskhome+0x10000
 	#define mbrbuffer diskhome+0x20000
 #define fshome 0x900000
 #define dirhome 0xa00000
 #define datahome 0xb00000
+//libui
 
-#define eventhome 0xc00000
-#define consolehome 0xd00000
-#define journalhome 0xe00000
 
 
 

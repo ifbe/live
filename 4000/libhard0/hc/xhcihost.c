@@ -1,9 +1,7 @@
-#define BYTE unsigned char
-#define WORD unsigned short
-#define DWORD unsigned int
-#define QWORD unsigned long long
-
-#define pcihome 0x60000
+#define u8 unsigned char
+#define u16 unsigned short
+#define u32 unsigned int
+#define u64 unsigned long long
 
 #define xhcihome 0x600000
 #define ersthome xhcihome+0x10000
@@ -17,13 +15,15 @@
 
 
 
-static QWORD xhciport=0;
-static QWORD xhciaddr=0;
+static u64 xhciport=0;
+static u64 xhciaddr=0;
 
 
 
 
 //用了别人的函数
+u32 in32(u32 addr);
+void out32(u32 port, u32 addr);
 void diary(char* , ...);
 void initusb();
 
@@ -39,47 +39,42 @@ void initusb();
 //本函数作用是：
 //1.返回要驱动的设备的portaddress
 //2.填上[0x18,0x1f],(为了工整好看)
-void findxhci()
+int searchpci()
 {
-	QWORD* addr=(QWORD*)(pcihome);
-	DWORD temp;
-	int i;
-	for(i=0;i<0x80;i++)
+	int bus,slot,func;
+	u32 temp,data;
+	for(bus=0;bus<256;bus++)
 	{
-		temp=addr[8*i+1];
-		temp&=0xffffff00;
-
-		if(temp==0x0c033000)
+		for(slot=0;slot<32;slot++)
 		{
-			xhciport=addr[8*i+2];
-			addr[8*i+3]=0x69636878;
+			for(func=0;func<8;func++)
+			{
+				temp = 0x80000000 | (bus<<16) | (slot<<11) + (func<<8) + 8;
+				out32(0xcf8, temp);
 
-			return;
+				data = in32(0xcfc);
+				if((data>>8) == 0x0c0330)
+				{
+					return temp & 0xffffff00;
+				}
+			}
 		}
 	}
+	return 0;
 }
 
 
 
 
-static inline void out32( unsigned short port, unsigned int val )
-{
-	asm volatile( "outl %0, %1"  : : "a"(val), "Nd"(port) );
-}
-static inline unsigned int in32( unsigned short port )
-{
-	unsigned int ret;
-	asm volatile( "inl %1, %0"  : "=a"(ret) : "Nd"(port) );
-	return ret;
-}/*
+/*
 void explaincapability()
 {
 diary("pci cap{");
 
-	DWORD offset;
-	DWORD temp;
-	DWORD type;
-	DWORD next;
+	u32 offset;
+	u32 temp;
+	u32 type;
+	u32 next;
 
 	out32(0xcf8,xhciport+0x34);
 	offset=in32(0xcfc)&0xff;
@@ -157,18 +152,18 @@ diary("pci cap{");
 		{
 			diary("msix@%x\n",offset);
 break;
-			DWORD msixcontrol;
-			DWORD* msixtable;
-			DWORD* pendingtable;
+			u32 msixcontrol;
+			u32* msixtable;
+			u32* pendingtable;
 
 			//get mmio addr,msixtable addr,pendingtable addr
 			out32(0xcf8,xhciport+0x10);
 			xhciaddr=in32(0xcfc)&0xfffffff0;
 
 			out32(0xcf8,xhciport+offset+8);
-			pendingtable=(DWORD*)( xhciaddr+in32(0xcfc) );
+			pendingtable=(u32*)( xhciaddr+in32(0xcfc) );
 			out32(0xcf8,xhciport+offset+4);
-			msixtable=(DWORD*)( xhciaddr+in32(0xcfc) );
+			msixtable=(u32*)( xhciaddr+in32(0xcfc) );
 			out32(0xcf8,xhciport+offset);
 			msixcontrol=in32(0xcfc);
 			out32(0xcf8,xhciport+offset);
@@ -214,19 +209,21 @@ diary("}\n",0);
 
 
 
-QWORD probepci()
+u64 probepci()
 {
+	u64 temp;
 	diary("(xhci)portaddr:%x{\n",xhciport);
 
 	//disable pin interrupt+enable bus mastering
 	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
 	out32(0xcf8,xhciport+0x4);
-	DWORD temp=in32(0xcfc)|(1<<10)|(1<<2);
+	temp=in32(0xcfc)|(1<<10)|(1<<2);
+
 	out32(0xcf8,xhciport+0x4);
 	out32(0xcfc,temp);
 
 	out32(0xcf8,xhciport+0x4);
-	diary("	sts&cmd:%x\n",(QWORD)in32(0xcfc));
+	diary("	sts&cmd:%x\n",(u64)in32(0xcfc));
 
 	//deal with capability list
 	//explaincapability();
@@ -240,11 +237,11 @@ QWORD probepci()
 
 
 
-int ownership(QWORD addr)
+int ownership(u64 addr)
 {
 	//set hc os owned semaphore
 	int timeout;
-	volatile DWORD* temp=(DWORD*)addr;
+	volatile u32* temp=(u32*)addr;
 	temp[0]=temp[0] | 0x1000000;
 
 
@@ -273,14 +270,14 @@ int ownership(QWORD addr)
 		}
 	}
 }
-void supportedprotocol(QWORD addr)
+void supportedprotocol(u64 addr)
 {
-	QWORD* memory=(QWORD*)(xhcihome+0x40);
+	u64* memory=(u64*)(xhcihome+0x40);
 	int i;
-	QWORD first=(*(DWORD*)addr) >> 16;
-	QWORD third=*(DWORD*)(addr+8);
-	QWORD start=third & 0xff;
-	QWORD count=(third>>8) & 0xff;
+	u64 first=(*(u32*)addr) >> 16;
+	u64 third=*(u32*)(addr+8);
+	u64 start=third & 0xff;
+	u64 count=(third>>8) & 0xff;
 
 	//diary("first:",first);
 	if(first<0x100)		//[0,0xff]
@@ -307,17 +304,17 @@ void supportedprotocol(QWORD addr)
 
 
 
-void explainxecp(QWORD addr)
+void explainxecp(u64 addr)
 {
-	DWORD temp;
+	u32 temp;
 
 	diary("	explain xecp@%x{\n",addr);
 	while(1)
 	{
 		diary("	@%x\n",addr);
-		temp=*(DWORD*)addr;
-		BYTE type=temp&0xff;
-		QWORD next=(temp>>6)&0x3fc;
+		temp=*(u32*)addr;
+		u8 type=temp&0xff;
+		u64 next=(temp>>6)&0x3fc;
 
 		diary("	cap:%x\n",type);
 		switch(type)
@@ -350,16 +347,16 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 
 //基本信息
 //diary("base information{");
-	QWORD version=(*(DWORD*)xhciaddr) >> 16;
-	QWORD caplength=(*(DWORD*)xhciaddr) & 0xffff;
+	u64 version=(*(u32*)xhciaddr) >> 16;
+	u64 caplength=(*(u32*)xhciaddr) & 0xffff;
 
-	QWORD hcsparams1=*(DWORD*)(xhciaddr+4);
-	QWORD hcsparams2=*(DWORD*)(xhciaddr+8);
-	QWORD hcsparams3=*(DWORD*)(xhciaddr+0xc);
-	QWORD capparams=*(DWORD*)(xhciaddr+0x10);
+	u64 hcsparams1=*(u32*)(xhciaddr+4);
+	u64 hcsparams2=*(u32*)(xhciaddr+8);
+	u64 hcsparams3=*(u32*)(xhciaddr+0xc);
+	u64 capparams=*(u32*)(xhciaddr+0x10);
 
-	volatile QWORD operational=xhciaddr+caplength;
-	QWORD runtime=xhciaddr+(*(DWORD*)(xhciaddr+0x18));
+	volatile u64 operational=xhciaddr+caplength;
+	u64 runtime=xhciaddr+(*(u32*)(xhciaddr+0x18));
 
 	//diary("	version:%x\n",version);
 	//diary("	caplength:%x\n",caplength);
@@ -377,7 +374,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 
 
 //mostly,grab ownership
-	QWORD xecp=xhciaddr+( (capparams >> 16) << 2 );
+	u64 xecp=xhciaddr+( (capparams >> 16) << 2 );
 	explainxecp(xecp);
 
 
@@ -385,15 +382,15 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 
 //打印bios初始化完后的状态
 //diary("before we destory everything{\n");
-	QWORD usbcommand=*(DWORD*)operational;
-	QWORD usbstatus=*(DWORD*)(operational+4);
-	QWORD pagesize=0x1000;
-	QWORD crcr=*(DWORD*)(operational+0x18);
-	QWORD dcbaa=*(DWORD*)(operational+0x30);
-	QWORD config=*(DWORD*)(operational+0x38);
+	u64 usbcommand=*(u32*)operational;
+	u64 usbstatus=*(u32*)(operational+4);
+	u64 pagesize=0x1000;
+	u64 crcr=*(u32*)(operational+0x18);
+	u64 dcbaa=*(u32*)(operational+0x30);
+	u64 config=*(u32*)(operational+0x38);
 
 	//蛋疼的计算pagesize
-	QWORD psz=*(DWORD*)(operational+8);
+	u64 psz=*(u32*)(operational+8);
 	while(1)
 	{
 		if(psz == 0){
@@ -430,14 +427,14 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 		diary("		running,stopping\n");
 
 		//按下停止按钮
-		*(DWORD*)operational=usbcommand&0xfffffffe;
+		*(u32*)operational=usbcommand&0xfffffffe;
 
 		//等一会
-		QWORD wait1=0xfffffff;
+		u64 wait1=0xfffffff;
 		for(;wait1>0;wait1--) asm("nop");
 
 		//xhci停了吗
-		usbstatus=*(DWORD*)(operational+4);
+		usbstatus=*(u32*)(operational+4);
 		if( (usbstatus&0x1) == 0)	//HCH位为0，即正在运行
 		{
 			diary("		not stop\n");
@@ -446,14 +443,14 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	}
 
 	//按下复位按钮
-	usbcommand=*(DWORD*)operational;
-	*(DWORD*)operational=usbcommand|2;
+	usbcommand=*(u32*)operational;
+	*(u32*)operational=usbcommand|2;
 
 	//等一会
-	QWORD wait2=0xfffffff;
+	u64 wait2=0xfffffff;
 	for(;wait2>0;wait2--) asm("nop");
 
-	usbcommand=*(DWORD*)(operational);
+	usbcommand=*(u32*)(operational);
 	if((usbcommand&0x2) == 2)
 	{
 		diary("	reset failed:%x\n",usbcommand);
@@ -461,7 +458,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	}
 
 	//controller not ready=1就是没准备好
-	usbstatus=*(DWORD*)(operational+4);
+	usbstatus=*(u32*)(operational+4);
 	if( (usbstatus&0x800) == 0x800 )
 	{
 		diary("	controller not ready:%x\n",usbstatus);
@@ -482,25 +479,26 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 //----------------------------------------------------------
 	diary("	2.maxslot&dcbaa&crcr:");
 	//maxslot=deviceslots
-	*(DWORD*)(operational+0x38)=(*(DWORD*)(xhciaddr+4)) &0xff;
-	diary("		maxslot:%x\n",*(DWORD*)(operational+0x38) );
+	*(u32*)(operational+0x38)=(*(u32*)(xhciaddr+4)) &0xff;
+	diary("		maxslot:%x\n",*(u32*)(operational+0x38) );
 
 	//dcbaa(scratchpad)
-	*(DWORD*)(operational+0x30)=dcbahome;
-	*(DWORD*)(operational+0x34)=0;
+	*(u32*)(operational+0x30)=dcbahome;
+	*(u32*)(operational+0x34)=0;
 	diary("		dcbaa:%x\n",dcbahome);
-	*(DWORD*)(dcbahome) = scratchpadhome;		//用了宏，加括号
-	*(DWORD*)(dcbahome+4)=0;					//高位
+
+	*(u32*)(dcbahome) = scratchpadhome;		//用了宏，加括号
+	*(u32*)(dcbahome+4)=0;					//高位
 	diary("		scratchpad:%x\n",scratchpadhome);
 
 	//command linktrb:lastone point to firstone
-	*(QWORD*)(cmdringhome+0xfff*0x10)=cmdringhome;
-	*(DWORD*)(cmdringhome+0xfff*0x10+8)=0;
-	*(DWORD*)(cmdringhome+0xfff*0x10+0xc)=(6<<10)+2;
+	*(u64*)(cmdringhome+0xfff*0x10)=cmdringhome;
+	*(u32*)(cmdringhome+0xfff*0x10+8)=0;
+	*(u32*)(cmdringhome+0xfff*0x10+0xc)=(6<<10)+2;
 
 	//crcr
-	*(DWORD*)(operational+0x18)=cmdringhome+1;
-	*(DWORD*)(operational+0x1c)=0;
+	*(u32*)(operational+0x18)=cmdringhome+1;
+	*(u32*)(operational+0x1c)=0;
 	diary("		crcr:%x\n",cmdringhome+1);
 
 
@@ -521,30 +519,30 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 
 	//-------------define event ring-----------
 	//build the "event ring segment table"
-	*(QWORD*)(ersthome)=eventringhome;
-	*(QWORD*)(ersthome+0x8)=0x100;		//0x1000*0x10=0x10000
+	*(u64*)(ersthome)=eventringhome;
+	*(u64*)(ersthome+0x8)=0x100;		//0x1000*0x10=0x10000
 						//but!!!my asus n55 must set it below 0x100
 
 	//ERSTSZ
-	*(DWORD*)(runtime+0x28)=1;
+	*(u32*)(runtime+0x28)=1;
 
 	//ERSTBA
-	*(DWORD*)(runtime+0x30)=ersthome;
-	*(DWORD*)(runtime+0x34)=0;	//这一行必须有
+	*(u32*)(runtime+0x30)=ersthome;
+	*(u32*)(runtime+0x34)=0;	//这一行必须有
 
 	//ERDP
-	*(DWORD*)(runtime+0x38)=eventringhome;
-	*(DWORD*)(runtime+0x3c)=0;	//这一行也必须有
+	*(u32*)(runtime+0x38)=eventringhome;
+	*(u32*)(runtime+0x3c)=0;	//这一行也必须有
 
 	//enable EWE|HSEIE|INTE(0x400|0x8|0x4) in USBCMD
-	//*(DWORD*)operational |= 0x40c;
-	//*(DWORD*)operational = (*(DWORD*)operational) | 0xc;	//no interrupt
+	//*(u32*)operational |= 0x40c;
+	//*(u32*)operational = (*(u32*)operational) | 0xc;	//no interrupt
 
 	//IMOD
-	*(DWORD*)(runtime+0x24)=4000;
+	*(u32*)(runtime+0x24)=4000;
 
 	//IMAN
-	*(DWORD*)(runtime+0x20) = (*(DWORD*)(runtime+0x20)) | 0x2;
+	*(u32*)(runtime+0x20) = (*(u32*)(runtime+0x20)) | 0x2;
 
 	diary("		event ring@%x\n",eventringhome);
 
@@ -556,15 +554,15 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 //-------------------------------------------------
 	diary("	4.turnon\n");
 	//turn on
-	*(DWORD*)operational = (*(DWORD*)operational) | 0x1;
+	*(u32*)operational = (*(u32*)operational) | 0x1;
 
 	//不用等?
-	//QWORD wait3=0xffffff;
+	//u64 wait3=0xffffff;
 	//while(wait3--)asm("nop");
 
 	//
-	//diary("	command:%x\n",*(DWORD*)operational);
-	//diary("	status:%x\n",*(DWORD*)(operational+4));
+	//diary("	command:%x\n",*(u32*)operational);
+	//diary("	status:%x\n",*(u32*)(operational+4));
 
 	diary("	}\n");
 
@@ -587,18 +585,18 @@ void initxhci()
 	diary("@initxhci");
 
 	//find pci address
-	findxhci();
-	if(xhciport==0) goto end;
+	xhciport = searchpci();
+	if(xhciport == 0) goto end;
 
 	//pci部分
 	probepci();
-	if(xhciaddr==0) goto end;
+	if(xhciaddr == 0) goto end;
 
 	//stop xhci
 	//probexhci();
 
 	//clean home(1m)
-	BYTE* p=(BYTE*)(xhcihome);
+	u8* p=(u8*)(xhcihome);
 	int i;
 	for(i=0;i<0x100000;i++) p[i]=0;
 

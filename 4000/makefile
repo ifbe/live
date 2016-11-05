@@ -13,12 +13,23 @@ binary:
 	init/start.o init/main.o \
 	libboot0/print.o \
 	libboot1/debug.o \
-	libsoft0/convert.o libsoft0/remember.o \
-	libsoft1/parttable.o libsoft1/fat.o libsoft1/ntfs.o libsoft1/ext.o \
-	libhard0/ide.o libhard0/ahci.o libhard0/xhcihost.o libhard0/xhciport.o \
-	libhard1/identify.o libhard1/read.o \
+	libhard0/fp.o \
+	libhard0/port.o \
+	libhard0/ide.o \
+	libhard0/ahci.o \
+	libhard0/xhcihost.o \
+	libhard0/xhciport.o \
+	libhard1/identify.o \
+	libhard1/read.o \
+	libsoft0/convert.o \
+	libsoft0/remember.o \
+	libsoft1/parttable.o \
+	libsoft1/fat.o \
+	libsoft1/ntfs.o \
+	libsoft1/ext.o \
 	libui0/screen.o \
-	libui1/ascii.o libui1/character.o \
+	libui1/ascii.o \
+	libui1/character.o \
 	-o extremities.bin
 cross:
 	make -s -C init cross
@@ -35,12 +46,23 @@ cross:
 	init/start.o init/main.o \
 	libboot0/print.o \
 	libboot1/debug.o \
-	libsoft0/convert.o libsoft0/remember.o \
-	libsoft1/parttable.o libsoft1/fat.o libsoft1/ntfs.o libsoft1/ext.o \
-	libhard0/ide.o libhard0/ahci.o libhard0/xhcihost.o libhard0/xhciport.o \
-	libhard1/identify.o libhard1/read.o \
+	libhard0/fp.o \
+	libhard0/port.o \
+	libhard0/ide.o \
+	libhard0/ahci.o \
+	libhard0/xhcihost.o \
+	libhard0/xhciport.o \
+	libhard1/identify.o \
+	libhard1/read.o \
+	libsoft0/convert.o \
+	libsoft0/remember.o \
+	libsoft1/parttable.o \
+	libsoft1/fat.o \
+	libsoft1/ntfs.o \
+	libsoft1/ext.o \
 	libui0/screen.o \
-	libui1/ascii.o libui1/character.o \
+	libui1/ascii.o \
+	libui1/character.o \
 	-o extremities.bin
 clean:
 	rm -f */*.o *.bin

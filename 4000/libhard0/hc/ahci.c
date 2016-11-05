@@ -1,9 +1,8 @@
-#define BYTE unsigned char
-#define WORD unsigned short
-#define DWORD unsigned int
-#define QWORD unsigned long long
-
-#define pcihome 0x60000
+#define u8 unsigned char
+#define u16 unsigned short
+#define u32 unsigned int
+#define u64 unsigned long long
+//
 #define ahcihome 0x400000
 #define receivefisbuffer ahcihome+0x10000
 #define cmdlistbuffer ahcihome+0x20000
@@ -13,6 +12,8 @@
 
 
 //用了别人的函数
+u32 in32(u32 addr);
+void out32(u32 port, u32 addr);
 void diary(char* , ...);
 
 
@@ -21,74 +22,73 @@ void diary(char* , ...);
 typedef struct tagHBA_CMD_HEADER
 {
 	// DW0
-	BYTE	cfl:5;	// Command FIS length in DWORDS, 2 ~ 16
-	BYTE	a:1;	// ATAPI
-	BYTE	w:1;	// Write, 1: H2D, 0: D2H
-	BYTE	p:1;	// Prefetchable
+	u8	cfl:5;	// Command FIS length in DWORDS, 2 ~ 16
+	u8	a:1;	// ATAPI
+	u8	w:1;	// Write, 1: H2D, 0: D2H
+	u8	p:1;	// Prefetchable
 
-	BYTE	r:1;	// Reset
-	BYTE	b:1;	// BIST
-	BYTE	c:1;	// Clear busy upon R_OK
-	BYTE	rsv0:1;	// Reserved
-	BYTE	pmp:4;	// Port multiplier port
+	u8	r:1;	// Reset
+	u8	b:1;	// BIST
+	u8	c:1;	// Clear busy upon R_OK
+	u8	rsv0:1;	// Reserved
+	u8	pmp:4;	// Port multiplier port
  
-	WORD	prdtl;	// Physical region descriptor table length in entries
+	u16 prdtl;	// Physical region descriptor table length in entries
  
 	// DW1
-	volatile
-	DWORD	prdbc;	// Physical region descriptor byte count transferred
+	volatile u32 prdbc;	// Physical region descriptor byte count transferred
  
 	// DW2, 3
-	DWORD	ctba;	// Command table descriptor base address
-	DWORD	ctbau;	// Command table descriptor base address upper 32 bits
+	u32 ctba;	// Command table descriptor base address
+	u32 ctbau;	// Command table descriptor base address upper 32 bits
  
 	// DW4 - 7
-	DWORD	rsv1[4];	// Reserved
+	u32 rsv1[4];	// Reserved
 } HBA_CMD_HEADER;
 
 typedef volatile struct tagHBA_PORT
 {
-	DWORD	clb;	// 0x00, command list base address, 1K-byte aligned
-	DWORD	clbu;	// 0x04, command list base address upper 32 bits
-	DWORD	fb;	// 0x08, FIS base address, 256-byte aligned
-	DWORD	fbu;	// 0x0C, FIS base address upper 32 bits
-	DWORD	is;	// 0x10, interrupt status
-	DWORD	ie;	// 0x14, interrupt enable
-	DWORD	cmd;	// 0x18, command and status
-	DWORD	rsv0;	// 0x1C, Reserved
-	DWORD	tfd;	// 0x20, task file data
-	DWORD	sig;	// 0x24, signature
-	DWORD	ssts;	// 0x28, SATA status (SCR0:SStatus)
-	DWORD	sctl;	// 0x2C, SATA control (SCR2:SControl)
-	DWORD	serr;	// 0x30, SATA error (SCR1:SError)
-	DWORD	sact;	// 0x34, SATA active (SCR3:SActive)
-	DWORD	ci;	// 0x38, command issue
-	DWORD	sntf;	// 0x3C, SATA notification (SCR4:SNotification)
-	DWORD	fbs;	// 0x40, FIS-based switch control
-	DWORD	rsv1[11];	// 0x44 ~ 0x6F, Reserved
-	DWORD	vendor[4];	// 0x70 ~ 0x7F, vendor specific
+	u32	clb;	// 0x00, command list base address, 1K-byte aligned
+	u32	clbu;	// 0x04, command list base address upper 32 bits
+	u32	fb;	// 0x08, FIS base address, 256-byte aligned
+	u32	fbu;	// 0x0C, FIS base address upper 32 bits
+	u32	is;	// 0x10, interrupt status
+	u32	ie;	// 0x14, interrupt enable
+	u32	cmd;	// 0x18, command and status
+	u32	rsv0;	// 0x1C, Reserved
+	u32	tfd;	// 0x20, task file data
+	u32	sig;	// 0x24, signature
+	u32	ssts;	// 0x28, SATA status (SCR0:SStatus)
+	u32	sctl;	// 0x2C, SATA control (SCR2:SControl)
+	u32	serr;	// 0x30, SATA error (SCR1:SError)
+	u32	sact;	// 0x34, SATA active (SCR3:SActive)
+	u32	ci;	// 0x38, command issue
+	u32	sntf;	// 0x3C, SATA notification (SCR4:SNotification)
+	u32	fbs;	// 0x40, FIS-based switch control
+	u32	rsv1[11];	// 0x44 ~ 0x6F, Reserved
+	u32	vendor[4];	// 0x70 ~ 0x7F, vendor specific
 } HBA_PORT;
 
 typedef volatile struct tagHBA_MEM
 {
 	// 0x00 - 0x2B, Generic Host Control
-	DWORD	cap;		// 0x00, Host capability
-	DWORD	ghc;		// 0x04, Global host control
-	DWORD	is;		// 0x08, Interrupt status
-	DWORD	pi;		// 0x0C, Port implemented
-	DWORD	vs;		// 0x10, Version
-	DWORD	ccc_ctl;	// 0x14, Command completion coalescing control
-	DWORD	ccc_pts;	// 0x18, Command completion coalescing ports
-	DWORD	em_loc;		// 0x1C, Enclosure management location
-	DWORD	em_ctl;		// 0x20, Enclosure management control
-	DWORD	cap2;		// 0x24, Host capabilities extended
-	DWORD	bohc;		// 0x28, BIOS/OS handoff control and status
+	u32	cap;		// 0x00, Host capability
+	u32	ghc;		// 0x04, Global host control
+	u32	is;		// 0x08, Interrupt status
+	u32	pi;		// 0x0C, Port implemented
+	u32	vs;		// 0x10, Version
+	u32	ccc_ctl;	// 0x14, Command completion coalescing control
+	u32	ccc_pts;	// 0x18, Command completion coalescing ports
+	u32	em_loc;		// 0x1C, Enclosure management location
+	u32	em_ctl;		// 0x20, Enclosure management control
+	u32	cap2;		// 0x24, Host capabilities extended
+	u32	bohc;		// 0x28, BIOS/OS handoff control and status
  
 	// 0x2C - 0x9F, Reserved
-	BYTE	rsv[0xA0-0x2C];
+	u8	rsv[0xA0-0x2C];
  
 	// 0xA0 - 0xFF, Vendor specific registers
-	BYTE	vendor[0x100-0xA0];
+	u8	vendor[0x100-0xA0];
  
 	// 0x100 - 0x10FF, Port control registers
 	HBA_PORT	ports[1];	// 1 ~ 32
@@ -97,53 +97,34 @@ typedef volatile struct tagHBA_MEM
 
 
 
-
-
-
-
 //[0,7]:(vendorid<<16)+deviceid
 //[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
 //[0x10,0x17]:portaddress of the device
 //[0x18,0x1f]:ansciiname of the device
-static unsigned int finddevice()
+static unsigned int searchpci()
 {
-	QWORD* addr=(QWORD*)(pcihome);
-	int i;
-	unsigned int temp;
-	for(i=0;i<0x80;i++)				//每个0x40
+	int bus,slot,func;
+	u32 temp,data;
+	for(bus=0;bus<256;bus++)
 	{
-		temp=addr[8*i+1];
-		temp&=0xffffff00;
-		if(temp==0x01060100)
+		for(slot=0;slot<32;slot++)
 		{
-			addr[8*i+3]=0x69636861;			//ahci
+			for(func=0;func<8;func++)
+			{
+				temp = 0x80000000 | (bus<<16) | (slot<<11) + (func<<8) + 8;
+				out32(0xcf8, temp);
 
-			return addr[8*i+2];		//1.返回要驱动的设备的portaddress
+				data = in32(0xcfc);
+				if((data>>8) == 0x010601)
+				{
+					return temp & 0xffffff00;
+				}
+			}
 		}
 	}
-return 0;
+	return 0;
 }
-
-
-
-
-
-
-
-
-static inline void out32( unsigned short port, unsigned int val )
-{
-    asm volatile( "outl %0, %1"
-                  : : "a"(val), "Nd"(port) );
-}
-static inline unsigned int in32( unsigned short port )
-{
-    unsigned int ret;
-    asm volatile( "inl %1, %0"
-                  : "=a"(ret) : "Nd"(port) );
-    return ret;
-}
-static unsigned int probepci(QWORD addr)
+static unsigned int probepci(u64 addr)
 {
 //进：pci地址
 //出：内存地址
@@ -157,7 +138,7 @@ static unsigned int probepci(QWORD addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	diary("    pci sts&cmd:%x",(QWORD)in32(0xcfc));
+	diary("    pci sts&cmd:%x",(u64)in32(0xcfc));
 
 	//ide port
 	out32(0xcf8,addr+0x10);
@@ -193,7 +174,7 @@ static void disableport(HBA_PORT* port)
 
 
 	//step3:	put port in idle mode
-			//diary("port->cmd before disable:%x",(QWORD)(port->cmd));
+			//diary("port->cmd before disable:%x",(u64)(port->cmd));
 	port->cmd &= 0xfffffffe;	//0x18,bit0
 	port->cmd &= 0xffffffef;	//0x18,bit4,FRE
  
@@ -203,7 +184,7 @@ static void disableport(HBA_PORT* port)
 		timeout--;
 		if(timeout==0)
 		{
-			diary("(timeout)still running:%x",(QWORD)(port->cmd));
+			diary("(timeout)still running:%x",(u64)(port->cmd));
 			return;
 		}
 
@@ -212,7 +193,7 @@ static void disableport(HBA_PORT* port)
 
 		break;
 	}
-			//diary("port->cmd after disable:%x",(QWORD)(port->cmd));
+			//diary("port->cmd after disable:%x",(u64)(port->cmd));
 
 
 
@@ -247,20 +228,20 @@ static void disableport(HBA_PORT* port)
 }
 static void enableport(HBA_PORT* port)
 {
-	//diary("port->cmd before enable:%x",(QWORD)(port->cmd));
+	//diary("port->cmd before enable:%x",(u64)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
  
 	port->cmd |= 1<<4;	//bit4,receive enable
 	port->cmd |= 1; 	//bit0,start
-	//diary("port->cmd after enable:%x",(QWORD)(port->cmd));
+	//diary("port->cmd after enable:%x",(u64)(port->cmd));
 }
-static void probeahci(QWORD addr)
+static void probeahci(u64 addr)
 {
 	HBA_MEM* abar=(HBA_MEM*)addr;
 	HBA_PORT* port;
 	HBA_CMD_HEADER* cmdheader;
 
-	QWORD temp;
+	u64 temp;
 	int i,j;
 	int count=0;
 
@@ -299,7 +280,7 @@ static void probeahci(QWORD addr)
 		port->clb =cmdlistbuffer+i*0x400;		//每个header=(32*32)*32=0x400*32=0x8000
 		port->clbu = 0;
 
-		cmdheader=(HBA_CMD_HEADER*)(QWORD)(port->clb);
+		cmdheader=(HBA_CMD_HEADER*)(u64)(port->clb);
 		for (j=0; j<32; j++)	//0x100*32=0x2000=8k
 		{
 			cmdheader[j].prdtl = 8;			//8 prdt entries per command table
@@ -317,9 +298,9 @@ static void probeahci(QWORD addr)
 
 
 //第三步:list all known sata devices
-	QWORD* mytable=(QWORD*)ahcihome;
-	QWORD from = 0;
-	QWORD to = 0;
+	u64* mytable=(u64*)ahcihome;
+	u64 from = 0;
+	u64 to = 0;
 	for(from=0;from<32*2+8;from++)		//清空目的地内存
 	{
 		mytable[from]=0;
@@ -329,9 +310,9 @@ static void probeahci(QWORD addr)
 	for(from=0;from<count;from++)
 	{
 		port=(HBA_PORT*)(addr+0x100+from*0x80);
-		DWORD ssts = port -> ssts;			//0x28
-		BYTE ipm = (ssts >> 8) & 0x0F;		//0x28.[8,11]
-		BYTE det = ssts & 0x0F;			//0x28.[0,3]
+		u32 ssts = port -> ssts;			//0x28
+		u8 ipm = (ssts >> 8) & 0x0F;		//0x28.[8,11]
+		u8 det = ssts & 0x0F;			//0x28.[0,3]
 		if( (ipm != 0) && (det != 0) )
 		{
 		switch(port->sig)
@@ -376,14 +357,14 @@ static void probeahci(QWORD addr)
 
 void initahci()
 {
-	QWORD addr;
+	u64 addr;
 	diary("@initahci");
 
 	//clear home
 	addr=ahcihome;
-	for(;addr<ahcihome+0x100000;addr++) *(BYTE*)addr=0;
+	for(;addr<ahcihome+0x100000;addr++) *(u8*)addr=0;
 
-	addr=finddevice();		//get port addr of this storage device
+	addr=searchpci();		//get port addr of this storage device
 	if(addr==0) return;
 
 	addr=probepci(addr);		//memory addr of ahci
