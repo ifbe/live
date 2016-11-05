@@ -22,17 +22,9 @@ times 0x4000-($-$$) db 0
 
 
 
-;addr=4000,size=4000
-;[4000,7fff]
-incbin "4000/trunk.bin"
-times 0x8000-($-$$) db 0
-
-
-
-
-;addr=8000,size=8000
-;[8000,ffff]
-incbin "8000/extremities.bin"
+;addr=4000,size=c000
+;[4000,ffff]
+incbin "4000/extremities.bin"
 times 0x10000-($-$$) db 0
 
 

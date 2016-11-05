@@ -121,6 +121,7 @@ static unsigned int probepci(QWORD addr)
 void initide()
 {
 	QWORD addr;
+	diary("@initide");
 
 	//find device
 	addr=finddevice();		//get port addr of this storage device

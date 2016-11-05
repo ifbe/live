@@ -377,6 +377,7 @@ static void probeahci(QWORD addr)
 void initahci()
 {
 	QWORD addr;
+	diary("@initahci");
 
 	//clear home
 	addr=ahcihome;

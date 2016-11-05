@@ -161,12 +161,6 @@ static void directsay(char* first,char* second,char* third,char* fourth,char* fi
 
 void something()
 {
-	//0.清空日志内存
-	QWORD* p=(QWORD*)(journalhome);
-	QWORD temp;
-	for(temp=0;temp<0x20000;temp++) p[temp]=0;
-	diary("oh we have found a whole new world,landing...%x...%x...%x...",3,2,1);
-
 	//二.把操作函数的位置放进/bin以便在终端里直接调
 	remember(0x746e756f6d,		(QWORD)mount);
 	remember(0x796669746e656469,		(QWORD)directidentify);
@@ -176,17 +170,6 @@ void something()
 	remember(0x6963686174696e69,		(QWORD)directinitahci);
 	remember(0x6963687874696e69,		(QWORD)directinitxhci);
 	remember(0x796173,		(QWORD)directsay);
-}
-void inithardware()
-{
-	//初始化，然后把找到的设备列一个清单
-	initahci();
-
-	//初始化，然后放进清单
-	initide();
-
-	//xhcihost,xhciport(hub+基本的询问)
-	initxhci();
 }
 void initsoftware()
 {
@@ -261,11 +244,6 @@ void autotry()
 
 void main()
 {
-	something();
-
-	//1.初始化硬件
-	inithardware();
-
 	//2.初始化软件
 	initsoftware();
 

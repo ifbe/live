@@ -1,18 +1,46 @@
-%define ansciihome 0x3000
+%define slowanscii 0x3000
+%define fastanscii 0x30000
 [bits 64]
 
 
 
 
 startofdata:
-mov edi,ansciihome
-lea rsi,[rel ansciitable]
-mov ecx,0x800
-rep movsb
-jmp endofansciitable
+	mov edi,slowanscii
+	lea rsi,[rel ansciitable]
+	mov ecx,0x800
+	rep movsb
 
-paddingofcode:
-times 0x40-(paddingofcode-startofdata) db 0
+
+
+
+optimizeanscii:
+	mov esi,slowanscii
+	mov edi,fastanscii
+
+.continue:
+	mov bl,[esi]
+	inc esi
+	mov ecx,8
+
+.eighttimes:
+	xor eax,eax
+	shl bl,1
+	jnc .skip
+.blackcolor:
+	not eax
+.skip:
+	stosd
+	loop .eighttimes
+
+	cmp esi,slowanscii+0x800
+	jb .continue
+
+
+
+
+jmp endofansciitable
+paddingofcode:times 0x40-(paddingofcode-startofdata) db 0
 
 
 

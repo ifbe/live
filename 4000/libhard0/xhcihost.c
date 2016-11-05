@@ -584,6 +584,8 @@ return 0;
 
 void initxhci()
 {
+	diary("@initxhci");
+
 	//find pci address
 	findxhci();
 	if(xhciport==0) goto end;

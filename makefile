@@ -4,17 +4,17 @@ binary:				#linuxer only
 	make -s -C 1000
 	make -s -C 2000
 	make -s -C 4000
-	make -s -C 8000
 	nasm corebin.s -o core.bin
 	nasm coreimg.s -o core.img
+	qemu-img convert -f raw -O vpc core.img core.vhd
 cross:		#windows and mac user
 	make -s -C 0.old
 	make -s -C 1000
 	make -s -C 2000
-	make -s -C 4000
-	make -s -C 8000 cross
+	make -s -C 4000 cross
 	nasm corebin.s -o core.bin
 	nasm coreimg.s -o core.img
+	qemu-img convert -f raw -O vpc core.img core.vhd
 
 
 
@@ -48,6 +48,5 @@ parallels:
 
 clean:
 	make -s -C 4000 clean
-	make -s -C 8000 clean
 	rm -f */*.o */*.bin */*.efi
 	rm -f *.bin *.efi *.img *.vmdk *.vhd *.dmg *.vdi
