@@ -1,20 +1,16 @@
 #1:create a 64k binary,compile with gcc(linux) or x86_64-elf-gcc(other system)
 binary:				#linuxer only
-	make -s -C 0.old
-	make -s -C 1000
-	make -s -C 2000
-	make -s -C 4000
+	make -s -C 0.bios
+	make -s -C 1.asm
+	make -s -C 2.ccc
 	nasm corebin.s -o core.bin
-	nasm coreimg.s -o core.img
-	qemu-img convert -f raw -O vpc core.img core.vhd
+	qemu-img convert -f raw -O vpc core.bin core.vhd
 cross:		#windows and mac user
-	make -s -C 0.old
-	make -s -C 1000
-	make -s -C 2000
-	make -s -C 4000 cross
+	make -s -C 0.bios
+	make -s -C 1.asm
+	make -s -C 2.ccc cross
 	nasm corebin.s -o core.bin
-	nasm coreimg.s -o core.img
-	qemu-img convert -f raw -O vpc core.img core.vhd
+	qemu-img convert -f raw -O vpc core.bin core.vhd
 
 
 
