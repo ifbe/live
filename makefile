@@ -15,7 +15,7 @@ cross:		#windows and mac user
 
 #image convert
 convert:
-	nasm readme -o core.bin
+	nasm README -o core.bin
 	cp core.bin core.img
 	qemu-img resize -f raw core.img 1M
 	qemu-img convert -f raw -O vmdk core.img core.vmdk
