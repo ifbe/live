@@ -3,34 +3,34 @@ binary:				#linuxer only
 	make -s -C 0.bios
 	make -s -C 1.asm
 	make -s -C 2.ccc
-	nasm corebin.s -o core.bin
-	qemu-img convert -f raw -O vpc core.bin core.vhd
+	make -s convert
 cross:		#windows and mac user
 	make -s -C 0.bios
 	make -s -C 1.asm
 	make -s -C 2.ccc cross
-	nasm corebin.s -o core.bin
-	qemu-img convert -f raw -O vpc core.bin core.vhd
+	make -s convert
 
 
 
 
 #image convert
-img2dmg:
-	qemu-img convert -f raw -O dmg core.img core.dmg
-img2vhd:
-	qemu-img convert -f raw -O vpc core.img core.vhd
-img2vmdk:
+convert:
+	nasm readme -o core.bin
+	cp core.bin core.img
+	qemu-img resize -f raw core.img 1M
 	qemu-img convert -f raw -O vmdk core.img core.vmdk
+	qemu-img convert -f raw -O vpc -o subformat=fixed core.img core.vhd
 
 
 
 
 #test
 kvm:
-	tool/kvm $(shell pwd)/core.img
+	tool/kvm $(shell pwd)/core.vhd
 qemu:
-	tool/qemu $(shell pwd)/core.img
+	tool/qemu $(shell pwd)/core.vhd
+qemu-kvm:
+	tool/qemu $(shell pwd)/core.vhd
 bochs:
 	bochs -f ../tool/bochsrc
 vmware:
@@ -43,6 +43,6 @@ parallels:
 
 
 clean:
-	make -s -C 4000 clean
+	make -s -C 2.ccc clean
 	rm -f */*.o */*.bin */*.efi
 	rm -f *.bin *.efi *.img *.vmdk *.vhd *.dmg *.vdi
