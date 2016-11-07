@@ -6,3 +6,5 @@ cross:
 target:
 	$(compiler) $(cflag) start.c
 	$(compiler) $(cflag) main.c
+clean:
+	rm -f *.o

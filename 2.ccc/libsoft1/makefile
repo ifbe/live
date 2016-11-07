@@ -8,3 +8,5 @@ target:
 	$(compiler) $(cflag) fat.c
 	$(compiler) $(cflag) ntfs.c
 	$(compiler) $(cflag) ext.c
+clean:
+	rm -f *.o

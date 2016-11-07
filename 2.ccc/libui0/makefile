@@ -5,3 +5,5 @@ cross:
 	make target compiler=x86_64-elf-gcc
 target:
 	$(compiler) $(cflag) screen.c
+clean:
+	rm -f *.o

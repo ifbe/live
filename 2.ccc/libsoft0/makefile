@@ -6,3 +6,5 @@ cross:
 target:
 	$(compiler) $(cflag) convert.c
 	$(compiler) $(cflag) remember.c
+clean:
+	rm -f *.o

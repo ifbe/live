@@ -6,3 +6,5 @@ cross:
 target:
 	$(compiler) $(cflag) identify.c
 	$(compiler) $(cflag) read.c
+clean:
+	rm -f *.o

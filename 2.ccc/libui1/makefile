@@ -6,3 +6,5 @@ cross:
 target:
 	$(compiler) $(cflag) ascii.c
 	$(compiler) $(cflag) character.c
+clean:
+	rm -f *.o
