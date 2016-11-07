@@ -30,7 +30,7 @@ binary:
 	libui0/screen.o \
 	libui1/ascii.o \
 	libui1/character.o \
-	-o extremities.bin
+	-o ccc.bin
 cross:
 	make -s -C init cross
 	make -s -C libboot0 cross
@@ -63,6 +63,6 @@ cross:
 	libui0/screen.o \
 	libui1/ascii.o \
 	libui1/character.o \
-	-o extremities.bin
+	-o ccc.bin
 clean:
 	rm -f */*.o *.bin

@@ -6,17 +6,17 @@ incbin "0.bios/cpu.bin"
 
 
 ;addr=1000,size=2000
-;[4000,7fff]
+;[1000,1fff]
 times 0x1000-($-$$) db 0
-incbin "1.asm/interrupt.bin"
+incbin "1.asm/asm.bin"
 
 
 
 
-;addr=3000,size=c000
-;[3000,ffff]
-times 0x3000-($-$$) db 0
-incbin "2.ccc/extremities.bin"
+;addr=2000,size=c000
+;[2000,ffff]
+times 0x2000-($-$$) db 0
+incbin "2.ccc/ccc.bin"
 
 
 

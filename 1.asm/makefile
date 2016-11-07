@@ -1,2 +1,2 @@
 all:
-	nasm interrupt.s -o interrupt.bin
+	nasm asm.s -o asm.bin
