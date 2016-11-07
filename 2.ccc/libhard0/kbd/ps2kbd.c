@@ -8,7 +8,7 @@ void diary(char*,...);
 
 
 
-int waitkbd()
+u8 ps2kbd()
 {
 	u32 key;
 	while(1)
@@ -17,7 +17,6 @@ int waitkbd()
 		if( (key&1) == 0)continue;
 
 		key = in8(0x60);
-		diary("key=%x",key);
 		return key;
 	}
 	return 0;

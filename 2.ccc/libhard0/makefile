@@ -10,6 +10,6 @@ target:
 	$(compiler) $(cflag) hc/ide.c
 	$(compiler) $(cflag) hc/xhcihost.c
 	$(compiler) $(cflag) hc/xhciport.c
-	$(compiler) $(cflag) kbd/kbd.c
+	$(compiler) $(cflag) kbd/ps2kbd.c
 clean:
 	rm -f *.o

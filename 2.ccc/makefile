@@ -32,7 +32,8 @@ link:
 	libhard0/ahci.o \
 	libhard0/xhcihost.o \
 	libhard0/xhciport.o \
-	libhard0/kbd.o \
+	libhard0/ps2kbd.o \
+	libhard1/kbd.o \
 	libhard1/identify.o \
 	libhard1/read.o \
 	libsoft0/convert.o \

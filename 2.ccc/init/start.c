@@ -20,10 +20,10 @@ void writescreen();
 //libui1
 void initcharacter(u64 addr);
 void showprint();
-void scrolldown();
 //
 int waitkbd();
 void main();
+
 
 
 
@@ -54,7 +54,7 @@ void start()
 		showprint();
 		writescreen();
 
-		if(waitkbd() >0)scrolldown();
+		temp = waitkbd();
 	}
 
 
