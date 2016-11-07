@@ -1,6 +1,8 @@
+cflag := -c -fPIC -fno-stack-protector -O2
 linux:
-	gcc -c -fPIC -O2 identify.c
-	gcc -c -fPIC -O2 read.c
+	make target compiler=gcc
 cross:
-	x86_64-elf-gcc -c -fPIC -O2 identify.c
-	x86_64-elf-gcc -c -fPIC -O2 read.c
+	make target compiler=x86_64-elf-gcc
+target:
+	$(compiler) $(cflag) identify.c
+	$(compiler) $(cflag) read.c

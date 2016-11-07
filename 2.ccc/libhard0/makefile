@@ -1,14 +1,12 @@
+cflag := -c -fPIC -fno-stack-protector -O2
 linux:
-	gcc -c -fPIC -O2 cpu/fp.c
-	gcc -c -fPIC -O2 cpu/port.c
-	gcc -c -fPIC -O2 hc/ahci.c
-	gcc -c -fPIC -O2 hc/ide.c
-	gcc -c -fPIC -O2 hc/xhcihost.c
-	gcc -c -fPIC -O2 hc/xhciport.c
+	make target compiler=gcc
 cross:
-	x86_64-elf-gcc -c -fPIC -O2 cpu/fp.c
-	x86_64-elf-gcc -c -fPIC -O2 cpu/port.c
-	x86_64-elf-gcc -c -fPIC -O2 hc/ahci.c
-	x86_64-elf-gcc -c -fPIC -O2 hc/ide.c
-	x86_64-elf-gcc -c -fPIC -O2 hc/xhcihost.c
-	x86_64-elf-gcc -c -fPIC -O2 hc/xhciport.c
+	make target compiler=x86_64-elf-gcc
+target:
+	$(compiler) $(cflag) cpu/fp.c
+	$(compiler) $(cflag) cpu/port.c
+	$(compiler) $(cflag) hc/ahci.c
+	$(compiler) $(cflag) hc/ide.c
+	$(compiler) $(cflag) hc/xhcihost.c
+	$(compiler) $(cflag) hc/xhciport.c

@@ -1,6 +1,8 @@
+cflag := -c -fPIC -fno-stack-protector -O2
 linux:
-	gcc -c -fPIC -O2 convert.c
-	gcc -c -fPIC -O2 remember.c
+	make target compiler=gcc
 cross:
-	x86_64-elf-gcc -c -fPIC -O2 convert.c
-	x86_64-elf-gcc -c -fPIC -O2 remember.c
+	make target compiler=x86_64-elf-gcc
+target:
+	$(compiler) $(cflag) convert.c
+	$(compiler) $(cflag) remember.c

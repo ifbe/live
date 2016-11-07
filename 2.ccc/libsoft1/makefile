@@ -1,10 +1,10 @@
+cflag := -c -fPIC -fno-stack-protector -O2
 linux:
-	gcc -c -fPIC -O2 parttable.c
-	gcc -c -fPIC -O2 fat.c
-	gcc -c -fPIC -O2 ntfs.c
-	gcc -c -fPIC -O2 ext.c
+	make target compiler=gcc
 cross:
-	x86_64-elf-gcc -c -fPIC -O2 parttable.c
-	x86_64-elf-gcc -c -fPIC -O2 fat.c
-	x86_64-elf-gcc -c -fPIC -O2 ntfs.c
-	x86_64-elf-gcc -c -fPIC -O2 ext.c
+	make target compiler=x86_64-elf-gcc
+target:
+	$(compiler) $(cflag) parttable.c
+	$(compiler) $(cflag) fat.c
+	$(compiler) $(cflag) ntfs.c
+	$(compiler) $(cflag) ext.c

@@ -1,6 +1,8 @@
+cflag := -c -fPIC -fno-stack-protector -O2
 linux:
-	gcc -c -fPIC -O2 start.c
-	gcc -c -fPIC -O2 main.c
+	make target compiler=gcc
 cross:
-	x86_64-elf-gcc -c -fPIC -O2 start.c
-	x86_64-elf-gcc -c -fPIC -O2 main.c
+	make target compiler=x86_64-elf-gcc
+target:
+	$(compiler) $(cflag) start.c
+	$(compiler) $(cflag) main.c

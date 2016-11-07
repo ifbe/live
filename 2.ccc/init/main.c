@@ -105,6 +105,7 @@ static void directread(QWORD sector)
 	//if(result>=0) say("read sector:%x",sector);
 	//else say("something wrong:%x",sector);
 }
+/*
 static void directhostcmd(char* arg0,char* arg1,char* arg2,char* arg3)
 {
 	QWORD dword0,dword1,dword2,dword3;
@@ -134,14 +135,7 @@ static void directusbcmd(char* arg0,char* arg1,char* arg2,char* arg3,char* arg4,
 	string2data(arg5,&buffer);
 	usbcommand(bmrequesttype, brequest, wvalue, windex, wlength, buffer);
 }
-static void directinitxhci()
-{
-	initxhci();
-}
-static void directinitahci()
-{
-	initahci();
-}
+*/
 static void directsay(char* first,char* second,char* third,char* fourth,char* fifth,char* sixth)
 {
 	say(first);
@@ -159,18 +153,6 @@ static void directsay(char* first,char* second,char* third,char* fourth,char* fi
 
 
 
-void something()
-{
-	//二.把操作函数的位置放进/bin以便在终端里直接调
-	remember(0x746e756f6d,		(QWORD)mount);
-	remember(0x796669746e656469,		(QWORD)directidentify);
-	remember(0x6b73696464616572,		(QWORD)directread);
-	remember(0x646d6374736f68,		(QWORD)directhostcmd);
-	remember(0x646d63627375,		(QWORD)directusbcmd);
-	remember(0x6963686174696e69,		(QWORD)directinitahci);
-	remember(0x6963687874696e69,		(QWORD)directinitxhci);
-	remember(0x796173,		(QWORD)directsay);
-}
 void initsoftware()
 {
 	QWORD from,to,temp;
