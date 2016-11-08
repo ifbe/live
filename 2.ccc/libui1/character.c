@@ -3,13 +3,16 @@
 #define u16 unsigned short
 #define u8 unsigned char
 void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
+void diary(char*,...);
 
 
 
 
 //
-static u8* logaddr;
 static u32* window;
+//
+static u8* logaddr;
+static int last=0;
 //
 static u8 buffer[128];
 static int count=0;
@@ -21,8 +24,8 @@ void characterread()
 {
 	int x,y;
 	u64 temp = *(u64*)(logaddr + 0xffff8);
-	if(temp < 0x40*0x30)temp = 0;
-	else temp = temp-0x40*0x30;
+	if(temp < 0x40*0x2f)temp = 0;
+	else temp = temp-0x40*0x2f;
 
 	//
 	for(y=0;y<768;y++)
@@ -32,6 +35,7 @@ void characterread()
 			window[(y<<10)+x] = 0;
 		}
 	}
+	last = temp;
 
 	//
 	for(y=0;y<752/16;y++)
@@ -46,8 +50,17 @@ void characterwrite(u64 key, u64 type)
 {
 	if(key == 0x7f)
 	{
-		buffer[count] = 0x20;
 		if(count>0)count--;
+		buffer[count] = 0;
+	}
+	else if(key == 0xd)
+	{
+		diary("command=%s",buffer);
+		for(count=127;count>=0;count--)
+		{
+			buffer[count] = 0;
+		}
+		count = 0;
 	}
 	else
 	{
