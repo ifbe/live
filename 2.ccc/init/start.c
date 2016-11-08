@@ -19,9 +19,10 @@ void initscreen(u64 addr);
 void writescreen();
 //libui1
 void initcharacter(u64 addr);
-void showprint();
+void characterread();
+void characterwrite(u64 key, u64 type);
 //
-int waitkbd();
+void waitkbd(u64* key, u64* type);
 void main();
 
 
@@ -31,8 +32,8 @@ void start()
 {
 	//0.清空日志内存
 	u64* p=(u64*)(journalhome);
-	u64 temp;
-	for(temp=0;temp<0x20000;temp++) p[temp]=0;
+	u64 type,key;
+	for(key=0;key<0x20000;key++) p[key]=0;
 	diary("oh we have found a whole new world,landing...%x...%x...%x...",3,2,1);
 
 	//before
@@ -51,10 +52,11 @@ void start()
 	//
 	while(1)
 	{
-		showprint();
+		characterread();
 		writescreen();
 
-		temp = waitkbd();
+		waitkbd(&key, &type);
+		characterwrite(key, type);
 	}
 
 

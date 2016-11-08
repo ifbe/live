@@ -1,11 +1,22 @@
 #define u8 unsigned char
+#define u16 unsigned short
+#define u32 unsigned int
+#define u64 unsigned long long
 u8 ps2kbd();
 void diary(char*,...);
 
 
 
 
-static u8 table[30*2] =
+static u8 kbd[5*2] =
+{
+	0x48,0x48,	//up
+	0x50,0x50,	//down
+	0x4b,0x4b,	//left
+	0x4d,0x4d,	//right
+	0x1,0x1b	//esc
+};
+static u8 ch[30*2] =
 {
         0x1e,'a',
         0x30,'b',
@@ -42,18 +53,46 @@ static u8 table[30*2] =
 
 
 
-int waitkbd()
+int waitkbd(u64* key, u64* type)
 {
 	int j;
-	u8 key = ps2kbd();
-	for(j=0;j<30;j++)
+	*type = 0;
+
+	//key down
+	while(1)
 	{
-		if(table[j*2] == key)
+		*key = ps2kbd();
+		if(*key < 0x80)break;
+	}
+
+	//kbd
+	if(*type==0)
+	{
+		for(j=0;j<5;j++)
 		{
-			key = table[(j*2) + 1];
-			break;
+			if(*key == kbd[j*2])
+			{
+				*type = 0x64626b;
+				*key = kbd[(j*2) + 1];
+				break;
+			}
 		}
 	}
-	diary("key=%x",key);
-	return key;
+
+	//char
+	if(*type==0)
+	{
+		for(j=0;j<30;j++)
+		{
+			if(*key == ch[j*2])
+			{
+				*type = 0x72616863;
+				*key = ch[(j*2) + 1];
+				break;
+			}
+		}
+	}
+
+	//return
+	diary("type=%x,key=%x",*type,*key);
 }
