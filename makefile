@@ -25,14 +25,14 @@ convert:
 
 
 #test
-kvm:
-	tool/kvm $(shell pwd)/core.vhd
 qemu:
-	tool/qemu $(shell pwd)/core.vhd
-qemu-kvm:
-	tool/qemu $(shell pwd)/core.vhd
+	tool/qemu/qemu.sh "qemu-system-x86_64" \
+	$(shell pwd)/core.vhd
+ovmf:
+	tool/qemu/qemu.sh "qemu-system-x86_64 -bios ovmf.fd" \
+	$(shell pwd)/core.vhd
 bochs:
-	bochs -f ../tool/bochsrc
+	bochs -f ../tool/bochs/bochsrc
 vmware:
 	cp core.vhd ../tool/vmware/test.vhd
 	#(please double click) ../tool/vmware/vmware.vmx
