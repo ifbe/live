@@ -46,7 +46,7 @@ startofmbr:
 
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-;不一样说明代码是被引导器加载的，但是不知具体位置所以比必须自己搬家
+;不一样说明代码是被引导器加载的，但是不知具体位置所以自己搬
 	xor eax,eax
 	xor ebx,ebx
 
@@ -58,8 +58,7 @@ whereami:
 	add eax,ebx
 	sub eax,whereami-startofmbr
 
-									;拿到本程序被加载到的实际位置
-									;注意不能放在800的位置(原因不明)
+;拿到实际位置
 	mov [birthrecord],eax
 
 	shr eax,4
@@ -74,14 +73,14 @@ whereami:
 		mov di,si					;di
 		cld
 		rep movsw
-		jmp 0x1000:0x0200
+		jmp mbrsuccess
 
 	reversemove:
 		mov si,0xfffe
 		mov di,si
 		std
 		rep movsw
-		jmp 0x1000:0x0200
+		jmp mbrsuccess
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -89,13 +88,13 @@ whereami:
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ;全部一样说明在虚拟机里，读前128个扇区到0x10000然后跳到+0x200的位置
-readyourself:						;dap:
-	mov byte [0xff0],0x10			;.packagesize db 0x10
-	mov byte [0xff1],0				;.reserved db 0x00
-	mov word [0xff2],0x40			;.blockcount dw 0x0002
-	mov word [0xff4],0				;.bufferoffset dw 0xc000
-	mov word [0xff6],0x1000			;.buffersegment dw 0x0000
-	mov dword [0xff8],0				;.blocknumber dq 0x0000000000000001
+readyourself:				;dap:
+	mov byte [0xff0],0x10		;.packagesize db 0x10
+	mov byte [0xff1],0		;.reserved db 0x00
+	mov word [0xff2],0x40		;.blockcount dw 0x0002
+	mov word [0xff4],0		;.bufferoffset dw 0xc000
+	mov word [0xff6],0x1000		;.buffersegment dw 0x0000
+	mov dword [0xff8],0		;.blocknumber dq 0x0000000000000001
 	mov dword [0xffc],0
 
 	mov ah,0x42
@@ -104,12 +103,12 @@ readyourself:						;dap:
 	int 0x13
 	jc mbrerror
 
-	mov byte [0xff0],0x10			;.packagesize db 0x10
-	mov byte [0xff1],0				;.reserved db 0x00
-	mov word [0xff2],0x40			;.blockcount dw 0x0002
-	mov word [0xff4],0x8000			;.bufferoffset dw 0xc000
-	mov word [0xff6],0x1000			;.buffersegment dw 0x0000
-	mov dword [0xff8],0x40			;.blocknumber dq 0x0000000000000001
+	mov byte [0xff0],0x10		;.packagesize db 0x10
+	mov byte [0xff1],0		;.reserved db 0x00
+	mov word [0xff2],0x40		;.blockcount dw 0x0002
+	mov word [0xff4],0x8000		;.bufferoffset dw 0xc000
+	mov word [0xff6],0x1000		;.buffersegment dw 0x0000
+	mov dword [0xff8],0x40		;.blocknumber dq 0x0000000000000001
 	mov dword [0xffc],0
 
 	mov ah,0x42
@@ -118,7 +117,7 @@ readyourself:						;dap:
 	int 0x13
 	jc mbrerror
 
-	jmp 0x1000:0x0200
+	jmp mbrsuccess
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
 
 
@@ -151,6 +150,9 @@ mbrerror:
 mbrdie:
 	hlt
 	jmp mbrdie
+
+mbrsuccess:
+	jmp 0x1000:0x4400
 ;_________________________________________________
 
 

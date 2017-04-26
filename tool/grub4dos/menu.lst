@@ -1,30 +1,36 @@
 timeout 5
 
 title core
+root (hd0,2)
 chainloader /live/core.bin
 
 title live
+root (hd0,2)
 map --mem /live/kernel (hd0)
 map --hook
 chainloader (hd0)+1
 rootnoverify (hd0)
 
 title PE
+root (hd0,5)
 map /7.iso (0xff) || map --mem /7.iso (0xff) 
 map --hook 
 chainloader (0xff) 
 
 title chameleon
+root (hd0,5)
 map /wowpc.iso (0xff) || map --mem /wowpc.iso (0xff) 
 map --hook 
 chainloader (0xff) 
 
 title fedora
+root (hd0,5)
 map --mem /fedora.iso (hd0)
 kernel (hd0)/isolinux/vmlinuz linux repo=hd:/dev/sdb1:/
 initrd (hd0)/isolinux/initrd.img
 
 title ubuntu
+root (hd0,5)
 map --mem /ubuntu.iso (hd0)
 kernel (hd0)/casper/vmlinuz.efi boot=casper iso-scan/filename=/ubuntu.iso
 initrd (hd0)/casper/initrd.lz

@@ -1,21 +1,21 @@
-;addr=0,size=1000
-;[0,fff]
-incbin "0.bios/cpu.bin"
+;addr=0,size=4000
+;[0,3fff]
+incbin "0.bios/head.bin"
 
 
 
 
-;addr=1000,size=2000
-;[1000,1fff]
-times 0x1000-($-$$) db 0
+;addr=4000,size=4000
+;[4000,7fff]
+times 0x4000-($-$$) db 0
 incbin "1.asm/asm.bin"
 
 
 
 
-;addr=2000,size=c000
-;[2000,ffff]
-times 0x2000-($-$$) db 0
+;addr=8000,size=8000
+;[8000,ffff]
+times 0x8000-($-$$) db 0
 incbin "2.ccc/ccc.bin"
 
 
