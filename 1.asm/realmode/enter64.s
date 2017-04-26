@@ -119,13 +119,13 @@ startofenter64:
 
 ;__________映射2MB的地址空间足够pre kernel用了________
 ;在pd里面写0|0x83
-	mov word [temppd],0x83					;temppd=0x6000
+	mov word [temppd],0x83			;temppd=0x6000
 
 ;把pd的地址放入pdpt(0x91000)(9000:1000)
-	mov word [temppdpt],temppd | 3			;temppd=0x6000,temppdpt=0x7000
+	mov word [temppdpt],temppd | 3		;temppd=0x6000,temppdpt=0x7000
 
 ;把pdpt的地址放入pml4(0x90000)(9000:0000)
-	 mov word [temppml4],temppdpt | 3				;temppdpt=0x7000,temppml4=0x3000
+	 mov word [temppml4],temppdpt | 3	;temppdpt=0x7000,temppml4=0x3000
 ;______________________________________________________
 
 

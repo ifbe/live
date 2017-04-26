@@ -2,10 +2,15 @@
 #define u32 unsigned int
 #define u16 unsigned short
 #define u8 unsigned char
-static u8* screeninfo=(void*)0x2000;
-static u8* addr;
-static int bpp;
-//
+#define screeninfo 0x2000
+struct window
+{
+	u64 buf;
+	u64 fmt;
+	u64 w;
+	u64 h;
+};
+static struct window win;
 static u8* img;
 
 
@@ -14,9 +19,11 @@ static u8* img;
 void writescreen()
 {
 	int j;
+	u32* p;
 	for(j=0;j<1024*768;j++)
 	{
-		*(u32*)(addr + (j*bpp)) = *(u32*)(img + (j<<2));
+		p = (void*)( (win.buf) + (j*win.fmt) );
+		*p = *(u32*)(img + (j<<2));
 	}
 }
 
@@ -25,11 +32,8 @@ void writescreen()
 
 void initscreen(void* p)
 {
-	u64 haha = *(u32*)(screeninfo+0x28);
-	addr = (void*)haha;
-
-	bpp = *(u8*)(screeninfo+0x19);
-	bpp >>= 3;
+	win.buf = *(u32*)screeninfo;
+	win.fmt = *(u8*)(screeninfo+8);
 
 	img = p;
 }
