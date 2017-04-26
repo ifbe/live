@@ -23,7 +23,7 @@ void parsexsdt(void* p)
 
 	p += 0x24;
 	c -= 0x24;
-	for(j=0;j<c;c+=8)parsetable(p+j);
+	for(j=0;j<c;j+=8)parsetable(p+j);
 }
 void parsersdt(void* p)
 {
