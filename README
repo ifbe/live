@@ -16,7 +16,7 @@ incbin "1.asm/asm.bin"
 ;addr=8000,size=8000
 ;[8000,ffff]
 times 0x8000-($-$$) db 0
-incbin "2.ccc/ccc.bin"
+incbin "2.cxx/cxx.bin"
 
 
 

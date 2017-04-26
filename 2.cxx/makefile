@@ -36,15 +36,15 @@ link:
 	libhard1/kbd.o \
 	libhard1/identify.o \
 	libhard1/read.o \
-	libsoft0/convert.o \
-	libsoft0/remember.o \
+	libsoft1/acpi.o \
+	libsoft1/convert.o \
 	libsoft1/parttable.o \
-	libsoft1/fat.o \
-	libsoft1/ntfs.o \
-	libsoft1/ext.o \
+	libsoft1/fs.fat.o \
+	libsoft1/fs.ntfs.o \
+	libsoft1/fs.ext.o \
 	libui0/screen.o \
 	libui1/ascii.o \
 	libui1/character.o \
-	-o ccc.bin
+	-o cxx.bin
 clean:
 	rm -f */*.o *.bin

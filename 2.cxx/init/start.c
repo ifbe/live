@@ -12,6 +12,7 @@ void initahci();
 void initide();
 void initxhci();
 //libsoft
+void initacpi();
 void initparttable();
 void initfilesystem();
 //libui0
@@ -36,14 +37,21 @@ void start()
 	for(key=0;key<0x20000;key++) p[key]=0;
 	diary("oh we have found a whole new world,landing...%x...%x...%x...",3,2,1);
 
-	//before
+	//libhard
 	initahci();
 	initide();
 	initxhci();
 
+	//libsoft
+	initacpi();
+	//initparttable();
+	//initfilesystem();
+
+	//libui
 	initscreen(window);
 	initcharacter(window);
 
+	//go
 	main();
 
 

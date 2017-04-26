@@ -15,7 +15,6 @@
 
 
 
-void remember(QWORD first,QWORD second);
 void diary(char* , ...);
 void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
 void blank2zero(QWORD* name);
@@ -348,9 +347,4 @@ int mountext(QWORD sector)
 
 	//cd /
 	ext_cd("/");
-
-	//保存函数地址
-	remember(0x6463,(QWORD)ext_cd);
-	remember(0x64616f6c,(QWORD)ext_load);
-	return 0;
 }

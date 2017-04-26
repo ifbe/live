@@ -15,7 +15,6 @@
 
 
 
-void remember(QWORD,QWORD);
 void diary(char* , ...);
 void read(QWORD,QWORD,QWORD,QWORD);
 void string2data(BYTE* str,QWORD* data);
@@ -194,11 +193,6 @@ void fat16(QWORD fatsector)
 
 	checkfatcache();
 	fat16_cd("/");
-
-	//保存函数地址
-        remember(0x6463,(QWORD)fat16_cd);
-        remember(0x64616f6c,(QWORD)fat16_load);
-
 }
 
 
@@ -328,11 +322,6 @@ void fat32(QWORD fatsector)
 
 	checkfatcache();
 	fat32_cd("/");
-
-	//保存函数地址
-        remember(0x6463,(QWORD)fat32_cd);
-        remember(0x64616f6c,(QWORD)fat32_load);
-
 }
 
 

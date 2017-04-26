@@ -15,7 +15,6 @@
 
 
 
-void remember(QWORD first,QWORD second);
 void diary(char* , ...);
 void read(QWORD first,QWORD second,QWORD third,QWORD fourth);
 void string2data(BYTE* str,QWORD* data);
@@ -548,9 +547,4 @@ int mountntfs(QWORD sector)
 	pwd[0]=5;
 	ntfspwd=0;
 	ntfs_cd("/");
-
-	//保存函数地址
-	remember(0x6463,(QWORD)ntfs_cd);
-	remember(0x64616f6c,(QWORD)ntfs_load);
-	return 0;
 }

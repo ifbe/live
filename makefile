@@ -2,12 +2,12 @@
 binary:				#linuxer only
 	make -s -C 0.bios
 	make -s -C 1.asm
-	make -s -C 2.ccc
+	make -s -C 2.cxx
 	make -s convert
 cross:		#windows and mac user
 	make -s -C 0.bios
 	make -s -C 1.asm
-	make -s -C 2.ccc cross
+	make -s -C 2.cxx cross
 	make -s convert
 
 
@@ -43,6 +43,6 @@ parallels:
 
 
 clean:
-	make -s -C 2.ccc clean
+	make -s -C 2.cxx clean
 	rm -f */*.o */*.bin */*.efi
 	rm -f *.bin *.efi *.img *.vmdk *.vhd *.dmg *.vdi

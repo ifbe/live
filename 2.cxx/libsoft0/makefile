@@ -4,9 +4,6 @@ linux:
 cross:
 	make target compiler=x86_64-elf-gcc
 target:
-	$(compiler) $(cflag) parttable.c
-	$(compiler) $(cflag) fat.c
-	$(compiler) $(cflag) ntfs.c
-	$(compiler) $(cflag) ext.c
+	$(compiler) $(cflag) haha.c
 clean:
 	rm -f *.o
