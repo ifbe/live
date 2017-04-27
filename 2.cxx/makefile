@@ -28,6 +28,7 @@ link:
 	libboot1/debug.o \
 	libhard0/fp.o \
 	libhard0/port.o \
+	libhard0/pci.o \
 	libhard0/ide.o \
 	libhard0/ahci.o \
 	libhard0/xhcihost.o \
@@ -40,8 +41,6 @@ link:
 	libsoft1/convert.o \
 	libsoft1/parttable.o \
 	libsoft1/fs.fat.o \
-	libsoft1/fs.ntfs.o \
-	libsoft1/fs.ext.o \
 	libui0/screen.o \
 	libui1/ascii.o \
 	libui1/character.o \

@@ -11,14 +11,13 @@
 
 
 
-//用了别人的函数
 u32 in32(u32 addr);
 void out32(u32 port, u32 addr);
 void diary(char* , ...);
 
 
 
-//主控就是这么做的，程序员没法改
+//
 typedef struct tagHBA_CMD_HEADER
 {
 	// DW0
@@ -97,33 +96,6 @@ typedef volatile struct tagHBA_MEM
 
 
 
-//[0,7]:(vendorid<<16)+deviceid
-//[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
-//[0x10,0x17]:portaddress of the device
-//[0x18,0x1f]:ansciiname of the device
-static unsigned int searchpci()
-{
-	int bus,slot,func;
-	u32 temp,data;
-	for(bus=0;bus<256;bus++)
-	{
-		for(slot=0;slot<32;slot++)
-		{
-			for(func=0;func<8;func++)
-			{
-				temp = 0x80000000 | (bus<<16) | (slot<<11) + (func<<8) + 8;
-				out32(0xcf8, temp);
-
-				data = in32(0xcfc);
-				if((data>>8) == 0x010601)
-				{
-					return temp & 0xffffff00;
-				}
-			}
-		}
-	}
-	return 0;
-}
 static unsigned int probepci(u64 addr)
 {
 //进：pci地址
@@ -355,19 +327,16 @@ static void probeahci(u64 addr)
 
 
 
-void initahci()
+void initahci(u64 pciaddr)
 {
 	u64 addr;
-	diary("@initahci");
+	diary("ahci@%x",pciaddr);
 
 	//clear home
 	addr=ahcihome;
 	for(;addr<ahcihome+0x100000;addr++) *(u8*)addr=0;
 
-	addr=searchpci();		//get port addr of this storage device
-	if(addr==0) return;
-
-	addr=probepci(addr);		//memory addr of ahci
+	addr=probepci(pciaddr);		//memory addr of ahci
 	if(addr==0) return;
 
 	probeahci(addr);

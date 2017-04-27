@@ -5,12 +5,10 @@
 #define journalhome 0x100000	//1m
 #define window 0x1000000		//16m
 //libboot
-void initconsole();
 void diary(char*,...);
+void initconsole();
 //libhard
-void initahci();
-void initide();
-void initxhci();
+void initpci();
 //libsoft
 void initacpi();
 void initparttable();
@@ -35,12 +33,10 @@ void start()
 	u64* p=(u64*)(journalhome);
 	u64 type,key;
 	for(key=0;key<0x20000;key++) p[key]=0;
-	diary("oh we have found a whole new world,landing...%x...%x...%x...",3,2,1);
+	diary("landing...3...2...1...");
 
 	//libhard
-	initahci();
-	initide();
-	initxhci();
+	initpci();
 
 	//libsoft
 	initacpi();

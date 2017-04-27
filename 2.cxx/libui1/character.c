@@ -12,7 +12,7 @@ void diary(char*,...);
 static u32* window;
 //
 static u8* logaddr;
-static int last=0;
+static int offset=0;
 //
 static u8 buffer[128];
 static int count=0;
@@ -23,7 +23,10 @@ static int count=0;
 void characterread_image()
 {
 	int x,y;
-	u32 temp = *(u32*)(logaddr + 0xffff8);
+	int temp = *(int*)(logaddr + 0xffff8);
+	temp -= offset;
+	if(temp < 0)temp = 0;
+
 	if(temp < 0x80*0x2f)temp = 0;
 	else temp = temp-0x80*0x2f;
 
@@ -35,7 +38,6 @@ void characterread_image()
 			window[(y<<10)+x] = 0;
 		}
 	}
-	last = temp;
 
 	//
 	for(y=0;y<752/16;y++)
@@ -52,7 +54,10 @@ void characterread_b8000()
 	int c,t;
 	u8* p;
 	u8* q;
-	u32 temp = *(u32*)(logaddr + 0xffff8);
+	int temp = *(int*)(logaddr + 0xffff8);
+	temp -= offset;
+	if(temp < 0)temp = 0;
+
 	if(temp < 0x80*24)temp = 0;
 	else temp = temp-0x80*24;
 
@@ -67,7 +72,7 @@ void characterread_b8000()
 
 			t = (y*80+x)*2;
 			p[t+0] = c;
-			p[t+1] = 0xf0;
+			p[t+1] = 0x70;
 		}
 	}
 }
@@ -78,26 +83,54 @@ void characterread()
 }
 void characterwrite(u64 key, u64 type)
 {
-	if(key == 0x7f)
+	if(type == 0x64626b)
 	{
-		if(count>0)count--;
-		buffer[count] = 0;
-	}
-	else if(key == 0xd)
-	{
-		diary(buffer);
-		for(count=127;count>=0;count--)
+		if(key == 0x1b)		//esc
 		{
+			offset = 0;
+		}
+		else if(key == 0x47)	//home
+		{
+			offset = 0x100000;
+		}
+		else if(key == 0x4f)	//end
+		{
+			offset = 0;
+		}
+		else if(key == 0x49)	//page up
+		{
+			offset += 0x800;
+		}
+		else if(key == 0x51)	//page down
+		{
+			if(offset>0x800)offset -= 0x800;
+		}
+
+		return;
+	}
+	if(type == 0x72616863)
+	{
+		if(key == 0x7f)
+		{
+			if(count>0)count--;
 			buffer[count] = 0;
 		}
-		count = 0;
-	}
-	else
-	{
-		if(count > 127)return;
+		else if(key == 0xd)
+		{
+			diary(buffer);
+			for(count=127;count>=0;count--)
+			{
+				buffer[count] = 0;
+			}
+			count = 0;
+		}
+		else
+		{
+			if(count > 127)return;
 
-		buffer[count] = (u8)key;
-		count ++;
+			buffer[count] = (u8)key;
+			count ++;
+		}
 	}
 }
 

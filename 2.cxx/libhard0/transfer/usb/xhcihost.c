@@ -31,41 +31,6 @@ void initusb();
 
 
 
-//全部设备信息我放在0x110000了，格式如下:(非本环境自己处理这一步)
-//[0,7]:(vendorid<<16)+deviceid
-//[8,0xf]:(class<<24)+(subclass<<16)+(progif<<8)+revisionid
-//[0x10,0x17]:portaddress of the device
-//[0x18,0x1f]:ansciiname of the device
-//本函数作用是：
-//1.返回要驱动的设备的portaddress
-//2.填上[0x18,0x1f],(为了工整好看)
-int searchpci()
-{
-	int bus,slot,func;
-	u32 temp,data;
-	for(bus=0;bus<256;bus++)
-	{
-		for(slot=0;slot<32;slot++)
-		{
-			for(func=0;func<8;func++)
-			{
-				temp = 0x80000000 | (bus<<16) | (slot<<11) + (func<<8) + 8;
-				out32(0xcf8, temp);
-
-				data = in32(0xcfc);
-				if((data>>8) == 0x0c0330)
-				{
-					return temp & 0xffffff00;
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-
-
-
 /*
 void explaincapability()
 {
@@ -580,12 +545,11 @@ return 0;
 
 
 
-void initxhci()
+void initxhci(u64 pciaddr)
 {
-	diary("@initxhci");
+	diary("xhci@%x",pciaddr);
 
-	//find pci address
-	xhciport = searchpci();
+	xhciport = pciaddr;
 	if(xhciport == 0) goto end;
 
 	//pci部分

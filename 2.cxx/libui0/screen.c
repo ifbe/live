@@ -42,8 +42,10 @@ void writescreen()
 
 void initscreen(void* p)
 {
+	int j,size;
+	u8* addr;
+	img = p;
+
 	win.buf = *(u32*)screeninfo;
 	win.fmt = *(u8*)(screeninfo+8);
-
-	img = p;
 }

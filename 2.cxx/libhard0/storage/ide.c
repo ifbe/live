@@ -3,41 +3,9 @@
 #define u32 unsigned int
 #define u64 unsigned long long
 #define idehome 0x400000
-
-
-
-
-//用了别人的函数
 u32 in32(u32 addr);
 void out32(u32 port, u32 addr);
 void diary(char* , ...);
-
-
-
-
-static unsigned int searchpci()
-{
-	int bus,slot,func;
-	u32 temp,data;
-	for(bus=0;bus<256;bus++)
-	{
-		for(slot=0;slot<32;slot++)
-		{
-			for(func=0;func<8;func++)
-			{
-				temp = 0x80000000 | (bus<<16) | (slot<<11) + (func<<8) + 8;
-				out32(0xcf8, temp);
-
-				data = in32(0xcfc);
-				if((data>>16) == 0x0101)
-				{
-					return temp & 0xffffff00;
-				}
-			}
-		}
-	}
-	return 0;
-}
 
 
 
@@ -108,16 +76,12 @@ static unsigned int probepci(u64 addr)
 
 
 
-void initide()
+void initide(u64 pciaddr)
 {
 	u64 addr;
-	diary("@initide");
-
-	//find device
-	addr = searchpci();		//get port addr of this storage device
-	if(addr == 0) return;
+	diary("ide@%x", pciaddr);
 
 	//probe pci
-	addr = probepci(addr);		//memory addr of ahci
+	addr = probepci(pciaddr);
 	if(addr == 0) return;
 }

@@ -6,10 +6,11 @@ cross:
 target:
 	$(compiler) $(cflag) cpu/fp.c
 	$(compiler) $(cflag) cpu/port.c
-	$(compiler) $(cflag) hc/ahci.c
-	$(compiler) $(cflag) hc/ide.c
-	$(compiler) $(cflag) hc/xhcihost.c
-	$(compiler) $(cflag) hc/xhciport.c
-	$(compiler) $(cflag) kbd/ps2kbd.c
+	$(compiler) $(cflag) input/ps2kbd.c
+	$(compiler) $(cflag) storage/ahci.c
+	$(compiler) $(cflag) storage/ide.c
+	$(compiler) $(cflag) transfer/pci/pci.c
+	$(compiler) $(cflag) transfer/usb/xhcihost.c
+	$(compiler) $(cflag) transfer/usb/xhciport.c
 clean:
 	rm -f *.o
