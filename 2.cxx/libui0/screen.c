@@ -20,6 +20,16 @@ void writescreen()
 {
 	int j;
 	u32* p;
+	u8* aa;
+	u8* bb;
+	if(win.fmt == 0)
+	{
+		aa = (void*)0xb8000;
+		bb = (void*)win.buf;
+		for(j=0;j<80*25*2;j++)aa[j] = bb[j];
+		return;
+	}
+
 	for(j=0;j<1024*768;j++)
 	{
 		p = (void*)( (win.buf) + (j*win.fmt) );

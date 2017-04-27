@@ -94,5 +94,5 @@ int waitkbd(u64* key, u64* type)
 	}
 
 	//return
-	diary("type=%x,key=%x",*type,*key);
+	//diary("type=%x,key=%x",*type,*key);
 }

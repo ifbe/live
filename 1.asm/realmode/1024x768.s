@@ -30,15 +30,18 @@ setresolution:
 	mov ax,0x4f02
 	int 0x10
 
+	;buf
 	mov eax,[vesahome+0x28]
 	mov [vesahome],eax
-
+	;fmt
 	mov al,[vesahome+0x19]
 	shr al,3
 	mov [vesahome+8],al
-
+	;x
 	mov word [vesahome+0x10],1024
+	;y
 	mov word [vesahome+0x18],768
+
 	jmp endofscreen
 
 

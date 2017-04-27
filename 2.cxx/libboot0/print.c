@@ -98,7 +98,7 @@ void arg2string(QWORD* argtable,char* dest)
 	int out=0;
 	while(1)
 	{
-		if(out>=0x40)break;
+		if(out>=0x80)break;
 		if(source[in] == '\0')break;		//是0，字符串结束了
 
 		else if(source[in]==0x9)
@@ -176,7 +176,7 @@ void diary(QWORD arg0,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
 
 	//这次往哪儿写（要确保不写到指定以外的地方）
 	unsigned long long temp=*(QWORD*)(journalhome+journalsize-8);
-	if(temp>=journalsize-0x40)
+	if(temp>=journalsize-0x80)
 	{
 		temp=0;
 		*(QWORD*)(journalhome+journalsize-8)=0;
@@ -187,7 +187,7 @@ void diary(QWORD arg0,QWORD arg1,QWORD arg2,QWORD arg3,QWORD arg4,QWORD arg5)
 	arg2string(argtable,dest);
 
 	//下一次怎办
-	*(QWORD*)(journalhome+journalsize-8)+=0x40;
+	*(QWORD*)(journalhome+journalsize-8)+=0x80;
 }
 
 

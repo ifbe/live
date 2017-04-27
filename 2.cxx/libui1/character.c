@@ -20,12 +20,12 @@ static int count=0;
 
 
 
-void characterread()
+void characterread_image()
 {
 	int x,y;
-	u64 temp = *(u64*)(logaddr + 0xffff8);
-	if(temp < 0x40*0x2f)temp = 0;
-	else temp = temp-0x40*0x2f;
+	u32 temp = *(u32*)(logaddr + 0xffff8);
+	if(temp < 0x80*0x2f)temp = 0;
+	else temp = temp-0x80*0x2f;
 
 	//
 	for(y=0;y<768;y++)
@@ -40,11 +40,41 @@ void characterread()
 	//
 	for(y=0;y<752/16;y++)
 	{
-		printstring(0, y*16, 1, logaddr+temp+y*0x40, 0xffffff, 0xff000000);
+		printstring(0, y*16, 1, logaddr+temp+y*0x80, 0xffffff, 0xff000000);
 	}
 
 	//
 	printstring(0, 752, 1, buffer, 0xffffff, 0xff000000);
+}
+void characterread_b8000()
+{
+	int x,y;
+	int c,t;
+	u8* p;
+	u8* q;
+	u32 temp = *(u32*)(logaddr + 0xffff8);
+	if(temp < 0x80*24)temp = 0;
+	else temp = temp-0x80*24;
+
+	q = logaddr+temp;
+	p = (u8*)0xb8000;
+	for(y=0;y<25;y++)
+	{
+		for(x=0;x<80;x++)
+		{
+			c = q[y*0x80 + x];
+			if(c < 0x20)c = 0x20;
+
+			t = (y*80+x)*2;
+			p[t+0] = c;
+			p[t+1] = 0xf0;
+		}
+	}
+}
+void characterread()
+{
+	if(*(u32*)0x2000 == 0xb8000)characterread_b8000();
+	else characterread_image();
 }
 void characterwrite(u64 key, u64 type)
 {
@@ -55,7 +85,7 @@ void characterwrite(u64 key, u64 type)
 	}
 	else if(key == 0xd)
 	{
-		diary("command=%s",buffer);
+		diary(buffer);
 		for(count=127;count>=0;count--)
 		{
 			buffer[count] = 0;
