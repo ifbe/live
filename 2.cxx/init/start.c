@@ -33,7 +33,7 @@ void start()
 	u64* p=(u64*)(journalhome);
 	u64 type,key;
 	for(key=0;key<0x20000;key++) p[key]=0;
-	diary("landing...3...2...1...");
+	diary("spaceship landing...3...2...1...");
 
 	//libhard
 	initpci();

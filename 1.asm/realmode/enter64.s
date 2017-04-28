@@ -3,12 +3,12 @@
 
 %define gdtr 0x840
 %define idtr 0x850
-%define gdthome 0x4000
-%define idthome 0x5000
+%define gdthome 0x3000
 
+%define temppml4 0x4000
+%define temppdpt 0x5000
 %define temppd 0x6000
-%define temppdpt 0x7000
-%define temppml4 0x3000
+%define temppt 0x7000
 
 [BITS 16]
 startofenter64:
@@ -16,30 +16,28 @@ startofenter64:
 
 
 
-;___________打开A20地址线______________
-	in al, 92h  
-	or al, 2  
+;_________________________________________________
+;打开A20地址线
+	in al, 92h
+	or al, 2
 	out 92h, al
-;_________________________________
+;__________________________________________________
 
 
 
 
-;__________________________________________
-;注意不能清空:e820信息[800,fff],屏幕信息[1000,1fff],栈[7000,7c00]
+;__________________________________________________
+;es=0
 	xor eax, eax
 	mov es,ax
 	cld
 
-;[+0x10,+0x1f]:jump rax
-;[+0x40,+0x4f]:gdtr
-;[+0x50,+0x5f]:idtr
+;[0x840,+0x87f]
 	mov di,gdtr
 	mov cx,0x40
 	rep stosb
 
-;[0x4000,0x4fff]:gdt
-;[0x5000,0x5fff]:idt
+;[0x3000,0x7fff]
 	mov di,0x3000
 	mov cx,0x5000
 	rep stosb
@@ -48,7 +46,8 @@ startofenter64:
 
 
 
-;_______在0x810这个位置手工写入jmp rax这条指令_______
+;__________________________________________________
+;在0x810这个位置手工写入jmp rax这条指令
 	xor ax,ax
 	mov es,ax
 	mov di,jmprax
@@ -58,25 +57,25 @@ startofenter64:
 
 
 
-;_______________global descriptor table_____________ 
+;__________________________________________________ 
 ;gdt表位于
 	mov di,gdthome
 
 ;第一个:必须是空描述符
 	xor eax,eax
-	stosd	;null(lower half)
-	stosd	;null(higher half)
+	stosd
+	stosd
 
-;第二个:64bit代码段        0x002f9a00,00000000
-	stosd	;code(lower half)
+;第二个:64bit代码段00,00,00,00,00,9a,2f,00
+	stosd
 	mov eax,0x002f9a00
-	stosd	;code(higher half)
+	stosd
 
-;第三个:64bit数据段        0x002f9200,00000000
+;第三个:64bit数据段00,00,00,00,00,92,2f,00
 	xor eax,eax
-	stosd	;data(lower half)
+	stosd
 	mov eax,0x002f9200
-	stosd	;data(higher half)
+	stosd
 
 
 
@@ -85,18 +84,18 @@ startofenter64:
 	mov di,gdtr
 ;gdtr.size=gdt表的总长度-1
 	mov ax,0x17
-	stosw					;dw $-GDT-1	16bit Size
+	stosw			;8*3 - 1
 ;gdtr.addr=gdt表的位置
 	mov eax,gdthome
-	stosd					;low 32bit
+	stosd
 	xor eax,eax
-	stosd					;high 32bit
-;______________________________________________
+	stosd
+;__________________________________________________
 
 
 
 
-;_______________________________________
+;___________________________________________________
 ;关闭中断
 	mov al, 0xFF
 	out 0xA1, al
@@ -112,26 +111,26 @@ startofenter64:
 
 ;lidt指令
 	lidt [idtr]		;load pointer
-;_______________________________________________
+;___________________________________________________
  
 
 
 
-;__________映射2MB的地址空间足够pre kernel用了________
+;___________________________________________________
 ;在pd里面写0|0x83
-	mov word [temppd],0x83			;temppd=0x6000
+	mov word [temppd], 0x0|0x83
 
-;把pd的地址放入pdpt(0x91000)(9000:1000)
-	mov word [temppdpt],temppd | 3		;temppd=0x6000,temppdpt=0x7000
+;把pd的地址放入pdpt
+	mov word [temppdpt], temppd|3
 
-;把pdpt的地址放入pml4(0x90000)(9000:0000)
-	 mov word [temppml4],temppdpt | 3	;temppdpt=0x7000,temppml4=0x3000
-;______________________________________________________
-
-
+;把pdpt的地址放入pml4
+	 mov word [temppml4], temppdpt|3
+;___________________________________________________
 
 
-;_______开pae/pge,给cr3写地址,设置efer.lme=1_________
+
+
+;__________________________________________________
 ;Set the PAE and PGE bit.
 	mov eax,10100000b
 	mov cr4, eax
@@ -143,21 +142,21 @@ startofenter64:
 	rdmsr    
 	or eax,0x00000100        ; Set the LME bit.
 	wrmsr
-;____________________________________________
+;___________________________________________________
 
 
 
 
 ;______________________打开sse______________________
 ;读出cr0,改掉,写回去
-    mov eax,cr0
-    and ax,0xFFFB      ;clear coprocessor emulation CR0.EM
-    or ax,0x2          ;set coprocessor monitoring  CR0.MP
-    mov cr0,eax
+	mov eax,cr0
+	and ax,0xFFFB	;clear coprocessor emulation CR0.EM
+	or ax,0x2	;set coprocessor monitoring  CR0.MP
+	mov cr0,eax
 ;读出cr4,改掉,写回去
-    mov eax,cr4
-    or ax,3<<9    ;set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time
-    mov cr4,eax
+	mov eax,cr4
+	or ax,3<<9	;set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time
+	mov cr4,eax
 ;_______________________________________________
 
 
@@ -173,25 +172,21 @@ startofenter64:
 	xor eax,eax
 	xor ebx,ebx
 
-;目前仍在实模式,取出段基址给eax
-	push cs
+	push cs				;取出段基址给eax
 	pop ax
 	shl eax,4
 
-;基地址加上段内偏移得到where的实际地址
-	call where    ;往栈里压入where的地址
+	call where
 where:
 	pop bx
-	add eax,ebx
+	add eax,ebx			;where的实际地址
 
-;再加上相对长度,得到rax=endofenter64的实际地址
-	add eax,endofenter64-where
+	add eax,endofenter64-where	;endofenter64的实际地址
 
 ;Load pointer (a32 because over 64k)
 	a32 lgdt [gdtr]
 
-;Load CS,flush instruction cache
-;内存800位置里面的东西是jmp rax,也就是跳回来到endofenter64的位置
+;jmp rax: Load CS+flush instruction cache
 	jmp dword 0x0008:jmprax
 ;______________________________________________
 

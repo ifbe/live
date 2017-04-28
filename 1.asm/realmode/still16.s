@@ -22,7 +22,7 @@ startof16:
 	mov ds,ax
 	mov es,ax
 	mov ss,ax    ; Set up stack so that it starts below Main.
-	mov sp,0x7c00
+	mov sp,0xfff0
 ;___________________________________________
 
 

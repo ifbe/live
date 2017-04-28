@@ -3,38 +3,201 @@
 #define u32 unsigned int
 #define u64 unsigned long long
 #define idehome 0x400000
+u8 in8(u32 addr);
+u16 in16(u32 addr);
 u32 in32(u32 addr);
-void out32(u32 port, u32 addr);
+void out8(u32 port, u8 data);
+void out16(u32 port, u16 data);
+void out32(u32 port, u32 data);
 void diary(char* , ...);
 
 
 
 
-static void rememberharddisk(u64 name,u64 command,u64 control)
+void readide(u64 fd, u64 buf, u64 from, u64 count)
 {
-	u64* p=(u64*)idehome;
-	int i;
+        u64 command=*(u64*)(idehome+0x10);	//command
+        u64 control=*(u64*)(idehome+0x20);	//control
+        char* dest=(char*)buf;
+        volatile int i;
+        volatile u32 temp;
 
-	//最多0x1000字节,每0x40字节一个记录
-	//所以最多挂满64个sata设备,正常人不会挂那么多sata设备吧?
-	//多了直接覆盖......
-	//(如果实在超过这个数量,其实有0x10000字节可以用)
-	for( i=0; i<0x1000/8; i+=8 )
-	{
-		if( p[i] == 0 )break;
-	}
+        //channel reset
+        out8(control+2,4);
+        out16(0x80,0x1111);             //out8(0xeb,0)
+        diary("out %x %x\n",control+2,4);
 
-	//已经找到了空地，放东西
-	p[i]=name;
-	p[i+2]=command;
-	p[i+4]=control;
+        out8(control+2,0);
+        diary("out %x %x\n",control+2,0);
+
+        out8(command+6,0xa0);
+        diary("out %x %x\n",command+6,0xa0);
+
+        //50:hd exist
+        i=0;
+        while(1)
+        {
+                i++;
+                if(i>0xfffff)
+                {
+                        diary("device not ready:%x\n",temp);
+                        return;
+                }
+
+                temp=in8(command+7);
+                if( (temp&0x80) == 0x80 )continue;                      //busy
+                if( (temp&0x40) == 0x40 )break;                 //Device ReaDY?
+        }
+
+        //count
+        out8(command+2,count&0xff);
+        diary("total:%x\n",count);
+
+        //lba
+        out8(command+3,from&0xff);
+        out8(command+4,(from>>8)&0xff);
+        out8(command+5,(from>>16)&0xff);
+        diary("lba:%x\n",from);
+
+        //mode
+        out8(command+6,0xe0);
+        diary("out %x %x\n",command+6,0xe0);
+
+        //start reading
+        out8(command+7,0x20);
+        diary("out %x %x\n",command+7,0x20);
+
+        //check hd data ready?
+        i=0;
+        while(1)
+        {
+                i++;
+                if(i>0xfffff)
+                {
+                        diary("data not ready!\n");
+                        return;
+                }
+
+                temp=in8(command+7);
+                if( (temp&0x80) == 0x80 )continue;                      //busy
+                if( (temp&0x8) == 0 )continue;                  //DRQ
+
+                break;
+                //if( (temp&0x1) == 0x1 )
+                //{
+                //      diary("read error:%x\n",temp);
+                //      return;
+                //}
+                //else break;
+        }
+
+        //read data
+        diary("reading data\n");
+        for(i=0;i<0x200;i+=2)
+        {
+                temp=in8(command+7);
+                //if( (temp&1) == 1)break;
+                if( (temp&0x8) != 8)break;
+
+                temp=in16(command+0);
+                dest[i]=temp&0xff;
+                dest[i+1]=(temp>>8)&0xff;
+        }
+
+        if(i < 0x200) diary("not finished:%x\n",i);
 }
-static unsigned int probepci(u64 addr)
+int identifyide(u64 rdi)
+{
+        u64 command=*(u64*)(idehome+0x10);              //command
+        u64 control=*(u64*)(idehome+0x20);              //control
+        u16* dest=(u16*)rdi;
+        volatile int i;
+        volatile u32 temp=0;
+
+        //channel reset
+        out8(control+2,4);
+        out16(0x80,0x1111);             //out8(0xeb,0)
+        diary("out %x %x\n",control+2,4);
+
+        out8(control+2,0);
+        diary("out %x %x\n",control+2,0);
+
+        out8(command+6,0xa0);
+        diary("out %x %x\n",command+6,0xa0);
+
+        //50:hd exist
+        i=0;
+        while(1)
+        {
+                i++;
+                if(i>0xfffff)
+                {
+                        diary("device not ready:%x\n",temp);
+                        return -1;
+                }
+
+                temp=in8(command+7);
+                if( (temp&0x80) == 0x80 )continue;                      //busy
+                if( (temp&0x40) == 0x40 )break;                 //Device ReaDY?
+        }
+
+        //count
+        out8(command+2,0);
+        out8(command+3,0);
+        out8(command+4,0);
+        out8(command+5,0);
+
+        //mode
+        out8(command+6,0xe0);
+        diary("out %x %x\n",command+6,0xe0);
+
+        //start reading
+        out8(command+7,0xec);
+        diary("out %x %x\n",command+7,0xec);
+
+        //check hd data ready?
+        i=0;
+        while(1)
+        {
+                i++;
+                if(i>0xfffff)
+                {
+                        diary("data not ready!\n");
+                        return -2;
+                }
+
+                temp=in8(command+7);
+                if( (temp&0x80) == 0x80 )continue;                      //busy
+                if( (temp&0x8) == 0 )continue;                  //DRQ
+
+                break;
+        }
+
+        //read data
+        diary("reading data\n");
+        for(i=0;i<0x100;i++)
+        {
+                temp=in8(command+7);
+                //if( (temp&1) == 1)break;
+                if( (temp&0x8) != 8)break;
+
+                temp=in16(command+0);           //只管放，后面再调字节序
+                dest[i]=temp;
+        }
+
+        if(i < 0x100) diary("not finished:%x\n",i);
+        return 1;
+}
+
+
+
+
+static void probepci(u64 addr)
 {
 //?：pci地址
 //出：?存地址
-	unsigned int temp;
-	unsigned int bar0,bar1;
+	u32 temp;
+	u32 bar0,bar1;
 	diary("(ide)pciaddr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
@@ -45,7 +208,7 @@ static unsigned int probepci(u64 addr)
 
 	out32(0xcf8,addr+0x4);
 	temp=(u64)in32(0xcfc);
-	diary("    pci sts&cmd:%x",temp);
+	diary("    sts&cmd:%x",temp);
 
 	//ide port
 	out32(0xcf8,addr+0x10);
@@ -65,23 +228,14 @@ static unsigned int probepci(u64 addr)
 	diary("    bar3:%x\n",temp);
 
 	//找到了，放到自己的表格里
-	rememberharddisk(0x656469,bar0,bar1);
+	diary("ide,%x,%x",bar0,bar1);
 	diary("}\n");
 }
-
-
-
-
-
-
-
-
 void initide(u64 pciaddr)
 {
 	u64 addr;
 	diary("ide@%x", pciaddr);
 
 	//probe pci
-	addr = probepci(pciaddr);
-	if(addr == 0) return;
+	probepci(pciaddr);
 }

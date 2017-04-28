@@ -1,5 +1,5 @@
 %define idtr 0x850
-%define idthome 0x5000
+%define idthome 0x8000
 
 [bits 64]
 idt_start:
