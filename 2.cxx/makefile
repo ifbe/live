@@ -39,6 +39,7 @@ link:
 	libhard1/read.o \
 	libsoft1/acpi.o \
 	libsoft1/convert.o \
+	libsoft1/cmp.o \
 	libsoft1/parttable.o \
 	libsoft1/fs.fat.o \
 	libui0/screen.o \

@@ -2,7 +2,14 @@
 #define u32 unsigned int
 #define u16 unsigned short
 #define u8 unsigned char
+//
 void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
+//
+int ncmp(void*, void*, int);
+int cmp(void*, void*);
+//
+void ahcilist();
+//
 void diary(char*,...);
 
 
@@ -118,10 +125,9 @@ void characterwrite(u64 key, u64 type)
 		else if(key == 0xd)
 		{
 			diary(buffer);
-			for(count=127;count>=0;count--)
-			{
-				buffer[count] = 0;
-			}
+			if(ncmp(buffer,"ahcilist",6) == 0)ahcilist();
+
+			for(count=127;count>=0;count--)buffer[count] = 0;
 			count = 0;
 		}
 		else

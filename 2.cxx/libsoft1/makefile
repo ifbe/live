@@ -5,6 +5,7 @@ cross:
 	make target compiler=x86_64-elf-gcc
 target:
 	$(compiler) $(cflag) acpi.c
+	$(compiler) $(cflag) cmp.c
 	$(compiler) $(cflag) convert.c
 	$(compiler) $(cflag) pt/parttable.c
 	$(compiler) $(cflag) fs/fs.fat.c

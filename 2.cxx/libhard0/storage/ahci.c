@@ -2,18 +2,10 @@
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
-//
 #define ahcihome 0x400000
 #define receivefisbuffer ahcihome+0x10000
 #define cmdlistbuffer ahcihome+0x20000
 #define cmdtablebuffer ahcihome+0x30000
-
-
-
-
-u32 in32(u32 addr);
-void out32(u32 port, u32 addr);
-void diary(char* , ...);
 
 
 
@@ -165,6 +157,15 @@ typedef volatile struct tagHBA_MEM
 
 
 
+u32 in32(u32 addr);
+void out32(u32 port, u32 addr);
+void diary(char* , ...);
+static u64 portbase;
+static int total;
+
+
+
+
 int find_cmdslot(HBA_PORT *port)
 {
 	// If not set in SACT and CI, the slot is free
@@ -178,11 +179,16 @@ int find_cmdslot(HBA_PORT *port)
 	}
 	return -1;
 }
-void maketable(u64 buf,u64 from,HBA_CMD_HEADER* cmdheader,u32 count)
+void maketable(u64 buf,u64 from,HBA_CMD_HEADER* cmdheader,u64 count)
 {
-	cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(u32);//Command FIS size
-	cmdheader->w = 0;	       // Read from device
-	cmdheader->prdtl = (u16)((count-1)>>7) + 1;    //PRDT entries count,example:
+	//Command FIS size
+	cmdheader->cfl=sizeof(FIS_REG_H2D)/4;
+
+	// Read from device
+	cmdheader->w = 0;
+
+	//PRDT entries count,example:
+	cmdheader->prdtl = (u16)((count-1)>>7) + 1;
 	//13sectors    >>>>    prdt=1个
 	//0x80sectors    >>>>    prdt=1个
 	//0x93sectors    >>>>    prdt=2个
@@ -191,59 +197,52 @@ void maketable(u64 buf,u64 from,HBA_CMD_HEADER* cmdheader,u32 count)
 	//0x181sectors    >>>>    prdt=4个
 	//diary("ptdtl",(u64)cmdheader->prdtl);
 
-
-
-
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(u64)cmdheader->ctba;
 	//diary("cmdtable@",(u64)cmdtable);
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
 	for(;i>0;i--){p[i]=0;}
 
-
-
-
 	// 8K bytes (16 sectors) per PRDT
 	for (i=0; i<cmdheader->prdtl-1; i++)
 	{
 		cmdtable->prdt_entry[i].dba = (u32)buf;
-		cmdtable->prdt_entry[i].dbc = 0x80*0x200-1;      //bit0=1, 0x1ffff
+		cmdtable->prdt_entry[i].dbc = 0x80*0x200-1;	//bit0=1, 0x1ffff
 		//cmdtable->prdt_entry[i].i = 1;
 		buf += 0x10000;  // 64KB words?
 		count -= 0x80;    // 16 sectors
 	}
-	cmdtable->prdt_entry[i].dba = (u32)buf;	       // Last entry
-	cmdtable->prdt_entry[i].dbc = count*0x200-1;	    // 512 bytes per sector
+	cmdtable->prdt_entry[i].dba = (u32)buf;		//Last entry
+	cmdtable->prdt_entry[i].dbc = count*0x200-1;	// 512 bytes per sector
 	//cmdtable->prdt_entry[i].i = 1;
 
 	// Setup command
 	FIS_REG_H2D* fis = (FIS_REG_H2D*)(&cmdtable->cfis);
-	fis->fis_type = FIS_TYPE_REG_H2D;	       //0
-	fis->c = 1;     // Command		      //[1].[0,0]
+	fis->fis_type = FIS_TYPE_REG_H2D;	//0
+	fis->c = 1;		//Command	//[1].[0,0]
 	//fis->command = 0x20;
 	//fis->command = ATA_CMD_READ_DMA_EX;
-	fis->command = 0x25;			    //2
+	fis->command = 0x25;		//2
 
-	fis->lba0 = (u8)from;			 //4
-	fis->lba1 = (u8)(from>>8);		    //5
-	fis->lba2 = (u8)(from>>16);		   //6
-	fis->device = 1<<6;			     //7     1<<6=LBA mode
+	fis->lba0 = (u8)from;		//4
+	fis->lba1 = (u8)(from>>8);	//5
+	fis->lba2 = (u8)(from>>16);	//6
+	fis->device = 1<<6;		//7	1<<6=LBA mode
 
-	fis->lba3 = (u8)(from>>24);		   //8
-	fis->lba4 = (u8)(from>>32);		   //9
-	fis->lba5 = (u8)(from>>40);		   //a
+	fis->lba3 = (u8)(from>>24);	//8
+	fis->lba4 = (u8)(from>>32);	//9
+	fis->lba5 = (u8)(from>>40);	//a
 
-	fis->countl = count&0xff;		       //c
-	fis->counth = (count>>8)&0xff;		  //d
+	fis->countl = count&0xff;	//c
+	fis->counth = (count>>8)&0xff;	//d
 }
 int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 {
 	HBA_PORT* port =(HBA_PORT*)sata;
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(u64)(port->clb);
-	port->is = 0xffffffff;	   // Clear pending interrupt
 
-
-
+	//Clear pending interrupt
+	port->is = 0xffffffff;
 
 	//find cmdslot
 	int cmdslot = find_cmdslot(port);
@@ -255,9 +254,6 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 	cmdheader += cmdslot;
 	//diary("cmdslot:",(u64)cmdslot);
 	//diary("cmdheader:",(u64)cmdheader);
-
-
-
 
 	//make the table
 	maketable(buf,from,cmdheader,count);
@@ -312,105 +308,156 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 }
 int ahciidentify(u64 dev, u64 rdi)
 {
-        HBA_PORT* port=(HBA_PORT*)dev;
-        HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(u64)(port->clb);
-        port->is = (u32)-1;             // Clear pending interrupt bits
-        u32 cmdslot;
-        u32 temp;
+	HBA_PORT* port=(HBA_PORT*)dev;
+	HBA_CMD_HEADER* cmdheader = (void*)(u64)(port->clb);
+	u32 cmdslot;
+	u32 temp;
+	port->is = 0xffffffff;	//Clear pending interrupt bits
 
+	//find a cmd slot
+	temp=(port->sact | port->ci);
+	for(cmdslot=0; cmdslot<32; cmdslot++)    //cmdslots=32
+	{
+		if ((temp&1) == 0)break;
+		temp>>= 1;
+	}
+	if(cmdslot == 32)
+	{
+		diary("error:no cmdslot",0);
+		return -1;
+	}
+	cmdheader += cmdslot;
+	//diary("cmdslot:",(u64)cmdslot);
+	//diary("cmdheader:",(u64)cmdheader);
 
+	cmdheader->cfl=sizeof(FIS_REG_H2D)/4;	//Command FIS size
+	cmdheader->w = 0;			// Read from device
+	cmdheader->prdtl=1;
+	cmdheader->prdbc=0;
 
+	//make the table
+	CMD_TABLE* cmdtable = (CMD_TABLE*)(u64)cmdheader->ctba;
+	//diary("cmdtable(comheader->ctba):",(u64)cmdtable);
+	char* p=(char*)cmdtable;
+	int i=sizeof(CMD_TABLE);
+	for(;i>0;i--){p[i]=0;}
+	cmdtable->prdt_entry[0].dba = rdi;
+	cmdtable->prdt_entry[0].dbc = 0x200-1;	//bit0=1
+	//cmdtable->prdt_entry[0].i = 1;
+	FIS_REG_H2D *fis = (FIS_REG_H2D*)(&cmdtable->cfis);
 
-        //find a cmd slot
-        temp=(port->sact | port->ci);
-        for (cmdslot=0;cmdslot<32;cmdslot++)    //cmdslots=32
-        {
-                if ((temp&1) == 0)break;
-                temp>>= 1;
-        }
-        if (cmdslot == 32)
-        {
-                diary("error:no cmdslot",0);
-                return -1;
-        }
-        cmdheader += cmdslot;
-        //diary("cmdslot:",(u64)cmdslot);
-        //diary("cmdheader:",(u64)cmdheader);
+	fis->fis_type = FIS_TYPE_REG_H2D;	       //0
+	fis->c = 1;				     //1     Command
+	fis->command = 0xec;			    //2
+	fis->device = 0;				//7     LBA mode
 
-        cmdheader->cfl=sizeof(FIS_REG_H2D)/sizeof(u32);//Command FIS size
-        cmdheader->w = 0;               // Read from device
-        cmdheader->prdtl=1;
-        cmdheader->prdbc=0;
+	//wait until the port is no longer busy
+	volatile int timeout = 0;
+	while(1)
+	{
+		timeout++;
+		if(timeout>0xfffff)
+		{
+			diary("(timeout1)port->tfd:%x",(u64)port->tfd);
+			return -1;
+		}
 
+		//0x88=interface busy|data transfer requested
+		temp=port->tfd;	 //0x20
+		if( (temp&0x80) == 0x80 )continue;      //bit7,busy
+		if( (temp&0x8) == 0x8)continue;	 //bit3,DRQ
 
+		break;
+	}
+	//diary("is:",(u64)port->is);
+	//unsigned int* pointer=(unsigned int*)(u64)(port->fb);
+	//set issue,wait for completion
+	port->ci = 1<<cmdslot;  // Issue command,start reading
+	timeout=0;
+	while(1)
+	{
+		timeout++;
+		if(timeout>0xfffff)
+		{
+			diary("(timeout2)ci=%x,prdbc=%x",temp,cmdheader->prdbc);
+			return -2;
+		}
 
+		temp=port->is;
+		if (temp & 0x40000000)  // Task file error
+		{
+			diary("port error 1");
+			return -9;
+		}
 
-        //make the table
-        CMD_TABLE* cmdtable = (CMD_TABLE*)(u64)cmdheader->ctba;
-        //diary("cmdtable(comheader->ctba):",(u64)cmdtable);
-        char* p=(char*)cmdtable;
-        int i=sizeof(CMD_TABLE);
-        for(;i>0;i--){p[i]=0;}
-        cmdtable->prdt_entry[0].dba = rdi;
-        cmdtable->prdt_entry[0].dbc = 0x200-1;          //bit0必须等于1 , 到底要-1还是+1?
-        //cmdtable->prdt_entry[0].i = 1;
-        FIS_REG_H2D *fis = (FIS_REG_H2D*)(&cmdtable->cfis);
+		//in the PxIS port field as well (1<<5)
+		temp=port->ci;
+		if( (temp & (1<<cmdslot)) != 0) continue;
 
-        fis->fis_type = FIS_TYPE_REG_H2D;               //0
-        fis->c = 1;                                     //1     Command
-        fis->command = 0xec;                            //2
-        fis->device = 0;                                //7     LBA mode
+		break;
+	}
 
+	return 1;
+}
+void ahcilist()
+{
+	int j,k;
+	u64 addr;
+	u64* mytable=(u64*)ahcihome;
+	for(j=0;j<32*2+8;j++)mytable[j]=0;
 
+	k=0;		//翻译到自己的容易理解的表格里面(+0:名字,+8:地址)
+	for(j=0;j<total;j++)
+	{
+		addr = portbase + j*0x80;
+		HBA_PORT* port = (void*)addr;
 
+		u32 ssts = port -> ssts;		//0x28
+		u8 ipm = (ssts >> 8) & 0x0F;		//0x28.[8,11]
+		u8 det = ssts & 0x0F;			//0x28.[0,3]
+		if( (ipm != 0) && (det != 0) )
+		{
+		switch(port->sig)
+		{
+			case 0x00000101:	//sata
+			{
+				mytable[k*8] = 0x61746173;
+				mytable[k*8+1] = addr;
+				k+=8;
 
-        //wait until the port is no longer busy
-        volatile int timeout = 0;
-        while(1)
-        {
-                timeout++;
-                if(timeout>0xfffff)
-                {
-                        diary("(timeout1)port->tfd:%x",(u64)port->tfd);
-                        return -1;
-                }
+				diary("sata@%x", addr);
+				break;
+			}
+			case 0xeb140101:	//atapi
+			{
+				mytable[k*8] = 0x6970617461;
+				mytable[k*8+1] = addr;
+				k+=8;
 
-                //0x88=interface busy|data transfer requested
-                temp=port->tfd;         //0x20
-                if( (temp&0x80) == 0x80 )continue;      //bit7,busy
-                if( (temp&0x8) == 0x8)continue;         //bit3,DRQ
+				diary("atapi@%x", addr);
+				break;
+			}
+			case 0xc33c0101:	//enclosure....
+			{
+				mytable[k*8] = 0x6f6c636e65;
+				mytable[k*8+1] = addr;
+				k+=8;
 
-                break;
-        }
-        //diary("is:",(u64)port->is);
-        //unsigned int* pointer=(unsigned int*)(u64)(port->fb);
-        //set issue,wait for completion
-        port->ci = 1<<cmdslot;  // Issue command,start reading
-        timeout=0;
-        while(1)
-        {
-                timeout++;
-                if(timeout>0xfffff)
-                {
-                        diary("(timeout2)ci=%x,prdbc=%x",temp,cmdheader->prdbc);
-                        return -2;
-                }
+				diary("enclosure@%x", addr);
+				break;
+			}
+			case 0x96690101:	//port multiplier
+			{
+				mytable[k*8] = 0x69746c756d;
+				mytable[k*8+1] = addr;
+				k+=8;
 
-                temp=port->is;
-                if (temp & 0x40000000)  // Task file error
-                {
-                        diary("port error 1");
-                        return -9;
-                }
-
-                // in the PxIS port field as well (1 << 5)
-                temp=port->ci;
-                if( (temp & (1<<cmdslot)) != 0) continue;
-
-                break;
-        }
-
-        return 1;
+				diary("multiplier@%x", addr);
+				break;
+			}
+		}//switch
+		}//if this port usable
+	}//for
 }
 
 
@@ -489,9 +536,6 @@ static void probeahci(u64 addr)
 	int i,j;
 	int count=0;
 
-
-
-
 //第一步:host controller settings
 	diary("(ahci)memaddr:%x{\n",addr);
 	abar->ghc|=0x80000000;
@@ -505,9 +549,6 @@ static void probeahci(u64 addr)
 		count++;
 	}
 	diary("    total implemented=%x\n",count);
-
-
-
 
 //第二步:32 ports settings
 	for(i=0;i<count;i++)
@@ -542,65 +583,10 @@ static void probeahci(u64 addr)
 		enableport(port);	// Start command engine
 	}
 
-
-
-
-//第三步:list all known sata devices
-	u64* mytable=(u64*)ahcihome;
-	u64 from = 0;
-	u64 to = 0;
-	for(from=0;from<32*2+8;from++)		//清空目的地内存
-	{
-		mytable[from]=0;
-	}
-
-	to=0;		//翻译到自己的容易理解的表格里面(+0:名字,+8:地址)
-	for(from=0;from<count;from++)
-	{
-		port=(HBA_PORT*)(addr+0x100+from*0x80);
-		u32 ssts = port -> ssts;		//0x28
-		u8 ipm = (ssts >> 8) & 0x0F;		//0x28.[8,11]
-		u8 det = ssts & 0x0F;			//0x28.[0,3]
-		if( (ipm != 0) && (det != 0) )
-		{
-		switch(port->sig)
-		{
-			case 0x00000101:{		//sata
-				mytable[to*8]=0x61746173;
-				mytable[to*8+1]=addr+0x100+from*0x80;
-				to+=8;
-
-				diary("sata@%x",addr+0x100+from*0x80);
-				break;
-			}
-			case 0xeb140101:{		//atapi
-				mytable[to*8]=0x6970617461;
-				mytable[to*8+1]=addr+0x100+from*0x80;
-				to+=8;
-
-				diary("atapi@%x",addr+0x100+from*0x80);
-				break;
-			}
-			case 0xc33c0101:{		//enclosure....
-				mytable[to*8]=0x2e2e2e6f6c636e65;
-				mytable[to*8+1]=addr+0x100+from*0x80;
-				to+=8;
-
-				diary("enclosure@%x",addr+0x100+from*0x80);
-				break;
-			}
-			case 0x96690101:{		//port multiplier
-				mytable[to*8]=0x2e2e2e69746c756d;
-				mytable[to*8+1]=addr+0x100+from*0x80;
-				to+=8;
-
-				diary("multiplier@%x",addr+0x100+from*0x80);
-				break;
-			}
-		}//switch
-		}//if this port usable
-	}//for
-
+	//list
+	portbase = addr+0x100;
+	total = count;
+	ahcilist();
 	diary("}\n");
 }
 static unsigned int probepci(u64 addr)

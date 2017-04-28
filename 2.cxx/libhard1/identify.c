@@ -10,5 +10,6 @@ int ideidentify(u64 dev, u64 rdi);
 
 void identify(u64 dev, u64 rdi)
 {
+	u8 buf;
 	ahciidentify(dev, rdi);
 }
