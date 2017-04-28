@@ -8,6 +8,7 @@ void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
 int ncmp(void*, void*, int);
 int cmp(void*, void*);
 //
+void identify();
 void ahcilist();
 //
 void diary(char*,...);
@@ -40,7 +41,7 @@ void characterread_image()
 	//
 	for(y=0;y<768;y++)
 	{
-		for(x=0;x<256;x++)
+		for(x=0;x<1024;x++)
 		{
 			window[(y<<10)+x] = 0;
 		}
@@ -125,7 +126,8 @@ void characterwrite(u64 key, u64 type)
 		else if(key == 0xd)
 		{
 			diary(buffer);
-			if(ncmp(buffer,"ahcilist",6) == 0)ahcilist();
+			if(ncmp(buffer,"ahcilist",8) == 0)ahcilist();
+			else if(ncmp(buffer,"identify",8) == 0)identify();
 
 			for(count=127;count>=0;count--)buffer[count] = 0;
 			count = 0;

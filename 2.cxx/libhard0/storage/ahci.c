@@ -157,9 +157,11 @@ typedef volatile struct tagHBA_MEM
 
 
 
+//
 u32 in32(u32 addr);
 void out32(u32 port, u32 addr);
 void diary(char* , ...);
+//
 static u64 portbase;
 static int total;
 
@@ -308,7 +310,8 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 }
 int ahciidentify(u64 dev, u64 rdi)
 {
-	HBA_PORT* port=(HBA_PORT*)dev;
+	u64 t = *(u64*)(ahcihome + dev*0x40 + 8);
+	HBA_PORT* port=(HBA_PORT*)t;
 	HBA_CMD_HEADER* cmdheader = (void*)(u64)(port->clb);
 	u32 cmdslot;
 	u32 temp;
