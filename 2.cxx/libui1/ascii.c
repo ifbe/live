@@ -1,6 +1,8 @@
-#define u64 unsigned long long
+#define u8 unsigned char
+#define u16 unsigned short
 #define u32 unsigned int
-#define window 0x1000000
+#define u64 unsigned long long
+#define window 0x2000000;
 
 
 

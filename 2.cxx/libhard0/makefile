@@ -12,5 +12,6 @@ target:
 	$(compiler) $(cflag) transfer/pci/pci.c
 	$(compiler) $(cflag) transfer/usb/xhcihost.c
 	$(compiler) $(cflag) transfer/usb/xhciport.c
+	$(compiler) $(cflag) driver.c
 clean:
 	rm -f *.o

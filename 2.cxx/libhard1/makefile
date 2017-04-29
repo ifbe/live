@@ -7,5 +7,6 @@ target:
 	$(compiler) $(cflag) kbd.c
 	$(compiler) $(cflag) identify.c
 	$(compiler) $(cflag) read.c
+	$(compiler) $(cflag) body.c
 clean:
 	rm -f *.o

@@ -145,8 +145,8 @@ void characterwrite(u64 key, u64 type)
 
 
 
-void initcharacter(void* addr)
+void charactercreate()
 {
 	logaddr = (void*)0x100000;
-	window = addr;
+	window = (void*)0x2000000;
 }

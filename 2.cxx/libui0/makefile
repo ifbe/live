@@ -5,5 +5,6 @@ cross:
 	make target compiler=x86_64-elf-gcc
 target:
 	$(compiler) $(cflag) screen.c
+	$(compiler) $(cflag) display.c
 clean:
 	rm -f *.o

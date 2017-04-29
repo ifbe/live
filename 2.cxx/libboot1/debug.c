@@ -39,3 +39,10 @@ void printmemory(u8* buf, int len)
 
 	*(u64*)(journalhome+journalsize-8) += k&0xffffff80;
 }
+
+
+
+
+void debugcreate()
+{
+}

@@ -9,7 +9,6 @@ target:
 	$(compiler) $(cflag) convert.c
 	$(compiler) $(cflag) pt/parttable.c
 	$(compiler) $(cflag) fs/fs.fat.c
-	$(compiler) $(cflag) fs/fs.ntfs.c
-	$(compiler) $(cflag) fs/fs.ext.c
+	$(compiler) $(cflag) artery.c
 clean:
 	rm -f *.o

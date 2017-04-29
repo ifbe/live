@@ -24,27 +24,14 @@ cross:
 link:
 	$(linker) -T link.ld \
 	init/start.o init/main.o \
-	libboot0/print.o \
-	libboot1/debug.o \
-	libhard0/fp.o \
-	libhard0/port.o \
-	libhard0/pci.o \
-	libhard0/ide.o \
-	libhard0/ahci.o \
-	libhard0/xhcihost.o \
-	libhard0/xhciport.o \
-	libhard0/ps2kbd.o \
-	libhard1/kbd.o \
-	libhard1/identify.o \
-	libhard1/read.o \
-	libsoft1/acpi.o \
-	libsoft1/convert.o \
-	libsoft1/cmp.o \
-	libsoft1/parttable.o \
-	libsoft1/fs.fat.o \
-	libui0/screen.o \
-	libui1/ascii.o \
-	libui1/character.o \
+	libboot0/*.o \
+	libboot1/*.o \
+	libhard0/*.o \
+	libhard1/*.o \
+	libsoft0/*.o \
+	libsoft1/*.o \
+	libui0/*.o \
+	libui1/*.o \
 	-o cxx.bin
 clean:
 	rm -f */*.o *.bin

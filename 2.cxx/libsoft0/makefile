@@ -5,5 +5,6 @@ cross:
 	make target compiler=x86_64-elf-gcc
 target:
 	$(compiler) $(cflag) haha.c
+	$(compiler) $(cflag) system.c
 clean:
 	rm -f *.o
