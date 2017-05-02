@@ -34,9 +34,10 @@ setresolution:
 	mov eax,[vesahome+0x28]
 	mov [vesahome],eax
 	;fmt
+	xor eax,eax
 	mov al,[vesahome+0x19]
 	shr al,3
-	mov [vesahome+8],al
+	mov [vesahome+8],eax
 	;x
 	mov word [vesahome+0x10],1024
 	;y

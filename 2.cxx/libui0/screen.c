@@ -21,12 +21,17 @@ void writescreen()
 	int j;
 	u32* p;
 	u8* aa;
-	u8* bb;
-	if(win.fmt == 0)
+	if(win.fmt == 0xb8000)
 	{
 		aa = (void*)0xb8000;
-		bb = (void*)win.buf;
-		for(j=0;j<80*25*2;j++)aa[j] = bb[j];
+		for(j=0;j<80*25*2;j++)aa[j] = img[j];
+		return;
+	}
+
+	if(win.fmt == 0xa0000)
+	{
+		aa = (void*)0xa0000;
+		for(j=0;j<320*200;j++)aa[j] = img[j];
 		return;
 	}
 
@@ -40,12 +45,10 @@ void writescreen()
 
 
 
-void initscreen(void* p)
+void initscreen()
 {
-	int j,size;
-	u8* addr;
-	img = p;
+	img = (void*)0x2000000;
 
 	win.buf = *(u32*)screeninfo;
-	win.fmt = *(u8*)(screeninfo+8);
+	win.fmt = *(u32*)(screeninfo+8);
 }

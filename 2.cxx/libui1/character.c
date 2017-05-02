@@ -56,21 +56,38 @@ void characterread_image()
 	//
 	printstring(0, 752, 1, buffer, 0xffffff, 0xff000000);
 }
-void characterread_b8000()
+void characterread_a0000()
 {
 	int x,y;
-	int c,t;
+	u8 color;
+	u8* p = (void*)window;
+
+	for(y=0;y<200;y++)
+	{
+		for(x=0;x<320;x++)
+		{
+			color = ((y*16/200)<<4) + (x*16/320);
+			p[320*y + x] = color;
+		}
+	}
+}
+void characterread_b8000()
+{
 	u8* p;
 	u8* q;
-	int temp = *(int*)(logaddr + 0xffff8);
-	temp -= offset;
-	if(temp < 0)temp = 0;
+	int x,y;
+	int c,t;
+	u32 temp = *(u32*)(logaddr + 0xffff8);
+	if(temp < offset)temp = 0;
+	else
+	{
+		temp -= offset;
+		if(temp < 0x80*24)temp = 0;
+		else temp = temp-0x80*24;
+	}
 
-	if(temp < 0x80*24)temp = 0;
-	else temp = temp-0x80*24;
-
+	p = (void*)window;
 	q = logaddr+temp;
-	p = (u8*)0xb8000;
 	for(y=0;y<25;y++)
 	{
 		for(x=0;x<80;x++)
@@ -83,10 +100,18 @@ void characterread_b8000()
 			p[t+1] = 0x70;
 		}
 	}
+
+	for(x=0;x<80;x++)
+	{
+		p[2*(80*24+x) + 0] = buffer[x];
+		p[2*(80*24+x) + 1] = 0x70;
+	}
 }
 void characterread()
 {
-	if(*(u32*)0x2000 == 0xb8000)characterread_b8000();
+	u32 type = *(u32*)0x2008;
+	if(type == 0xb8000)characterread_b8000();
+	else if(type == 0xa0000)characterread_a0000();
 	else characterread_image();
 }
 void characterwrite(u64 key, u64 type)

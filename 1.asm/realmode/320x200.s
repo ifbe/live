@@ -7,16 +7,17 @@ startofscreen:
 	mov ax,0x13
 	int 0x10
 
-	cld
-	mov rdi,0x2000
-	mov rax,0xb8000		;buf
-	stosq
-	mov rax,666666		;fmt
-	stosq
-	mov rax,320		;x
-	stosq
-	mov rax,240		;y
-	stosq
+	;buf
+	mov eax,0xa0000
+	mov [vesahome],eax
+	;fmt
+	mov [vesahome+8],eax
+	;x
+	mov eax,320
+	mov [vesahome+0x10],eax
+	;y
+	mov eax,200
+	mov [vesahome+0x18],eax
 
 	jmp endofscreen
 ;___________________________________________

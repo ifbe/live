@@ -3,7 +3,7 @@ dir=`dirname $0`
 cd $dir
 
 $1 \
--monitor stdio \
+-serial stdio \
 -smp 2 \
 -m 512 \
 -device ahci,id=ahci \

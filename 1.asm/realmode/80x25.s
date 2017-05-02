@@ -8,11 +8,11 @@ startofscreen:
 	mov eax,0xb8000
 	mov [vesahome],eax
 	;fmt
-	mov word [vesahome+8],0
+	mov [vesahome+8],eax
 	;x
 	mov word [vesahome+0x10],80
 	;y
-	mov word [vesahome+0x10],25
+	mov word [vesahome+0x18],25
 
 	jmp endofscreen
 ;___________________________________

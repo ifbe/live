@@ -10,6 +10,7 @@ target:
 	$(compiler) $(cflag) storage/ahci.c
 	$(compiler) $(cflag) storage/ide.c
 	$(compiler) $(cflag) transfer/pci/pci.c
+	$(compiler) $(cflag) transfer/uart/8250.c
 	$(compiler) $(cflag) transfer/usb/xhcihost.c
 	$(compiler) $(cflag) transfer/usb/xhciport.c
 	$(compiler) $(cflag) driver.c

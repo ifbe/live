@@ -9,7 +9,7 @@ times 0x1000 db 0
 ;[0x5000,0x5fff]
 %include "realmode/still16.s"
 %include "realmode/1024x768.s"
-;%include "realmode/320x240.s"
+;%include "realmode/320x200.s"
 ;%include "realmode/80x25.s"
 %include "realmode/enter64.s"
 
