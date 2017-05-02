@@ -12,23 +12,30 @@ void characterwrite(u64 key, u64 type);
 //libui0
 void writescreen();
 //
-void waitkbd(u64* key, u64* type);
-//
-void diary(char*,...);
-void initconsole();
+void* waitevent();
 
 
 
 
+struct event
+{
+	u64 why;
+	u64 what;
+	u64 where;
+	u64 when;
+};
 void main()
 {
-	u64 type,key;
+	struct event* ev;
 	while(1)
 	{
 		characterread();
 		writescreen();
 
-		waitkbd(&key, &type);
-		characterwrite(key, type);
+repeat:
+		ev = waitevent();
+		if(ev == 0)goto repeat;
+
+		characterwrite(ev->why, ev->what);
 	}
 }

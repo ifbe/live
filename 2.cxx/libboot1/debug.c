@@ -2,7 +2,7 @@
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
-#define journalhome 0x100000
+#define journalhome 0x1200000
 #define journalsize 0x100000
 void printmemory(u8* buf, int len)
 {

@@ -9,20 +9,37 @@ u8 in8(u32 port);
 
 
 
-char readuart()
+int readuart_one(u8* buf)
 {
-	while((in8(PORT + 5) & 1) == 0);
-	return in8(PORT);
+	int j = 0;
+	if((in8(PORT + 5) & 1) != 0)
+	{
+		buf[0] = in8(PORT);
+		j = 1;
+	}
+	return j;
 }
-void writeuart_one(u8 data)
+int readuart(u8* buf, int len)
+{
+	int j,ret;
+	for(j=0;j<len;j++)
+	{
+		ret = readuart_one(buf+j);
+		if(ret == 0)break;
+	}
+	return j;
+}
+int writeuart_one(u8 data)
 {
 	while((in8(PORT + 5) & 0x20) == 0);
 	out8(PORT, data);
+	return 1;
 }
-void writeuart(u8* buf, int len)
+int writeuart(u8* buf, int len)
 {
 	int j;
 	for(j=0;j<len;j++)writeuart_one(buf[j]);
+	return j;
 }
 void inituart()
 {

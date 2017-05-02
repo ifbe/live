@@ -2,7 +2,7 @@
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
-u8 ps2kbd();
+int readkbd(u8*, int);
 void diary(char*,...);
 
 
@@ -57,46 +57,51 @@ static u8 ch[30*2] =
 
 
 
-int waitkbd(u64* key, u64* type)
+struct event
+{
+	u64 why;
+	u64 what;
+	u64 where;
+	u64 when;
+};
+int waitkbd(struct event* ev)
 {
 	int j;
-	*type = 0;
-
-	//key down
-	while(1)
-	{
-		*key = ps2kbd();
-		if(*key < 0x80)break;
-	}
+	u8 buf[1];
+	j = readkbd(buf, 1);
+	if(j == 0)return 0;
+	if(buf[0] >= 0x80)return 0;
 
 	//kbd
-	if(*type==0)
+	ev->what = 0;
+	ev->why = buf[0];
+	if(ev->what==0)
 	{
 		for(j=0;j<9;j++)
 		{
-			if(*key == kbd[j*2])
+			if(ev->why == kbd[j*2])
 			{
-				*type = 0x64626b;
-				*key = kbd[(j*2) + 1];
+				ev->what = 0x64626b;
+				ev->why = kbd[(j*2) + 1];
 				break;
 			}
 		}
 	}
 
 	//char
-	if(*type==0)
+	if(ev->what==0)
 	{
 		for(j=0;j<30;j++)
 		{
-			if(*key == ch[j*2])
+			if(ev->why == ch[j*2])
 			{
-				*type = 0x72616863;
-				*key = ch[(j*2) + 1];
+				ev->what = 0x72616863;
+				ev->why = ch[(j*2) + 1];
 				break;
 			}
 		}
 	}
 
-	//return
 	//diary("type=%x,key=%x",*type,*key);
+	return 1;
 }

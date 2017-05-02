@@ -172,6 +172,6 @@ void characterwrite(u64 key, u64 type)
 
 void charactercreate()
 {
-	logaddr = (void*)0x100000;
+	logaddr = (void*)0x1200000;
 	window = (void*)0x2000000;
 }

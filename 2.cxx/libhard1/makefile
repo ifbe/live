@@ -4,9 +4,10 @@ linux:
 cross:
 	make target compiler=x86_64-elf-gcc
 target:
-	$(compiler) $(cflag) kbd.c
-	$(compiler) $(cflag) identify.c
-	$(compiler) $(cflag) read.c
 	$(compiler) $(cflag) body.c
+	$(compiler) $(cflag) identify.c
+	$(compiler) $(cflag) kbd.c
+	$(compiler) $(cflag) read.c
+	$(compiler) $(cflag) uart.c
 clean:
 	rm -f *.o

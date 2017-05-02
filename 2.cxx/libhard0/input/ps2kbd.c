@@ -8,16 +8,21 @@ void diary(char*,...);
 
 
 
-u8 ps2kbd()
+int readkbd_one(u8* buf)
 {
-	u32 key;
-	while(1)
-	{
-		key = in8(0x64);
-		if( (key&1) == 0)continue;
+	u8 flag = in8(0x64);
+	if( (flag&1) == 0)return 0;
 
-		key = in8(0x60);
-		return key;
+	buf[0] = in8(0x60);
+	return 1;
+}
+int readkbd(u8* buf, int len)
+{
+	int j,ret;
+	for(j=0;j<len;j++)
+	{
+		ret = readkbd_one(buf+j);
+		if(ret == 0)break;
 	}
-	return 0;
+	return j;
 }
