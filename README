@@ -23,4 +23,5 @@ incbin "2.cxx/cxx.bin"
 
 
 ;64KB
-times 0x10000-($-$$) db 0
+times 0xfff8-($-$$) db 0
+db "holyshit"

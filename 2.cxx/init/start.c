@@ -3,24 +3,24 @@
 #define u32 unsigned int
 #define u64 unsigned long long
 //libui
-void charactercreate(char*,char*);
+void charactercreate(void*,void*);
 void characterdelete();
-void displaycreate(char*,char*);
+void displaycreate(void*,void*);
 void displaydelete();
 //libsoft
-void arterycreate(char*,char*);
+void arterycreate(void*,void*);
 void arterydelete();
-void systemcreate(char*,char*);
+void systemcreate(void*,void*);
 void systemdelete();
 //libhard
-void bodycreate(char*,char*);
+void bodycreate(void*,void*);
 void bodydelete();
-void drivercreate(char*,char*);
+void drivercreate(void*,void*);
 void driverdelete();
 //libboot
-void debugcreate(char*,char*);
+void debugcreate(void*,void*);
 void debugdelete();
-void basiccreate(char*,char*);
+void basiccreate(void*,void*);
 void basicdelete();
 //
 void diary(void*, ...);
@@ -31,17 +31,21 @@ void main();
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-static char*     basic=0;		//4m
-static char*      body=0;		//4m
-static char*    memory=0;		//4m
-static char* character=0;		//4m
+static u8*     basic=0;		//4m
+static u8*      body=0;		//4m
+static u8*    memory=0;		//4m
+static u8* character=0;		//4m
 
 
 
 
 void start()
 {
-	void* haha = (void*)0x1000000;
+	int j;
+	u8* haha = (void*)(0x20000);
+	for(j=0;j<0x20000;j++)haha[j] = 0;
+
+	haha = (void*)0x1000000;
 	basic = haha + 0;
 	body = haha + 0x400000;
 	memory = haha + 0x800000;

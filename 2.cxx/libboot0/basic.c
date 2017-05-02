@@ -25,6 +25,7 @@ void basiccreate(void* type, void* addr)
 	outputqueue = addr+0x100000;
 	journalqueue = addr+0x200000;
 	eventqueue = addr+0x300000;
+	for(j=0;j<0x400000;j++)inputqueue[j] = 0;
 
 	initprint(addr);
 	diary("spaceship landing...3...2...1...");
@@ -35,8 +36,8 @@ void* waitevent()
 	ret = waitkbd(eventqueue);
 	if(ret > 0)return eventqueue;
 
-	ret = waituart(eventqueue);
-	if(ret > 0)return eventqueue;
+	//ret = waituart(eventqueue);
+	//if(ret > 0)return eventqueue;
 
 	return 0;
 }

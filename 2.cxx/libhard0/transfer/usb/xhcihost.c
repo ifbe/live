@@ -374,7 +374,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	//diary("	crcr:%x\n",crcr);
 	//diary("	dcbaa:%x\n",dcbaa);
 	//diary("	config:%x\n",config);
-//diary("}\n",0);
+	diary("}\n",0);
 
 
 
@@ -383,7 +383,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 //init system io memory map,if supported
 //xhci reset,wait until CNR flag is 0
 //--------------------------------------------------------------------
-	diary("	init xhci{",0);
+	diary("init xhci{",0);
 	diary("	1.stop&reset");
 
 	//xhci正在运行吗
@@ -529,12 +529,11 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	//diary("	command:%x\n",*(u32*)operational);
 	//diary("	status:%x\n",*(u32*)(operational+4));
 
-	diary("	}\n");
+	diary("}\n");
 
 
 
 
-diary("}\n",0);
 return 0;
 }
 

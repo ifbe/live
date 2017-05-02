@@ -19,11 +19,12 @@ void diary(char*,...);
 //
 static u32* window;
 //
-static u8* logaddr;
-static int offset=0;
+static u8* input;
+static u8* output;
+static u8* journal;
 //
-static u8 buffer[128];
 static int count=0;
+static int offset=0;
 
 
 
@@ -31,7 +32,7 @@ static int count=0;
 void characterread_image()
 {
 	int x,y;
-	int temp = *(int*)(logaddr + 0xffff8);
+	int temp = *(int*)(journal + 0xffff8);
 	temp -= offset;
 	if(temp < 0)temp = 0;
 
@@ -50,11 +51,11 @@ void characterread_image()
 	//
 	for(y=0;y<752/16;y++)
 	{
-		printstring(0, y*16, 1, logaddr+temp+y*0x80, 0xffffff, 0xff000000);
+		printstring(0, y*16, 1, journal+temp+y*0x80, 0xffffff, 0xff000000);
 	}
 
 	//
-	printstring(0, 752, 1, buffer, 0xffffff, 0xff000000);
+	printstring(0, 752, 1, input, 0xffffff, 0xff000000);
 }
 void characterread_a0000()
 {
@@ -77,7 +78,7 @@ void characterread_b8000()
 	u8* q;
 	int x,y;
 	int c,t;
-	u32 temp = *(u32*)(logaddr + 0xffff8);
+	u32 temp = *(u32*)(journal + 0xffff8);
 	if(temp < offset)temp = 0;
 	else
 	{
@@ -87,7 +88,7 @@ void characterread_b8000()
 	}
 
 	p = (void*)window;
-	q = logaddr+temp;
+	q = journal+temp;
 	for(y=0;y<25;y++)
 	{
 		for(x=0;x<80;x++)
@@ -103,7 +104,7 @@ void characterread_b8000()
 
 	for(x=0;x<80;x++)
 	{
-		p[2*(80*24+x) + 0] = buffer[x];
+		p[2*(80*24+x) + 0] = input[x];
 		p[2*(80*24+x) + 1] = 0x70;
 	}
 }
@@ -146,22 +147,22 @@ void characterwrite(u64 key, u64 type)
 		if(key == 0x7f)
 		{
 			if(count>0)count--;
-			buffer[count] = 0;
+			input[count] = 0;
 		}
 		else if(key == 0xd)
 		{
-			diary(buffer);
-			if(ncmp(buffer,"ahcilist",8) == 0)ahcilist();
-			else if(ncmp(buffer,"identify",8) == 0)identify();
+			diary(input);
+			if(ncmp(input,"ahcilist",8) == 0)ahcilist();
+			else if(ncmp(input,"identify",8) == 0)identify();
 
-			for(count=127;count>=0;count--)buffer[count] = 0;
+			for(count=127;count>=0;count--)input[count] = 0;
 			count = 0;
 		}
 		else
 		{
 			if(count > 127)return;
 
-			buffer[count] = (u8)key;
+			input[count] = (u8)key;
 			count ++;
 		}
 	}
@@ -172,6 +173,10 @@ void characterwrite(u64 key, u64 type)
 
 void charactercreate()
 {
-	logaddr = (void*)0x1200000;
+	count = offset = 0;
+	input = (void*)0x1000000;
+	output = (void*)0x1100000;
+	journal = (void*)0x1200000;
+
 	window = (void*)0x2000000;
 }
