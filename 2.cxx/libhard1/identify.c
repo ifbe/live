@@ -5,7 +5,7 @@
 int ahciidentify(u64 dev, void* rdi);
 int ideidentify(u64 dev, void* rdi);
 void printmemory(void*, int);
-void diary(void*, ...);
+void say(void*, ...);
 
 
 

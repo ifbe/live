@@ -160,7 +160,7 @@ typedef volatile struct tagHBA_MEM
 //
 u32 in32(u32 addr);
 void out32(u32 port, u32 addr);
-void diary(char* , ...);
+void say(char* , ...);
 //
 static u64 portbase;
 static int total;
@@ -197,10 +197,10 @@ void maketable(u64 buf,u64 from,HBA_CMD_HEADER* cmdheader,u64 count)
 	//0x100sectors    >>>>    prdt=2个
 	//0x173sectors    >>>>    prdt=3个
 	//0x181sectors    >>>>    prdt=4个
-	//diary("ptdtl",(u64)cmdheader->prdtl);
+	//say("ptdtl",(u64)cmdheader->prdtl);
 
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(u64)cmdheader->ctba;
-	//diary("cmdtable@",(u64)cmdtable);
+	//say("cmdtable@",(u64)cmdtable);
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE)+(cmdheader->prdtl-1)*sizeof(HBA_PRDT_ENTRY);
 	for(;i>0;i--){p[i]=0;}
@@ -250,12 +250,12 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1)
 	{
-		diary("error:no cmdslot",0);
+		say("error:no cmdslot",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
-	//diary("cmdslot:",(u64)cmdslot);
-	//diary("cmdheader:",(u64)cmdheader);
+	//say("cmdslot:",(u64)cmdslot);
+	//say("cmdheader:",(u64)cmdheader);
 
 	//make the table
 	maketable(buf,from,cmdheader,count);
@@ -266,7 +266,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			diary("(timeout1)port->tfd:%x",(u64)port->tfd);
+			say("(timeout1)port->tfd:%x",(u64)port->tfd);
 			return -11;
 		}
 
@@ -277,7 +277,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 
 		break;
 	}
-	//diary("is:",(u64)port->is);
+	//say("is:",(u64)port->is);
 	//unsigned int* pointer=(unsigned int*)(u64)(port->fb);
 
 	//issue
@@ -288,7 +288,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 		timeout++;
 		if(timeout>0xffffff)
 		{
-			diary("(timeout2)port->ci=%x",temp);
+			say("(timeout2)port->ci=%x",temp);
 			return -22;
 		}
 
@@ -296,7 +296,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 		temp=port->is;
 		if (temp & 0x40000000)  //Task file error
 		{
-			diary("port error 1",0);
+			say("port error 1",0);
 			return -33;
 		}
 
@@ -326,12 +326,12 @@ int ahciidentify(u64 dev, u64 rdi)
 	}
 	if(cmdslot == 32)
 	{
-		diary("error:no cmdslot",0);
+		say("error:no cmdslot",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
-	//diary("cmdslot:",(u64)cmdslot);
-	//diary("cmdheader:",(u64)cmdheader);
+	//say("cmdslot:",(u64)cmdslot);
+	//say("cmdheader:",(u64)cmdheader);
 
 	cmdheader->cfl=sizeof(FIS_REG_H2D)/4;	//Command FIS size
 	cmdheader->w = 0;			// Read from device
@@ -340,7 +340,7 @@ int ahciidentify(u64 dev, u64 rdi)
 
 	//make the table
 	CMD_TABLE* cmdtable = (CMD_TABLE*)(u64)cmdheader->ctba;
-	//diary("cmdtable(comheader->ctba):",(u64)cmdtable);
+	//say("cmdtable(comheader->ctba):",(u64)cmdtable);
 	char* p=(char*)cmdtable;
 	int i=sizeof(CMD_TABLE);
 	for(;i>0;i--){p[i]=0;}
@@ -361,7 +361,7 @@ int ahciidentify(u64 dev, u64 rdi)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			diary("(timeout1)port->tfd:%x",(u64)port->tfd);
+			say("(timeout1)port->tfd:%x",(u64)port->tfd);
 			return -1;
 		}
 
@@ -372,7 +372,7 @@ int ahciidentify(u64 dev, u64 rdi)
 
 		break;
 	}
-	//diary("is:",(u64)port->is);
+	//say("is:",(u64)port->is);
 	//unsigned int* pointer=(unsigned int*)(u64)(port->fb);
 	//set issue,wait for completion
 	port->ci = 1<<cmdslot;  // Issue command,start reading
@@ -382,14 +382,14 @@ int ahciidentify(u64 dev, u64 rdi)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			diary("(timeout2)ci=%x,prdbc=%x",temp,cmdheader->prdbc);
+			say("(timeout2)ci=%x,prdbc=%x",temp,cmdheader->prdbc);
 			return -2;
 		}
 
 		temp=port->is;
 		if (temp & 0x40000000)  // Task file error
 		{
-			diary("port error 1");
+			say("port error 1");
 			return -9;
 		}
 
@@ -428,7 +428,7 @@ void ahcilist()
 				mytable[k*8+1] = addr;
 				k+=8;
 
-				diary("sata@%x", addr);
+				say("sata@%x", addr);
 				break;
 			}
 			case 0xeb140101:	//atapi
@@ -437,7 +437,7 @@ void ahcilist()
 				mytable[k*8+1] = addr;
 				k+=8;
 
-				diary("atapi@%x", addr);
+				say("atapi@%x", addr);
 				break;
 			}
 			case 0xc33c0101:	//enclosure....
@@ -446,7 +446,7 @@ void ahcilist()
 				mytable[k*8+1] = addr;
 				k+=8;
 
-				diary("enclosure@%x", addr);
+				say("enclosure@%x", addr);
 				break;
 			}
 			case 0x96690101:	//port multiplier
@@ -455,7 +455,7 @@ void ahcilist()
 				mytable[k*8+1] = addr;
 				k+=8;
 
-				diary("multiplier@%x", addr);
+				say("multiplier@%x", addr);
 				break;
 			}
 		}//switch
@@ -473,7 +473,7 @@ static void disableport(HBA_PORT* port)
 	port->is = 0xfd8000af;			//0x10
 
 	//put port in idle mode
-	//diary("port->cmd before disable:%x",(u64)(port->cmd));
+	//say("port->cmd before disable:%x",(u64)(port->cmd));
 	port->cmd &= 0xfffffffe;	//0x18,bit0
 	port->cmd &= 0xffffffef;	//0x18,bit4,FRE
  
@@ -483,7 +483,7 @@ static void disableport(HBA_PORT* port)
 		timeout--;
 		if(timeout==0)
 		{
-			diary("(timeout)still running:%x",(u64)(port->cmd));
+			say("(timeout)still running:%x",(u64)(port->cmd));
 			return;
 		}
 
@@ -496,7 +496,7 @@ static void disableport(HBA_PORT* port)
 		//
 		break;
 	}
-	//diary("port->cmd after disable:%x",(u64)(port->cmd));
+	//say("port->cmd after disable:%x",(u64)(port->cmd));
 
 	//reset port
 	port->sctl |= 0x2;
@@ -510,7 +510,7 @@ static void disableport(HBA_PORT* port)
 		timeout--;
 		if(timeout==0)
 		{
-			//diary("no device:%x",11111);
+			//say("no device:%x",11111);
 			return;
 		}
 
@@ -522,12 +522,12 @@ static void disableport(HBA_PORT* port)
 }
 static void enableport(HBA_PORT* port)
 {
-	//diary("port->cmd before enable:%x",(u64)(port->cmd));
+	//say("port->cmd before enable:%x",(u64)(port->cmd));
 	while (port->cmd & (1<<15));	//bit15
  
 	port->cmd |= 1<<4;	//bit4,receive enable
 	port->cmd |= 1; 	//bit0,start
-	//diary("port->cmd after enable:%x",(u64)(port->cmd));
+	//say("port->cmd after enable:%x",(u64)(port->cmd));
 }
 static void probeahci(u64 addr)
 {
@@ -540,7 +540,7 @@ static void probeahci(u64 addr)
 	int count=0;
 
 //第一步:host controller settings
-	diary("(ahci)memaddr:%x{\n",addr);
+	say("(ahci)memaddr:%x{\n",addr);
 	abar->ghc|=0x80000000;
 	abar->ghc&=0xfffffffd;
 	abar->is = 0xffffffff;		//clear all
@@ -551,7 +551,7 @@ static void probeahci(u64 addr)
 		temp >>= 1;
 		count++;
 	}
-	diary("    total implemented=%x\n",count);
+	say("    total implemented=%x\n",count);
 
 //第二步:32 ports settings
 	for(i=0;i<count;i++)
@@ -590,14 +590,14 @@ static void probeahci(u64 addr)
 	portbase = addr+0x100;
 	total = count;
 	ahcilist();
-	diary("}\n");
+	say("}\n");
 }
 static unsigned int probepci(u64 addr)
 {
 //进：pci地址
 //出：内存地址
 	unsigned int temp;
-	diary("(ahci)pciaddr:%x{\n",addr);
+	say("(ahci)pciaddr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
 	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
@@ -606,19 +606,19 @@ static unsigned int probepci(u64 addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	diary("    pci sts&cmd:%x",(u64)in32(0xcfc));
+	say("    pci sts&cmd:%x",(u64)in32(0xcfc));
 
 	//ide port
 	out32(0xcf8,addr+0x10);
-	diary("    bar0:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("    bar0:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x14);
-	diary("    bar1:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("    bar1:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x18);
-	diary("    bar2:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("    bar2:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x1c);
-	diary("    bar3:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("    bar3:%x\n" , in32(0xcfc)&0xfffffffe );
 
-	diary("}\n");
+	say("}\n");
 
 	//hba addr
 	out32(0xcf8,addr+0x24);
@@ -627,7 +627,7 @@ static unsigned int probepci(u64 addr)
 void initahci(u64 pciaddr)
 {
 	u64 addr;
-	diary("ahci@%x",pciaddr);
+	say("ahci@%x",pciaddr);
 
 	//clear home
 	addr=ahcihome;

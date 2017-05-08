@@ -6,6 +6,8 @@
 void out8(u32 port, u8 data);
 u8 in8(u32 port);
 
+static u8 state = 0;
+
 
 
 
@@ -31,13 +33,19 @@ int readuart(u8* buf, int len)
 }
 int writeuart_one(u8 data)
 {
-	while((in8(PORT + 5) & 0x20) == 0);
+	int j=0;
+	while((in8(PORT + 5) & 0x20) == 0)
+	{
+		j++;
+		if(j>0xffffff)return 0;
+	}
 	out8(PORT, data);
 	return 1;
 }
 int writeuart(u8* buf, int len)
 {
 	int j;
+	if(state == 0)return 0;
 	for(j=0;j<len;j++)writeuart_one(buf[j]);
 	return j;
 }
@@ -51,5 +59,6 @@ void inituart()
 	out8(PORT + 2, 0xC7);//Enable FIFO, clear them, with 14-byte threshold
 	out8(PORT + 4, 0x0B);//IRQs enabled, RTS/DSR set
 
+	state = 1;
 	writeuart("fuckyou\n", 8);
 }

@@ -25,7 +25,7 @@
 
 
 
-void diary(char* , ...);
+void say(char* , ...);
 
 
 
@@ -59,7 +59,7 @@ void sendpacket(u64 ringaddr)
 	u64 enqueue=*(u64*)(ringaddr+0xff0);
 	u32* p=(u32*)(ringaddr+enqueue);
 
-	//diary("(enqueue before:%x)\n",enqueue);
+	//say("(enqueue before:%x)\n",enqueue);
 	if(packet.bmrequesttype>=0x80)
 	{
 		//setup stage
@@ -107,7 +107,7 @@ void sendpacket(u64 ringaddr)
 		//cycle取反
 	}
 	*(u64*)(ringaddr+0xff0)=enqueue;
-	//diary("(enqueue after:%x)\n",enqueue);
+	//say("(enqueue after:%x)\n",enqueue);
 }
 void usbcommand(u8 bmrequesttype,u8 brequest,u16 wvalue,u16 windex,u16 wlength,u64 buffer)
 {
@@ -176,7 +176,7 @@ int waitxhci(u64 wantedslot,u64 wantedtype)
 		timeout++;
 		if(timeout>0xffffff)
 		{
-			diary("(timeout@%x)\n",thisevent);
+			say("(timeout@%x)\n",thisevent);
 			return -1;
 		}
 
@@ -193,7 +193,7 @@ int waitxhci(u64 wantedslot,u64 wantedtype)
 		//正常就往下走，否则返回失败
 		if( (thisevent[2] >> 24) != 0x1 )
 		{
-			diary("(error event@%x)%x,%x,%x,%x\n",thisevent,
+			say("(error event@%x)%x,%x,%x,%x\n",thisevent,
 			thisevent[0],thisevent[1],thisevent[2],thisevent[3]);
 			return -1;
 		}
@@ -260,7 +260,7 @@ void explaindescriptor(u64 addr)
 {
 	u32 type=*(u8*)(addr+1);
 	if(type==0)return;
-	//diary("type:%x\n",type);
+	//say("type:%x\n",type);
 	//if(	(type==0)|((type>7)&(type<0x21))|(type>0x29)	) return;
 
 	volatile u32 i;
@@ -272,60 +272,60 @@ void explaindescriptor(u64 addr)
 		//classcode=0;	//这个就不必了，马上就变掉
 		//for(i=0;i<8;i++) stringtoread[i]=0;
 
-		diary("(desc 1)device@%x{\n",addr);
-		//diary("blength:%x\n",*(u8*)addr);
-		//diary("type:%x\n",*(u8*)(addr+1));
-		//diary("bcdusb:%x\n",*(u16*)(addr+2));
+		say("(desc 1)device@%x{\n",addr);
+		//say("blength:%x\n",*(u8*)addr);
+		//say("type:%x\n",*(u8*)(addr+1));
+		//say("bcdusb:%x\n",*(u16*)(addr+2));
 
 		//classcode=*(u8*)(addr+4);			//!
-		//diary("bclass:%x\n",classcode);
+		//say("bclass:%x\n",classcode);
 
-		//diary("bsubclass:%x\n",*(u8*)(addr+5));
+		//say("bsubclass:%x\n",*(u8*)(addr+5));
 
 		//deviceprotocol=*(u8*)(addr+6);		//!
-		//diary("bprotocol:%x\n",deviceprotocol);
+		//say("bprotocol:%x\n",deviceprotocol);
 
-		diary("	bpacketsize:%x\n",*(u8*)(addr+7));
-		diary("	vendor:%x\n",*(u16*)(addr+8));
-		diary("	product:%x\n",*(u16*)(addr+0xa));
+		say("	bpacketsize:%x\n",*(u8*)(addr+7));
+		say("	vendor:%x\n",*(u16*)(addr+8));
+		say("	product:%x\n",*(u16*)(addr+0xa));
 
-		//diary("	bcddevice:%x\n",*(u16*)(addr+0xc));
+		//say("	bcddevice:%x\n",*(u16*)(addr+0xc));
 
 		//i=*(u8*)(addr+0xe);
 		//stringtoread[i]=1;
-		//diary("	imanufacturer:%x\n",i);
+		//say("	imanufacturer:%x\n",i);
 
 		//i=*(u8*)(addr+0xf);
 		//stringtoread[i]=1;
-		//diary("	iproduct:%x\n",i);
+		//say("	iproduct:%x\n",i);
 
 		//i=*(u8*)(addr+0x10);
 		//stringtoread[i]=1;
-		//diary("	iserial:%x\n",i);
+		//say("	iserial:%x\n",i);
 
-		diary("	bnumconf:%x\n",*(u8*)(addr+0x11));
-		diary("}\n");
+		say("	bnumconf:%x\n",*(u8*)(addr+0x11));
+		say("}\n");
 		break;
 	}
 	case 2:	//配置描述符
 	{
-		diary("(desc 2)conf@%x{\n",addr);
-		//diary("	blength:%x\n",*(u8*)addr);
-		//diary("	type:%x\n",*(u8*)(addr+1));
-		//diary("	wlength:%x\n",*(u16*)(addr+2));
-		diary("	bnuminterface:%x\n",*(u8*)(addr+4));
-		//diary("	bvalue:%x\n",*(u8*)(addr+5));
+		say("(desc 2)conf@%x{\n",addr);
+		//say("	blength:%x\n",*(u8*)addr);
+		//say("	type:%x\n",*(u8*)(addr+1));
+		//say("	wlength:%x\n",*(u16*)(addr+2));
+		say("	bnuminterface:%x\n",*(u8*)(addr+4));
+		//say("	bvalue:%x\n",*(u8*)(addr+5));
 		//i=*(u8*)(addr+0x6);
 		//stringtoread[i]=1;
-		//diary("	i:",i);
+		//say("	i:",i);
 		//u8 bmattribute=*(u8*)(addr+7);
-		//diary("	bmattribute:%x\n",bmattribute);
-		//if( (bmattribute&0x40) ==0x40 ) diary("	self powered");
-		//if( (bmattribute&0x20) ==0x20 ) diary("	remote wake");
-		//diary("	bmaxpower:%x\n",*(u8*)(addr+8));
+		//say("	bmattribute:%x\n",bmattribute);
+		//if( (bmattribute&0x40) ==0x40 ) say("	self powered");
+		//if( (bmattribute&0x20) ==0x20 ) say("	remote wake");
+		//say("	bmaxpower:%x\n",*(u8*)(addr+8));
 
 		u32 totallength=*(u16*)(addr+2);
-		diary("	wlength:%x\n",totallength);
+		say("	wlength:%x\n",totallength);
 		u32 offset=9;
 		u32 nextlen,nexttype;
 		while(1)
@@ -337,7 +337,7 @@ void explaindescriptor(u64 addr)
 			//用的递归,所以要是里面再出现type2的错误desc,可能会死着...
 			nextlen=*(u8*)(addr+offset);
 			nexttype=*(u8*)(addr+offset);
-			//diary("	@%x:(%x,%x)\n",offset,nextlen,nexttype);
+			//say("	@%x:(%x,%x)\n",offset,nextlen,nexttype);
 			if(nexttype==2)break;
 
 			//一切正常,解释下一个表
@@ -347,122 +347,122 @@ void explaindescriptor(u64 addr)
 			offset+=nextlen;
 		}
 
-		diary("}\n");
+		say("}\n");
 		break;
 	}
 	case 3:	//接口描述符
 	{
-		diary("(desc 3)string@%x{\n",addr);
+		say("(desc 3)string@%x{\n",addr);
 
-		diary("	blength:%x\n",*(u8*)(addr));
+		say("	blength:%x\n",*(u8*)(addr));
 		u16 language=*(u16*)(addr+2);
-		diary("	language:%x\n",language);
+		say("	language:%x\n",language);
 
-		diary("}\n");
+		say("}\n");
 		break;
 	}
 	case 4:	//接口描述符
 	{
-		diary("	(desc 4)interface@%x{\n",addr);
-		//diary("	length:%x\n",*(u8*)addr);
-		//diary("	type:%x\n",*(u8*)(addr+1));
-		diary("		binterfacenum:%x\n",*(u8*)(addr+2));
-		diary("		balternatesetting:%x\n",*(u8*)(addr+3));
-		diary("		bnumendpoint:%x\n",*(u8*)(addr+4));
+		say("	(desc 4)interface@%x{\n",addr);
+		//say("	length:%x\n",*(u8*)addr);
+		//say("	type:%x\n",*(u8*)(addr+1));
+		say("		binterfacenum:%x\n",*(u8*)(addr+2));
+		say("		balternatesetting:%x\n",*(u8*)(addr+3));
+		say("		bnumendpoint:%x\n",*(u8*)(addr+4));
 
 		//interfaceclass=*(u8*)(addr+5);
-		//diary("		bclass:%x\n",interfaceclass);
-		//diary("		bsubclass:%x\n",*(u8*)(addr+6));
-		//diary("		bprotol:%x\n",*(u8*)(addr+7));
+		//say("		bclass:%x\n",interfaceclass);
+		//say("		bsubclass:%x\n",*(u8*)(addr+6));
+		//say("		bprotol:%x\n",*(u8*)(addr+7));
 
 		//i=*(u8*)(addr+0x8);
 		//stringtoread[i]=1;
-		//diary("		i:%x\n",i);
+		//say("		i:%x\n",i);
 
-		diary("	}\n");
+		say("	}\n");
 		break;
 	}
 	case 5:	//端点描述符
 	{
-		diary("	(desc 5)endpoint@%x{\n",addr);
-		//diary("		blength:%x\n",*(u8*)addr);
-		//diary("		type:%x\n",*(u8*)(addr+1));
+		say("	(desc 5)endpoint@%x{\n",addr);
+		//say("		blength:%x\n",*(u8*)addr);
+		//say("		type:%x\n",*(u8*)(addr+1));
 
 		u8 endpoint=*(u8*)(addr+2);
 		u8 eptype=*(u8*)(addr+3);
-		diary("		ep:%x\n",endpoint&0xf);
+		say("		ep:%x\n",endpoint&0xf);
 		if(endpoint>0x80)
 		{
-			if(eptype==0) diary("		in,control");
-			else if(eptype==1) diary("		in,isochronous");
-			else if(eptype==2) diary("		in,bulk");
-			else diary("		in,interrupt");
+			if(eptype==0) say("		in,control");
+			else if(eptype==1) say("		in,isochronous");
+			else if(eptype==2) say("		in,bulk");
+			else say("		in,interrupt");
 		}
 		else
 		{
-			if(eptype==0) diary("		out,control");
-			else if(eptype==1) diary("		out,isochronous");
-			else if(eptype==2) diary("		out,bulk");
-			else diary("		out,interrupt");
+			if(eptype==0) say("		out,control");
+			else if(eptype==1) say("		out,isochronous");
+			else if(eptype==2) say("		out,bulk");
+			else say("		out,interrupt");
 		}
 
 
 		//wmaxpacket=*(u16*)(addr+4);
-		//diary("	wmaxpacket:%x\n",wmaxpacket);
+		//say("	wmaxpacket:%x\n",wmaxpacket);
 		//interval=*(u8*)(addr+6);
-		//diary("	binterval:%x\n",interval);
+		//say("	binterval:%x\n",interval);
 
-		diary("	}\n");
+		say("	}\n");
 		break;
 	}
 	case 6:	//设备限定描述符
 	{
-		diary("	(desc 6)@%x{\n",addr);
-		//diary("	blength:%x\n",*(u8*)addr);
-		//diary("	bdescriptortype:%x\n",*(u8*)(addr+1));
-		//diary("	bcdusb:%x\n",*(u16*)(addr+2));
-		//diary("	bdeviceclass:%x\n",*(u8*)(addr+4));
-		//diary("	bdevicesubclass:%x\n",*(u8*)(addr+5));
-		//diary("	bdeviceprotocol:%x\n",*(u8*)(addr+6));
-		//diary("	bmaxpacketsize0:%x\n",*(u8*)(addr+7));
-		//diary("	bnumconfigurations:%x\n",*(u8*)(addr+8));
+		say("	(desc 6)@%x{\n",addr);
+		//say("	blength:%x\n",*(u8*)addr);
+		//say("	bdescriptortype:%x\n",*(u8*)(addr+1));
+		//say("	bcdusb:%x\n",*(u16*)(addr+2));
+		//say("	bdeviceclass:%x\n",*(u8*)(addr+4));
+		//say("	bdevicesubclass:%x\n",*(u8*)(addr+5));
+		//say("	bdeviceprotocol:%x\n",*(u8*)(addr+6));
+		//say("	bmaxpacketsize0:%x\n",*(u8*)(addr+7));
+		//say("	bnumconfigurations:%x\n",*(u8*)(addr+8));
 		break;
 	}
 	case 7:	//其他速率配置描述符
 	{
-		diary("	(desc 7)@%x{\n",addr);
-		//diary("	blength:%x\n",*(u8*)addr);
-		//diary("	bdescriptortype:%x\n",*(u8*)(addr+1));
-		//diary("	wtotallength:%x\n",*(u16*)(addr+2));
-		//diary("	bnuminterfaces:%x\n",*(u8*)(addr+4));
-		//diary("	bconfigurationvalue:%x\n",*(u8*)(addr+5));
-		//diary("	iconfiguration:%x\n",*(u8*)(addr+6));
-		//diary("	bmattributes:%x\n",*(u8*)(addr+7));
-		//diary("	bmaxpower:%x\n",*(u8*)(addr+8));
+		say("	(desc 7)@%x{\n",addr);
+		//say("	blength:%x\n",*(u8*)addr);
+		//say("	bdescriptortype:%x\n",*(u8*)(addr+1));
+		//say("	wtotallength:%x\n",*(u16*)(addr+2));
+		//say("	bnuminterfaces:%x\n",*(u8*)(addr+4));
+		//say("	bconfigurationvalue:%x\n",*(u8*)(addr+5));
+		//say("	iconfiguration:%x\n",*(u8*)(addr+6));
+		//say("	bmattributes:%x\n",*(u8*)(addr+7));
+		//say("	bmaxpower:%x\n",*(u8*)(addr+8));
 		break;
 	}
 	case 0x21:	//hid设备描述符
 	{
-		diary("	(desc 21)hid@%x{\n",addr);
-		//diary("		blength:",*(u8*)addr);
-		//diary("		type:",*(u8*)(addr+1));
-		//diary("		bcdhid:",*(u16*)(addr+2));
-		//diary("		bcountrycode:",*(u8*)(addr+4));
-		//diary("		bnumdescriptor:",*(u8*)(addr+5));
+		say("	(desc 21)hid@%x{\n",addr);
+		//say("		blength:",*(u8*)addr);
+		//say("		type:",*(u8*)(addr+1));
+		//say("		bcdhid:",*(u16*)(addr+2));
+		//say("		bcountrycode:",*(u8*)(addr+4));
+		//say("		bnumdescriptor:",*(u8*)(addr+5));
 
-		//diary("		btype:",*(u8*)(addr+6));
-		//diary("		wlength:",*(u16*)(addr+7));
-		//diary("		btype:",*(u8*)(addr+9));
-		//diary("		wlength:",*(u16*)(addr+10));
+		//say("		btype:",*(u8*)(addr+6));
+		//say("		wlength:",*(u16*)(addr+7));
+		//say("		btype:",*(u8*)(addr+9));
+		//say("		wlength:",*(u16*)(addr+10));
 
 		//reportsize=*(u16*)(addr+7);
 
-		diary("	}\n");
+		say("	}\n");
 		break;
 	}
 	default:
 	{
-		diary("	(desc ?)unknown@%x{\n",type,addr);
+		say("	(desc ?)unknown@%x{\n",type,addr);
 	}
 	}
 }
@@ -492,20 +492,20 @@ void recorddevice(u64 vidpid,u64 class,u64 position,u64 speed,u64 slot)
 /*
 void explainhub(u64 addr)
 {
-	diary("hub@%x\n",addr);
-        diary("blength:%x\n",*(u8*)addr);
-        diary("type:%x\n",*(u8*)(addr+1));
-        diary("bnumberofport:%x\n",*(u8*)(addr+2));
+	say("hub@%x\n",addr);
+        say("blength:%x\n",*(u8*)addr);
+        say("type:%x\n",*(u8*)(addr+1));
+        say("bnumberofport:%x\n",*(u8*)(addr+2));
 	u16 hubcharacteristics=*(u8*)(addr+3);
-        diary("    power mode:%x\n",hubcharacteristics&0x3);
-        diary("    compound device:%x\n",(hubcharacteristics>>2)&0x1);
-        diary("    overcurrent protect:%x\n",(hubcharacteristics>>3)&0x3);
-        diary("    TT thinktime:%x\n",(hubcharacteristics>>5)&0x3);
-        diary("    port indicator:%x\n",(hubcharacteristics>>7)&0x1);
-        diary("bpowerontopowergood:%x\n",*(u8*)(addr+5));
-        diary("bhubcontrolcurrent:%x\n",*(u8*)(addr+6));
-        diary("bremoveandpowermask:%x\n",*(u8*)(addr+7));
-	diary("",0);
+        say("    power mode:%x\n",hubcharacteristics&0x3);
+        say("    compound device:%x\n",(hubcharacteristics>>2)&0x1);
+        say("    overcurrent protect:%x\n",(hubcharacteristics>>3)&0x3);
+        say("    TT thinktime:%x\n",(hubcharacteristics>>5)&0x3);
+        say("    port indicator:%x\n",(hubcharacteristics>>7)&0x1);
+        say("bpowerontopowergood:%x\n",*(u8*)(addr+5));
+        say("bhubcontrolcurrent:%x\n",*(u8*)(addr+6));
+        say("bremoveandpowermask:%x\n",*(u8*)(addr+7));
+	say("",0);
 }
 */
 
@@ -514,15 +514,15 @@ void explainhub(u64 addr)
 /*
 void fixinterval(u64* interval,u64 speed)
 {
-	//if(speed==0) diary("undefined speed:",speed);
-	//if(speed==1) diary("full speed:",speed);
-	//if(speed==2) diary("low speed:",speed);
-	//if(speed==3) diary("high speed:",speed);
-	//if(speed==4) diary("super speed:",speed);
+	//if(speed==0) say("undefined speed:",speed);
+	//if(speed==1) say("full speed:",speed);
+	//if(speed==2) say("low speed:",speed);
+	//if(speed==3) say("high speed:",speed);
+	//if(speed==4) say("super speed:",speed);
 
 
 	u64 val=*interval;
-	diary("val:%x\n",val);
+	say("val:%x\n",val);
 	if( (speed==1)|(speed==2) )
 	{
 		//if(val == 1) val=3;
@@ -545,7 +545,7 @@ void fixinterval(u64* interval,u64 speed)
 		else if(val==2)val=4;
 		else if(val==1)val=3;
 	}
-	diary("fixed interval:%x\n",val);		//[3,11]
+	say("fixed interval:%x\n",val);		//[3,11]
 	*interval=val;
 }
 */
@@ -561,20 +561,20 @@ void fixinterval(u64* interval,u64 speed)
 //static u64 slot;
 void hello(u64 rootport,u64 routestring,u32 speed)
 {
-	//diary("device{",0);
+	//say("device{",0);
 
 
 	//---------------obtain slot------------------
-	//diary("1.enable slot...",0);
+	//say("1.enable slot...",0);
 	hostcommand(0,0,0, (9<<10) );
 	u64 slot = waitxhci(0,0x21);
 	if(slot<=0) goto failed;
 	if(slot>=0x10)
 	{
-		diary("bad slotnum:%x\n",slot);
+		say("bad slotnum:%x\n",slot);
 		goto failed;
 	}
-	diary("slot obtained:%x\n",slot);
+	say("slot obtained:%x\n",slot);
 	//-------------------------------------------
 
 
@@ -590,7 +590,7 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 	u64 data11=slotcontext+0x9000;
 	u64 inputcontext=slotcontext+0xf000;
 	u32 maxpacketsize;
-	diary("	slot context@%x\n",slotcontext);
+	say("	slot context@%x\n",slotcontext);
 
 	//clear context
 	int i=0;
@@ -627,21 +627,21 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 	//if2,addressed
 	u32 slotstate=(*(u32*)(slotcontext+0xc))>>27;
 	u32 epstate=(*(u32*)(slotcontext+contextsize))&0x3;
-	if(slotstate==2) diary("slot addressed");
-	else diary("	slot state:%x\n",slotstate);
+	if(slotstate==2) say("slot addressed");
+	else say("	slot state:%x\n",slotstate);
 	if(epstate == 0)
 	{
-		diary("	ep0 wrong");
+		say("	ep0 wrong");
 		goto failed;
 	}
-	diary("	ep0ring@%x\n",ep0ring);
+	say("	ep0ring@%x\n",ep0ring);
 	//------------------------------------------------
 
 
 
 
 	//_______________device descriptor__________________
-	//diary("getting device desc(0x12 bytes)......\n");
+	//say("getting device desc(0x12 bytes)......\n");
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x100;
@@ -659,9 +659,9 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 
 
 	//----------------configuration descriptor-----------
-	//diary("3.descriptors:",0);
+	//say("3.descriptors:",0);
 	//[data0+0x100]:configure descriptor
-	//diary("getting conf desc......\n");
+	//say("getting conf desc......\n");
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x200;
@@ -682,7 +682,7 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 
 
 	//----------------string descriptors----------------
-	//diary("string descriptor...",0);
+	//say("string descriptor...",0);
 	packet.bmrequesttype=0x80;
 	packet.brequest=6;
 	packet.wvalue=0x300;
@@ -725,7 +725,7 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 
 	failed:
 	return;
-	//diary("}",0);
+	//say("}",0);
 }
 
 
@@ -737,9 +737,9 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 /*
 void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 {
-	if(deviceprotocol==0) diary("no TT hub!");
-	if(deviceprotocol==1) diary("single TT hub!");
-	if(deviceprotocol==2) diary("multi TT hub!");
+	if(deviceprotocol==0) say("no TT hub!");
+	if(deviceprotocol==1) say("single TT hub!");
+	if(deviceprotocol==2) say("multi TT hub!");
 
 	u64 slotcontext=usbhome+slot*0x8000;
 	u64 ep0ring=slotcontext+0x1000;
@@ -756,7 +756,7 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 	struct context context;
 
 
-	diary("4.set configuration...\n");
+	say("4.set configuration...\n");
 	packet.bmrequesttype=0;
 	packet.brequest=9;
 	packet.wvalue=1;
@@ -768,7 +768,7 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 
 
 	//----------------得到hub描述符-----------------
-	diary("1.hub desc@%x\n",data0+0x400);
+	say("1.hub desc@%x\n",data0+0x400);
 	packet.bmrequesttype=0xa0;
 	packet.brequest=6;
 	packet.wvalue=0x2900;
@@ -789,7 +789,7 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 
 
 	//-------------这是一个hub,修改部分context---------------
-	//diary("2.evaluate...",0);
+	//say("2.evaluate...",0);
 
 	//slot context
 	readcontext(slotcontext,1,&context);
@@ -802,15 +802,15 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 	if(waitxhci(0,0x21)<0) goto failed;
 
 	slotstate=(*(u32*)(slotcontext+0x80c))>>27; //if2,addressed
-	if(slotstate==2) diary("slot evaluated");
-	else diary("slot state:%x\n",slotstate);
+	if(slotstate==2) say("slot evaluated");
+	else say("slot state:%x\n",slotstate);
 
 
 
 
 
 	//change input context&ep1.1 context
-	//diary("3.configure ep1.1..",0);
+	//say("3.configure ep1.1..",0);
 	context.d0=0;
 	context.d1=9;
 	context.d2=0;
@@ -831,10 +831,10 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 
 	slotstate=(*(u32*)(slotcontext+0x80c))>>27;
 	epstate=(*(u32*)(slotcontext+0x860))&0x3;
-	if(slotstate==3) diary("slot configured");
-	else diary("slot state:%x\n",slotstate);
+	if(slotstate==3) say("slot configured");
+	else say("slot state:%x\n",slotstate);
 	if(epstate==0){
-		diary("ep3 wrong");
+		say("ep3 wrong");
 		goto failed;
 	}
 
@@ -842,7 +842,7 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 
 
 	//----------prepare ep1.1 ring-------------
-	diary("4.ep1.1 ring");
+	say("4.ep1.1 ring");
 	u32* temp=(u32*)ep1in;
 	int i=0;
 	for(i=0;i<0x3fc;i+=4)		//0xff0/4=0x3fc
@@ -868,9 +868,9 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 	u64 childport;
 	for(childport=1;childport<=count;childport++)
 	{
-		diary("child port:%x\n",childport);
+		say("child port:%x\n",childport);
 
-		//diary("resetting...",0);
+		//say("resetting...",0);
 		packet.bmrequesttype=0x23;	//host2dev|class|rt_other
 		packet.brequest=3;		//set feathre
 		packet.wvalue=0x4;		//f_port_reset
@@ -881,7 +881,7 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 		ring(slot,1);
 		if(waitxhci(slot,1)<0) goto failed;
 
-		//diary("getting status...",0);
+		//say("getting status...",0);
 		packet.bmrequesttype=0xa3;	//devhost|class|rt_other
 		packet.brequest=0;		//req_get_status
 		packet.wvalue=0;		//0
@@ -893,7 +893,7 @@ void normalhub(u64 rootport,u64 routestring,u64 speed,u64 slot)
 		if(waitxhci(slot,1)<0) goto failed;
 
 		u32 status=*(u32*)(data0+0x600);
-		diary("status:%x\n",status);
+		say("status:%x\n",status);
 
 		if( (status&1) == 1 )
 		{
@@ -950,7 +950,7 @@ int resetport(volatile u32* childaddr)
 		//portsc=*(u32*)(childaddr);
 		if( (childaddr[0] & 0x10) == 0 )break;
 	}
-	diary("pr done\n");
+	say("pr done\n");
 
 	//wait for enable=1
 	i=0;
@@ -962,11 +962,11 @@ int resetport(volatile u32* childaddr)
 		//portsc=*(u32*)(childaddr);
 		if( (childaddr[0] & 0x2) == 0x2 )break;
 	}
-	diary("enable done\n");
+	say("enable done\n");
 
 	//wait for portchange event
 	if(waitxhci(0,0x22) <= 0)return -2;
-	diary("event done\n");
+	say("event done\n");
 
 	//nothing wrong haha
 	return 1;
@@ -981,8 +981,8 @@ void roothub()
 		//gcc please i am begging you......do not try to optimize my code......
 		//check
 		childaddr=(u32*)(portbase+childport*0x10-0x10);
-		diary("root port:%x@%x{\n",childport,childaddr);
-		diary("portsc(before):%x\n",childaddr[0]);
+		say("root port:%x@%x{\n",childport,childaddr);
+		say("portsc(before):%x\n",childaddr[0]);
 		if( ( childaddr[0] & 0x1 ) == 0)goto thisfinish;
 
 
@@ -996,10 +996,10 @@ void roothub()
 		{
 			if( resetport(childaddr) <= 0 )
 			{
-				diary("reset failed");
+				say("reset failed");
 				goto thisfinish;
 			}
-			diary("portsc(reset1):%x\n",childaddr[0]);
+			say("portsc(reset1):%x\n",childaddr[0]);
 		}
 		//todo:检查错误
 		//---------------------------------------------
@@ -1008,14 +1008,14 @@ void roothub()
 
 
 		//---------第一步:初始化，读取并记录基本信息--------
-		diary("	linkstate:%x\n",( childaddr[0] >> 5 ) & 0xf);
+		say("	linkstate:%x\n",( childaddr[0] >> 5 ) & 0xf);
 
 		u32 speed=( childaddr[0] >> 10 ) & 0xf;
-		if(speed == 4)diary("	superspeed:4");
-		else if(speed ==3)diary("	highspeed:3");
-		else if(speed == 2)diary("	fullspeed:2");
-		else if(speed == 1)diary("	lowspeed:1");
-		else diary("	speed:%x",speed);
+		if(speed == 4)say("	superspeed:4");
+		else if(speed ==3)say("	highspeed:3");
+		else if(speed == 2)say("	fullspeed:2");
+		else if(speed == 1)say("	lowspeed:1");
+		else say("	speed:%x",speed);
 		hello(childport,0,speed);
 		//---------------------------------------
 
@@ -1034,7 +1034,7 @@ void roothub()
 
 
 thisfinish:
-		diary("}");
+		say("}");
 	}
 	return;
 }
@@ -1046,7 +1046,7 @@ void initusb(u64 xhciaddr)
 {
 	//拿到xhci的mmio地址
 	if(xhciaddr==0) return;
-	diary("xhci@%x{\n",xhciaddr);
+	say("xhci@%x{\n",xhciaddr);
 
 
 
@@ -1067,7 +1067,7 @@ void initusb(u64 xhciaddr)
 	//runtime
 	volatile u64 temp=*(u32*)(xhciaddr+0x18);
 	runtime=xhciaddr+temp;
-	diary("	runtime@%x\n",runtime);
+	say("	runtime@%x\n",runtime);
 
 
 
@@ -1075,7 +1075,7 @@ void initusb(u64 xhciaddr)
 	//doorbell位置
 	temp=(*(u32*)(xhciaddr+0x14));
 	doorbell=xhciaddr+temp;
-	diary("	doorbell@%x\n",doorbell);
+	say("	doorbell@%x\n",doorbell);
 
 
 
@@ -1083,11 +1083,11 @@ void initusb(u64 xhciaddr)
 	//port们集中在哪儿,总共多少个port
 	temp=(*(u32*)xhciaddr) & 0xffff;	//caplength
 	portbase=xhciaddr+temp+0x400;
-	diary("	portbase@%x\n",portbase);
+	say("	portbase@%x\n",portbase);
 
 	temp=*(u32*)(xhciaddr+4);		//hcsparams1
 	portcount=temp>>24;
-	diary("	portcount:%x\n",portcount);
+	say("	portcount:%x\n",portcount);
 
 
 
@@ -1096,8 +1096,8 @@ void initusb(u64 xhciaddr)
 	temp=*(u32*)(xhciaddr+0x10);		//capparams
 	contextsize=0x20;
 	if((temp&0x4) == 0x4) contextsize*=2;
-	diary("	contextsize:%x\n",contextsize);
-	diary("}");
+	say("	contextsize:%x\n",contextsize);
+	say("}");
 
 
 

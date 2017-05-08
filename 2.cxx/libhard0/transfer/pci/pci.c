@@ -11,7 +11,7 @@ void initxhci(u64);
 void out32(u32, u32);
 u32 in32(u32);
 //
-void diary(void*, ...);
+void say(void*, ...);
 
 
 
@@ -45,7 +45,7 @@ void initpci()
 				{
 					initxhci(addr);
 				}
-				else diary("%x:%x", id, type);
+				else say("%x:%x", id, type);
 			}
 		}
 	}

@@ -5,10 +5,6 @@
 int waitkbd(void*);
 int waituart(void*);
 //
-void initprint(void*);
-void diary(void*, ...);
-void say(void*, ...);
-//
 static char* inputqueue;	//stdin
 static char* outputqueue;	//stdout
 static char* journalqueue;	//stderr
@@ -26,9 +22,6 @@ void basiccreate(void* type, void* addr)
 	journalqueue = addr+0x200000;
 	eventqueue = addr+0x300000;
 	for(j=0;j<0x400000;j++)inputqueue[j] = 0;
-
-	initprint(addr);
-	diary("spaceship landing...3...2...1...");
 }
 void* waitevent()
 {

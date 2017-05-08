@@ -8,10 +8,11 @@ void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
 int ncmp(void*, void*, int);
 int cmp(void*, void*);
 //
+void out8(u32, u8);
 void identify();
 void ahcilist();
 //
-void diary(char*,...);
+void say(char*,...);
 
 
 
@@ -151,8 +152,9 @@ void characterwrite(u64 key, u64 type)
 		}
 		else if(key == 0xd)
 		{
-			diary(input);
-			if(ncmp(input,"ahcilist",8) == 0)ahcilist();
+			say(input);
+			if(ncmp(input,"reboot",6) == 0)out8(0x64,0xfe);
+			else if(ncmp(input,"ahcilist",8) == 0)ahcilist();
 			else if(ncmp(input,"identify",8) == 0)identify();
 
 			for(count=127;count>=0;count--)input[count] = 0;

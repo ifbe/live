@@ -1,6 +1,13 @@
-#define u64 unsigned long long
+#define u8 unsigned char
+#define u16 unsigned short
 #define u32 unsigned int
+#define u64 unsigned long long
 #define onemega 0x100000
+int writeuart(void*, int);
+
+
+
+
 static char* inputqueue;        //stdin
 static char* outputqueue;       //stdout
 static char* journalqueue;      //stderr
@@ -42,10 +49,6 @@ int hexadecimal(char* dest, u64 data)
 
 	return count;
 }
-
-
-
-
 int decimal(char* dest, u64 data)
 {
 	u64 temp;
@@ -84,8 +87,7 @@ int decimal(char* dest, u64 data)
 
 
 
-//		~=sprintf();
-void arg2string(u64* argtable, char* dest)
+int fmt(char* dest, u64* argtable)
 {
 	//保存传入的参数
 	char* source=(char*)(argtable[0]);			//0号是source字符串位置
@@ -132,60 +134,68 @@ void arg2string(u64* argtable, char* dest)
 			in++;
 			out++;
 		}
-
 	}//while(1)finish
+	return out;
 }
-
-
-
-
 void say(u64 arg0, u64 arg1, u64 arg2, u64 arg3, u64 arg4, u64 arg5)
 {
 	//保存传进来的6个参数
+	int ret;
+	char* dest;
 	u64 argtable[6]={arg0,arg1,arg2,arg3,arg4,arg5};
 
 	//这次往哪儿写（要确保不写到指定以外的地方）
-	u64 temp=*(u64*)(outputqueue+onemega-8);
-	if(temp >= onemega-0x80)
+	ret = *(u64*)(journalqueue+onemega-8);
+	if(ret >= onemega-0x80)
 	{
-		temp=0;
-		*(u64*)(outputqueue+onemega-8)=0;
+		ret = 0;
+		*(u64*)(journalqueue+onemega-8)=0;
 	}
-	char* dest=(char*)(outputqueue+temp);
+	dest = (char*)(journalqueue + ret);
+	*(u64*)(journalqueue+onemega-8)+=0x80;
 
-	//把传入的字符串写进buffer里面
-	*(u64*)(dest)=0x4645444342413938;	//time
-	*(u64*)(dest+8)=0x3736353433323130;
-	*(u64*)(dest+0x10)=0x7473616d20202020;	//name
-	*(u64*)(dest+0x18)=0x2020202020207265;
-
-	arg2string(argtable,dest+32);
-
-	//这里有点特殊,要自己更新屏幕,还是让后面的函数自己整屏得刷新
-	//updatescreen(leftx,rightx,upy,downy);
-
-	//下一次怎办
-	*(u64*)(outputqueue+onemega-8)+=0x80;
+	//往里写
+	ret = fmt(dest, argtable);
+	ret = writeuart(dest, ret);
 }
-void diary(u64 arg0, u64 arg1, u64 arg2, u64 arg3, u64 arg4, u64 arg5)
-{
-	//保存传进来的6个参数
-	u64 argtable[6]={arg0,arg1,arg2,arg3,arg4,arg5};
 
-	//这次往哪儿写（要确保不写到指定以外的地方）
+
+
+
+void printmemory(u8* buf, int len)
+{
 	u64 temp=*(u64*)(journalqueue+onemega-8);
 	if(temp >= onemega-0x80)
 	{
-		temp=0;
-		*(u64*)(journalqueue+onemega-8)=0;
+		temp = 0;
+		*(u64*)(journalqueue+onemega-8) = 0;
 	}
-	char* dest=(char*)(journalqueue+temp);
+	u8* dst = (void*)(journalqueue+temp);
 
-	//往里写
-	arg2string(argtable,dest);
+	u8 c;
+	int j,k = 0;
+	for(j=0;j<len;j++)
+	{
+		c = buf[j]>>4;
+		c += 0x30;
+		if(c > 0x39)c += 0x27;
+		dst[k+0] = c;
 
-	//下一次怎办
-	*(u64*)(journalqueue+onemega-8)+=0x80;
+		c = buf[j]&0xf;
+		c += 0x30;
+		if(c > 0x39)c += 0x27;
+		dst[k+1] = c;
+
+		c = buf[j];
+		if(c<0x20|c>0x7e)c=0x20;
+		dst[k+0x40] = 0x20;
+		dst[k+0x41] = c;
+		k += 2;
+
+		if((j>0)&&((j&0x1f) == 0x1f))k += 0x40;
+	}
+
+	*(u64*)(journalqueue+onemega-8) += k&0xffffff80;
 }
 
 

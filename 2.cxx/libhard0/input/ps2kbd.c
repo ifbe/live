@@ -3,7 +3,7 @@
 #define u32 unsigned int
 #define u64 unsigned long long
 u8 in8(u16 port);
-void diary(char*,...);
+void say(char*,...);
 
 
 

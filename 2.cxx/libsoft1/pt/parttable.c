@@ -6,7 +6,7 @@
 
 
 
-void diary(char* , ...);
+void say(char* , ...);
 
 
 
@@ -32,7 +32,7 @@ void explaingpt(QWORD* source,QWORD* dest)
 	int i;
 	for(i=0;i<0x200;i++) dest[i]=0;
 
-	diary("gpt disk");
+	say("gpt disk");
 	for(i=0;i<0x80;i++)
 	{
 		dest[8*i]=source[0x10*i+4];
@@ -76,7 +76,7 @@ void explainmbr(QWORD source,QWORD dest)
 	int i;
 	for(i=0;i<0x1000;i++) p[i]=0;
 
-	diary("mbr disk");
+	say("mbr disk");
 	for(i=0;i<4;i++)
 	{
 		*(QWORD*)(dest+0x40*i)=*(DWORD*)(source+0x10*i+8);

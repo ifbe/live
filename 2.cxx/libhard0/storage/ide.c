@@ -9,7 +9,7 @@ u32 in32(u32 addr);
 void out8(u32 port, u8 data);
 void out16(u32 port, u16 data);
 void out32(u32 port, u32 data);
-void diary(char* , ...);
+void say(char* , ...);
 
 
 
@@ -25,13 +25,13 @@ void readide(u64 fd, u64 buf, u64 from, u64 count)
         //channel reset
         out8(control+2,4);
         out16(0x80,0x1111);             //out8(0xeb,0)
-        diary("out %x %x\n",control+2,4);
+        say("out %x %x\n",control+2,4);
 
         out8(control+2,0);
-        diary("out %x %x\n",control+2,0);
+        say("out %x %x\n",control+2,0);
 
         out8(command+6,0xa0);
-        diary("out %x %x\n",command+6,0xa0);
+        say("out %x %x\n",command+6,0xa0);
 
         //50:hd exist
         i=0;
@@ -40,7 +40,7 @@ void readide(u64 fd, u64 buf, u64 from, u64 count)
                 i++;
                 if(i>0xfffff)
                 {
-                        diary("device not ready:%x\n",temp);
+                        say("device not ready:%x\n",temp);
                         return;
                 }
 
@@ -51,21 +51,21 @@ void readide(u64 fd, u64 buf, u64 from, u64 count)
 
         //count
         out8(command+2,count&0xff);
-        diary("total:%x\n",count);
+        say("total:%x\n",count);
 
         //lba
         out8(command+3,from&0xff);
         out8(command+4,(from>>8)&0xff);
         out8(command+5,(from>>16)&0xff);
-        diary("lba:%x\n",from);
+        say("lba:%x\n",from);
 
         //mode
         out8(command+6,0xe0);
-        diary("out %x %x\n",command+6,0xe0);
+        say("out %x %x\n",command+6,0xe0);
 
         //start reading
         out8(command+7,0x20);
-        diary("out %x %x\n",command+7,0x20);
+        say("out %x %x\n",command+7,0x20);
 
         //check hd data ready?
         i=0;
@@ -74,7 +74,7 @@ void readide(u64 fd, u64 buf, u64 from, u64 count)
                 i++;
                 if(i>0xfffff)
                 {
-                        diary("data not ready!\n");
+                        say("data not ready!\n");
                         return;
                 }
 
@@ -85,14 +85,14 @@ void readide(u64 fd, u64 buf, u64 from, u64 count)
                 break;
                 //if( (temp&0x1) == 0x1 )
                 //{
-                //      diary("read error:%x\n",temp);
+                //      say("read error:%x\n",temp);
                 //      return;
                 //}
                 //else break;
         }
 
         //read data
-        diary("reading data\n");
+        say("reading data\n");
         for(i=0;i<0x200;i+=2)
         {
                 temp=in8(command+7);
@@ -104,7 +104,7 @@ void readide(u64 fd, u64 buf, u64 from, u64 count)
                 dest[i+1]=(temp>>8)&0xff;
         }
 
-        if(i < 0x200) diary("not finished:%x\n",i);
+        if(i < 0x200) say("not finished:%x\n",i);
 }
 int identifyide(u64 rdi)
 {
@@ -117,13 +117,13 @@ int identifyide(u64 rdi)
         //channel reset
         out8(control+2,4);
         out16(0x80,0x1111);             //out8(0xeb,0)
-        diary("out %x %x\n",control+2,4);
+        say("out %x %x\n",control+2,4);
 
         out8(control+2,0);
-        diary("out %x %x\n",control+2,0);
+        say("out %x %x\n",control+2,0);
 
         out8(command+6,0xa0);
-        diary("out %x %x\n",command+6,0xa0);
+        say("out %x %x\n",command+6,0xa0);
 
         //50:hd exist
         i=0;
@@ -132,7 +132,7 @@ int identifyide(u64 rdi)
                 i++;
                 if(i>0xfffff)
                 {
-                        diary("device not ready:%x\n",temp);
+                        say("device not ready:%x\n",temp);
                         return -1;
                 }
 
@@ -149,11 +149,11 @@ int identifyide(u64 rdi)
 
         //mode
         out8(command+6,0xe0);
-        diary("out %x %x\n",command+6,0xe0);
+        say("out %x %x\n",command+6,0xe0);
 
         //start reading
         out8(command+7,0xec);
-        diary("out %x %x\n",command+7,0xec);
+        say("out %x %x\n",command+7,0xec);
 
         //check hd data ready?
         i=0;
@@ -162,7 +162,7 @@ int identifyide(u64 rdi)
                 i++;
                 if(i>0xfffff)
                 {
-                        diary("data not ready!\n");
+                        say("data not ready!\n");
                         return -2;
                 }
 
@@ -174,7 +174,7 @@ int identifyide(u64 rdi)
         }
 
         //read data
-        diary("reading data\n");
+        say("reading data\n");
         for(i=0;i<0x100;i++)
         {
                 temp=in8(command+7);
@@ -185,7 +185,7 @@ int identifyide(u64 rdi)
                 dest[i]=temp;
         }
 
-        if(i < 0x100) diary("not finished:%x\n",i);
+        if(i < 0x100) say("not finished:%x\n",i);
         return 1;
 }
 
@@ -198,7 +198,7 @@ static void probepci(u64 addr)
 //出：?存地址
 	u32 temp;
 	u32 bar0,bar1;
-	diary("(ide)pciaddr:%x{\n",addr);
+	say("(ide)pciaddr:%x{\n",addr);
 
 	out32(0xcf8,addr+0x4);
 	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
@@ -208,33 +208,33 @@ static void probepci(u64 addr)
 
 	out32(0xcf8,addr+0x4);
 	temp=(u64)in32(0xcfc);
-	diary("    sts&cmd:%x",temp);
+	say("    sts&cmd:%x",temp);
 
 	//ide port
 	out32(0xcf8,addr+0x10);
 	bar0=in32(0xcfc)&0xfffffffe;
-	diary("    (command)bar0:%x\n",bar0);
+	say("    (command)bar0:%x\n",bar0);
 
 	out32(0xcf8,addr+0x14);
 	bar1=in32(0xcfc)&0xfffffffe;
-	diary("    (control)bar1:%x\n",bar1);
+	say("    (control)bar1:%x\n",bar1);
 
 	out32(0xcf8,addr+0x18);
 	temp=in32(0xcfc)&0xfffffffe;
-	diary("    bar2:%x\n",temp);
+	say("    bar2:%x\n",temp);
 
 	out32(0xcf8,addr+0x1c);
 	temp=in32(0xcfc)&0xfffffffe;
-	diary("    bar3:%x\n",temp);
+	say("    bar3:%x\n",temp);
 
 	//找到了，放到自己的表格里
-	diary("ide,%x,%x",bar0,bar1);
-	diary("}\n");
+	say("ide,%x,%x",bar0,bar1);
+	say("}\n");
 }
 void initide(u64 pciaddr)
 {
 	u64 addr;
-	diary("ide@%x", pciaddr);
+	say("ide@%x", pciaddr);
 
 	//probe pci
 	probepci(pciaddr);

@@ -23,7 +23,6 @@ void debugdelete();
 void basiccreate(void*,void*);
 void basicdelete();
 //
-void diary(void*, ...);
 void say(void*, ...);
 void main();
 

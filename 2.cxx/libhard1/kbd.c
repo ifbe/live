@@ -3,7 +3,7 @@
 #define u32 unsigned int
 #define u64 unsigned long long
 int readkbd(u8*, int);
-void diary(char*,...);
+void say(char*,...);
 
 
 
@@ -102,6 +102,6 @@ int waitkbd(struct event* ev)
 		}
 	}
 
-	//diary("type=%x,key=%x",*type,*key);
+	//say("type=%x,key=%x",*type,*key);
 	return 1;
 }

@@ -13,7 +13,7 @@
 #define dirhome 0xa00000
 #define datahome 0xb00000
 int ahciread(u64, u64, u64, u64);
-void diary(char*,...);
+void say(char*,...);
 
 
 

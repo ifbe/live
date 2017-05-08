@@ -24,7 +24,7 @@ static u64 xhciaddr=0;
 //用了别人的函数
 u32 in32(u32 addr);
 void out32(u32 port, u32 addr);
-void diary(char* , ...);
+void say(char* , ...);
 void initusb();
 
 
@@ -34,7 +34,7 @@ void initusb();
 /*
 void explaincapability()
 {
-diary("pci cap{");
+say("pci cap{");
 
 	u32 offset;
 	u32 temp;
@@ -59,15 +59,15 @@ diary("pci cap{");
 			temp=in32(0xcfc);
 			if( (temp&0x800000) ==0 )
 			{
-			diary("32bit msi@%x",offset);
+			say("32bit msi@%x",offset);
 
 			//before
 			out32(0xcf8,xhciport+offset);
-			diary("	control:%x\n",in32(0xcfc));
+			say("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			diary("	addr:%x\n",in32(0xcfc));
+			say("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+8);
-			diary("	data:%x\n",in32(0xcfc));
+			say("	data:%x\n",in32(0xcfc));
 
 			//do something
 			out32(0xcf8,xhciport+offset+8);
@@ -79,22 +79,22 @@ diary("pci cap{");
 
 			//after
 			out32(0xcf8,xhciport+offset);
-			diary("	control:%x\n",in32(0xcfc));
+			say("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			diary("	addr:%x\n",in32(0xcfc));
+			say("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+8);
-			diary("	data:%x\n",in32(0xcfc));
+			say("	data:%x\n",in32(0xcfc));
 			}
 			else
 			{
-			diary("64bit msi@",offset);
+			say("64bit msi@",offset);
 
 			out32(0xcf8,xhciport+offset);
-			diary("	control:%x\n",in32(0xcfc));
+			say("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			diary("	addr:%x\n",in32(0xcfc));
+			say("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+0xc);
-			diary("	data:%x\n",in32(0xcfc));
+			say("	data:%x\n",in32(0xcfc));
 
 			out32(0xcf8,xhciport+offset+0xc);
 			out32(0xcfc,0x20);
@@ -104,18 +104,18 @@ diary("pci cap{");
 			out32(0xcfc,temp|0x10000);
 
 			out32(0xcf8,xhciport+offset);
-			diary("	control:%x\n",in32(0xcfc));
+			say("	control:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+4);
-			diary("	addr:%x\n",in32(0xcfc));
+			say("	addr:%x\n",in32(0xcfc));
 			out32(0xcf8,xhciport+offset+0xc);
-			diary("	data:%x\n",in32(0xcfc));
+			say("	data:%x\n",in32(0xcfc));
 			}
 			break;
 		}
 
 		case 0x11:
 		{
-			diary("msix@%x\n",offset);
+			say("msix@%x\n",offset);
 break;
 			u32 msixcontrol;
 			u32* msixtable;
@@ -136,9 +136,9 @@ break;
 			out32(0xcf8,xhciport+offset);
 			msixcontrol=in32(0xcfc);
 
-			diary("	msix control:%x\n",msixcontrol);
-			diary("	msix table@%x\n",msixtable);
-			diary("	pending table@%x\n",pendingtable);
+			say("	msix control:%x\n",msixcontrol);
+			say("	msix table@%x\n",msixtable);
+			say("	pending table@%x\n",pendingtable);
 
 			//msixtable[0],addrlow,addrhigh,vector,control
 			msixtable[0]=0xfee00000;
@@ -146,17 +146,17 @@ break;
 			msixtable[2]=0x20;
 			msixtable[3]=msixtable[3]&0xfffffffe;
 
-			diary("	@0:%x\n",msixtable[0]);
-			diary("	@4:%x\n",msixtable[1]);
-			diary("	@8:%x\n",msixtable[2]);
-			diary("	@c:%x\n",msixtable[3]);
+			say("	@0:%x\n",msixtable[0]);
+			say("	@4:%x\n",msixtable[1]);
+			say("	@8:%x\n",msixtable[2]);
+			say("	@c:%x\n",msixtable[3]);
 
 			break;
 		}
 
 		default:
 		{
-			diary("unknown type:%x\n",type);
+			say("unknown type:%x\n",type);
 		}
 	}
 	
@@ -166,7 +166,7 @@ break;
 	offset=next;
 	}
 	
-diary("}\n",0);
+say("}\n",0);
 
 }
 */
@@ -177,7 +177,7 @@ diary("}\n",0);
 u64 probepci()
 {
 	u64 temp;
-	diary("(xhci)portaddr:%x{\n",xhciport);
+	say("(xhci)portaddr:%x{\n",xhciport);
 
 	//disable pin interrupt+enable bus mastering
 	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
@@ -188,7 +188,7 @@ u64 probepci()
 	out32(0xcfc,temp);
 
 	out32(0xcf8,xhciport+0x4);
-	diary("	sts&cmd:%x\n",(u64)in32(0xcfc));
+	say("	sts&cmd:%x\n",(u64)in32(0xcfc));
 
 	//deal with capability list
 	//explaincapability();
@@ -196,7 +196,7 @@ u64 probepci()
 	//get xhciaddr from bar0
 	out32(0xcf8,xhciport+0x10);
 	xhciaddr=in32(0xcfc)&0xfffffff0;
-	diary("}\n");
+	say("}\n");
 }
 
 
@@ -219,7 +219,7 @@ int ownership(u64 addr)
 		timeout++;
 		if(timeout > 0xffffff)
 		{
-			diary("	failed to get ownership");
+			say("	failed to get ownership");
 			return -1;
 		}
 
@@ -229,7 +229,7 @@ int ownership(u64 addr)
 		{
 			if( (temp[0]&0x10000) == 0 )
 			{
-				diary("	bios gone");
+				say("	bios gone");
 				return 1;
 			}
 		}
@@ -244,24 +244,24 @@ void supportedprotocol(u64 addr)
 	u64 start=third & 0xff;
 	u64 count=(third>>8) & 0xff;
 
-	//diary("first:",first);
+	//say("first:",first);
 	if(first<0x100)		//[0,0xff]
 	{
-		diary("	usb?\n");
+		say("	usb?\n");
 	}
 	else if(first<=0x200)	//[0x100,0x1ff]
 	{
-		diary("	usb1:%x\n",start);
+		say("	usb1:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=1;
 	}
 	else if(first<=0x300)	//[0x200,0x2ff]
 	{
-		diary("	usb2:%x\n",start);
+		say("	usb2:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=2;
 	}
 	else			//[0x300,0x3ff]
 	{
-		diary("	usb3:%x\n",start);
+		say("	usb3:%x\n",start);
 		for(i=start;i<start+count;i++) memory[i]=3;
 	}
 }
@@ -273,15 +273,15 @@ void explainxecp(u64 addr)
 {
 	u32 temp;
 
-	diary("	explain xecp@%x{\n",addr);
+	say("	explain xecp@%x{\n",addr);
 	while(1)
 	{
-		diary("	@%x\n",addr);
+		say("	@%x\n",addr);
 		temp=*(u32*)addr;
 		u8 type=temp&0xff;
 		u64 next=(temp>>6)&0x3fc;
 
-		diary("	cap:%x\n",type);
+		say("	cap:%x\n",type);
 		switch(type)
 		{
 			case 1:{
@@ -300,7 +300,7 @@ void explainxecp(u64 addr)
 
 
 failed:
-	diary("	}\n");
+	say("	}\n");
 }
 
 
@@ -308,10 +308,10 @@ failed:
 
 int probexhci()
 {
-diary("(xhci)memaddr:%x{\n",xhciaddr);
+say("(xhci)memaddr:%x{\n",xhciaddr);
 
 //基本信息
-//diary("base information{");
+//say("base information{");
 	u64 version=(*(u32*)xhciaddr) >> 16;
 	u64 caplength=(*(u32*)xhciaddr) & 0xffff;
 
@@ -323,17 +323,17 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	volatile u64 operational=xhciaddr+caplength;
 	u64 runtime=xhciaddr+(*(u32*)(xhciaddr+0x18));
 
-	//diary("	version:%x\n",version);
-	//diary("	caplength:%x\n",caplength);
+	//say("	version:%x\n",version);
+	//say("	caplength:%x\n",caplength);
 
-	//diary("	hcsparams1:%x\n",hcsparams1);
-	//diary("	hcsparams2:%x\n",hcsparams2);
-	//diary("	hcsparams3:%x\n",hcsparams3);
-	//diary("	capparams:%x\n",capparams);
+	//say("	hcsparams1:%x\n",hcsparams1);
+	//say("	hcsparams2:%x\n",hcsparams2);
+	//say("	hcsparams3:%x\n",hcsparams3);
+	//say("	capparams:%x\n",capparams);
 
-	//diary("	operational@%x\n",operational);
-	//diary("	runtime@%x\n",runtime);
-//diary("}\n",0);
+	//say("	operational@%x\n",operational);
+	//say("	runtime@%x\n",runtime);
+//say("}\n",0);
 
 
 
@@ -346,7 +346,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 
 
 //打印bios初始化完后的状态
-//diary("before we destory everything{\n");
+//say("before we destory everything{\n");
 	u64 usbcommand=*(u32*)operational;
 	u64 usbstatus=*(u32*)(operational+4);
 	u64 pagesize=0x1000;
@@ -359,7 +359,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	while(1)
 	{
 		if(psz == 0){
-			diary("psz:",psz);
+			say("psz:",psz);
 			return -1;
 		}
 		if(psz == 1) break;
@@ -368,13 +368,13 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 		pagesize<<1;
 	}
 
-	//diary("	usbcommand:%x\n",usbcommand);
-	//diary("	usbstatus:%x\n",usbstatus);
-	//diary("	pagesize:%x\n",pagesize);
-	//diary("	crcr:%x\n",crcr);
-	//diary("	dcbaa:%x\n",dcbaa);
-	//diary("	config:%x\n",config);
-	diary("}\n",0);
+	//say("	usbcommand:%x\n",usbcommand);
+	//say("	usbstatus:%x\n",usbstatus);
+	//say("	pagesize:%x\n",pagesize);
+	//say("	crcr:%x\n",crcr);
+	//say("	dcbaa:%x\n",dcbaa);
+	//say("	config:%x\n",config);
+	say("}\n",0);
 
 
 
@@ -383,13 +383,13 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 //init system io memory map,if supported
 //xhci reset,wait until CNR flag is 0
 //--------------------------------------------------------------------
-	diary("init xhci{",0);
-	diary("	1.stop&reset");
+	say("init xhci{",0);
+	say("	1.stop&reset");
 
 	//xhci正在运行吗
 	if( (usbstatus&0x1) == 0)		//HCH位为0，即正在运行
 	{
-		diary("		running,stopping\n");
+		say("		running,stopping\n");
 
 		//按下停止按钮
 		*(u32*)operational=usbcommand&0xfffffffe;
@@ -402,7 +402,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 		usbstatus=*(u32*)(operational+4);
 		if( (usbstatus&0x1) == 0)	//HCH位为0，即正在运行
 		{
-			diary("		not stop\n");
+			say("		not stop\n");
 			return -2;
 		}
 	}
@@ -418,7 +418,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	usbcommand=*(u32*)(operational);
 	if((usbcommand&0x2) == 2)
 	{
-		diary("	reset failed:%x\n",usbcommand);
+		say("	reset failed:%x\n",usbcommand);
 		return -3;
 	}
 
@@ -426,13 +426,13 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	usbstatus=*(u32*)(operational+4);
 	if( (usbstatus&0x800) == 0x800 )
 	{
-		diary("	controller not ready:%x\n",usbstatus);
+		say("	controller not ready:%x\n",usbstatus);
 		return -4;
 	}
 
 	//好像第一步成功了
-	//diary("	command:%x\n",usbcommand);
-	//diary("	status:%x\n",usbstatus);
+	//say("	command:%x\n",usbcommand);
+	//say("	status:%x\n",usbstatus);
 
 
 
@@ -442,19 +442,19 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 //program the dcbaap
 //program crcr,point to addr of first trb in command ring
 //----------------------------------------------------------
-	diary("	2.maxslot&dcbaa&crcr:");
+	say("	2.maxslot&dcbaa&crcr:");
 	//maxslot=deviceslots
 	*(u32*)(operational+0x38)=(*(u32*)(xhciaddr+4)) &0xff;
-	diary("		maxslot:%x\n",*(u32*)(operational+0x38) );
+	say("		maxslot:%x\n",*(u32*)(operational+0x38) );
 
 	//dcbaa(scratchpad)
 	*(u32*)(operational+0x30)=dcbahome;
 	*(u32*)(operational+0x34)=0;
-	diary("		dcbaa:%x\n",dcbahome);
+	say("		dcbaa:%x\n",dcbahome);
 
 	*(u32*)(dcbahome) = scratchpadhome;		//用了宏，加括号
 	*(u32*)(dcbahome+4)=0;					//高位
-	diary("		scratchpad:%x\n",scratchpadhome);
+	say("		scratchpad:%x\n",scratchpadhome);
 
 	//command linktrb:lastone point to firstone
 	*(u64*)(cmdringhome+0xfff*0x10)=cmdringhome;
@@ -464,7 +464,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	//crcr
 	*(u32*)(operational+0x18)=cmdringhome+1;
 	*(u32*)(operational+0x1c)=0;
-	diary("		crcr:%x\n",cmdringhome+1);
+	say("		crcr:%x\n",cmdringhome+1);
 
 
 
@@ -475,7 +475,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 //point table&pba offset to message control table and pending bit array
 //init message control register of msix capability structure
 //-------------------------------------------------
-	diary("	3.interrupt&eventring\n");
+	say("	3.interrupt&eventring\n");
 
 	//setupisr(xhciaddr);
 	//----------------------if(msix)--------------------------
@@ -509,7 +509,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	//IMAN
 	*(u32*)(runtime+0x20) = (*(u32*)(runtime+0x20)) | 0x2;
 
-	diary("		event ring@%x\n",eventringhome);
+	say("		event ring@%x\n",eventringhome);
 
 
 
@@ -517,7 +517,7 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 //---------------------xhci启动---------------------
 //write usbcmd,turn host controller on
 //-------------------------------------------------
-	diary("	4.turnon\n");
+	say("	4.turnon\n");
 	//turn on
 	*(u32*)operational = (*(u32*)operational) | 0x1;
 
@@ -526,10 +526,10 @@ diary("(xhci)memaddr:%x{\n",xhciaddr);
 	//while(wait3--)asm("nop");
 
 	//
-	//diary("	command:%x\n",*(u32*)operational);
-	//diary("	status:%x\n",*(u32*)(operational+4));
+	//say("	command:%x\n",*(u32*)operational);
+	//say("	status:%x\n",*(u32*)(operational+4));
 
-	diary("}\n");
+	say("}\n");
 
 
 
@@ -546,7 +546,7 @@ return 0;
 
 void initxhci(u64 pciaddr)
 {
-	diary("xhci@%x",pciaddr);
+	say("xhci@%x",pciaddr);
 
 	xhciport = pciaddr;
 	if(xhciport == 0) goto end;
@@ -573,5 +573,5 @@ void initxhci(u64 pciaddr)
 
 
 end:		//就一行空白
-	diary("\n");
+	say("\n");
 }

@@ -5,6 +5,5 @@ cross:
 	make target compiler=x86_64-elf-gcc
 target:
 	$(compiler) $(cflag) basic.c
-	$(compiler) $(cflag) print.c
 clean:
 	rm -f *.o
