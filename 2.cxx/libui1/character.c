@@ -8,10 +8,14 @@ void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
 int ncmp(void*, void*, int);
 int cmp(void*, void*);
 //
-void out8(u32, u8);
+void read(u64,u64,u64,u64);
 void identify();
-void ahcilist();
 //
+void ahci_list();
+void ahci_choose();
+void out8(u32, u8);
+//
+void printmemory(void*, int);
 void say(char*,...);
 
 
@@ -154,8 +158,11 @@ void characterwrite(u64 key, u64 type)
 		{
 			say(input);
 			if(ncmp(input,"reboot",6) == 0)out8(0x64,0xfe);
-			else if(ncmp(input,"ahcilist",8) == 0)ahcilist();
-			else if(ncmp(input,"identify",8) == 0)identify();
+			else if(ncmp(input,"print",5) == 0)printmemory((void*)0x100000,0x200);
+			else if(ncmp(input,"ahci.ls",7) == 0)ahci_list();
+			else if(ncmp(input,"ahci.cd",7) == 0)ahci_choose();
+			else if(ncmp(input,"disk.id",7) == 0)identify();
+			else if(ncmp(input,"disk.read",9) == 0)read(0, 0x100000, 0, 1);
 
 			for(count=127;count>=0;count--)input[count] = 0;
 			count = 0;

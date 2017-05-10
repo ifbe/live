@@ -20,20 +20,14 @@ void say(char*,...);
 
 int read(u64 fd, u64 buf, u64 from, u64 count)
 {
-	//暂时管不了多硬盘,所以指定用寻找到的第一个
-	u64 type=*(u64*)diskhome;
-	if(type == 0x61746173)
+	u64 j=0;
+	while(count>0x80)
 	{
-		u64 sata=*(u64*)(diskhome+8);
-		u64 j=0;
-		while(count>0x80)
-		{
-			//0x80sectors=0x10000=64KB
-			ahciread(sata, buf+j*0x10000, from+j*0x80, 0x80);
+		//0x80sectors=0x10000=64KB
+		ahciread(0, buf+j*0x10000, from+j*0x80, 0x80);
 
-			j++;
-			count-=0x80;
-		}
-		ahciread(sata, buf+j*0x10000, from+j*0x80, count);
+		j++;
+		count-=0x80;
 	}
+	ahciread(0, buf+j*0x10000, from+j*0x80, count);
 }

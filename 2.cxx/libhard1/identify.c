@@ -2,8 +2,7 @@
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
-int ahciidentify(u64 dev, void* rdi);
-int ideidentify(u64 dev, void* rdi);
+int ahciidentify(void* rdi);
 void printmemory(void*, int);
 void say(void*, ...);
 
@@ -15,7 +14,7 @@ void identify()
 	int j;
 	u8 c;
 	u8* rdi = (void*)0x100000;
-	ahciidentify(0, rdi);
+	ahciidentify(rdi);
 
 	for(j=0;j<0x200;j+=2)
 	{

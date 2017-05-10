@@ -164,6 +164,7 @@ void say(char* , ...);
 //
 static u64 portbase;
 static int total;
+static int theone;
 
 
 
@@ -240,7 +241,7 @@ void maketable(u64 buf,u64 from,HBA_CMD_HEADER* cmdheader,u64 count)
 }
 int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 {
-	HBA_PORT* port =(HBA_PORT*)sata;
+	HBA_PORT* port =(HBA_PORT*)(portbase + theone*0x80);
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(u64)(port->clb);
 
 	//Clear pending interrupt
@@ -308,10 +309,9 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 	}
 	return 0;
 }
-int ahciidentify(u64 dev, u64 rdi)
+int ahciidentify(u64 rdi)
 {
-	u64 t = *(u64*)(ahcihome + dev*0x40 + 8);
-	HBA_PORT* port=(HBA_PORT*)t;
+	HBA_PORT* port=(HBA_PORT*)(portbase + theone*0x80);
 	HBA_CMD_HEADER* cmdheader = (void*)(u64)(port->clb);
 	u32 cmdslot;
 	u32 temp;
@@ -402,14 +402,10 @@ int ahciidentify(u64 dev, u64 rdi)
 
 	return 1;
 }
-void ahcilist()
+void ahci_list()
 {
-	int j,k;
+	int j;
 	u64 addr;
-	u64* mytable=(u64*)ahcihome;
-	for(j=0;j<32*2+8;j++)mytable[j]=0;
-
-	k=0;		//翻译到自己的容易理解的表格里面(+0:名字,+8:地址)
 	for(j=0;j<total;j++)
 	{
 		addr = portbase + j*0x80;
@@ -424,43 +420,31 @@ void ahcilist()
 		{
 			case 0x00000101:	//sata
 			{
-				mytable[k*8] = 0x61746173;
-				mytable[k*8+1] = addr;
-				k+=8;
-
-				say("sata@%x", addr);
+				theone = j;
+				say("%x	sata", j);
 				break;
 			}
 			case 0xeb140101:	//atapi
 			{
-				mytable[k*8] = 0x6970617461;
-				mytable[k*8+1] = addr;
-				k+=8;
-
-				say("atapi@%x", addr);
+				say("%x	atapi", j);
 				break;
 			}
 			case 0xc33c0101:	//enclosure....
 			{
-				mytable[k*8] = 0x6f6c636e65;
-				mytable[k*8+1] = addr;
-				k+=8;
-
-				say("enclosure@%x", addr);
+				say("%x	enclosure", j);
 				break;
 			}
 			case 0x96690101:	//port multiplier
 			{
-				mytable[k*8] = 0x69746c756d;
-				mytable[k*8+1] = addr;
-				k+=8;
-
-				say("multiplier@%x", addr);
+				say("%x	multiplier", j);
 				break;
 			}
 		}//switch
 		}//if this port usable
 	}//for
+}
+void ahci_choose()
+{
 }
 
 
@@ -589,7 +573,7 @@ static void probeahci(u64 addr)
 	//list
 	portbase = addr+0x100;
 	total = count;
-	ahcilist();
+	ahci_list();
 	say("}\n");
 }
 static unsigned int probepci(u64 addr)

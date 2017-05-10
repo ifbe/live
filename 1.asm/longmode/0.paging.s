@@ -3,12 +3,12 @@ startofprepare64:
 
 
 ;_____________environment___________________
-	mov ax,0x0010
-	mov ds,ax
-	mov es,ax
+	mov eax,0x0010
+	;mov ss,ax
+	;mov ds,ax
+	;mov es,ax
 	mov fs,ax
 	mov gs,ax
-	mov ss,ax
 	mov rsp,0xa0000          ;.........@640K........be careful
 ;__________________________________
 

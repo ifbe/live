@@ -158,7 +158,7 @@ mbrsuccess:
 
 
 
-times 446-($-$$)db 0
+times 0x1be-($-$$)db 0
 
 
 
@@ -167,7 +167,7 @@ times 446-($-$$)db 0
 db 0x80,0xfe,0xff,0xff
 db 0x0b,0xfe,0xff,0xff
 dd 0x800		;首扇区号
-dd 0x1f800		;扇区数量
+dd 0x1f000		;扇区数量
 
 dd 0
 dd 0

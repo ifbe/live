@@ -1,4 +1,4 @@
 all:
-	nasm asm.s -o asm.bin
+	yasm asm.s -o asm.bin
 clean:
 	rm -f *.bin

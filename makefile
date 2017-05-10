@@ -3,23 +3,33 @@ binary:				#linuxer only
 	make -s -C 0.bios
 	make -s -C 1.asm
 	make -s -C 2.cxx
-	make -s convert
-cross:		#windows and mac user
+	nasm README -o head.img
+	make -s diskimage
+cross:
 	make -s -C 0.bios
 	make -s -C 1.asm
 	make -s -C 2.cxx cross
-	make -s convert
+	nasm README -o head.img
+	make -s diskimage
+fat32:
+	dd if=/dev/zero of=body.img bs=1M count=62
+	mkfs.fat -F32 body.img
 
 
 
 
-#image convert
-convert:
-	nasm README -o core.bin
-	cp core.bin core.img
-	qemu-img resize -f raw core.img 1M
-	qemu-img convert -f raw -O vmdk core.img core.vmdk
-	qemu-img convert -f raw -O vpc -o subformat=fixed core.img core.vhd
+#head(code,1m) + body(fat32,62m) + tail(zero,1m)
+diskimage:
+	cp head.img live.img
+	dd if=body.img of=live.img bs=1M seek=1 conv=notrunc
+	qemu-img resize -f raw live.img 64M
+	qemu-img convert -f raw -O vmdk live.img live.vmdk
+	qemu-img convert -f raw -O vpc -o subformat=fixed live.img live.vhd
+mount:
+	sudo losetup /dev/loop0 live.img
+	sudo partprobe /dev/loop0
+umount:
+	sudo losetup -d /dev/loop0
 
 
 
@@ -27,14 +37,14 @@ convert:
 #test
 qemu:
 	tool/qemu/qemu.sh "qemu-system-x86_64" \
-	$(shell pwd)/core.vhd
+	$(shell pwd)/live.vhd
 ovmf:
 	tool/qemu/qemu.sh "qemu-system-x86_64 -bios ovmf.fd" \
-	$(shell pwd)/core.vhd
+	$(shell pwd)/live.vhd
 bochs:
 	bochs -f ../tool/bochs/bochsrc
 vmware:
-	cp core.vhd ../tool/vmware/test.vhd
+	cp live.vhd ../tool/vmware/live.vhd
 	#(please double click) ../tool/vmware/vmware.vmx
 virtualbox:
 parallels:

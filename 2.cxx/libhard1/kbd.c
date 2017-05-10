@@ -20,7 +20,7 @@ static u8 kbd[9*2] =
 	0x4b,0x4b,	//left
 	0x4d,0x4d	//right
 };
-static u8 ch[30*2] =
+static u8 ch[31*2] =
 {
         0x1e,'a',
         0x30,'b',
@@ -48,6 +48,7 @@ static u8 ch[30*2] =
         0x2d,'x',
         0x15,'y',
         0x2c,'z',
+	0x34,'.',
         0x0e,0x7f,      //backspace
         0x1c,0xd,       //enter
         0x39,0x20,      //space
@@ -91,7 +92,7 @@ int waitkbd(struct event* ev)
 	//char
 	if(ev->what==0)
 	{
-		for(j=0;j<30;j++)
+		for(j=0;j<31;j++)
 		{
 			if(ev->why == ch[j*2])
 			{
@@ -102,6 +103,6 @@ int waitkbd(struct event* ev)
 		}
 	}
 
-	//say("type=%x,key=%x",*type,*key);
+	//say("type=%x,key=%x",ev->what,ev->why);
 	return 1;
 }
