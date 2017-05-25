@@ -10,16 +10,16 @@ void say(void*, ...);
 void parsetable(void* p)
 {
 	u32* q = (void*)(u64)(*(u32*)p);
-	say("%x,%x,%x", p, q, *q);
+	say("%x,%x,%x\n", p, q, *q);
 }
 void parsexsdt(void* p)
 {
 	int c,j;
-	say("xsdt");
+	say("xsdt\n");
 
 	p = (void*)(u64)(*(u32*)(p+0x18));
 	c = *(u8*)(p+4);
-	say("count:%x", c);
+	say("count:%x\n", c);
 
 	p += 0x24;
 	c -= 0x24;
@@ -28,11 +28,11 @@ void parsexsdt(void* p)
 void parsersdt(void* p)
 {
 	int c,j;
-	say("rsdt");
+	say("rsdt\n");
 
 	p = (void*)(u64)(*(u32*)(p+0x10));
 	c = *(u8*)(p+4);
-	say("count:%x", c);
+	say("count:%x\n", c);
 
 	p += 0x24;
 	c -= 0x24;
@@ -40,7 +40,7 @@ void parsersdt(void* p)
 }
 void parseacpi(void* p)
 {
-	say("RSD PTR @%x",p);
+	say("RSD PTR @%x\n",p);
 	if(*(u8*)(p+0xf) == 0)parsersdt(p);
 	else parsexsdt(p);
 }

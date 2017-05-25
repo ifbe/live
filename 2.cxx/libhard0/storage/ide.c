@@ -228,13 +228,13 @@ static void probepci(u64 addr)
 	say("    bar3:%x\n",temp);
 
 	//找到了，放到自己的表格里
-	say("ide,%x,%x",bar0,bar1);
+	say("ide,%x,%x\n",bar0,bar1);
 	say("}\n");
 }
 void initide(u64 pciaddr)
 {
 	u64 addr;
-	say("ide@%x", pciaddr);
+	say("ide@%x\n", pciaddr);
 
 	//probe pci
 	probepci(pciaddr);

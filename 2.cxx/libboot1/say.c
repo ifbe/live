@@ -1,174 +1,318 @@
+#include<stdarg.h>
 #define u8 unsigned char
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
 #define onemega 0x100000
-int writeuart(void*, int);
+int data2decstr(u64 data, void* str);
+int data2hexstr(u64 data, void* str);
+int double2decstr(double data, void* str);
+void writeuart(void*, int);
 
 
 
 
-static char* inputqueue;        //stdin
-static char* outputqueue;       //stdout
-static char* journalqueue;      //stderr
-
-
-
-
-int hexadecimal(char* dest, u64 data)
+static void* inputqueue;        //stdin
+	static u64* incur;			//real position
+	static u64* inwin;			//insert position
+static void* outputqueue;       //stdout
+	static u64* outcur;			//real position
+	static u64* outwin;			//display position
+static void* journalqueue;      //stderr
+	static u64* logcur;			//real position
+	static u64* logwin;			//display position
+void initprint(char* buf)
 {
-	u64 temp;
-	int count;
-	int i;
+	inputqueue = buf;
+	incur = inputqueue+0x100000-16;
+	inwin = inputqueue+0x100000-8;
 
-	//检查多少个nibbie需要显示出来
-	temp=data;
-	count=0;
-	while(1)
-	{
-		if(temp==0)break;
+	outputqueue = buf+0x100000;
+	outcur = outputqueue+0x100000-16;
+	outwin = outputqueue+0x100000-8;
 
-		temp=temp>>4;
-		count++;
-	}
-	if(count==0)
-	{
-		*dest=0x30;
-		return 1;
-	}
-
-	//显示数字
-	for(i=0;i<count;i++)
-	{
-		temp=(data&0xf) + 0x30;
-		if(temp>0x39)temp+=7;
-
-		data=data>>4;
-		dest[count-1-i]=temp;
-	}
-
-	return count;
-}
-int decimal(char* dest, u64 data)
-{
-	u64 temp;
-	int count;
-	int i;
-
-	//检查多少个nibbie需要显示出来
-	temp=data;
-	count=0;
-	while(1)
-	{
-		if(temp==0)break;
-
-		temp=temp/10;
-		count++;
-	}
-	if(count==0)
-	{
-		*dest=0x30;
-		return 1;
-	}
-
-	//显示数字
-	for(i=0;i<count;i++)
-	{
-		temp=(data%10) + 0x30;
-		if(temp>0x39)temp+=7;
-
-		data=data/10;
-		dest[count-1-i]=temp;
-	}
-
-	return count;
+	journalqueue = buf+0x200000;
+	logcur = journalqueue+0x100000-16;
+	logwin = journalqueue+0x100000-8;
 }
 
 
 
 
-int fmt(char* dest, u64* argtable)
+u64 fixdata(u64 data, int val)
 {
-	//保存传入的参数
-	char* source=(char*)(argtable[0]);			//0号是source字符串位置
-	int argcount=1;			//从1号开始
+	u64 mask;
+	if(val == 0)return data;
 
-	//把传入的字符串写进buffer里面
-	int in=0;
-	int out=0;
+	mask = 0;
+	while(val > 0)
+	{
+		mask = (mask<<8) | 0xff;
+		val--;
+	}
+	return data&mask;
+}
+int convert_c(char* buf, int align, int k, int ch)
+{
+	if(ch == '\n')
+	{
+		buf[k] = '\n';
+		k += 0x80-((k+align)%0x80);
+	}
+	else if(ch == '	')
+	{
+		do
+		{
+			buf[k] = 0x20;
+			k++;
+		}while( ( (align+k) % 8 ) != 0);
+	}
+	else
+	{
+		buf[k] = ch;
+		k++;
+	}
+	return k;
+}
+int convert(char* buf, int len, char* str, int align, va_list arg)
+{
+	int j,k,t;
+	int num,val,flag;
+	u64 _x;
+    char* _s;
+    double _f;
+
+	j = k = 0;
 	while(1)
 	{
-		if(out>=0x80)break;
-		if(source[in] == '\0')break;		//是0，字符串结束了
+		if(k >= len)return len;
+		if(str[j] == 0)return k;
 
-		else if(source[in]==0x9)
+		if(str[j] == '%')
 		{
-			*(u32*)(dest+out)=0x20202020;
-			in++;
-			out+=4;
-		}
-		else if(source[in]=='%')		//%d,%c,%lf,%llx.....
-		{
-			if(source[in+1]=='x')
+			val = 0;
+			num = j+1;
+			flag = str[num];
+			if(flag == '-')num++;
+			while( (str[num] >= 0x30) && (str[num] <= 0x39) )
 			{
-				in+=2;
-				out+=hexadecimal(dest+out,argtable[argcount]);
-				argcount++;
+				val = (val*10) + (str[num]-0x30);
+				num++;
 			}
-			else if(source[in+1]=='d')
+
+			if(str[num] == 'c')
 			{
-				in+=2;
-				out+=decimal(dest+out,argtable[argcount]);
-				argcount++;
+				_x = va_arg(arg, int);
+				k = convert_c(buf, align, k, _x);
+
+				j = num+1;
+				continue;
 			}
-			else
+			else if(str[num] == 'd')
 			{
-				dest[out]=source[in];
-				in++;
-				out++;
+				_x = va_arg(arg, u64);
+				k += data2decstr(_x, buf+k);
+
+				j = num+1;
+				continue;
+			}
+			else if(str[num] == 'f')
+			{
+				_f = va_arg(arg, double);
+				k += double2decstr(_f, buf+k);
+
+				j = num+1;
+				continue;
+			}
+			else if(str[num] == 'x')
+			{
+				_x = va_arg(arg, u64);
+				_x = fixdata(_x, val);
+
+				if( (flag == '0')&&(val == 2) )
+				{
+					if(_x < 0x10)
+					{
+						buf[k] = '0';
+						k += 1;
+					}
+				}
+
+				t = k;
+				k += data2hexstr(_x, buf+k);
+				if( (flag == '-')&&(val > 0) )
+				{
+					for(;k<t+val;k++)
+					{
+						buf[k] = ' ';
+					}
+				}
+
+				j = num+1;
+				continue;
+			}
+			else if(str[num] == 's')
+			{
+				_s = va_arg(arg, char*);
+				while(1)
+				{
+					if(k >= len)return len;
+
+					k = convert_c(buf, align, k, *_s);
+
+					_s++;
+					if(*_s == 0)break;
+				}
+				j = num+1;
+				continue;
 			}
 		}
-		else				//normal
-		{
-			dest[out]=source[in];
-			in++;
-			out++;
-		}
-	}//while(1)finish
-	return out;
+
+		k = convert_c(buf, align, k, str[j]);
+		j++;
+	}
+	return k;
 }
-void say(u64 arg0, u64 arg1, u64 arg2, u64 arg3, u64 arg4, u64 arg5)
+void printout(int cur, int len)
 {
-	//保存传进来的6个参数
+	int j,k;
+	u8* p;
+
+	p = outputqueue;
+	j = cur;
+	while(1)
+	{	
+		if(j >= cur+len)
+		{
+			if(j%0x80 == 0)break;
+
+			k = j - (j%0x80);
+			if(k<cur)k=cur;
+
+			writeuart(p+k, j-k);
+			break;
+		}
+		else if(p[j] == '\n')
+		{
+			k = j - (j%0x80);
+			if(k<cur)k=cur;
+
+			writeuart(p+k, j-k+1);
+			j = (j+0x80) - (j%0x80);
+		}
+		else
+		{
+			if(j%0x80 == 0x7f)
+			{
+				k = j - (j%0x80);
+				if(k<cur)k=cur;
+
+				writeuart(p+k, j-k+1);
+			}
+			j++;
+		}
+	}
+}
+
+
+
+
+int fmt(char* buf, int len, char* str, ...)
+{
 	int ret;
-	char* dest;
-	u64 argtable[6]={arg0,arg1,arg2,arg3,arg4,arg5};
+	va_list arg;
+	va_start(arg, str);
+	ret = convert(buf, len, str, 0, arg);
+	va_end(arg);
+    return ret;
+}
+void say(char* str, ...)
+{
+	int cur,ret;
+	va_list arg;
+	va_start(arg, str);
 
-	//这次往哪儿写（要确保不写到指定以外的地方）
-	ret = *(u64*)(journalqueue+onemega-8);
-	if(ret >= onemega-0x80)
-	{
-		ret = 0;
-		*(u64*)(journalqueue+onemega-8)=0;
-	}
-	dest = (char*)(journalqueue + ret);
-	*(u64*)(journalqueue+onemega-8)+=0x80;
+	//read position
+	cur = *outcur;
 
-	//往里写
-	ret = fmt(dest, argtable);
-	ret = writeuart(dest, ret);
+	//snprintf
+	ret = convert(outputqueue+cur, 0x1000, str, cur%0x80, arg);
+
+	//
+	va_end(arg);
+
+	//debugport
+	printout(cur, ret);
+
+	//write position
+	cur = cur+ret;
+	if(cur > 0xf0000)cur = 0;
+	*outcur = cur;
+
 }
 
 
 
+void printmemory(u8* addr,int size)
+{
+	int x,y;
+	u8 ch;
+	u8* p;
+	say("\n");
 
+	for(y=0;y<size/16;y++)
+	{
+		p = addr+y*16;
+
+		//addr
+		if((y%16) == 0)say( "@%-13x" , (u64)p );
+		else say("+%-13x",y*16);
+
+		//hex
+		for(x=0;x<=0xf;x++)
+		{
+			say("%02x ",p[x]);
+		}
+
+		//ascii
+		for(x=0;x<=0xf;x++)
+		{
+			ch = p[x];
+			if( (ch>=0x7f)|(ch<0x20) )ch=0x20;
+			say("%c",ch);
+		}
+		say("\n");
+	}
+	if(y*16 >= size)return;
+
+	p = addr+y*16;
+	say("+%-13x",y*16);
+	for(x=0;x<16;x++)
+	{
+		if(x >= size%16)say("   ");
+		else say("%02x ",p[x]);
+	}
+	for(x=0;x<16;x++)
+	{
+		if(x >= size%16)say(" ");
+		else
+		{
+			ch = p[x];
+			if( (ch>=0x7f)|(ch<0x20) )ch=0x20;
+			say("%c",ch);
+		}
+	}
+	say("\n");
+}
+
+/*
 void printmemory(u8* buf, int len)
 {
-	u64 temp=*(u64*)(journalqueue+onemega-8);
+	u64 temp=*(u64*)(journalqueue+onemega-16);
 	if(temp >= onemega-0x80)
 	{
 		temp = 0;
-		*(u64*)(journalqueue+onemega-8) = 0;
+		*(u64*)(journalqueue+onemega-16) = 0;
 	}
 	u8* dst = (void*)(journalqueue+temp);
 
@@ -195,15 +339,6 @@ void printmemory(u8* buf, int len)
 		if((j>0)&&((j&0x1f) == 0x1f))k += 0x40;
 	}
 
-	*(u64*)(journalqueue+onemega-8) += k&0xffffff80;
+	*(u64*)(journalqueue+onemega-16) += k&0xffffff80;
 }
-
-
-
-
-void initprint(void* addr)
-{
-	inputqueue = addr;
-	outputqueue = addr+0x100000;
-	journalqueue = addr+0x200000;
-}
+*/

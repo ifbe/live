@@ -45,7 +45,7 @@ void initpci()
 				{
 					initxhci(addr);
 				}
-				else say("%x:%x", id, type);
+				else say("%x:%x\n", id, type);
 			}
 		}
 	}

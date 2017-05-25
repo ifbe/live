@@ -393,17 +393,17 @@ void explaindescriptor(u64 addr)
 		say("		ep:%x\n",endpoint&0xf);
 		if(endpoint>0x80)
 		{
-			if(eptype==0) say("		in,control");
-			else if(eptype==1) say("		in,isochronous");
-			else if(eptype==2) say("		in,bulk");
-			else say("		in,interrupt");
+			if(eptype==0) say("		in,control\n");
+			else if(eptype==1) say("		in,isochronous\n");
+			else if(eptype==2) say("		in,bulk\n");
+			else say("		in,interrupt\n");
 		}
 		else
 		{
-			if(eptype==0) say("		out,control");
-			else if(eptype==1) say("		out,isochronous");
-			else if(eptype==2) say("		out,bulk");
-			else say("		out,interrupt");
+			if(eptype==0) say("		out,control\n");
+			else if(eptype==1) say("		out,isochronous\n");
+			else if(eptype==2) say("		out,bulk\n");
+			else say("		out,interrupt\n");
 		}
 
 
@@ -561,7 +561,7 @@ void fixinterval(u64* interval,u64 speed)
 //static u64 slot;
 void hello(u64 rootport,u64 routestring,u32 speed)
 {
-	//say("device{",0);
+	//say("device{\n",0);
 
 
 	//---------------obtain slot------------------
@@ -627,11 +627,11 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 	//if2,addressed
 	u32 slotstate=(*(u32*)(slotcontext+0xc))>>27;
 	u32 epstate=(*(u32*)(slotcontext+contextsize))&0x3;
-	if(slotstate==2) say("slot addressed");
+	if(slotstate==2) say("slot addressed\n");
 	else say("	slot state:%x\n",slotstate);
 	if(epstate == 0)
 	{
-		say("	ep0 wrong");
+		say("	ep0 wrong\n");
 		goto failed;
 	}
 	say("	ep0ring@%x\n",ep0ring);
@@ -996,7 +996,7 @@ void roothub()
 		{
 			if( resetport(childaddr) <= 0 )
 			{
-				say("reset failed");
+				say("reset failed\n");
 				goto thisfinish;
 			}
 			say("portsc(reset1):%x\n",childaddr[0]);
@@ -1011,11 +1011,11 @@ void roothub()
 		say("	linkstate:%x\n",( childaddr[0] >> 5 ) & 0xf);
 
 		u32 speed=( childaddr[0] >> 10 ) & 0xf;
-		if(speed == 4)say("	superspeed:4");
-		else if(speed ==3)say("	highspeed:3");
-		else if(speed == 2)say("	fullspeed:2");
-		else if(speed == 1)say("	lowspeed:1");
-		else say("	speed:%x",speed);
+		if(speed == 4)say("	superspeed:4\n");
+		else if(speed ==3)say("	highspeed:3\n");
+		else if(speed == 2)say("	fullspeed:2\n");
+		else if(speed == 1)say("	lowspeed:1\n");
+		else say("	speed:%x\n",speed);
 		hello(childport,0,speed);
 		//---------------------------------------
 
@@ -1034,7 +1034,7 @@ void roothub()
 
 
 thisfinish:
-		say("}");
+		say("}\n");
 	}
 	return;
 }
@@ -1097,7 +1097,7 @@ void initusb(u64 xhciaddr)
 	contextsize=0x20;
 	if((temp&0x4) == 0x4) contextsize*=2;
 	say("	contextsize:%x\n",contextsize);
-	say("}");
+	say("}\n");
 
 
 

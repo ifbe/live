@@ -359,7 +359,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 	while(1)
 	{
 		if(psz == 0){
-			say("psz:",psz);
+			say("psz:\n",psz);
 			return -1;
 		}
 		if(psz == 1) break;
@@ -383,8 +383,8 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 //init system io memory map,if supported
 //xhci reset,wait until CNR flag is 0
 //--------------------------------------------------------------------
-	say("init xhci{",0);
-	say("	1.stop&reset");
+	say("init xhci{\n",0);
+	say("	1.stop&reset\n");
 
 	//xhci正在运行吗
 	if( (usbstatus&0x1) == 0)		//HCH位为0，即正在运行
@@ -442,7 +442,7 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 //program the dcbaap
 //program crcr,point to addr of first trb in command ring
 //----------------------------------------------------------
-	say("	2.maxslot&dcbaa&crcr:");
+	say("	2.maxslot&dcbaa&crcr:\n");
 	//maxslot=deviceslots
 	*(u32*)(operational+0x38)=(*(u32*)(xhciaddr+4)) &0xff;
 	say("		maxslot:%x\n",*(u32*)(operational+0x38) );
@@ -546,7 +546,7 @@ return 0;
 
 void initxhci(u64 pciaddr)
 {
-	say("xhci@%x",pciaddr);
+	say("xhci@%x\n",pciaddr);
 
 	xhciport = pciaddr;
 	if(xhciport == 0) goto end;

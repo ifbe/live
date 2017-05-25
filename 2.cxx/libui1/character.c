@@ -37,7 +37,7 @@ static int offset=0;
 void characterread_image()
 {
 	int x,y;
-	int temp = *(int*)(journal + 0xffff8);
+	int temp = *(int*)(output + 0xffff0);
 	temp -= offset;
 	if(temp < 0)temp = 0;
 
@@ -56,7 +56,7 @@ void characterread_image()
 	//
 	for(y=0;y<752/16;y++)
 	{
-		printstring(0, y*16, 1, journal+temp+y*0x80, 0xffffff, 0xff000000);
+		printstring(0, y*16, 1, output+temp+y*0x80, 0xffffff, 0xff000000);
 	}
 
 	//
@@ -83,7 +83,7 @@ void characterread_b8000()
 	u8* q;
 	int x,y;
 	int c,t;
-	u32 temp = *(u32*)(journal + 0xffff8);
+	u32 temp = *(u32*)(output + 0xffff0);
 	if(temp < offset)temp = 0;
 	else
 	{
@@ -93,7 +93,7 @@ void characterread_b8000()
 	}
 
 	p = (void*)window;
-	q = journal+temp;
+	q = output+temp;
 	for(y=0;y<25;y++)
 	{
 		for(x=0;x<80;x++)
@@ -156,7 +156,7 @@ void characterwrite(u64 key, u64 type)
 		}
 		else if(key == 0xd)
 		{
-			say(input);
+			say("%s\n",input);
 			if(ncmp(input,"reboot",6) == 0)out8(0x64,0xfe);
 			else if(ncmp(input,"print",5) == 0)printmemory((void*)0x100000,0x200);
 			else if(ncmp(input,"ahci.ls",7) == 0)ahci_list();

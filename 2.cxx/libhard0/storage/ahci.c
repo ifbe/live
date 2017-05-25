@@ -251,7 +251,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1)
 	{
-		say("error:no cmdslot",0);
+		say("error:no cmdslot\n",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
@@ -267,7 +267,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			say("(timeout1)port->tfd:%x",(u64)port->tfd);
+			say("(timeout1)port->tfd:%x\n",(u64)port->tfd);
 			return -11;
 		}
 
@@ -289,7 +289,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 		timeout++;
 		if(timeout>0xffffff)
 		{
-			say("(timeout2)port->ci=%x",temp);
+			say("(timeout2)port->ci=%x\n",temp);
 			return -22;
 		}
 
@@ -297,7 +297,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 		temp=port->is;
 		if (temp & 0x40000000)  //Task file error
 		{
-			say("port error 1",0);
+			say("port error 1\n",0);
 			return -33;
 		}
 
@@ -326,7 +326,7 @@ int ahciidentify(u64 rdi)
 	}
 	if(cmdslot == 32)
 	{
-		say("error:no cmdslot",0);
+		say("error:no cmdslot\n",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
@@ -361,7 +361,7 @@ int ahciidentify(u64 rdi)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			say("(timeout1)port->tfd:%x",(u64)port->tfd);
+			say("(timeout1)port->tfd:%x\n",(u64)port->tfd);
 			return -1;
 		}
 
@@ -382,14 +382,14 @@ int ahciidentify(u64 rdi)
 		timeout++;
 		if(timeout>0xfffff)
 		{
-			say("(timeout2)ci=%x,prdbc=%x",temp,cmdheader->prdbc);
+			say("(timeout2)ci=%x,prdbc=%x\n",temp,cmdheader->prdbc);
 			return -2;
 		}
 
 		temp=port->is;
 		if (temp & 0x40000000)  // Task file error
 		{
-			say("port error 1");
+			say("port error 1\n");
 			return -9;
 		}
 
@@ -421,22 +421,22 @@ void ahci_list()
 			case 0x00000101:	//sata
 			{
 				theone = j;
-				say("%x	sata", j);
+				say("%x	sata\n", j);
 				break;
 			}
 			case 0xeb140101:	//atapi
 			{
-				say("%x	atapi", j);
+				say("%x	atapi\n", j);
 				break;
 			}
 			case 0xc33c0101:	//enclosure....
 			{
-				say("%x	enclosure", j);
+				say("%x	enclosure\n", j);
 				break;
 			}
 			case 0x96690101:	//port multiplier
 			{
-				say("%x	multiplier", j);
+				say("%x	multiplier\n", j);
 				break;
 			}
 		}//switch
@@ -467,7 +467,7 @@ static void disableport(HBA_PORT* port)
 		timeout--;
 		if(timeout==0)
 		{
-			say("(timeout)still running:%x",(u64)(port->cmd));
+			say("(timeout)still running:%x\n",(u64)(port->cmd));
 			return;
 		}
 
@@ -590,7 +590,7 @@ static unsigned int probepci(u64 addr)
 	out32(0xcfc,temp);
 
 	out32(0xcf8,addr+0x4);
-	say("    pci sts&cmd:%x",(u64)in32(0xcfc));
+	say("    pci sts&cmd:%x\n",(u64)in32(0xcfc));
 
 	//ide port
 	out32(0xcf8,addr+0x10);
@@ -611,7 +611,7 @@ static unsigned int probepci(u64 addr)
 void initahci(u64 pciaddr)
 {
 	u64 addr;
-	say("ahci@%x",pciaddr);
+	say("ahci@%x\n",pciaddr);
 
 	//clear home
 	addr=ahcihome;
