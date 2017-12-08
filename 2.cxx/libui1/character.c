@@ -122,6 +122,7 @@ void characterread()
 }
 void characterwrite(u64 key, u64 type)
 {
+	int (*func)();
 	if(type == 0x64626b)
 	{
 		if(key == 0x1b)		//esc
@@ -162,7 +163,14 @@ void characterwrite(u64 key, u64 type)
 			else if(ncmp(input,"ahci.ls",7) == 0)ahci_list();
 			else if(ncmp(input,"ahci.cd",7) == 0)ahci_choose();
 			else if(ncmp(input,"disk.id",7) == 0)identify();
-			else if(ncmp(input,"disk.read",9) == 0)read(0, 0x100000, 0, 1);
+			else if(ncmp(input,"disk.read",9) == 0)read(0, 0x100000, 0x100000, 0x100000);
+			else if(ncmp(input,"jump",4) == 0)
+			{
+				say("!!!!\n");
+				func = (void*)0x100000;
+				func();
+				say("????\n");
+			}
 
 			for(count=127;count>=0;count--)input[count] = 0;
 			count = 0;

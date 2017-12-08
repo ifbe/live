@@ -4,6 +4,7 @@ linux:
 cross:
 	make target compiler=x86_64-elf-gcc
 target:
+	$(compiler) $(cflag) start.c
 	$(compiler) $(cflag) basic.c
 clean:
 	rm -f *.o

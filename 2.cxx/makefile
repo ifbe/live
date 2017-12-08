@@ -1,6 +1,5 @@
 link := ld
 binary:
-	make -s -C init linux
 	make -s -C libboot0 linux
 	make -s -C libboot1 linux
 	make -s -C libhard0 linux
@@ -11,7 +10,6 @@ binary:
 	make -s -C libui1 linux
 	make -s link linker=ld
 cross:
-	make -s -C init cross
 	make -s -C libboot0 cross
 	make -s -C libboot1 cross
 	make -s -C libhard0 cross
@@ -23,8 +21,8 @@ cross:
 	make -s link linker=x86_64-elf-ld
 link:
 	$(linker) -T link.ld \
-	init/start.o init/main.o \
-	libboot0/*.o \
+	libboot0/start.o \
+	libboot0/basic.o \
 	libboot1/*.o \
 	libhard0/*.o \
 	libhard1/*.o \

@@ -18,16 +18,18 @@ void say(char*,...);
 
 
 
-int read(u64 fd, u64 buf, u64 from, u64 count)
+int read(u64 fd, u64 buf, u64 off, u64 len)
 {
 	u64 j=0;
-	while(count>0x80)
+	off = off>>9;
+	len = (len+0x1ff)>>9;
+	while(len>0x80)
 	{
 		//0x80sectors=0x10000=64KB
-		ahciread(0, buf+j*0x10000, from+j*0x80, 0x80);
+		ahciread(0, buf+j*0x10000, off+j*0x80, 0x80);
 
 		j++;
-		count-=0x80;
+		len -= 0x80;
 	}
-	ahciread(0, buf+j*0x10000, from+j*0x80, count);
+	ahciread(0, buf+j*0x10000, off+j*0x80, len);
 }
