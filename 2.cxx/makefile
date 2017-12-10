@@ -8,7 +8,7 @@ binary:
 	make -s -C libsoft1 linux
 	make -s -C libui0 linux
 	make -s -C libui1 linux
-	make -s link linker=ld
+	make -s link linker=/opt/cross/bin/x86_64-elf-ld
 cross:
 	make -s -C libboot0 cross
 	make -s -C libboot1 cross
