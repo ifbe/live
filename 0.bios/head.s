@@ -51,10 +51,10 @@ startofmbr:
 	xor ebx,ebx
 
 	mov ax,cs
-	shl eax,4						;拿到cs<<4
+	shl eax,4			;拿到cs<<4
 	call whereami
 whereami:
-	pop bx							;拿到ip
+	pop bx				;拿到ip
 	add eax,ebx
 	sub eax,whereami-startofmbr
 
@@ -62,15 +62,15 @@ whereami:
 	mov [birthrecord],eax
 
 	shr eax,4
-	mov ds,ax						;ds
+	mov ds,ax			;ds
 	mov ax,0x1000
-	mov es,ax						;es
-	mov cx,0x8000					;cx=(0x10000-0x200)/2
+	mov es,ax			;es
+	mov cx,0x8000			;cx=(0x10000-0x200)/2
 
 	cmp word [birthrecord+2],0
 	je reversemove
-		mov si,0					;si
-		mov di,si					;di
+		mov si,0		;si
+		mov di,si		;di
 		cld
 		rep movsw
 		jmp mbrsuccess
@@ -152,7 +152,7 @@ mbrdie:
 	jmp mbrdie
 
 mbrsuccess:
-	jmp 0x1000:0x4400
+	jmp 0x1000:0x4000
 ;_________________________________________________
 
 
