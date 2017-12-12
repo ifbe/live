@@ -18,13 +18,20 @@ static u8* img;
 
 void writescreen()
 {
-	int j;
+	int j,k;
 	u32* p;
 	u8* aa;
+
 	if(win.fmt == 0xb8000)
 	{
 		aa = (void*)0xb8000;
-		for(j=0;j<80*25*2;j++)aa[j] = img[j];
+		for(j=0;j<80;j++)
+		{
+			k = (j%16)+0x30;
+			if(k > 0x39)k+=7;
+			aa[j*2+0] = k;
+			aa[j*2+1] = (j%16);
+		}
 		return;
 	}
 

@@ -6,9 +6,9 @@ startofscreen:
 ;__________________________________
 	;buf
 	mov eax,0xb8000
-	mov [vesahome],eax
+	mov [vesahome+0x0],eax
 	;fmt
-	mov [vesahome+8],eax
+	mov [vesahome+0x8],eax
 	;x
 	mov word [vesahome+0x10],80
 	;y

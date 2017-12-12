@@ -164,8 +164,9 @@ void characterwrite(u64 key, u64 type)
 			else if(ncmp(input,"ahci.cd",7) == 0)ahci_choose();
 			else if(ncmp(input,"disk.id",7) == 0)identify();
 			else if(ncmp(input,"disk.read",9) == 0)read(0, 0x100000, 0x100000, 0x100000);
-			else if(ncmp(input,"jump",4) == 0)
+			else if(ncmp(input,"42",2) == 0)
 			{
+				read(0, 0x100000, 0x100000, 0x100000);
 				say("!!!!\n");
 				func = (void*)0x100000;
 				func();
