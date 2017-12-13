@@ -1,9 +1,9 @@
-push
 .DS_Store
 *.o
 *.a
 *.bin
 *.efi
+*.EFI
 *.img
 *.vhd
 *.vmdk
@@ -11,5 +11,3 @@ push
 *.exe
 *.res
 *.out
-*.seed
-*.tree

@@ -1,0 +1,6 @@
+bios/
+	loader(bios)
+efi/
+	loader(efi)
+tool/
+	compiler, cfgfile, etc

@@ -1,6 +1,6 @@
 ;addr=0,size=4000
 ;[0,3fff]
-incbin "0.bios/head.bin"
+incbin "0.mbr/head.bin"
 
 
 
