@@ -9,7 +9,8 @@ efiimg:
 	mformat -i body.img -f 1440 ::
 	mmd -i body.img ::/EFI
 	mmd -i body.img ::/EFI/BOOT
-	mcopy -i body.img efi/BOOTX64.EFI ::/EFI/BOOT
+	mcopy -i body.img BOOTX64.EFI ::/EFI/BOOT
+	make -s biosimg
 
 
 
