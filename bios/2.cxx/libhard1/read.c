@@ -32,4 +32,5 @@ int read(u64 fd, u64 buf, u64 off, u64 len)
 		len -= 0x80;
 	}
 	ahciread(0, buf+j*0x10000, off+j*0x80, len);
+	return len;
 }

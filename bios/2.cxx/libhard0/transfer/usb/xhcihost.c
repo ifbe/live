@@ -196,7 +196,9 @@ u64 probepci()
 	//get xhciaddr from bar0
 	out32(0xcf8,xhciport+0x10);
 	xhciaddr=in32(0xcfc)&0xfffffff0;
+
 	say("}\n");
+	return 0;
 }
 
 
@@ -364,8 +366,8 @@ say("(xhci)memaddr:%x{\n",xhciaddr);
 		}
 		if(psz == 1) break;
 
-		psz>>1;
-		pagesize<<1;
+		psz >>= 1;
+		pagesize <<= 1;
 	}
 
 	//say("	usbcommand:%x\n",usbcommand);

@@ -594,7 +594,7 @@ void hello(u64 rootport,u64 routestring,u32 speed)
 
 	//clear context
 	int i=0;
-	for(i=0;i<0x10000;i++){ *(u8*)(slotcontext+i) == 0; }
+	for(i=0;i<0x10000;i++){ *(u8*)(slotcontext+i) = 0; }
 
 	//packetsize
 	if(speed==4)maxpacketsize=0x200;

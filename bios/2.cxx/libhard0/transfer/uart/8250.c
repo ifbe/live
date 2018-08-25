@@ -60,5 +60,5 @@ void inituart()
 	out8(PORT + 4, 0x0B);//IRQs enabled, RTS/DSR set
 
 	state = 1;
-	writeuart("fuckyou\n", 8);
+	writeuart((u8*)"fuckyou\n", 8);
 }

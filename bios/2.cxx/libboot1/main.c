@@ -24,7 +24,7 @@ struct event
 	u64 where;
 	u64 when;
 };
-void main()
+int main()
 {
 	struct event* ev;
 	while(1)
@@ -38,4 +38,5 @@ repeat:
 
 		characterwrite(ev->why, ev->what);
 	}
+	return 0;
 }

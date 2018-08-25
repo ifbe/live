@@ -80,7 +80,7 @@ double cosine(double x)
 		:"0"(x)
 	);
 	return result;
-}
+}/*
 //同时得到sin，cos
 void sincos(double x,double *s,double *c)
 {
@@ -89,7 +89,7 @@ void sincos(double x,double *s,double *c)
 			: "=t" (*c), "=u" (*s) 
 			: "0" (x) : "st(7)"
 	);
-}
+}*/
 //正切
 double tangent(double x)
 {
@@ -207,8 +207,8 @@ double f2xm1(double x)
 		:"0" (x)
 	);
 	return result+1;
-}
-//*/result=x^y
+}/*
+//result=x^y
 double power(double x,double y)
 {
 	double result;
@@ -288,7 +288,7 @@ double exponent(double x)
 			: "st(6)", "st(7)", "%2", "%3"
 	);
 	return(result);
-}
+}*/
 
 
 

@@ -192,7 +192,7 @@ void fat16(QWORD fatsector)
 	say("");
 
 	checkfatcache();
-	fat16_cd("/");
+	fat16_cd((void*)"/");
 }
 
 
@@ -321,7 +321,7 @@ void fat32(QWORD fatsector)
 	say("cluster0:%x",cluster0);
 
 	checkfatcache();
-	fat32_cd("/");
+	fat32_cd((void*)"/");
 }
 
 

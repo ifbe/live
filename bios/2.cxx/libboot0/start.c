@@ -24,7 +24,7 @@ void basiccreate(void*,void*);
 void basicdelete();
 //
 void say(void*, ...);
-void main();
+int main();
 
 
 
