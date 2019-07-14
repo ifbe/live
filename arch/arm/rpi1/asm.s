@@ -1,9 +1,12 @@
+// AArch32 mode
+
 // To keep this in the first portion of the binary.
 .section ".text.boot"
  
 // Make _start global.
 .globl _start
  
+	.org 0x8000
 // Entry point for the kernel.
 // r15 -> should begin execution at 0x8000.
 // r0 -> 0x00000000
