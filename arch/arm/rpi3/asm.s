@@ -6,8 +6,6 @@
 // Make _start global.
 .globl _start
  
-    .org 0x80000
-// Entry point for the kernel. Registers are not defined as in AArch32.
 _start:
     // read cpu id, stop slave cores
     mrs     x1, mpidr_el1
