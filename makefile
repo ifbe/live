@@ -43,7 +43,8 @@ winumount:
 
 #----------------step3: live.img----------------
 biosimg:
-	cp head.img live.img
+	dd if=arch/x64/bios/asm.bin of=live.img conv=notrunc
+	dd if=core/full/cxx.bin of=live.img bs=32768 seek=1 conv=notrunc
 	dd if=body.img of=live.img bs=1048576 seek=1 conv=notrunc
 	qemu-img resize -f raw live.img 64M
 	qemu-img convert -f raw -O vmdk live.img live.vmdk
@@ -61,14 +62,14 @@ efiimg:
 
 #----------------step4: testing----------------
 qemu:
-	tool/qemu/qemu.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
+	virt/qemu/qemu.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
 ovmf:
-	tool/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
+	virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
 bochs:
-	bochs -f tool/bochs/bochsrc
+	bochs -f virt/bochs/bochsrc
 vmware:
-	cp live.vhd tool/vmware/live.vhd
-	#(please double click) ../tool/vmware/vmware.vmx
+	cp live.vhd virt/vmware/live.vhd
+	#(please double click) ../virt/vmware/vmware.vmx
 virtualbox:
 parallels:
 

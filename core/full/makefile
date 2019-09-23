@@ -18,7 +18,8 @@ cross:
 	make -s -C libsoft1 cross
 	make -s -C libui0 cross
 	make -s -C libui1 cross
-	make -s link linker=/opt/cross/bin/x86_64-elf-ld
+	#make -s link linker=/opt/cross/bin/x86_64-elf-ld
+	make -s link linker=/usr/local/x86_64-elf-gcc/bin/x86_64-elf-ld
 link:
 	$(linker) -T link.ld \
 	libboot0/start.o \
