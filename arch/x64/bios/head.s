@@ -1,26 +1,13 @@
-;addr=0,size=4000
-;[0,3fff]
-incbin "0.mbr/head.bin"
+;[0000,01ff]
+incbin "0000-mbr/mbr.bin"
+times 0x200-($-$$) db 0
 
 
-
-
-;addr=4000,size=4000
-;[4000,7fff]
+;[0200,3fff]
+incbin "0200-realmode/16bit.bin"
 times 0x4000-($-$$) db 0
-incbin "1.asm/asm.bin"
 
 
-
-
-;addr=8000,size=8000
-;[8000,ffff]
+;[4000,7fff]
+incbin "4000-longmode/64bit.bin"
 times 0x8000-($-$$) db 0
-incbin "2.cxx/cxx.bin"
-
-
-
-
-
-;64KB
-times 0x10000-($-$$) db 0

@@ -1,12 +1,7 @@
 binary:
-	make -s -C 0.mbr
-	make -s -C 1.asm
-	make -s -C 2.cxx
-	yasm head.s -o head.img
-cross:
-	make -s -C 0.mbr
-	make -s -C 1.asm
-	make -s -C 2.cxx cross
+	make -s -C 0000-mbr
+	make -s -C 0200-realmode
+	make -s -C 4000-longmode
 	yasm head.s -o head.img
 clean:
 	rm -f *.o *.img

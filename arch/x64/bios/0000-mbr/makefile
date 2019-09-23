@@ -1,4 +1,4 @@
 all:
-	yasm head.s -o head.bin
+	yasm mbr.s -o mbr.bin
 clean:
 	rm -f *.bin

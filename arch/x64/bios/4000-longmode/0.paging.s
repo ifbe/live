@@ -1,5 +1,5 @@
 [BITS 64]
-startofprepare64:
+startofpaging:
 
 
 ;_____________environment___________________
@@ -61,13 +61,13 @@ pagedirectory:
 	mov cr3,rax
 
 ;完事,跳到下一块继续执行
-	jmp endofprepare64
+	jmp endofpaging
 ;________________________________________
 
 
 
 
-paddingofprepare64:
-times 0x400-(paddingofprepare64-startofprepare64) db 0
+paddingofpaging:
+times 0x400-(paddingofpaging-startofpaging) db 0
 
-endofprepare64:
+endofpaging:

@@ -138,7 +138,7 @@ exceptioninstall:
 	call isrinstall
 	loop .external
 
-	jmp endofasm
+	jmp endof64
 ;____________________________________________
 
 

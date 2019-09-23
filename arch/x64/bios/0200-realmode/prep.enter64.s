@@ -168,6 +168,9 @@ startofenter64:
 	or ebx,0x80000001
 	mov cr0, ebx                    
 
+	a32 lgdt [gdtr]
+	jmp dword 0x0008:0x14000
+
 ;下面一大堆只是为了地址无关,否则lgdt和jmp两条指令就能完事
 	xor eax,eax
 	xor ebx,ebx
