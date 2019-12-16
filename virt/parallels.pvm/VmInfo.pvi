@@ -7,13 +7,14 @@
       <RealOsType>unknown</RealOsType>
       <RealOsVersion>unknown</RealOsVersion>
       <RealOsDetails></RealOsDetails>
-      <GuestToolsList id="0" dyn_lists="GuestToolInfo 1">
-         <GuestToolInfo id="0" dyn_lists="">
+      <RealOsTypeId>255</RealOsTypeId>
+      <GuestToolsList dyn_lists="GuestToolInfo 1" id="0">
+         <GuestToolInfo dyn_lists="" id="0">
             <ToolId>parallels.TIS.host.cross</ToolId>
             <ToolName>Tools Information Service host side</ToolName>
-            <ToolVersion>10.1.28614.1072077</ToolVersion>
+            <ToolVersion>14.1.3-45485</ToolVersion>
             <ToolInternalVersion>1.3</ToolInternalVersion>
-            <ToolDate>2014-11-16T06:21:04Z</ToolDate>
+            <ToolDate>2019-12-16T05:42:30Z</ToolDate>
             <ToolState>1</ToolState>
             <ToolData></ToolData>
             <ToolStringData>dummy</ToolStringData>
@@ -21,4 +22,8 @@
          </GuestToolInfo>
       </GuestToolsList>
    </GuestOsInformation>
+   <AdvancedEngineInfo dyn_lists="">
+      <EngineTypeStr>KernelContext</EngineTypeStr>
+      <EngineTypeNum>2</EngineTypeNum>
+   </AdvancedEngineInfo>
 </VmInfo>

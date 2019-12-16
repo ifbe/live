@@ -1,7 +1,8 @@
 [System]
-Helper Version = 10.0
+Helper Version = 14.0
 VM Id = {f7f4e4df-e097-42ce-8b2d-34ee8ee8bb49}
 VM Name = live
+VM OS Type = 255.65535
 APP Path = 
 Protocols = 
 File Extensions = 
