@@ -66,9 +66,8 @@ void checkinodecache(QWORD inode)
 	cacheblock&=0xfffffffffffc0000;
 	if(cachecurrent == cacheblock) return;
 
-	say("inode:%x",inode);
-	say("cacheblock:%x",cacheblock);
-	say("{");
+	say("inode:%x\n",inode);
+	say("cacheblock:%x{\n",cacheblock);
 
 
 	//那一块第一个inode的号
@@ -78,23 +77,23 @@ void checkinodecache(QWORD inode)
 	{
 		if(rdi>=inodebuffer+0x40000) break;
 
-		say("i:%x",inode);
+		say("i:%x\n",inode);
 
 		//此inode在第几块组
 		QWORD groupnum=(inode-1)/inodepergroup;
-		say("group number:%x",groupnum);
+		say("group number:%x\n",groupnum);
 
 		//组内偏移（多少扇区）
 		QWORD groupoffset=((inode-1) % inodepergroup)/(0x200/inodesize);
-		say("group offset:%x",groupoffset);
+		say("group offset:%x\n",groupoffset);
 
 		//得到这一组的块编号
 		QWORD inodeblock=getinodeblock(groupnum);
-		say("inode block:%x",inodeblock);
+		say("inode block:%x\n",inodeblock);
 
 		//计算从哪一块开始
 		QWORD where=block0+inodeblock*blocksize+groupoffset;
-		say("sector:%x",where);
+		say("sector:%x\n",where);
 
 		//计算读多少块
 		QWORD count;
@@ -117,7 +116,7 @@ void checkinodecache(QWORD inode)
 				count=(inodebuffer+0x40000-rdi)/0x200;
 			}
 		}
-		say("count:%x",count);
+		say("count:%x\n",count);
 
 		//read inode table
 	        read(rdi,where,diskaddr,count);
@@ -127,7 +126,7 @@ void checkinodecache(QWORD inode)
 	}
 
 	cachecurrent=cacheblock;
-	say("}",0);
+	say("}\n");
 }
 
 
@@ -138,7 +137,7 @@ void explaininode(QWORD rdi,QWORD inode)
 
 	checkinodecache(inode);
 
-	say("inode:%x",inode);
+	say("inode:%x\n",inode);
 
 	//(inode-1)%(0x40000/inodesize)
 	rsi=inodebuffer+((inode-1)*inodesize)%0x40000;
@@ -146,8 +145,7 @@ void explaininode(QWORD rdi,QWORD inode)
 	//检查是不是软链接
 	WORD temp=(*(WORD*)rsi)&0xf000;
 	if(temp == 0xa000){
-		say("softlink:");
-		say((char*)(rsi+0x28));
+		say("softlink:%s\n",(char*)(rsi+0x28));
 		return;
 	}
 
@@ -157,27 +155,26 @@ void explaininode(QWORD rdi,QWORD inode)
 	{
 		QWORD numbers;
 
-		say("extend@%x",rsi);
+		say("extend@%x\n",rsi);
 		numbers=*(WORD*)(rsi+2);
-		say("numbers:%x",numbers);
+		say("numbers:%x{\n",numbers);
 
-		say("{");
 		rsi+=12;
 		for(i=0;i<numbers;i++)
 		{
 			QWORD temp1;
 			QWORD temp2;
-			say("    @%x",rsi);
+			say("    @%x\n",rsi);
 
 			temp1=*(DWORD*)(rsi+8);
 			temp1+= *(WORD*)(rsi+6);
 			temp1*=blocksize;
 			temp1+=block0;
-			say("    sector:%x",temp1);
+			say("    sector:%x\n",temp1);
 
 			temp2=*(WORD*)(rsi+4);
 			temp2*=blocksize;
-			say("    count:%x",temp2);
+			say("    count:%x\n",temp2);
 
 			rsi+=12;
 
@@ -185,12 +182,11 @@ void explaininode(QWORD rdi,QWORD inode)
 			rdi+=0x200*blocksize;
 		}
 
-		say("}");
+		say("}\n");
 	}
 	else
 	{
-	say("old@%x",rsi);
-	say("{",0);
+	say("old@%x{\n",rsi);
 /*
 	for(i=0;i<8;i++)
 	{
@@ -209,7 +205,7 @@ void explaininode(QWORD rdi,QWORD inode)
 		rsi+=4;
 	}
 */
-	say("}",0);
+	say("}\n");
 	}
 }
 
@@ -269,7 +265,7 @@ static int ext_cd(BYTE* addr)
 			}
 			if(number == 0)
 			{
-				say("not found:%x",name);
+				say("not found:%x\n",name);
 				return -1;
 			}
 		}
@@ -310,7 +306,7 @@ static void ext_load(BYTE* addr)
 	}
 	if(number == 0)
 	{
-		say("not found");
+		say("not found\n");
 		return;
 	}
 
@@ -320,7 +316,7 @@ static void ext_load(BYTE* addr)
 
 int mountext(QWORD sector)
 {
-	say("extx sector:%x",sector);
+	say("extx sector:%x\n",sector);
 	block0=sector;
 
 	//读分区前8扇区，总共0x1000字节
@@ -332,18 +328,18 @@ int mountext(QWORD sector)
 	//变量们
 	blocksize=*(DWORD*)(pbrbuffer+0x418);	//就不另开个temp变量了
 	blocksize=( 1<<(blocksize+10) )/0x200;
-	say("sectorperblock:%x",blocksize);
+	say("sectorperblock:%x\n",blocksize);
 	groupsize=( *(DWORD*)(pbrbuffer+0x420) )*blocksize;
-	say("sectorpergroup:%x",groupsize);
+	say("sectorpergroup:%x\n",groupsize);
 	inodepergroup=*(DWORD*)(pbrbuffer+0x428);
-	say("inodepergroup:%x",inodepergroup);
+	say("inodepergroup:%x\n",inodepergroup);
 	inodesize=*(WORD*)(pbrbuffer+0x458);
-	say("byteperinode:%x",inodesize);
+	say("byteperinode:%x\n",inodesize);
 
 	//inode table缓存
 	cachecurrent=0xffffffff;
 	cacheblock=0;
-	say("");
+	say("\n");
 
 	//cd /
 	ext_cd("/");

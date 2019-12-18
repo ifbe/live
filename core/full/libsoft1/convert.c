@@ -59,6 +59,21 @@ void string2data(u8* str,u64* data)
 		*data+=((u64)str[i])<<(i*8);
 	}
 }
+void hexstr2data(u8* str,u64* data)
+{
+	int j;
+	u64 tmp;
+
+	*data = 0;
+	for(j=0;j<8;j++)
+	{
+		if((str[j] >= '0')&&(str[j] <= '9'))tmp = str[j]-'0';
+		else if((str[j] >= 'a')&&(str[j] <= 'f'))tmp = str[j]-'a'+10;
+		else break;
+
+		*data = ((*data)<<4) + tmp;
+	}
+}
 
 
 

@@ -2,8 +2,11 @@
 #define u32 unsigned int
 #define u16 unsigned short
 #define u8 unsigned char
+#define powerport (*(u16*)0xffc)
+#define powerdata ((*(u16*)0xffe)|0x2000)
 //
 void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
+void printtext(char* p, int size, int x0, int y0, int dx, int dy, u32 fgc, u32 bgc);
 //
 int ncmp(void*, void*, int);
 int cmp(void*, void*);
@@ -37,29 +40,18 @@ static int offset=0;
 void characterread_image()
 {
 	int x,y;
-	int temp = *(int*)(output + 0xffff0);
-	temp -= offset;
-	if(temp < 0)temp = 0;
-
-	if(temp < 0x80*0x2f)temp = 0;
-	else temp = temp-0x80*0x2f;
-
-	//
-	for(y=0;y<768;y++)
-	{
-		for(x=0;x<1024;x++)
-		{
-			window[(y<<10)+x] = 0;
-		}
+	for(y=0;y<768;y++){
+		for(x=0;x<1024;x++)window[(y<<10)+x] = 0;
 	}
 
-	//
-	for(y=0;y<752/16;y++)
-	{
-		printstring(0, y*16, 1, output+temp+y*0x80, 0xffffff, 0xff000000);
+	y = 0;
+	x = *(int*)(output + 0xffff0);
+	for(;x>=1;x--){
+		if('\n' == output[x])y++;
+		if(47 == y)break;
 	}
+	printtext(output+x, 1, 0, 0, 1024, 752, 0xffffff, 0xff000000);
 
-	//
 	printstring(0, 752, 1, input, 0xffffff, 0xff000000);
 }
 void characterread_a0000()
@@ -113,6 +105,39 @@ void characterread_b8000()
 		p[2*(80*24+x) + 1] = 0x70;
 	}
 }
+void command(u8* input)
+{
+	say("%s\n",input);
+	if(ncmp(input,"reboot",6) == 0)out8(0x64,0xfe);
+	else if(0 == ncmp(input,"poweroff",8)){
+		u16 port = powerport;
+		u16 data = powerdata;
+		say("port=%x,data=%x\n",port,data);
+		out16(port, data);
+	}
+	else if(ncmp(input,"print",5) == 0){
+		u64 data;
+		hexstr2data(input+6, &data);
+		printmemory((void*)data,0x200);
+	}
+	else if(ncmp(input,"ahci.ls",7) == 0)ahci_list();
+	else if(ncmp(input,"ahci.cd",7) == 0)ahci_choose();
+	else if(ncmp(input,"disk.id",7) == 0)identify();
+	else if(ncmp(input,"disk.read",9) == 0)read(0, 0x100000, 0x100000, 0x100000);
+	else if(ncmp(input,"42",2) == 0)
+	{
+		int (*func)();
+		read(0, 0x100000, 0x100000, 0x100000);
+		say("!!\n");
+		func = (void*)0x100000;
+		func();
+		say("??\n");
+	}
+}
+
+
+
+
 void characterread()
 {
 	u32 type = *(u32*)0x2008;
@@ -122,7 +147,6 @@ void characterread()
 }
 void characterwrite(u64 key, u64 type)
 {
-	int (*func)();
 	if(type == 0x64626b)
 	{
 		if(key == 0x1b)		//esc
@@ -157,22 +181,7 @@ void characterwrite(u64 key, u64 type)
 		}
 		else if(key == 0xd)
 		{
-			say("%s\n",input);
-			if(ncmp(input,"reboot",6) == 0)out8(0x64,0xfe);
-			else if(ncmp(input,"print",5) == 0)printmemory((void*)0x100000,0x200);
-			else if(ncmp(input,"ahci.ls",7) == 0)ahci_list();
-			else if(ncmp(input,"ahci.cd",7) == 0)ahci_choose();
-			else if(ncmp(input,"disk.id",7) == 0)identify();
-			else if(ncmp(input,"disk.read",9) == 0)read(0, 0x100000, 0x100000, 0x100000);
-			else if(ncmp(input,"42",2) == 0)
-			{
-				read(0, 0x100000, 0x100000, 0x100000);
-				say("!!!!\n");
-				func = (void*)0x100000;
-				func();
-				say("????\n");
-			}
-
+			command(input);
 			for(count=127;count>=0;count--)input[count] = 0;
 			count = 0;
 		}

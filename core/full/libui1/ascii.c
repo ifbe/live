@@ -350,6 +350,20 @@ void printstring(int x, int y, int size, char* p, u32 fgcolor, u32 bgcolor)
 		p++;
 	}
 }
+void printtext(char* p, int size, int x0, int y0, int dx, int dy, u32 fgc, u32 bgc)
+{
+	int x,y,j;
+
+	j = 0;
+	for(y=0;y<dy;y+=16*size){
+		for(x=0;x<dx;x+=8*size){
+			if('\n' == p[j]){j++;break;}
+			if('\t' == p[j]){j++;x+=24*size;continue;};
+			printascii(x0+x, y0+y, size, p[j], fgc, bgc);
+			j++;
+		}
+	}
+}
 
 
 

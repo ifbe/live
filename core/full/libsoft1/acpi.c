@@ -2,24 +2,69 @@
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
+#define hex32(a,b,c,d) (a | (b<<8) | (c<<16) | (d<<24))
+#define _FACP_ hex32('F','A','C','P')
+#define _DSDT_ hex32('D','S','D','T')
+#define _S5_ hex32('_','S','5','_')
 void say(void*, ...);
+
+
+
+
+void parse_S5_(void* p)
+{
+	u16 data;
+	say("%.4s@%x\n", p, p);
+
+	data = (*(u8*)(p+8))<<10;
+	say("data=%x\n", data);
+	*(u16*)0xffe = data;
+}
+void parsedsdt(void* p)
+{
+	int j;
+	say("%.4s@%x\n", p, p);
+
+	for(j=4;j<0x10000;j++){
+		if(_S5_ == *(u32*)(p+j)){
+			parse_S5_(p+j);
+			break;
+		}
+	}
+}
+void parsefacp(void* p)
+{
+	u16 port;
+	u64 addr;
+	say("%.4s@%x\n", p, p);
+
+	addr = *(u32*)(p+0x28);
+	parsedsdt((void*)addr);
+
+	port = *(u16*)(p+0x40);
+	say("port=%x\n", port);
+	*(u16*)0xffc = port;
+}
 
 
 
 
 void parsetable(void* p)
 {
-	u32* q = (void*)(u64)(*(u32*)p);
-	say("%x,%x,%x\n", p, q, *q);
+	u64 addr = *(u32*)p;
+	switch(*(u32*)addr){
+		case _FACP_:parsefacp((void*)addr);break;
+		default:say("%.4s@%x\n", (u8*)addr, addr);
+	}
 }
 void parsexsdt(void* p)
 {
 	int c,j;
-	say("xsdt\n");
+	say("xsdt@%x\n",p);
 
 	p = (void*)(u64)(*(u32*)(p+0x18));
 	c = *(u8*)(p+4);
-	say("count:%x\n", c);
+	say("cnt:%x\n", c);
 
 	p += 0x24;
 	c -= 0x24;
@@ -28,16 +73,20 @@ void parsexsdt(void* p)
 void parsersdt(void* p)
 {
 	int c,j;
-	say("rsdt\n");
+	say("rsdt@%x\n",p);
 
 	p = (void*)(u64)(*(u32*)(p+0x10));
 	c = *(u8*)(p+4);
-	say("count:%x\n", c);
+	say("cnt:%x\n", c);
 
 	p += 0x24;
 	c -= 0x24;
 	for(j=0;j<c;j+=4)parsetable(p+j);
 }
+
+
+
+
 void parseacpi(void* p)
 {
 	say("RSD PTR @%x\n",p);

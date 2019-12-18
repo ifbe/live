@@ -251,7 +251,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 	int cmdslot = find_cmdslot(port);
 	if (cmdslot == -1)
 	{
-		say("error:no cmdslot\n",0);
+		say("err:no cmdslot\n",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
@@ -297,7 +297,7 @@ int ahciread(u64 sata, u64 buf, u64 from, u64 count)
 		temp=port->is;
 		if (temp & 0x40000000)  //Task file error
 		{
-			say("port error 1\n",0);
+			say("port err 1\n",0);
 			return -33;
 		}
 
@@ -326,7 +326,7 @@ int ahciidentify(u64 rdi)
 	}
 	if(cmdslot == 32)
 	{
-		say("error:no cmdslot\n",0);
+		say("err:no cmdslot\n",0);
 		return -1;
 	}
 	cmdheader += cmdslot;
@@ -594,13 +594,13 @@ static unsigned int probepci(u64 addr)
 
 	//ide port
 	out32(0xcf8,addr+0x10);
-	say("    bar0:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("bar0:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x14);
-	say("    bar1:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("bar1:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x18);
-	say("    bar2:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("bar2:%x\n" , in32(0xcfc)&0xfffffffe );
 	out32(0xcf8,addr+0x1c);
-	say("    bar3:%x\n" , in32(0xcfc)&0xfffffffe );
+	say("bar3:%x\n" , in32(0xcfc)&0xfffffffe );
 
 	say("}\n");
 
