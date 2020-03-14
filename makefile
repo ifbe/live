@@ -1,34 +1,36 @@
 #----------------step0: asm----------------
 mbr:
-	make -C arch/x64/bios binary
-	cp arch/x64/bios/asm.bin 00-asm.img
+	make -C handon/x64/bios binary
+	cp handon/x64/bios/asm.bin 00-asm.img
 efi:
-	make -C arch/x64/efi
-	cp arch/x64/efi/BOOTX64.EFI .
+	make -C handon/x64/efi
+	cp handon/x64/efi/BOOTX64.EFI .
 
 
 
 
 #----------------step1: cxx----------------
 easy:
-	make -C core/easy
-	cp core/easy/cxx.bin 01-cxx.img
+	make -C kernel/easy
+	cp kernel/easy/cxx.bin 01-cxx.img
 easy-cross:
-	make -C core/easy cross
-	cp core/easy/cxx.bin 01-cxx.img
+	make -C kernel/easy cross
+	cp kernel/easy/cxx.bin 01-cxx.img
 full:
-	make -C core/full
-	cp core/full/cxx.bin 01-cxx.img
+	make -C kernel/full
+	cp kernel/full/cxx.bin 01-cxx.img
 full-cross:
-	make -C core/full cross
-	cp core/full/cxx.bin 01-cxx.img
+	make -C kernel/full cross
+	cp kernel/full/cxx.bin 01-cxx.img
 
 
 
 
 #----------------step2: fat.img----------------
-linuxmkfs:
+dd:
 	dd if=/dev/zero of=02-fat.img bs=1048576 count=62
+
+linuxmkfs:dd
 	mkfs.fat -F32 02-fat.img
 linuxmount:
 	sudo losetup /dev/loop0 live.img
@@ -36,16 +38,14 @@ linuxmount:
 linuxumount:
 	sudo losetup -d /dev/loop0
 
-macmkfs:
-	dd if=/dev/zero of=02-fat.img bs=1048576 count=62
-	#make -s macerase haha=$(shell hdiutil attach -nomount 02-fat.img)
-macerase:
-	diskutil eraseVolume FAT32 BODY ${haha}
-	hdiutil detach ${haha}
+macmkfs:dd
+	$(eval DISK := $(shell hdiutil attach -nomount 02-fat.img))
+	newfs_msdos -F 32 $(DISK)
+	hdiutil detach $(DISK)
 macmount:
-	hdiutil attach -nomount 02-fat.img
+	hdiutil attach -mountpoint boot 02-fat.img
 macumount:
-	hdiutil detach 02-fat.img
+	hdiutil detach boot
 
 winmkfs:
 	fsutil file createnew 02-fat.img 65011712
