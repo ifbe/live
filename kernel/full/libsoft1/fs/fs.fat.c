@@ -5,6 +5,8 @@
 #define hex16(a,b) (a | (b<<8))
 #define hex32(a,b,c,d) (a | (b<<8) | (c<<16) | (d<<24))
 #define hex64(a,b,c,d,e,f,g,h) (hex32(a,b,c,d) | (((u64)hex32(e,f,g,h))<<32))
+int pt_read(u64 fd, u64 off, void* buf, int len);
+void printmemory(void*, int);
 void say(char* , ...);
 
 
@@ -78,7 +80,7 @@ void fatdate2mydate(int val0, int val1, u8* date)
 }
 static void parsefolder(u8* rsi)
 {
-	int j;
+	int j,cnt=0;
 	struct folder* dir;
 
 	for(j=0;j<0x4000;j+=0x20){
@@ -98,7 +100,10 @@ static void parsefolder(u8* rsi)
 		say("createtime: %02d%02d, %d:%d, %d:%d:%d\n",
 			date[6],date[5], date[4],date[3], date[2],date[1],date[0]
 		);
+
+		cnt += 1;
 	}
+	if(0 == cnt)say("empty\n");
 }
 
 
@@ -286,12 +291,12 @@ int fat_parse(u8* addr)
 
 		version = 32;
 	}
-say("1\n");
+
 	//build cache
 	cache_first = 0;
 	cache_count = 0x10000;
 	pt_read(0, sec_of_fat0*byte_per_sec, fatbuffer,0x40000);
-say("2\n");
+
 	//read root
 	fat_cd(0);
 }

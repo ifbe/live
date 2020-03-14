@@ -17,7 +17,9 @@ void fs_check(void*);
 int fs_read(u64 fd,u64 off, void* buf, int len);
 //
 void out8(u32, u8);
+void out16(u32, u16);
 //
+int hexstr2data(void*, void*);
 int ncmp(void*, void*, int);
 int cmp(void*, void*);
 //
