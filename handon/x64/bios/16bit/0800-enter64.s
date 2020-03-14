@@ -169,7 +169,7 @@ startofenter64:
 	mov cr0, ebx                    
 
 	a32 lgdt [gdtr]
-	jmp dword 0x0008:0x14000
+	jmp dword 0x0008:0x11000
 
 ;下面一大堆只是为了地址无关,否则lgdt和jmp两条指令就能完事
 	xor eax,eax
@@ -197,6 +197,6 @@ where:
 
 
 paddingofenter64:
-times 0x400-(paddingofenter64-startofenter64) db 0
+times 0x800-(paddingofenter64-startofenter64) db 0
 
 endofenter64:

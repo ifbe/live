@@ -1,7 +1,6 @@
 binary:
-	make -s -C 0000-mbr
-	make -s -C 0200-realmode
-	make -s -C 4000-longmode
+	make -s -C 16bit
+	make -s -C 64bit
 	yasm asm.s -o asm.bin
 clean:
-	rm -f *.o *.img
+	rm -f *.o *.bin *.img

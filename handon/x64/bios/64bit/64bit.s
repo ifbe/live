@@ -9,5 +9,5 @@ startof64:
 
 
 padding:
-times 0x4000-(padding-startof64) db 0
+times 0x1000-(padding-startof64) db 0
 endof64:

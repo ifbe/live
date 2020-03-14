@@ -60,7 +60,7 @@ winumount:
 #----------------step3: live.img----------------
 biosimg:
 	dd if=00-asm.img of=live.img conv=notrunc
-	dd if=01-cxx.img of=live.img bs=32768 seek=1 conv=notrunc
+	dd if=01-cxx.img of=live.img bs=8192 seek=1 conv=notrunc
 	dd if=02-fat.img of=live.img bs=1048576 seek=1 conv=notrunc
 	qemu-img resize -f raw live.img 64M
 	qemu-img convert -f raw -O vmdk live.img live.vmdk
