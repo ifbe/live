@@ -135,5 +135,5 @@ int pt_check(u8* addr)
 }
 int pt_read(u64 fd, u64 off, u8* buf, int len)
 {
-	diskread(0, off+chosen, buf, len);
+	return diskread(0, off+chosen, buf, len);
 }

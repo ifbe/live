@@ -68,9 +68,18 @@ void command(u8* input)
 		pt_check((void*)0x100000);
 	}
 	else if(0 == ncmp(input,"fs.read",7)){
-		fs_read(0, 0, (void*)0x100000, 0x100000);
+		fs_read((u64)(input+8), 0, (void*)0x100000, 0x100000);
 	}
 	else if(0 == ncmp(input,"fs",2)){
 		fs_check((void*)0x100000);
+	}
+	else if(0 == ncmp(input,"bss",3)){
+		int j;
+		u8* tmp = (void*)0x100000;
+		for(j=0;j<0x700000;j++)tmp[j] = 0;
+	}
+	else if(0 == ncmp(input,"42",2)){
+		int (*fun)() = (void*)0x100000;
+		fun();
 	}
 }

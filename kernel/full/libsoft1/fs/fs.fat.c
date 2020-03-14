@@ -155,6 +155,7 @@ static int fat32_read(u64 clus,int offs, u8* buf,int len)
 		//read this cluster
 		tmp = byte_per_sec * (sec_of_clus2+sec_per_clus*(clus-2));
 		ret = pt_read(0, tmp, buf+cnt,byteperclus);
+
 		if(ret < byteperclus)goto retcnt;
 		cnt += byteperclus;
 
@@ -172,6 +173,65 @@ static int fat32_read(u64 clus,int offs, u8* buf,int len)
 
 retcnt:
 	return cnt;
+}
+
+
+
+
+//0=yes, else=no
+int fat_checkname(char* name, u8* fatname)
+{
+	int j,k;
+	u8 a,b;
+check0:
+	for(j=0;j<8;j++){
+		if(0x20 >= name[j])goto success;
+		if('.' == name[j]){j += 1;break;}
+
+		a = name[j];
+		if(a >= 'a')a -= 0x20;
+
+		b = fatname[j];
+		if(b >= 'a')b -= 0x20;
+
+		if(a != b)return 1;
+	}
+check1:
+	for(k=0;k<3;k++){
+		if(0x20 >= name[j+k])goto success;
+
+		a = name[j+k];
+		if(a >= 'a')a -= 0x20;
+
+		b = fatname[8+k];
+		if(b >= 'a')b -= 0x20;
+
+		if(a != b)return 1;
+	}
+
+success:
+	return 0;
+}
+u32 fat_ls(char* name)
+{
+	int j;
+	struct folder* dir;
+	if(0 == name)return 2;
+
+	if(32 == version){
+		for(j=0;j<0x1000;j+=0x20){
+			dir = (void*)(dirhome+j);
+			//printmemory(dir, 0x20);
+
+			if(0x0f == dir->attr)continue;	//longname
+			if(0xe5 == dir->name_this[0])continue;	//deleted
+			if(0x00 == dir->name_this[0])continue;	//have name
+
+			if(0 == fat_checkname(name, dir->name_this))
+			return (dir->clus_hi16<<16) + dir->clus_lo16;
+		}
+	}
+	return 0;
 }
 int fat_cd(char* name)
 {
@@ -300,7 +360,17 @@ int fat_parse(u8* addr)
 	//read root
 	fat_cd(0);
 }
-int fat_read(u64 fd, u64 off, u8* buf, int len)
+int fat_read(u8* str, u64 off, u8* buf, int len)
 {
-	say("@fat_read:%llx,%llx,%llx,%llx\n",fd,off,buf,len);
+	//say("@fat_read:%s,%llx,%llx,%llx\n",(void*)fd,off,buf,len);
+	if(0 == str)return 0;
+	if(0x20 >= str[0])return 0;
+
+	u32 clus = fat_ls(str);
+	say("clus=%x\n",clus);
+	if(0 == clus)return 0;
+
+	int ret = fat32_read(clus, off, buf, len);
+	say("ret=%x\n",ret);
+	return ret;
 }
