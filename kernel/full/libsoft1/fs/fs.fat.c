@@ -38,6 +38,10 @@ void initfat()
 		pbrbuffer = fshome+0x10000;
 		fatbuffer = fshome+0x20000;
 	dirhome = (void*)0x900000;
+
+	int j;
+	for(j=0;j<0x100000;j++)fshome[j] = 0;
+	for(j=0;j<0x100000;j++)dirhome[j] = 0;
 }
 
 

@@ -43,7 +43,7 @@ void initpci()
 				}
 				else if( (type&0xffffff00) == 0x0c033000)
 				{
-					initxhci(addr);
+					//initxhci(addr);
 				}
 				else say("%x:%x\n", id, type);
 			}

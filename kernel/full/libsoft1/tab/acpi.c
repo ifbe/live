@@ -22,10 +22,11 @@ void parse_S5_(void* p)
 }
 void parsedsdt(void* p)
 {
-	int j;
+	int j,cnt;
 	say("%.4s@%x\n", p, p);
 
-	for(j=4;j<0x10000;j++){
+	cnt = *(u32*)(p+4);
+	for(j=4;j<cnt;j++){
 		if(_S5_ == *(u32*)(p+j)){
 			parse_S5_(p+j);
 			break;
@@ -38,12 +39,12 @@ void parsefacp(void* p)
 	u64 addr;
 	say("%.4s@%x\n", p, p);
 
-	addr = *(u32*)(p+0x28);
-	parsedsdt((void*)addr);
-
 	port = *(u16*)(p+0x40);
 	say("port=%x\n", port);
 	*(u16*)0xffc = port;
+
+	addr = *(u32*)(p+0x28);
+	parsedsdt((void*)addr);
 }
 
 
