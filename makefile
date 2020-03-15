@@ -10,18 +10,12 @@ efi:
 
 
 #----------------step1: cxx----------------
-easy:
-	make -C kernel/easy
-	cp kernel/easy/cxx.bin 01-cxx.img
-easy-cross:
-	make -C kernel/easy cross
-	cp kernel/easy/cxx.bin 01-cxx.img
 full:
-	make -C kernel/full
-	cp kernel/full/cxx.bin 01-cxx.img
+	make -C kernel
+	cp kernel/cxx.bin 01-cxx.img
 full-cross:
-	make -C kernel/full cross
-	cp kernel/full/cxx.bin 01-cxx.img
+	make -C kernel cross
+	cp kernel/cxx.bin 01-cxx.img
 
 
 
