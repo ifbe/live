@@ -3,6 +3,7 @@
 #define u16 unsigned short
 #define u8 unsigned char
 void termread_wnd();
+void say(void*, ...);
 
 
 

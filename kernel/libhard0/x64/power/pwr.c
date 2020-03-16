@@ -6,6 +6,7 @@
 #define powerdata ((*(u16*)0xffe)|0x2000)
 void out8(u32, u8);
 void out16(u32, u16);
+void say(void*, ...);
 
 
 
