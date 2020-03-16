@@ -14,7 +14,7 @@ void say(char* , ...);
 
 
 
-int fs_check(u8* addr)
+int fs_list(u8* addr)
 {
 	pt_read(0, 0, (void*)0x100000, 0x1000);
 	if(fat_check(addr)){
@@ -24,6 +24,14 @@ int fs_check(u8* addr)
 	say("?\n");
 	return 0;
 }
+int fs_focus()
+{
+	return 0;
+}
+
+
+
+
 int fs_read(u64 fd, u64 off, u8* buf, int len)
 {
 	return fat_read(fd, off, buf, len);

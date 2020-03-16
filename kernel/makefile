@@ -39,8 +39,6 @@ efi:
 	libsoft0/*.o libsoft1/*.o libuiux0/*.o libuiux1/*.o \
 	-lgcc
 
-pi64test:
-	qemu-system-aarch64 -M raspi3 -serial null -serial stdio -kernel kernel8.img
 pi32:
 	make piobj CC=arm-none-eabi-gcc
 	arm-none-eabi-gcc -T pi32.ld -ffreestanding -nostdlib \
@@ -72,6 +70,11 @@ cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
 cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
 	make -s -C libuiux1 AS=$(AS) CC=$(CC) \
 cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
+
+pi64qemu:
+	qemu-system-aarch64 -M raspi3 -serial null -serial stdio -kernel kernel8.img
+pi64emmc:
+	qemu-system-aarch64 -M raspi3 -serial null -serial stdio -drive file=../live.img,if=sd,format=raw -kernel kernel8.img
 
 clean:
 	rm -f *.o *.bin *.elf *.img

@@ -92,19 +92,21 @@ struct mbrpart{
         u8 chs_start[3];        //[+0x1,+0x3]:开始磁头柱面扇区
         u8 parttype;            //[+0x4]:分区类型
         u8 chs_end[3];          //[+0x5,+0x7]:结束磁头柱面扇区
-        u32 lba_start;          //[+0x8,+0xb]:起始lba
-        u32 lba_count;          //[+0xc,+0xf]:大小
+        u8 lba_start[4];        //[+0x8,+0xb]:起始lba
+        u8 lba_count[4];        //[+0xc,+0xf]:大小
 };
+u32 hackforarmalign4(u8* p)
+{
+	return p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24);
+}
 void parse_mbr_one(struct mbrpart* part)
 {
-        u32 start,count;
+        u32 start,count,fat32=0;
         if(0 == part->parttype)return;
 
-        start = part->lba_start;
-        count = part->lba_count;
-
-        say("[%08x,%08x]:\n", start, start+count);
-	chosen = start*0x200;
+        start = hackforarmalign4(part->lba_start);
+        count = hackforarmalign4(part->lba_count);
+        say("[%08x,%08x]:\n", start, start+count-1);
 
 	switch(part->parttype){
         case 0x05:
@@ -132,12 +134,14 @@ void parse_mbr_one(struct mbrpart* part)
 	case 0x0b:
         case 0x1b:
         {
+		chosen = start << 9;
                 say("fat32-chs\n");
                 break;
         }
         case 0x0c:
         case 0x1c:
         {
+		chosen = start << 9;
                 say("fat32-lba\n");
                 break;
         }
@@ -161,7 +165,10 @@ void mbr_parse(u8* src)
 {
         int j;
         src += 0x1be;
-        for(j=0;j<0x40;j+=0x10)parse_mbr_one((void*)(src+j));
+        for(j=0;j<0x40;j+=0x10){
+		parse_mbr_one((void*)(src+j));
+	}
+	say("chosen=%x\n",chosen);
 }
 int mbr_check(u8* addr)
 {
@@ -173,7 +180,7 @@ int mbr_check(u8* addr)
 
 
 
-int pt_check(u8* addr)
+int pt_list(u8* addr)
 {
 	diskread(0, 0, (void*)addr, 0x1000);
 	if(gpt_check(addr)){
@@ -187,6 +194,13 @@ int pt_check(u8* addr)
 	say("?\n");
 	return 0;
 }
+void pt_focus()
+{
+}
+
+
+
+
 int pt_read(u64 fd, u64 off, u8* buf, int len)
 {
 	return diskread(0, off+chosen, buf, len);

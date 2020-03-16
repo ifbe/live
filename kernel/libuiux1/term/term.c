@@ -123,6 +123,7 @@ void termread_cli()
 
 void termwrite(u64 key, u64 type)
 {
+	//say("%llx,%llx\n",type,key);
 	if(type == 0x64626b)
 	{
 		if(key == 0x1b)		//esc
@@ -155,7 +156,7 @@ void termwrite(u64 key, u64 type)
 			if(count>0)count--;
 			input[count] = 0;
 		}
-		else if(key == 0xd)
+		else if((key == 0xd)|(key == 0xa))
 		{
 			command(input);
 			for(count=127;count>=0;count--)input[count] = 0;

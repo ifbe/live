@@ -1,6 +1,0 @@
-void reboot()
-{
-}
-void poweroff()
-{
-}

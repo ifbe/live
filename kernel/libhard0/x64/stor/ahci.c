@@ -239,7 +239,7 @@ void maketable(u64 buf,u64 from,HBA_CMD_HEADER* cmdheader,u64 count)
 	fis->countl = count&0xff;	//c
 	fis->counth = (count>>8)&0xff;	//d
 }
-int ahciread(u64 sata, u64 from, u64 buf, u64 count)
+int ahci_readblock(u64 sata, u64 from, u64 buf, u64 count)
 {
 	HBA_PORT* port =(HBA_PORT*)(portbase + theone*0x80);
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(u64)(port->clb);
@@ -309,7 +309,7 @@ int ahciread(u64 sata, u64 from, u64 buf, u64 count)
 	}
 	return 0;
 }
-int ahciidentify(u64 rdi)
+int ahci_identify(u64 rdi)
 {
 	HBA_PORT* port=(HBA_PORT*)(portbase + theone*0x80);
 	HBA_CMD_HEADER* cmdheader = (void*)(u64)(port->clb);
@@ -402,9 +402,13 @@ int ahciidentify(u64 rdi)
 
 	return 1;
 }
-void ahci_list()
+
+
+
+
+int ahci_list()
 {
-	int j;
+	int j,cnt=0;
 	u64 addr;
 	for(j=0;j<total;j++)
 	{
@@ -422,6 +426,7 @@ void ahci_list()
 			{
 				theone = j;
 				say("%x	sata\n", j);
+				cnt += 1;
 				break;
 			}
 			case 0xeb140101:	//atapi
@@ -442,6 +447,7 @@ void ahci_list()
 		}//switch
 		}//if this port usable
 	}//for
+	return cnt;
 }
 void ahci_choose()
 {

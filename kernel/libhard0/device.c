@@ -1,11 +1,11 @@
-void inituart();
-void initpci();
+void initplat();
 
 
 
 
 void devicecreate()
 {
-	inituart();
-	initpci();
+	say("device?\n");
+	initplat();
+	say("device!\n");
 }

@@ -273,18 +273,18 @@ struct BPB_FAT16{
 	u8 BS_drvNum;
 	u8 BS_Reserved1;
 	u8 BS_BootSig;
-	u16 BS_VolID[2];
+	u8 BS_VolID[4];
 	u8 BS_VolLab[11];
 	u8 BS_FileSysType[8];
 };
 struct BPB_FAT32{
 	struct BPB_FAT common;
-	u32      sec_per_fat; 	//24: 一个FAT表扇区数
-	u16     BPB_ExtFlags;	//28: FAT32特有
-	u16        BPB_FSVer;	//2a: FAT32特有
-	u32     BPB_RootClus;	//2c: 根目录簇号
-	u16           FSInfo;	//30: 保留扇区FSINFO扇区数
-	u16    BPB_BkBootSec;	//32: 通常为6
+	u8    sec_per_fat[4];	//24: 一个FAT表扇区数
+	u8   BPB_ExtFlags[2];	//28: FAT32特有
+	u8      BPB_FSVer[2];	//2a: FAT32特有
+	u8   BPB_RootClus[4];	//2c: 根目录簇号
+	u8         FSInfo[2];	//30: 保留扇区FSINFO扇区数
+	u8  BPB_BkBootSec[2];	//32: 通常为6
 	u8  BPB_Reserved[12];	//34: 扩展用
 	u8         BS_DrvNum;	//40: BIOS驱动器号
 	u8      BS_Reserved1;	//41: 未使用
@@ -299,43 +299,51 @@ int fat_check(u8* addr)
 	//printmemory(addr,0x200);
 
 	//0x55,0xaa
-	tmp = *(u16*)(addr+0x1fe);
-	if(tmp != 0xaa55)return 0;
+	if(0x55 != addr[0x1fe])return 0;
+	if(0xaa != addr[0x1ff])return 0;
 
 	//totally 2 fat tables
 	tmp = addr[0x10];
 	if(tmp != 2)return 0;
 
 	//byte per sector
-	tmp = *(u16*)(addr+0xb);
+	tmp = addr[0xb] + (addr[0xc]<<8);
 	if(tmp < 0x200)return 0;
 	if(tmp & 0x1ff)return 0;
 
-	if(0 != *(u16*)(addr+0x11))return 16;
-	if(0 != *(u16*)(addr+0x16))return 16;
+	if(addr[0x11])return 16;
+	if(addr[0x12])return 16;
+	if(addr[0x16])return 16;
+	if(addr[0x17])return 16;
 
 	return 32;
 }
 int fat_parse(u8* addr)
 {
+	u8* p;
 	struct BPB_FAT* fat = (void*)addr;
 
-	byte_per_sec = *(u16*)(fat->byte_per_sec);
+	p = fat->byte_per_sec;
+	byte_per_sec = p[0] + (p[1]<<8);
 	say("byte_per_sec=%x\n", byte_per_sec);
 
 	sec_per_clus = fat->sec_per_clus;
 	say("sec_per_clus=%x\n", sec_per_clus);
 
-	sec_of_fat0 = *(u16*)(fat->sec_of_fat0);
+	p = fat->sec_of_fat0;
+	sec_of_fat0 = p[0] + (p[1]<<8);
 	say("sec_of_fat0=%x\n", sec_of_fat0);
 
 	int ver = 32;
-	if(0 != *(u16*)(addr+0x11))ver = 16;
-	if(0 != *(u16*)(addr+0x16))ver = 16;
+	if(addr[0x11])ver = 16;
+	if(addr[0x12])ver = 16;
+	if(addr[0x16])ver = 16;
+	if(addr[0x17])ver = 16;
 
 	if(16 == ver)		//这是fat16
 	{
-		sec_per_fat = *(u16*)(fat->sec_per_fat);
+		p = fat->sec_per_fat;
+		sec_per_fat = p[0] + (p[1]<<8);
 		say("sec_per_fat:%x\n", sec_per_fat);
 
 		sec_of_clus2 = sec_of_fat0 + sec_per_fat*2 + 32;
@@ -347,7 +355,8 @@ int fat_parse(u8* addr)
 	{
 		struct BPB_FAT32* fat32 = (void*)addr;
 
-		sec_per_fat = fat32->sec_per_fat;
+		p = fat32->sec_per_fat;
+		sec_per_fat = p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24);
 		say("sec_per_fat:%x\n", sec_per_fat);
 
 		sec_of_clus2 = sec_of_fat0 + sec_per_fat*2;

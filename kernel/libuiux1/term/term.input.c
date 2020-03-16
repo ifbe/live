@@ -5,15 +5,13 @@
 #define powerport (*(u16*)0xffc)
 #define powerdata ((*(u16*)0xffe)|0x2000)
 //
+int disk_list(void*);
 int diskread(u64 fd, u64 off, void* buf, int len);
-void ahci_list();
-void ahci_choose();
-void identify();
 //
-void pt_check(void*);
+int pt_list(void*);
 int pt_read(u64 fd,u64 off, void* buf, int len);
 //
-void fs_check(void*);
+int fs_list(void*);
 int fs_read(u64 fd,u64 off, void* buf, int len);
 //
 void reboot();
@@ -33,6 +31,40 @@ void command(u8* input)
 {
 	say("%s\n",input);
 	if(0 == input[0])return;
+
+//-------------------disk-----------------
+	else if(0 == ncmp(input,"diskread",8)){
+		u64 offs;
+		u8* addr = (void*)0x100000;
+		hexstr2data(input+9, &offs);
+		diskread(0, offs, addr, 0x1000);
+		printmemory(addr, 0x200);
+	}
+	else if(0 == ncmp(input,"disk",4)){
+		disk_list((void*)0x100000);
+	}
+
+//------------------part----------------
+	else if(0 == ncmp(input,"partread",8)){
+		u8* addr = (void*)0x100000;
+		pt_read(0, 0, addr, 0x1000);
+		printmemory(addr, 0x200);
+	}
+	else if(0 == ncmp(input,"part",4)){
+		pt_list((void*)0x100000);
+	}
+
+//------------------file----------------
+	else if(0 == ncmp(input,"fileread",8)){
+		u8* addr = (void*)0x100000;
+		fs_read((u64)(input+9), 0, addr, 0x100000);
+		printmemory(addr, 0x200);
+	}
+	else if(0 == ncmp(input,"file",4)){
+		fs_list((void*)0x100000);
+	}
+
+//------------------bye-----------------
 	else if(0 == ncmp(input,"reboot",6)){
 		reboot();
 	}
@@ -43,32 +75,6 @@ void command(u8* input)
 		u64 data;
 		hexstr2data(input+6, &data);
 		printmemory((void*)data,0x200);
-	}
-	else if(0 == ncmp(input,"ahci.cd",7)){
-		ahci_choose();
-	}
-	else if(0 == ncmp(input,"ahci.id",7)){
-		identify();
-	}
-	else if(0 == ncmp(input,"disk.read",9)){
-		u64 data;
-		hexstr2data(input+10, &data);
-		diskread(0, data, (void*)0x100000, 0x100000);
-	}
-	else if(0 == ncmp(input,"disk",4)){
-		ahci_list();
-	}
-	else if(0 == ncmp(input,"pt.read",7)){
-		pt_read(0, 0, (void*)0x100000, 0x100000);
-	}
-	else if(0 == ncmp(input,"pt",2)){
-		pt_check((void*)0x100000);
-	}
-	else if(0 == ncmp(input,"fs.read",7)){
-		fs_read((u64)(input+8), 0, (void*)0x100000, 0x100000);
-	}
-	else if(0 == ncmp(input,"fs",2)){
-		fs_check((void*)0x100000);
 	}
 	else if(0 == ncmp(input,"bss",3)){
 		int j;
