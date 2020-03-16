@@ -123,7 +123,7 @@ static u32 fat32_nextclus(u32 clus)
 		cache_first = clus-remain;
 
 		byte = byte_per_sec*sec_of_fat0 + 4*cache_first;
-		pt_read(0, byte, cache,4*cache_count);
+		pt_read(0, byte, cache, 4*cache_count);
 	}
 
 	return cache[remain];
@@ -140,7 +140,7 @@ static int fat32_read(u64 clus,int offs, u8* buf,int len)
 		else if(offs >= byteperclus)offs -= byteperclus;
 		else if(offs < byteperclus){
 			tmp = byte_per_sec * (sec_of_clus2+sec_per_clus*(clus-2));
-			ret = pt_read(0, tmp+offs, buf,byteperclus-offs);
+			ret = pt_read(0, tmp+offs, buf, byteperclus-offs);
 			if(ret < byteperclus-offs)goto retcnt;
 			cnt += byteperclus-offs;
 
@@ -158,7 +158,7 @@ static int fat32_read(u64 clus,int offs, u8* buf,int len)
 
 		//read this cluster
 		tmp = byte_per_sec * (sec_of_clus2+sec_per_clus*(clus-2));
-		ret = pt_read(0, tmp, buf+cnt,byteperclus);
+		ret = pt_read(0, tmp, buf+cnt, byteperclus);
 
 		if(ret < byteperclus)goto retcnt;
 		cnt += byteperclus;
@@ -171,7 +171,7 @@ static int fat32_read(u64 clus,int offs, u8* buf,int len)
 	}
 
 	tmp = byte_per_sec * (sec_of_clus2+sec_per_clus*(clus-2));
-	ret = pt_read(0, ret, buf+cnt,len-cnt);
+	ret = pt_read(0, tmp, buf+cnt, len-cnt);
 	if(ret < len-cnt)goto retcnt;
 	cnt += ret;
 
@@ -183,7 +183,7 @@ retcnt:
 
 
 //0=yes, else=no
-int fat_checkname(char* name, u8* fatname)
+int fat_checkname(u8* name, u8* fatname)
 {
 	int j,k;
 	u8 a,b;
@@ -216,7 +216,7 @@ check1:
 success:
 	return 0;
 }
-u32 fat_ls(char* name)
+u32 fat_ls(u8* name)
 {
 	int j;
 	struct folder* dir;
@@ -247,6 +247,7 @@ int fat_cd(char* name)
 			parsefolder(dirhome);
 		}
 	}
+	return 0;
 }
 
 
@@ -368,10 +369,11 @@ int fat_parse(u8* addr)
 	//build cache
 	cache_first = 0;
 	cache_count = 0x10000;
-	pt_read(0, sec_of_fat0*byte_per_sec, fatbuffer,0x40000);
+	pt_read(0, sec_of_fat0*byte_per_sec, fatbuffer, 0x40000);
 
 	//read root
 	fat_cd(0);
+	return 0;
 }
 int fat_read(u8* str, u64 off, u8* buf, int len)
 {

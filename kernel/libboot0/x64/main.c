@@ -47,9 +47,6 @@ void main()
 	memory = haha + 0x800000;
 	character = haha + 0xc00000;
 
-	//only for x64 fb
-	enablescreen();
-
 	//[0,4)：构架相关，以及内核日志
 	basiccreate( basic );
 	debugcreate( basic );
@@ -65,6 +62,9 @@ void main()
 	//[c,f)：窗口开闭，以及用户界面
 	supplycreate( character );
 	entitycreate( character );
+
+	//only for x64 fb
+	enablescreen();
 
 	//go
 	poller();

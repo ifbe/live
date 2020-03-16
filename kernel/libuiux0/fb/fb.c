@@ -22,21 +22,23 @@ static int enable = 0;
 
 
 #define screeninfo 0x2000
-void initscreen()
+void enablescreen()
 {
 	u64 tmp;
-	if(0 == enable)return;
 
 	tmp = *(u32*)screeninfo;
 	win.buf = (void*)tmp;
 	win.fmt = *(u32*)(screeninfo+8);
+	say("win: %llx,%x,%d,%d\n", win.buf, win.fmt, win.w, win.h);
 
 	img.buf = (void*)0x2000000;
 	//img.fmt = rgba;
-}
-void enablescreen()
-{
+	say("img: %llx,%x,%d,%d\n", img.buf, img.fmt, img.w, img.h);
+
 	enable = 1;
+}
+void initscreen()
+{
 }
 
 

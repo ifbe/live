@@ -7,7 +7,9 @@
 #define hex64(a,b,c,d,e,f,g,h) (hex32(a,b,c,d) | (((u64)hex32(e,f,g,h))<<32))
 #define _EFI_PART_ hex64('E','F','I',' ','P','A','R','T')
 int diskread(u64 fd, u64 off, u8* buf, u64 len);
-void say(char* , ...);
+int ncmp(void*,void*,int);
+void printmemory(void* , ...);
+void say(void* , ...);
 
 
 
@@ -101,7 +103,7 @@ u32 hackforarmalign4(u8* p)
 }
 void parse_mbr_one(struct mbrpart* part)
 {
-        u32 start,count,fat32=0;
+        u32 start,count;
         if(0 == part->parttype)return;
 
         start = hackforarmalign4(part->lba_start);

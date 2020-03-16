@@ -283,7 +283,7 @@ retlen:
 	buf[len] = 0;
 	return len;
 }
-int mysnprintf(char* buf, int len, char* str, ...)
+int mysnprintf(u8* buf, int len, u8* str, ...)
 {
 	int ret;
 	va_list arg;
@@ -467,7 +467,7 @@ void printout(int cur, int len)
 		}
 	}
 }
-void say(char* str, ...)
+void say(u8* str, ...)
 {
 	int cur,ret;
 	va_list arg;
@@ -495,6 +495,43 @@ void say(char* str, ...)
 
 
 
+
+void printmemory(u8* buf, int len)
+{
+	u8 c;
+	int j,k;
+	u8 tmp[128];
+
+	while(1)
+	{
+		if(len <= 0)break;
+		if(len <= 16)k = len;
+		else k = 16;
+
+		j = mysnprintf(tmp, 80, (void*)"@%-13llx", buf);
+		for(;j<80;j++)tmp[j]=0x20;
+
+		for(j=0;j<k;j++)
+		{
+			c = ((buf[j]>>4)&0xf)+0x30;
+			if(c > 0x39)c += 7;
+			tmp[(3*j) + 14] = c;
+
+			c = (buf[j]&0xf)+0x30;
+			if(c > 0x39)c += 7;
+			tmp[(3*j) + 15] = c;
+
+			c = buf[j];
+			if((c<0x20)|(c>=0x7f))c = 0x20;
+			tmp[14+48+j] = c;
+		}
+		say((void*)"%.*s\n", 14+48+16, tmp);
+
+		buf += 16;
+		len -= 16;
+	}
+}
+/*
 void printmemory(u8* addr,int size)
 {
 	int x,y;
@@ -545,4 +582,4 @@ void printmemory(u8* addr,int size)
 		}
 	}
 	say("\n");
-}
+}*/

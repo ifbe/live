@@ -5,7 +5,7 @@
 int command(u8*);
 //
 void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
-void printtext(char* p, int size, int x0, int y0, int dx, int dy, u32 fgc, u32 bgc);
+void printtext(void* p, int size, int x0, int y0, int dx, int dy, u32 fgc, u32 bgc);
 //
 void printmemory(void*, int);
 void say(char*,...);
@@ -17,10 +17,10 @@ void say(char*,...);
 static u32* window;
 //
 static u8* input;
-static int count=0;
+static u32 count=0;
 //
 static u8* output;
-static int offset=0;
+static u32 offset=0;
 
 
 
@@ -159,7 +159,7 @@ void termwrite(u64 key, u64 type)
 		else if((key == 0xd)|(key == 0xa))
 		{
 			command(input);
-			for(count=127;count>=0;count--)input[count] = 0;
+			for(count=0;count<128;count++)input[count] = 0;
 			count = 0;
 		}
 		else

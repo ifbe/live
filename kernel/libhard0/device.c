@@ -1,4 +1,5 @@
 void initplat();
+void say(void*, ...);
 
 
 

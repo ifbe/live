@@ -10,10 +10,10 @@ efi:
 
 
 #----------------step1: cxx----------------
-full:
+local:
 	make -C kernel
 	cp kernel/cxx.bin 01-cxx.img
-full-cross:
+cross:
 	make -C kernel cross
 	cp kernel/cxx.bin 01-cxx.img
 

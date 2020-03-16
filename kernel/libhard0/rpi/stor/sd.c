@@ -1,3 +1,10 @@
+void say(void*, ...);
+void wait_msec(int);
+void wait_cycles(int);
+
+
+
+
 #define MMIO_BASE       0x3F000000
 
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))
@@ -418,5 +425,6 @@ int initsd()
 
 int sd_list()
 {
+	say("0:	sdcard\n");
 	return 1;
 }

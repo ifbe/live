@@ -17,13 +17,19 @@ void disk_list()
 {
 	int ret;
 
+//-----------ahci----------
 	say("ahci:\n");
 	ret = ahci_list();
-	if(ret)chosen = 'a';
 
+	if(ret)chosen = 'a';
+	else say("-	none\n");
+
+//-----------sd-------------
 	say("sd:\n");
 	ret = sd_list();
+
 	if(ret)chosen = 's';
+	else say("-	none\n");
 }
 void disk_focus()
 {

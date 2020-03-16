@@ -268,7 +268,7 @@ static const unsigned char asciitable[128*16]={
 void printascii(int xxxx, int yyyy, int size, char ch, u32 fgcolor, u32 bgcolor)
 {
 	int x,y,j,k,flag;
-	int width,height;
+	int width;
 	unsigned char temp;
 	unsigned char* points;
 	u32* screen;
@@ -285,7 +285,6 @@ void printascii(int xxxx, int yyyy, int size, char ch, u32 fgcolor, u32 bgcolor)
 	bgcolor |= 0xff000000;
 
 	width = 1024;
-	height = 768;
 	screen = (u32*)window;
 
 	for(y=0;y<16;y++)
@@ -316,7 +315,6 @@ void printascii(int xxxx, int yyyy, int size, char ch, u32 fgcolor, u32 bgcolor)
 }
 void printbyte(int x, int y, int size, unsigned char ch, u32 fg, u32 bg)
 {
-	int i;
 	unsigned char temp=ch;
 
 	ch=(temp>>4) & 0xf;
