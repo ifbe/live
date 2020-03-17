@@ -1,4 +1,4 @@
-int readkbd(char* buf, int len)
+int readkbd()
 {
 	return 0;
 }

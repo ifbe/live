@@ -116,7 +116,7 @@ void wait_cycles(int);
 #define SD_TIMEOUT          -1
 #define SD_ERROR            -2
 
-static unsigned long sd_scr[2], sd_ocr, sd_rca, sd_err, sd_hv;
+static unsigned long sd_scr[2], sd_rca, sd_err, sd_hv;
 
 /**
  * Wait for data or command ready
@@ -153,11 +153,11 @@ int sd_int(unsigned int mask)
  */
 int sd_cmd(unsigned int code, unsigned int arg)
 {
-	int r = 0;
+	int ret = 0;
 	sd_err = SD_OK;
 	if(code&CMD_NEED_APP) {
-		r = sd_cmd(CMD_APP_CMD|(sd_rca?CMD_RSPNS_48:0), sd_rca);
-		if(sd_rca && !r) {
+		ret = sd_cmd(CMD_APP_CMD|(sd_rca?CMD_RSPNS_48:0), sd_rca);
+		if(sd_rca && !ret) {
 			say("ERROR: failed to send SD APP command\n");
 			sd_err=SD_ERROR;
 			return 0;
@@ -177,28 +177,28 @@ int sd_cmd(unsigned int code, unsigned int arg)
 	if(code==CMD_SEND_OP_COND) wait_msec(1000);
 	else if(code==CMD_SEND_IF_COND || code==CMD_APP_CMD) wait_msec(100);
 
-	if((r = sd_int(INT_CMD_DONE))) {
+	if((ret = sd_int(INT_CMD_DONE))) {
 		say("ERROR: failed to send EMMC command\n");
-		sd_err=r;
+		sd_err = ret;
 		return 0;
 	}
-	r = *EMMC_RESP0;
+	ret = *EMMC_RESP0;
 
 	if(code==CMD_GO_IDLE || code==CMD_APP_CMD) return 0;
-	else if(code==(CMD_APP_CMD|CMD_RSPNS_48)) return r&SR_APP_CMD;
-	else if(code==CMD_SEND_OP_COND) return r;
-	else if(code==CMD_SEND_IF_COND) return r==arg? SD_OK : SD_ERROR;
+	else if(code==(CMD_APP_CMD|CMD_RSPNS_48)) return ret&SR_APP_CMD;
+	else if(code==CMD_SEND_OP_COND) return ret;
+	else if(code==CMD_SEND_IF_COND) return ret==arg? SD_OK : SD_ERROR;
 	else if(code==CMD_ALL_SEND_CID) {
-		r|=*EMMC_RESP3;
-		r|=*EMMC_RESP2;
-		r|=*EMMC_RESP1;
-		return r;
+		ret |= *EMMC_RESP3;
+		ret |= *EMMC_RESP2;
+		ret |= *EMMC_RESP1;
+		return ret;
 	}
 	else if(code==CMD_SEND_REL_ADDR) {
-		sd_err=(((r&0x1fff))|((r&0x2000)<<6)|((r&0x4000)<<8)|((r&0x8000)<<8))&CMD_ERRORS_MASK;
-		return r&CMD_RCA_MASK;
+		sd_err=(((ret&0x1fff))|((ret&0x2000)<<6)|((ret&0x4000)<<8)|((ret&0x8000)<<8))&CMD_ERRORS_MASK;
+		return ret&CMD_RCA_MASK;
 	}
-	return r&CMD_ERRORS_MASK;
+	return ret&CMD_ERRORS_MASK;
 	// make gcc happy
 	return 0;
 }
@@ -207,7 +207,7 @@ int sd_cmd(unsigned int code, unsigned int arg)
  * read a block from sd card and return the number of bytes read
  * returns 0 on error.
  */
-int sd_readblock(unsigned int fd, unsigned int lba, unsigned char *buffer, unsigned int num)
+int sd_readblock(unsigned int fd, unsigned int lba, unsigned char *buffer, int num)
 {
 	int r,c=0,d;
 	if(num<1) num=1;

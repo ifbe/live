@@ -23,7 +23,7 @@ void debugdelete();
 void basiccreate(void*);
 void basicdelete();
 //
-int windowcreate();
+int windowcreate(void*);
 int termcreate();
 //
 int poller();
@@ -66,7 +66,7 @@ void main()
 	entitycreate( character );
 
 	//only for x64 fb
-	windowcreate();
+	windowcreate((void*)0x2000);
 	termcreate();
 
 	//go

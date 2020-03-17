@@ -22,8 +22,7 @@ static int enable = 0;
 
 
 
-#define screeninfo 0x2000
-void windowcreate()
+void windowcreate(void* screeninfo)
 {
 	u64 tmp = *(u32*)screeninfo;
 	if(0 == tmp)return;

@@ -1,3 +1,5 @@
+void wait_cycles(unsigned int n);
+int mbox_call(unsigned char ch);
 void say(void*, ...);
 
 
@@ -48,66 +50,6 @@ void say(void*, ...);
 #define MBOX_TAG_SETCLKRATE     0x38002
 #define MBOX_TAG_LAST           0
 volatile unsigned int  __attribute__((aligned(16))) mbox[36];
-int mbox_call(unsigned char ch)
-{
-	unsigned int r = (((unsigned int)((unsigned long)&mbox)&~0xF) | (ch&0xF));
-	/* wait until we can write to the mailbox */
-	do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);
-	/* write the address of our message to the mailbox with channel identifier */
-	*MBOX_WRITE = r;
-	/* now wait for the response */
-	while(1) {
-		/* is there a response? */
-		do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_EMPTY);
-		/* is it a response to our message? */
-		if(r == *MBOX_READ)
-		/* is it a valid successful response? */
-		return mbox[1]==MBOX_RESPONSE;
-	}
-	return 0;
-}
-
-
-
-
-#define SYSTMR_LO        ((volatile unsigned int*)(MMIO_BASE+0x00003004))
-#define SYSTMR_HI        ((volatile unsigned int*)(MMIO_BASE+0x00003008))
-void wait_cycles(unsigned int n)
-{
-    if(n) while(n--) { asm volatile("nop"); }
-}
-void wait_msec(unsigned int n)
-{
-    register unsigned long f, t, r;
-    // get the current counter frequency
-    asm volatile ("mrs %0, cntfrq_el0" : "=r"(f));
-    // read the current counter
-    asm volatile ("mrs %0, cntpct_el0" : "=r"(t));
-    // calculate expire value for counter
-    t+=((f/1000)*n)/1000;
-    do{asm volatile ("mrs %0, cntpct_el0" : "=r"(r));}while(r<t);
-}
-unsigned long get_system_timer()
-{
-    unsigned int h=-1, l;
-    // we must read MMIO area as two separate 32 bit reads
-    h=*SYSTMR_HI;
-    l=*SYSTMR_LO;
-    // we have to repeat it if high word changed during read
-    if(h!=*SYSTMR_HI) {
-        h=*SYSTMR_HI;
-        l=*SYSTMR_LO;
-    }
-    // compose long int value
-    return ((unsigned long) h << 32) | l;
-}
-void wait_msec_st(unsigned int n)
-{
-    unsigned long t=get_system_timer();
-    // we must check if it's non-zero, because qemu does not emulate
-    // system timer, and returning constant zero would mean infinite loop
-    if(t) while(get_system_timer() < t+n);
-}
 
 
 
@@ -145,10 +87,16 @@ void poweroff()
 		mbox_call(MBOX_CH_PROP);
 	}
 	// power off gpio pins (but not VCC pins)
-	*GPFSEL0 = 0; *GPFSEL1 = 0; *GPFSEL2 = 0; *GPFSEL3 = 0; *GPFSEL4 = 0; *GPFSEL5 = 0;
+	*GPFSEL0 = 0;
+	*GPFSEL1 = 0;
+	*GPFSEL2 = 0;
+	*GPFSEL3 = 0;
+	*GPFSEL4 = 0;
+	*GPFSEL5 = 0;
 	*GPPUD = 0;
 	wait_cycles(150);
-	*GPPUDCLK0 = 0xffffffff; *GPPUDCLK1 = 0xffffffff;
+	*GPPUDCLK0 = 0xffffffff;
+	*GPPUDCLK1 = 0xffffffff;
 	wait_cycles(150);
 	*GPPUDCLK0 = 0; *GPPUDCLK1 = 0;        // flush GPIO setup
 

@@ -187,7 +187,7 @@ int fat_checkname(u8* name, u8* fatname)
 {
 	int j,k;
 	u8 a,b;
-check0:
+
 	for(j=0;j<8;j++){
 		if(0x20 >= name[j])goto success;
 		if('.' == name[j]){j += 1;break;}
@@ -200,7 +200,7 @@ check0:
 
 		if(a != b)return 1;
 	}
-check1:
+
 	for(k=0;k<3;k++){
 		if(0x20 >= name[j+k])goto success;
 
@@ -240,10 +240,12 @@ u32 fat_ls(u8* name)
 int fat_cd(char* name)
 {
 	int ret;
-	u32 clus;
+	//u32 clus;
 	if(32 == version){
 		if(0 == name){
 			ret = fat32_read(2,0, dirhome, 0x4000);
+			if(0 == ret)say("err@cd /\n");
+
 			parsefolder(dirhome);
 		}
 	}

@@ -2,11 +2,14 @@ cflag := -c -fPIC -fno-stack-protector -O2
 
 .PHONY:rpi
 rpi:
+	$(CC) $(cflag) rpi/gpu/gpu.c
+	$(CC) $(cflag) rpi/kbd/kbd.c
+	$(CC) $(cflag) rpi/mbox/mbox.c
+	$(CC) $(cflag) rpi/power/power.c
+	$(CC) $(cflag) rpi/time/time.c
 	$(CC) $(cflag) rpi/stor/ahci.c
 	$(CC) $(cflag) rpi/stor/sd.c
-	$(CC) $(cflag) rpi/kbd/kbd.c
 	$(CC) $(cflag) rpi/uart/miniuart.c
-	$(CC) $(cflag) rpi/power/power.c
 	$(CC) $(cflag) rpi/plat.c
 	$(CC) $(cflag) device.c
 
