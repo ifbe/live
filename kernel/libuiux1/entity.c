@@ -1,4 +1,4 @@
-void termcreate();
+void terminit();
 void say(void*, ...);
 
 
@@ -7,6 +7,6 @@ void say(void*, ...);
 void entitycreate()
 {
 	say("entity?\n");
-	termcreate();
+	terminit();
 	say("entity!\n");
 }

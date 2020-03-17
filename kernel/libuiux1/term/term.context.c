@@ -3,6 +3,7 @@
 #define u16 unsigned short
 #define u8 unsigned char
 int command(u8*);
+int stdio_write(void*, int);
 //
 void printstring(int x, int y, int size, u8* ch, u32 fgcolor, u32 bgcolor);
 void printtext(void* p, int size, int x0, int y0, int dx, int dy, u32 fgc, u32 bgc);
@@ -25,7 +26,7 @@ static u32 offset=0;
 
 
 
-void termcreate()
+void terminit()
 {
 	input = (void*)0x1000000;
 	count = 0;
@@ -34,6 +35,10 @@ void termcreate()
 	offset = 0;
 
 	window = (void*)0x2000000;
+}
+void termcreate()
+{
+	say("live>>>>");
 }
 
 
@@ -50,11 +55,11 @@ void termread_image()
 	x = *(int*)(output + 0xffff0);
 	for(;x>=1;x--){
 		if('\n' == output[x])y++;
-		if(47 == y)break;
+		if(y >= 47)break;
 	}
-	printtext(output+x, 1, 0, 0, 1024, 752, 0xffffff, 0xff000000);
+	printtext(output+x, 1, 0, 0, 1024, 768, 0xffffff, 0xff000000);
 
-	printstring(0, 752, 1, input, 0xffffff, 0xff000000);
+	//printstring(0, 752, 1, input, 0xffffff, 0xff000000);
 }
 void termread_a0000()
 {
@@ -107,21 +112,21 @@ void termread_b8000()
 		p[2*(80*24+x) + 1] = 0x70;
 	}
 }
-void termread_wnd()
+void term_readbywnd()
 {
 	u32 type = *(u32*)0x2008;
 	if(type == 0xb8000)termread_b8000();
 	else if(type == 0xa0000)termread_a0000();
 	else termread_image();
 }
-void termread_cli()
+void term_readbycli()
 {
 }
 
 
 
 
-void termwrite(u64 key, u64 type)
+void term_write(u64 key, u64 type)
 {
 	//say("%llx,%llx\n",type,key);
 	if(type == 0x64626b)
@@ -153,18 +158,29 @@ void termwrite(u64 key, u64 type)
 	{
 		if(key == 0x8)
 		{
-			if(count>0)count--;
+			if(count>0){
+				int* realoffs = (int*)(output + 0xffff0);
+				if(*realoffs > 0)*realoffs -= 1;
+				output[*realoffs] = 0;
+
+				stdio_write("\b", 1);
+				count--;
+			}
 			input[count] = 0;
 		}
 		else if((key == 0xd)|(key == 0xa))
 		{
+			say("\n");
 			command(input);
+			say("live>>>>");
+
 			for(count=0;count<128;count++)input[count] = 0;
 			count = 0;
 		}
 		else
 		{
 			if(count > 127)return;
+			say("%c", key);
 
 			input[count] = (u8)key;
 			count ++;

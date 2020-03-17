@@ -6,8 +6,8 @@
 
 
 
-int readcli();
-int readwnd();
+int stdio_read();
+int window_read();
 
 
 
@@ -16,8 +16,8 @@ int poller()
 {
 	while(1)
 	{
-		readwnd();
-		readcli();
+		window_read();
+		stdio_read();
 	}
 	return 0;
 }

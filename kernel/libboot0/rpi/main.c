@@ -23,8 +23,10 @@ void debugdelete();
 void basiccreate(void*);
 void basicdelete();
 //
-void say(void*, ...);
+void termcreate();
+//
 int poller();
+void say(void*, ...);
 
 
 
@@ -61,6 +63,9 @@ void main()
 	//[c,f)：窗口开闭，以及用户界面
 	supplycreate( character );
 	entitycreate( character );
+
+	//
+	termcreate();
 
 	//go
 	poller();

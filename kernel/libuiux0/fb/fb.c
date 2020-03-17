@@ -2,7 +2,7 @@
 #define u32 unsigned int
 #define u16 unsigned short
 #define u8 unsigned char
-void termread_wnd();
+void term_readbywnd();
 void say(void*, ...);
 
 
@@ -23,11 +23,11 @@ static int enable = 0;
 
 
 #define screeninfo 0x2000
-void enablescreen()
+void windowcreate()
 {
-	u64 tmp;
+	u64 tmp = *(u32*)screeninfo;
+	if(0 == tmp)return;
 
-	tmp = *(u32*)screeninfo;
 	win.buf = (void*)tmp;
 	win.fmt = *(u32*)(screeninfo+8);
 	say("win: %llx,%x,%d,%d\n", win.buf, win.fmt, win.w, win.h);
@@ -51,7 +51,7 @@ void writescreen()
 	u32* p;
 	u8* aa;
 
-	if(win.fmt == 0xb8000)
+	if(0xb8000 == win.fmt)
 	{
 		aa = (void*)0xb8000;
 		for(j=0;j<80;j++)
@@ -64,7 +64,7 @@ void writescreen()
 		return;
 	}
 
-	if(win.fmt == 0xa0000)
+	if(0xa0000 == win.fmt)
 	{
 		aa = (void*)0xa0000;
 		for(j=0;j<320*200;j++)aa[j] = img.buf[j];
@@ -77,12 +77,15 @@ void writescreen()
 		*p = *(u32*)(img.buf + (j<<2));
 	}
 }
-void readwnd()
+void window_read()
 {
 	if(0 == enable)return;
 	if(0 == win.buf)return;
 	if(0 == img.buf)return;
 
-	termread_wnd();
+	term_readbywnd();
 	writescreen();
+}
+void window_write()
+{
 }

@@ -8,6 +8,7 @@ target:
 	$(CC) $(cflag) fs/fs.c
 	$(CC) $(cflag) str/compare.c
 	$(CC) $(cflag) str/convert.c
+	$(CC) $(cflag) str/printf.c
 	$(CC) $(cflag) tab/acpi.c
 	$(CC) $(cflag) artery.c
 clean:

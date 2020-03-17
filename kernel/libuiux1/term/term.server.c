@@ -29,7 +29,7 @@ void say(char*,...);
 
 void command(u8* input)
 {
-	say("%s\n",input);
+	//say("%s\n",input);
 	if(0 == input[0])return;
 
 //-------------------disk-----------------

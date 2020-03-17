@@ -23,7 +23,9 @@ void debugdelete();
 void basiccreate(void*);
 void basicdelete();
 //
-int enablescreen();
+int windowcreate();
+int termcreate();
+//
 int poller();
 void say(void*, ...);
 
@@ -64,7 +66,8 @@ void main()
 	entitycreate( character );
 
 	//only for x64 fb
-	enablescreen();
+	windowcreate();
+	termcreate();
 
 	//go
 	poller();
