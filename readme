@@ -1,6 +1,22 @@
-bios/
-	loader(bios)
-efi/
-	loader(efi)
+handon/
+	pre loader(pc,mbr,realmode), or simple test thing(efi/arm)
+kernel/
+	real loader: most things are there
 tool/
-	compiler, cfgfile, etc
+	compiler, script, etc
+virt/
+	config file for virtualmachines, config file for bootloaders
+
+
+
+
+license:
+	if you use code in this repo,
+	i also uses grub4dos/
+	dont claim that you wrote this,
+	write beginning in source file
+disclaimer:
+	this bootloader is my hobby project,
+	nothing bad has happened while running on pc/rpi.
+	however there are wierd designed in wierd hardware,
+	i am not responsible for that shit.
