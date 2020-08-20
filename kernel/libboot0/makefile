@@ -1,5 +1,5 @@
 AS :=
-cflag := -c -fPIC -fno-stack-protector -O2
+cflag := -c -fPIC -ffreestanding -fno-stack-protector -O2
 
 .PHONY:rpi
 rpi:

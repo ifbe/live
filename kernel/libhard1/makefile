@@ -1,4 +1,4 @@
-cflag := -c -fPIC -fno-stack-protector -O2
+cflag := -c -fPIC -ffreestanding -fno-stack-protector -O2
 target:
 	$(CC) $(cflag) sata/identify.c
 	$(CC) $(cflag) kbd/kbd.c
