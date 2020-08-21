@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<VmInfo dyn_lists="" schemaVersion="1.0">
+<VmInfo schemaVersion="1.0" dyn_lists="">
    <GuestOsInformation dyn_lists="GuestToolsList 1">
       <Started>0</Started>
       <ConfOsType></ConfOsType>
@@ -8,8 +8,8 @@
       <RealOsVersion>unknown</RealOsVersion>
       <RealOsDetails></RealOsDetails>
       <RealOsTypeId>255</RealOsTypeId>
-      <GuestToolsList dyn_lists="GuestToolInfo 1" id="0">
-         <GuestToolInfo dyn_lists="" id="0">
+      <GuestToolsList id="0" dyn_lists="GuestToolInfo 1">
+         <GuestToolInfo id="0" dyn_lists="">
             <ToolId>parallels.TIS.host.cross</ToolId>
             <ToolName>Tools Information Service host side</ToolName>
             <ToolVersion>14.1.3-45485</ToolVersion>

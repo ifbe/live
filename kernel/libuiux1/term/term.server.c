@@ -56,7 +56,10 @@ void command(u8* input)
 
 //------------------file----------------
 	else if(0 == ncmp(input,"fileread",8)){
+		int j;
 		u8* addr = (void*)0x100000;
+		for(j=0;j<0x700000;j++)addr[j] = 0;
+
 		fs_read((u64)(input+9), 0, addr, 0x100000);
 		printmemory(addr, 0x200);
 	}
@@ -75,11 +78,6 @@ void command(u8* input)
 		u64 data;
 		hexstr2data(input+6, &data);
 		printmemory((void*)data,0x200);
-	}
-	else if(0 == ncmp(input,"bss",3)){
-		int j;
-		u8* tmp = (void*)0x100000;
-		for(j=0;j<0x700000;j++)tmp[j] = 0;
 	}
 	else if(0 == ncmp(input,"42",2)){
 		int (*fun)() = (void*)0x100000;

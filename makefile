@@ -57,7 +57,8 @@ biosimg:
 	dd if=01-cxx.img of=live.img bs=8192 seek=1 conv=notrunc
 	dd if=02-fat.img of=live.img bs=1048576 seek=1 conv=notrunc
 	qemu-img resize -f raw live.img 64M
-	qemu-img convert -f raw -O vmdk live.img live.vmdk
+	#qemu-img convert -f raw -O vmdk live.img live.vmdk
+	qemu-img convert -f raw -O parallels live.img live.hdd
 	qemu-img convert -f raw -O vpc -o subformat=fixed live.img live.vhd
 efiimg:
 	dd if=/dev/zero of=02-fat.img bs=1k count=1440
@@ -87,5 +88,6 @@ parallels:
 
 
 clean:
+	rm -rf live.hdd
 	rm -f *.o *.bin *.efi *.EFI
 	rm -f *.bin *.efi *.img *.vmdk *.vhd *.dmg *.vdi
