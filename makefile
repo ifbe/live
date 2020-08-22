@@ -75,7 +75,7 @@ efiimg:
 qemu:
 	virt/qemu/qemu.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
 ovmf:
-	virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
+	virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.img
 bochs:
 	bochs -f virt/bochs/bochsrc
 vmware:
