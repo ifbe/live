@@ -4,6 +4,7 @@
 *.bin
 *.efi
 *.EFI
+*.hdd
 *.img
 *.vhd
 *.vmdk
