@@ -37,9 +37,10 @@ macmkfs:dd
 	newfs_msdos -F 32 $(DISK)
 	hdiutil detach $(DISK)
 macmount:
-	hdiutil attach -mountpoint boot 02-fat.img
+	hdiutil attach -mountpoint mount 02-fat.img
+	mkdir -p mount/efi/boot
 macumount:
-	hdiutil detach boot
+	hdiutil detach mount
 
 winmkfs:
 	fsutil file createnew 02-fat.img 65011712
