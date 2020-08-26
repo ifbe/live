@@ -16,6 +16,8 @@ int fs_read(u64 fd,u64 off, void* buf, int len);
 //
 void reboot();
 void poweroff();
+void arprequest(u8*);
+void icmprequest(u8*);
 //
 int hexstr2data(void*, void*);
 int ncmp(void*, void*, int);
@@ -65,6 +67,14 @@ void command(u8* input)
 	}
 	else if(0 == ncmp(input,"file",4)){
 		fs_list((void*)0x100000);
+	}
+
+//------------------net-----------------
+	else if(0 == ncmp(input,"arp",3)){
+		arprequest(0);
+	}
+	else if(0 == ncmp(input,"icmp",4)){
+		icmprequest(0);
 	}
 
 //------------------bye-----------------
