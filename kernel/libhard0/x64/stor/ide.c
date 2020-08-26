@@ -192,50 +192,35 @@ int identifyide(u64 rdi)
 
 
 
-static void probepci(u64 addr)
+void ide_portinit(u64 addr)
 {
-//?：pci地址
-//出：?存地址
-	u32 temp;
-	u32 bar0,bar1;
-	say("(ide)pciaddr:%x{\n",addr);
+	u32 bar0,bar1,temp;
+	say("ide@port:%x{\n",addr);
 
-	out32(0xcf8,addr+0x4);
-	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
+	out32(0xcf8, addr+0x4);
+	temp=in32(0xcfc) | (1<<10) | (1<<2);	//bus master=1
+	out32(0xcf8, addr+0x4);
+	out32(0xcfc, temp);
 
-	out32(0xcf8,addr+0x4);
-	out32(0xcfc,temp);
+	out32(0xcf8, addr+0x4);
+	temp = in32(0xcfc);
+	say("sts,cmd=%x\n", temp);
 
-	out32(0xcf8,addr+0x4);
-	temp=(u64)in32(0xcfc);
-	say("    sts&cmd:%x",temp);
+	out32(0xcf8, addr+0x10);
+	bar0 = in32(0xcfc) & 0xfffffffe;
+	say("bar0=%x\n", bar0);
 
-	//ide port
-	out32(0xcf8,addr+0x10);
-	bar0=in32(0xcfc)&0xfffffffe;
-	say("    (command)bar0:%x\n",bar0);
+	out32(0xcf8, addr+0x14);
+	bar1=in32(0xcfc) & 0xfffffffe;
+	say("bar1=%x\n", bar1);
 
-	out32(0xcf8,addr+0x14);
-	bar1=in32(0xcfc)&0xfffffffe;
-	say("    (control)bar1:%x\n",bar1);
+	out32(0xcf8, addr+0x18);
+	temp=in32(0xcfc) & 0xfffffffe;
+	say("bar2=%x\n", temp);
 
-	out32(0xcf8,addr+0x18);
-	temp=in32(0xcfc)&0xfffffffe;
-	say("    bar2:%x\n",temp);
+	out32(0xcf8, addr+0x1c);
+	temp=in32(0xcfc) & 0xfffffffe;
+	say("bar3=%x\n", temp);
 
-	out32(0xcf8,addr+0x1c);
-	temp=in32(0xcfc)&0xfffffffe;
-	say("    bar3:%x\n",temp);
-
-	//找到了，放到自己的表格里
-	say("ide,%x,%x\n",bar0,bar1);
 	say("}\n");
-}
-void initide(u64 pciaddr)
-{
-	u64 addr;
-	say("ide@%x\n", pciaddr);
-
-	//probe pci
-	probepci(pciaddr);
 }

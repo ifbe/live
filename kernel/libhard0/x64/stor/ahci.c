@@ -519,18 +519,23 @@ static void enableport(HBA_PORT* port)
 	port->cmd |= 1; 	//bit0,start
 	//say("port->cmd after enable:%x",(u64)(port->cmd));
 }
-static void probeahci(u64 addr)
+static void ahci_mmioinit(u64 addr)
 {
+	say("ahci@mmio:%x{\n",addr);
+
+	//clear home
+	u64 temp;
+	int i,j,count=0;
+	u8* p = (void*)ahcihome;
+	for(j=0;j<0x100000;j++)p[j] = 0;
+
+
+	//start
 	HBA_MEM* abar=(HBA_MEM*)addr;
 	HBA_PORT* port;
 	HBA_CMD_HEADER* cmdheader;
 
-	u64 temp;
-	int i,j;
-	int count=0;
-
 //第一步:host controller settings
-	say("(ahci)memaddr:%x{\n",addr);
 	abar->ghc|=0x80000000;
 	abar->ghc&=0xfffffffd;
 	abar->is = 0xffffffff;		//clear all
@@ -541,7 +546,7 @@ static void probeahci(u64 addr)
 		temp >>= 1;
 		count++;
 	}
-	say("    total implemented=%x\n",count);
+	say("totalport=%x:\n",count);
 
 //第二步:32 ports settings
 	for(i=0;i<count;i++)
@@ -582,51 +587,36 @@ static void probeahci(u64 addr)
 	ahci_list();
 	say("}\n");
 }
-static unsigned int probepci(u64 addr)
+void ahci_portinit(u64 addr)
 {
-//进：pci地址
-//出：内存地址
 	unsigned int temp;
-	say("(ahci)pciaddr:%x{\n",addr);
+	say("ahci@port:%x{\n",addr);
 
-	out32(0xcf8,addr+0x4);
-	temp=in32(0xcfc)|(1<<10)|(1<<2);		//bus master=1
+	out32(0xcf8, addr+0x4);
+	temp = in32(0xcfc) | (1<<10) | (1<<2);		//bus master=1
 
-	out32(0xcf8,addr+0x4);
-	out32(0xcfc,temp);
+	out32(0xcf8, addr+0x4);
+	out32(0xcfc, temp);
 
-	out32(0xcf8,addr+0x4);
-	say("    pci sts&cmd:%x\n",(u64)in32(0xcfc));
+	out32(0xcf8, addr+0x4);
+	say("sts,cmd=%x\n", in32(0xcfc));
 
 	//ide port
-	out32(0xcf8,addr+0x10);
-	say("bar0:%x\n" , in32(0xcfc)&0xfffffffe );
-	out32(0xcf8,addr+0x14);
-	say("bar1:%x\n" , in32(0xcfc)&0xfffffffe );
-	out32(0xcf8,addr+0x18);
-	say("bar2:%x\n" , in32(0xcfc)&0xfffffffe );
-	out32(0xcf8,addr+0x1c);
-	say("bar3:%x\n" , in32(0xcfc)&0xfffffffe );
+	out32(0xcf8, addr+0x10);
+	say("bar0=%x\n", in32(0xcfc)&0xfffffffe );
+	out32(0xcf8, addr+0x14);
+	say("bar1=%x\n", in32(0xcfc)&0xfffffffe );
+	out32(0xcf8, addr+0x18);
+	say("bar2=%x\n", in32(0xcfc)&0xfffffffe );
+	out32(0xcf8, addr+0x1c);
+	say("bar3=%x\n", in32(0xcfc)&0xfffffffe );
 
 	say("}\n");
 
+
 	//hba addr
 	out32(0xcf8,addr+0x24);
-	return in32(0xcfc)&0xfffffff0;
-}
-void initahci(u64 pciaddr)
-{
-	u64 addr;
-	say("ahci@%x\n",pciaddr);
+	temp = in32(0xcfc)&0xfffffff0;
 
-	//clear home
-	addr=ahcihome;
-	for(;addr<ahcihome+0x100000;addr++) *(u8*)addr=0;
-
-	//
-	addr=probepci(pciaddr);
-	if(addr==0) return;
-
-	//
-	probeahci(addr);
+	ahci_mmioinit(temp);
 }

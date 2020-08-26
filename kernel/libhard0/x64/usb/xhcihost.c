@@ -174,36 +174,6 @@ say("}\n",0);
 
 
 
-u64 probepci()
-{
-	u64 temp;
-	say("(xhci)portaddr:%x{\n",xhciport);
-
-	//disable pin interrupt+enable bus mastering
-	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
-	out32(0xcf8,xhciport+0x4);
-	temp=in32(0xcfc)|(1<<10)|(1<<2);
-
-	out32(0xcf8,xhciport+0x4);
-	out32(0xcfc,temp);
-
-	out32(0xcf8,xhciport+0x4);
-	say("	sts&cmd:%x\n",(u64)in32(0xcfc));
-
-	//deal with capability list
-	//explaincapability();
-
-	//get xhciaddr from bar0
-	out32(0xcf8,xhciport+0x10);
-	xhciaddr=in32(0xcfc)&0xfffffff0;
-
-	say("}\n");
-	return 0;
-}
-
-
-
-
 int ownership(u64 addr)
 {
 	//set hc os owned semaphore
@@ -308,9 +278,14 @@ failed:
 
 
 
-int probexhci()
+int xhci_mmioinit()
 {
 say("(xhci)memaddr:%x{\n",xhciaddr);
+	//clean home(1m)
+	u8* p=(u8*)(xhcihome);
+	int i;
+	for(i=0;i<0x100000;i++) p[i]=0;
+
 
 //基本信息
 //say("base information{");
@@ -542,38 +517,35 @@ return 0;
 
 
 
-
-
-
-
-void initxhci(u64 pciaddr)
+void xhci_portinit(u64 portaddr)
 {
-	say("xhci@%x\n",pciaddr);
+	u64 temp;
+	say("xhci@port:%x\n", portaddr);
 
-	xhciport = pciaddr;
-	if(xhciport == 0) goto end;
+	//disable pin interrupt+enable bus mastering
+	//very important,in qemu-kvm 1.6.2,bus master bit is 0,must set 1
+	out32(0xcf8,portaddr+0x4);
+	temp=in32(0xcfc)|(1<<10)|(1<<2);
 
-	//pci部分
-	probepci();
-	if(xhciaddr == 0) goto end;
+	out32(0xcf8,portaddr+0x4);
+	out32(0xcfc,temp);
 
-	//stop xhci
-	//probexhci();
+	out32(0xcf8, portaddr+0x4);
+	say("sts,cmd=%x\n",(u64)in32(0xcfc));
 
-	//clean home(1m)
-	u8* p=(u8*)(xhcihome);
-	int i;
-	for(i=0;i<0x100000;i++) p[i]=0;
+	//deal with capability list
+	//explaincapability();
+
+	//get xhciaddr from bar0
+	out32(0xcf8, portaddr+0x10);
+	xhciaddr = in32(0xcfc)&0xfffffff0;
+
+	say("}\n");
+
 
 	//start xhci
-	probexhci();
+	xhci_mmioinit();
 
 	//initusb
 	initusb(xhciaddr);
-
-
-
-
-end:		//就一行空白
-	say("\n");
 }
