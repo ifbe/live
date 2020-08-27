@@ -7,17 +7,17 @@
 //
 int disk_list(void*);
 int diskread(u64 fd, u64 off, void* buf, int len);
-//
 int pt_list(void*);
 int pt_read(u64 fd,u64 off, void* buf, int len);
-//
 int fs_list(void*);
 int fs_read(u64 fd,u64 off, void* buf, int len);
 //
-void reboot();
-void poweroff();
 void arprequest(u8*);
 void icmprequest(u8*);
+void dhcprequest(u8*);
+//
+void reboot();
+void poweroff();
 //
 int hexstr2data(void*, void*);
 int ncmp(void*, void*, int);
@@ -75,6 +75,9 @@ void command(u8* input)
 	}
 	else if(0 == ncmp(input,"icmp",4)){
 		icmprequest(0);
+	}
+	else if(0 == ncmp(input,"dhcp",4)){
+		dhcprequest(0);
 	}
 
 //------------------bye-----------------
