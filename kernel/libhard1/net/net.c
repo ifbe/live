@@ -46,10 +46,12 @@ u16 checksum(u16 *buf, int len)
 
 struct arp
 {
+	//ether
 	u8 macdst[6];		//[0,5]
 	u8 macsrc[6];		//[6,0xb]
 	u16     type;		//[0xc,0xd]
 
+	//arp
 	u16       hwtype;	//[0xe,0xf]
 	u16 protocoltype;	//[0x10,0x11]
 	u8        hwsize;	//[0x12]
@@ -63,10 +65,8 @@ struct arp
 void arprequest(u8* url)
 {
 	struct arp arp;
-	*(u64*)(arp.macdst) = 0xffffffffffff;
-	*(u64*)(arp.macsrc) = 0;	//unknown
-	arp.type = 0x0608;
 
+	//arp
 	arp.hwtype = 0x0100;
 	arp.protocoltype = 8;
 	arp.hwsize = 6;
@@ -77,6 +77,11 @@ void arprequest(u8* url)
 	*(u64*)(arp.targetmac) = peer_mac;
 	*(u32*)(arp.targetip) =  peer_ip;
 
+	//ether
+	*(u64*)(arp.macdst) = 0xffffffffffff;
+	*(u64*)(arp.macsrc) = 0;	//unknown
+	arp.type = 0x0608;
+
 	e1000_write((u8*)&arp, sizeof(struct arp));
 }
 
@@ -85,10 +90,12 @@ void arprequest(u8* url)
 
 struct icmp
 {
+	//ether
 	u8 macdst[6];		//[0,5]
 	u8 macsrc[6];		//[6,0xb]
 	u16     type;		//[0xc,0xd]
 
+	//ipv4
 	u8      iphead;		//[0xe]
 	u8         tos;		//[0xf]
 	u16     length;		//[0x10,0x11]
@@ -100,25 +107,35 @@ struct icmp
 	u8    ipsrc[4];		//[0x1a,0x1d]
 	u8    ipdst[4];		//[0x1e,0x21]
 
+	//icmp
 	u8      icmptype;	//[0x22]
 	u8          code;	//[0x23]
 	u16 icmpchecksum;	//[0x24,0x25]
 	u16    identifer;	//[0x26,0x27]
 	u16           sn;	//[0x28,0x29]
-
 	u8  timestamp[8];	//[0x2a,0x31]
 	u8    data[0x30];	//[0x32,0x61]
 };
 void icmprequest(u8* url)
 {
+	int j,len;
 	struct icmp icmp;
-	*(u64*)(icmp.macdst) = 0xffffffffffff;
-	*(u64*)(icmp.macsrc) = 0;	//unknown
-	icmp.type = 0x0008;
 
+	//data
+	icmp.icmptype = 8;	//echo request
+	icmp.code = 0;
+	icmp.icmpchecksum = 0;
+	icmp.identifer = 233;
+	icmp.sn = 233;
+	for(j=0;j<0x30;j++)icmp.data[j] = j;
+	icmp.icmpchecksum = checksum((u16*)&icmp.icmptype, 0x40);
+	len = 0x40;
+
+	//ipv4
+	len += 20;
 	icmp.iphead = 0x45;
 	icmp.tos = 0;
-	icmp.length = (20+64)<<8;
+	icmp.length = swap16(len);
 	icmp.id = 0x233;
 	icmp.fragoffset = 0;
 	icmp.ttl = 0x40;
@@ -126,17 +143,12 @@ void icmprequest(u8* url)
 	icmp.checksum = 0;
 	*(u32*)(icmp.ipsrc) = self_ip;
 	*(u32*)(icmp.ipdst) = 0x0100a8c0;	//192.168.0.1
-	icmp.checksum = checksum((u16*)&(icmp.iphead), 20);
+	icmp.checksum = checksum((u16*)&icmp.iphead, 20);
 
-	icmp.icmptype = 8;	//echo request
-	icmp.code = 0;
-	icmp.icmpchecksum = 0;
-	icmp.identifer = 233;
-	icmp.sn = 233;
-
-	int j;
-	for(j=0;j<0x30;j++)icmp.data[j] = j;
-	icmp.icmpchecksum = checksum((u16*)&icmp.icmptype, 0x40);
+	//ether
+	*(u64*)(icmp.macdst) = 0xffffffffffff;
+	*(u64*)(icmp.macsrc) = 0;	//unknown
+	icmp.type = 0x0008;
 
 	e1000_write((u8*)&icmp, sizeof(struct icmp));
 }
@@ -144,13 +156,85 @@ void icmprequest(u8* url)
 
 
 
-struct dhcp{
+struct udp{
 	//eth
 	u8 macdst[6];		//[0,5]
 	u8 macsrc[6];		//[6,0xb]
 	u16     type;		//[0xc,0xd]
 
-	//ip
+	//ipv4
+	u8      iphead;		//[0xe]
+	u8         tos;		//[0xf]
+	u16     length;		//[0x10,0x11]
+	u16         id;		//[0x12,0x13]
+	u16 fragoffset;		//[0x14,0x15]
+	u8         ttl;		//[0x16]
+	u8    protocol;		//[0x17]
+	u16   checksum;		//[0x18,0x19]
+	u8    ipsrc[4];		//[0x1a,0x1d]
+	u8    ipdst[4];		//[0x1e,0x21]
+
+	//udp
+	u16 srcport;
+	u16 dstport;
+	u16 udplen;
+	u16 udpsum;
+
+	//payload
+	u8 buf[16];
+};
+void udprequest(u8* url)
+{
+	int len;
+	struct udp udp;
+
+	//data
+	for(len=0;len<14;len++){
+		if(url[len] < 0x20)break;
+		udp.buf[len] = url[len];
+	}
+	udp.buf[len] = 0xa;
+	len++;
+
+	//udp
+	len += 8;
+	udp.srcport = swap16(1324);
+	udp.dstport = swap16(1234);
+	udp.udplen = swap16(len);
+	udp.udpsum = 0;
+
+	//ipv4
+	len += 20;
+	udp.iphead = 0x45;
+	udp.tos = 0;
+	udp.length = swap16(len);
+	udp.id = 0x233;
+	udp.fragoffset = 0;
+	udp.ttl = 0x40;
+	udp.protocol = 0x11;
+	udp.checksum = 0;
+	*(u32*)(udp.ipsrc) = self_ip;  //0x00000000;  //0.0.0.0
+	*(u32*)(udp.ipdst) = 0xd900a8c0;  //0xffffffff;  //255.255.255.255
+	udp.checksum = checksum((u16*)&udp.iphead, 20);
+
+	//ether
+	*(u64*)(udp.macdst) = 0xffffffffffff;
+	*(u64*)(udp.macsrc) = 0;	//unknown
+	udp.type = 0x0008;
+
+	e1000_write((u8*)&udp, sizeof(struct udp));
+}
+
+
+
+
+struct dhcp{
+	//ether
+	u8 macdst[6];		//[0,5]
+	u8 macsrc[6];		//[6,0xb]
+	u16     type;		//[0xc,0xd]
+
+	//ipv4
 	u8      iphead;		//[0xe]
 	u8         tos;		//[0xf]
 	u16     length;		//[0x10,0x11]
@@ -189,6 +273,7 @@ void dhcprequest(u8* url)
 	int len;
 	struct dhcp dhcp;
 
+	//data
 	dhcp.op = 1;
 	dhcp.htype = 1;
 	dhcp.hlen = 6;
@@ -205,12 +290,14 @@ void dhcprequest(u8* url)
 	dhcp.file[0] = 0;
 	len = 12+16+16+64+128;
 
+	//udp
 	len += 8;
-	dhcp.srcport = 68;
-	dhcp.dstport = swap16(1234);
+	dhcp.srcport = swap16(68);
+	dhcp.dstport = swap16(67);
 	dhcp.udplen = swap16(len);
 	dhcp.udpsum = 0;
 
+	//ipv4
 	len += 20;
 	dhcp.iphead = 0x45;
 	dhcp.tos = 0;
@@ -220,13 +307,15 @@ void dhcprequest(u8* url)
 	dhcp.ttl = 0x40;
 	dhcp.protocol = 0x11;
 	dhcp.checksum = 0;
-	*(u32*)(dhcp.ipsrc) = self_ip;  //0x00000000;  //0.0.0.0
-	*(u32*)(dhcp.ipdst) = 0xd900a8c0;  //0xffffffff;  //255.255.255.255
+	*(u32*)(dhcp.ipsrc) = 0x00000000;  //0.0.0.0
+	*(u32*)(dhcp.ipdst) = 0xffffffff;  //255.255.255.255
 	dhcp.checksum = checksum((u16*)&dhcp.iphead, 20);
 
+	//ether
 	*(u64*)(dhcp.macdst) = 0xffffffffffff;
 	*(u64*)(dhcp.macsrc) = 0;	//unknown
 	dhcp.type = 0x0008;
+
 	e1000_write((u8*)&dhcp, sizeof(struct dhcp));
 }
 

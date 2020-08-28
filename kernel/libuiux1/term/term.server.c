@@ -14,6 +14,7 @@ int fs_read(u64 fd,u64 off, void* buf, int len);
 //
 void arprequest(u8*);
 void icmprequest(u8*);
+void udprequest(u8*);
 void dhcprequest(u8*);
 //
 void reboot();
@@ -75,6 +76,9 @@ void command(u8* input)
 	}
 	else if(0 == ncmp(input,"icmp",4)){
 		icmprequest(0);
+	}
+	else if(0 == ncmp(input,"udp",3)){
+		udprequest(input+4);
 	}
 	else if(0 == ncmp(input,"dhcp",4)){
 		dhcprequest(0);
