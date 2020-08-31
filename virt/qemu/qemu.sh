@@ -2,7 +2,9 @@
 dir=`dirname $0`
 cd $dir
 
+#-d int,cpu_reset \
 $1 \
+-no-reboot \
 -serial stdio \
 -smp 2 \
 -m 512 \

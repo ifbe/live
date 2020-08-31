@@ -7,10 +7,14 @@ typedef unsigned long long u64;
 #define peer_ip  0x0202000a
 #define peer_mac 0x0202000a5552
 //
-void e1000_write(u8* buf, int len);
-//
 void printmemory(void*, ...);
 void say(char*, ...);
+
+
+
+
+static int (*reader)(void* buf, int len) = 0;
+static int (*writer)(void* buf, int len) = 0;
 
 
 
@@ -65,6 +69,7 @@ struct arp
 void arprequest(u8* url)
 {
 	struct arp arp;
+	if(0 == writer)return;
 
 	//arp
 	arp.hwtype = 0x0100;
@@ -82,7 +87,7 @@ void arprequest(u8* url)
 	*(u64*)(arp.macsrc) = 0;	//unknown
 	arp.type = 0x0608;
 
-	e1000_write((u8*)&arp, sizeof(struct arp));
+	writer(&arp, sizeof(struct arp));
 }
 
 
@@ -120,6 +125,7 @@ void icmprequest(u8* url)
 {
 	int j,len;
 	struct icmp icmp;
+	if(0 == writer)return;
 
 	//data
 	icmp.icmptype = 8;	//echo request
@@ -150,7 +156,7 @@ void icmprequest(u8* url)
 	*(u64*)(icmp.macsrc) = 0;	//unknown
 	icmp.type = 0x0008;
 
-	e1000_write((u8*)&icmp, sizeof(struct icmp));
+	writer(&icmp, sizeof(struct icmp));
 }
 
 
@@ -187,6 +193,7 @@ void udprequest(u8* url)
 {
 	int len;
 	struct udp udp;
+	if(0 == writer)return;
 
 	//data
 	for(len=0;len<14;len++){
@@ -222,7 +229,7 @@ void udprequest(u8* url)
 	*(u64*)(udp.macsrc) = 0;	//unknown
 	udp.type = 0x0008;
 
-	e1000_write((u8*)&udp, sizeof(struct udp));
+	writer(&udp, sizeof(struct udp));
 }
 
 
@@ -272,6 +279,7 @@ void dhcprequest(u8* url)
 {
 	int len;
 	struct dhcp dhcp;
+	if(0 == writer)return;
 
 	//data
 	dhcp.op = 1;
@@ -316,7 +324,7 @@ void dhcprequest(u8* url)
 	*(u64*)(dhcp.macsrc) = 0;	//unknown
 	dhcp.type = 0x0008;
 
-	e1000_write((u8*)&dhcp, sizeof(struct dhcp));
+	writer(&dhcp, sizeof(struct dhcp));
 }
 
 
@@ -410,3 +418,35 @@ void explainpacket(u64 bufferaddr,u64 length)
 		case 0x0800:explainipv4(bufferaddr,length);
 	}
 }*/
+
+
+
+
+int network_read(void* buf, int len)
+{
+	int ret;
+	void* tmp[2];
+	if(0 == reader)return 0;
+
+	ret = reader(tmp, 2);
+	if(ret <= 0)return 0;
+
+	printmemory(tmp[0], ret);
+}
+int network_write(void* buf, int len)
+{
+	if(0 == writer)return 0;
+	return writer(buf, len);
+}
+int network_delete()
+{
+	reader = 0;
+	writer = 0;
+	return 0;
+}
+int network_create(void* r, void* w)
+{
+	reader = r;
+	writer = w;
+	return 0;
+}

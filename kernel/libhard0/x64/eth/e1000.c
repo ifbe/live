@@ -87,6 +87,8 @@ typedef unsigned long long u64;
 #define TSTA_LC    (1 << 2)    // Late Collision
 #define LSTA_TU    (1 << 3)    // Transmit Underrun
 //
+int network_create(void*, void*);
+//
 u32 in32(u16);
 void out32(u16, u32);
 //
@@ -116,10 +118,10 @@ struct RecvDesc
     volatile u8 errors;
     volatile u16 special;
 };
-void e1000_read()
+static int e1000_read(void** ptr, int max)
 {
-	if(0 == mmioaddr)return;
-while(1){
+	if(0 == mmioaddr)return -1;
+
 	//changed = tail+1
 	volatile u32 tail = *(volatile u32*)(mmioaddr+0x2818);
 	tail = (tail+1)%32;
@@ -127,21 +129,22 @@ while(1){
 	//desc = changed
 	u8* desc = rxdesc + 0x10*tail;
 	u8 stat = desc[12];
-	if(0 == (stat&0x1))return;
+	if(0 == (stat&0x1))return 0;
 
 say("@e1000_recv:sts=%x,err=%x\n", desc[12], desc[13]);
 printmemory(desc, 16);
 	desc[12] = 0;		//status写0
 
-	//recv
-	u8* buf = *(u8**)(desc);
-	int len = *(u16*)(desc+8);
-	printmemory(buf, len);
-
 	//next
 	volatile u32 dummy = *(volatile u32*)(mmioaddr+0xc0);	//必须读，防止被优化
 	*(u32*)(mmioaddr+0x2818) = tail;
-}
+
+	//recv
+	u8* buf = *(u8**)(desc);
+	int len = *(u16*)(desc+8);
+	//printmemory(buf, len);
+	ptr[0] = buf;
+	return len;
 }
 
 
@@ -157,10 +160,10 @@ struct TransDesc
     volatile u8 css;
     volatile u16 special;
 };
-void e1000_write(u8* buf, int len)
+static int e1000_write(u8* buf, int len)
 {
 	//error return
-	if(0 == mmioaddr)return;
+	if(0 == mmioaddr)return -1;
 
 	//txdesc
 	u32 head = *(u32*)(mmioaddr+0x3810);
@@ -188,16 +191,17 @@ void e1000_write(u8* buf, int len)
 		if(timeout>0xfffffff)
 		{
 			say("fail",0);
-			return;
+			return -2;
 		}
 
 		volatile u8 status = *(volatile u8*)(desc+12);
 		if( (status&0x1) == 0x1 )
 		{
 			say("sent@%x\n",desc);
-			return;
+			break;
 		}
 	}
+	return len;
 }
 
 
@@ -334,6 +338,7 @@ void e1000_mmioinit(u8* mmio)
 
 
 	say("}\n");
+	network_create(e1000_read, e1000_write);
 }
 void e1000_portinit(u64 addr)
 {
