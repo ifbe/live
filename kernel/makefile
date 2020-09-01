@@ -9,9 +9,9 @@ cross:
 	make pcobj CC=x86_64-elf-gcc
 	make pcbin LD=x86_64-elf-ld
 pcobj:
-	make -s -C libboot0 x64 CC=$(CC)
+	make -s -C libboot0 CC=$(CC) x64
 	make -s -C libboot1 CC=$(CC)
-	make -s -C libhard0 x64 CC=$(CC)
+	make -s -C libhard0 CC=$(CC) x64
 	make -s -C libhard1 CC=$(CC)
 	make -s -C libsoft0 CC=$(CC)
 	make -s -C libsoft1 CC=$(CC)
@@ -25,9 +25,9 @@ pcbin:
 	-o cxx.bin
 
 efi:
-	make -s -C libboot0 efi CC=$(CC)
+	make -s -C libboot0 CC=$(CC) efi
 	make -s -C libboot1 CC=$(CC)
-	make -s -C libhard0 efi CC=$(CC)
+	make -s -C libhard0 CC=$(CC) efi
 	make -s -C libhard1 CC=$(CC)
 	make -s -C libsoft0 CC=$(CC)
 	make -s -C libsoft1 CC=$(CC)
@@ -54,11 +54,11 @@ pi64:
 	-o kernel.elf
 	aarch64-elf-objcopy kernel.elf -O binary kernel8.img
 piobj:
-	make -s -C libboot0 rpi AS=$(AS) CC=$(CC) \
+	make -s -C libboot0 AS=$(AS) CC=$(CC) rpi \
 cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
 	make -s -C libboot1 AS=$(AS) CC=$(CC) \
 cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
-	make -s -C libhard0 rpi AS=$(AS) CC=$(CC) \
+	make -s -C libhard0 AS=$(AS) CC=$(CC) rpi \
 cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
 	make -s -C libhard1 AS=$(AS) CC=$(CC) \
 cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
@@ -72,8 +72,6 @@ cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
 cflag="-ffreestanding -fno-stack-protector -Wall -Wextra -c -O2"
 
 pi64qemu:
-	qemu-system-aarch64 -M raspi3 -serial null -serial stdio -kernel kernel8.img
-pi64emmc:
 	qemu-system-aarch64 -M raspi3 -serial null -serial stdio -drive file=../live.img,if=sd,format=raw -kernel kernel8.img
 
 clean:
