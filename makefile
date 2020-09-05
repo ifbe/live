@@ -53,7 +53,7 @@ winumount:
 
 
 #----------------step3: live.img----------------
-biosimg:
+fullimg:
 	dd if=00-asm.img of=live.img conv=notrunc
 	dd if=01-cxx.img of=live.img bs=8192 seek=1 conv=notrunc
 	dd if=02-fat.img of=live.img bs=1048576 seek=1 conv=notrunc
@@ -61,7 +61,7 @@ biosimg:
 	#qemu-img convert -f raw -O vmdk live.img live.vmdk
 	qemu-img convert -f raw -O parallels live.img live.hdd
 	qemu-img convert -f raw -O vpc -o subformat=fixed live.img live.vhd
-efiimg:
+copyefi:
 	dd if=/dev/zero of=02-fat.img bs=1k count=1440
 	mformat -i 02-fat.img -f 1440 ::
 	mmd -i 02-fat.img ::/EFI
@@ -76,7 +76,7 @@ efiimg:
 qemu:
 	virt/qemu/qemu.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
 ovmf:
-	virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.img
+	virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.vhd
 bochs:
 	bochs -f virt/bochs/bochsrc
 vmware:
