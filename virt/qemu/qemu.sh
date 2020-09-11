@@ -3,6 +3,7 @@ dir=`dirname $0`
 cd $dir
 
 #-d int,cpu_reset \
+#-no-shutdown \
 $1 \
 -no-reboot \
 -serial stdio \

@@ -28,7 +28,7 @@ startofpaging:
 
 ;________________0x2000个pd____________
 	mov rdi,0x80000
-	mov rax,0x83
+	mov rax,0x87
 pagedirectory:
 	stosq
 	add rax,0x200000
@@ -41,7 +41,7 @@ pagedirectory:
 
 ;________________16个pdpt_________________
 	mov edi,0x91000
-	mov eax,0x80003
+	mov eax,0x80007
 	mov ecx,16
 .pdpt:
 	stosq
@@ -54,7 +54,7 @@ pagedirectory:
 
 ;________________________________________________
 ;把pdpt的地址放入pml4
-	mov dword [0x90000],0x91003
+	mov dword [0x90000],0x91007
 
 ;把pml4的地址放进cr3
 	mov rax,0x90000

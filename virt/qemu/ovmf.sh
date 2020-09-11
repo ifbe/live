@@ -2,7 +2,7 @@
 dir=`dirname $0`
 cd $dir
 
-#-d cpu_reset \
+#-d int,cpu_reset \
 #-no-shutdown \
 $1 \
 -no-reboot \

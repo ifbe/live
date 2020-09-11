@@ -53,14 +53,15 @@ winumount:
 
 
 #----------------step3: live.img----------------
-fullimg:
+liveimg:
 	dd if=00-asm.img of=live.img conv=notrunc
 	dd if=01-cxx.img of=live.img bs=8192 seek=1 conv=notrunc
 	dd if=02-fat.img of=live.img bs=1048576 seek=1 conv=notrunc
 	qemu-img resize -f raw live.img 64M
-	#qemu-img convert -f raw -O vmdk live.img live.vmdk
-	qemu-img convert -f raw -O parallels live.img live.hdd
 	qemu-img convert -f raw -O vpc -o subformat=fixed live.img live.vhd
+fullimg:liveimg
+	qemu-img convert -f raw -O vmdk live.img live.vmdk
+	qemu-img convert -f raw -O parallels live.img live.hdd
 copyefi:
 	dd if=/dev/zero of=02-fat.img bs=1k count=1440
 	mformat -i 02-fat.img -f 1440 ::
