@@ -2,7 +2,7 @@
 #define u16 unsigned short
 #define u32 unsigned int
 #define u64 unsigned long long
-#define ahcihome 0x400000
+#define ahcihome 0x1000000
 #define receivefisbuffer ahcihome+0x10000
 #define cmdlistbuffer ahcihome+0x20000
 #define cmdtablebuffer ahcihome+0x30000
