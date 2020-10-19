@@ -6,7 +6,12 @@ void say(void*, ...);
 
 void devicecreate()
 {
-	say("device?\n");
+	say("device prep{\n");
 	initplat();
-	say("device!\n");
+	say("}device done\n");
+}
+void devicedelete()
+{
+	say("device free{\n");
+	say("}device gone\n");
 }

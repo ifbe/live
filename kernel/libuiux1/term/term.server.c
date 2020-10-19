@@ -19,6 +19,7 @@ void dhcprequest(u8*);
 //
 void reboot();
 void poweroff();
+void jump(void*);
 //
 int hexstr2data(void*, void*);
 int ncmp(void*, void*, int);
@@ -97,7 +98,6 @@ void command(u8* input)
 		printmemory((void*)data,0x200);
 	}
 	else if(0 == ncmp(input,"42",2)){
-		int (*fun)() = (void*)0x100000;
-		fun();
+		jump((void*)0x100000);
 	}
 }

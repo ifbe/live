@@ -26,6 +26,7 @@ void basicdelete();
 void termcreate();
 //
 int poller();
+void poweroff();
 void say(void*, ...);
 
 
@@ -69,4 +70,18 @@ void main()
 
 	//go
 	poller();
+}
+void jump(int (*fun)())
+{
+        entitydelete();
+        supplydelete();
+
+        arterydelete();
+        systemdelete();
+
+        driverdelete();
+        devicedelete();
+
+        fun();
+        poweroff();
 }

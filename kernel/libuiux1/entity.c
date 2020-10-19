@@ -6,7 +6,12 @@ void say(void*, ...);
 
 void entitycreate()
 {
-	say("entity?\n");
+	say("entity prep{\n");
 	terminit();
-	say("entity!\n");
+	say("}entity done\n");
+}
+void entitydelete()
+{
+	say("entity free{\n");
+	say("}entity gone\n");
 }

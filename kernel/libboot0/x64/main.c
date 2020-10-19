@@ -25,8 +25,8 @@ void basicdelete();
 //
 int windowcreate(void*);
 int termcreate();
-//
 int poller();
+void poweroff();
 void say(void*, ...);
 
 
@@ -74,4 +74,18 @@ void main()
 
 	//after
 	__asm__("int $0x3");
+}
+void jump(int (*fun)())
+{
+	entitydelete();
+	supplydelete();
+
+	arterydelete();
+	systemdelete();
+
+	driverdelete();
+	devicedelete();
+
+	fun();
+	poweroff();
 }

@@ -10,7 +10,12 @@ void say(void*, ...);
 
 void supplycreate()
 {
-	say("supply?\n");
+	say("supply prep{\n");
 	initscreen();
-	say("supply!\n");
+	say("}supply done\n");
+}
+void supplydelete()
+{
+	say("supply free{\n");
+	say("}supply gone\n");
 }

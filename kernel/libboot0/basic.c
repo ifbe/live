@@ -20,3 +20,6 @@ void basiccreate(void* addr)
 	eventqueue = addr+0x300000;
 	for(j=0;j<0x400000;j++)inputqueue[j] = 0;
 }
+void basicdelete()
+{
+}
