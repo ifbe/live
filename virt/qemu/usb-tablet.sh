@@ -5,7 +5,6 @@ cd $dir
 #-d int,cpu_reset \
 #-no-shutdown \
 #-device usb-audio,bus=xhci.0,port=1 \
-#-device usb-tablet,bus=xhci.0,port=2 \
 #-device usb-hub,id=hub1,bus=xhci.0,port=4
 $1 \
 -no-reboot \
@@ -20,6 +19,6 @@ $1 \
 -device usb-ehci,id=ehci \
 -device qemu-xhci,id=xhci \
 -device usb-kbd,bus=xhci.0,port=1 \
--device usb-mouse,bus=xhci.0,port=2 \
+-device usb-tablet,bus=xhci.0,port=2 \
 -device usb-net,bus=xhci.0,port=3 \
 -device usb-storage,drive=diskvhd,bus=xhci.0,port=4

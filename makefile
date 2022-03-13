@@ -79,9 +79,9 @@ copyefi:
 
 #----------------step4: testing----------------
 qemu:
-	virt/qemu/qemu.sh "qemu-system-x86_64" $(shell pwd)/live.vhd $(shell pwd)/live.img
+	virt/qemu/qemu.sh "qemu-system-x86_64" $(shell pwd)/live.img $(shell pwd)/live.vhd
 ovmf:
-	virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.vhd $(shell pwd)/live.img
+	virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.img $(shell pwd)/live.vhd
 bochs:
 	bochs -f virt/bochs/bochsrc
 vmware:
