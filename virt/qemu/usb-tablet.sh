@@ -4,8 +4,7 @@ cd $dir
 
 #-d int,cpu_reset \
 #-no-shutdown \
-#-device usb-audio,bus=xhci.0,port=1 \
-#-device usb-hub,id=hub1,bus=xhci.0,port=4
+#-device usb-serial,chardev=/dev/ttyUSB0,bus=xhci.0,port=1 \
 $1 \
 -no-reboot \
 -bios ovmf.fd \
@@ -20,5 +19,7 @@ $1 \
 -device qemu-xhci,id=xhci \
 -device usb-kbd,bus=xhci.0,port=1 \
 -device usb-tablet,bus=xhci.0,port=2 \
--device usb-net,bus=xhci.0,port=3 \
--device usb-storage,drive=diskvhd,bus=xhci.0,port=4
+-device usb-storage,drive=diskvhd,bus=xhci.0,port=3 \
+-device usb-hub,id=hub1,bus=xhci.0,port=4 \
+-device usb-audio,bus=xhci.0,port=4.2
+#-device usb-net,bus=xhci.0,port=4.3 \
