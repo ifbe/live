@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ParallelsVirtualMachine schemaVersion="1.0" dyn_lists="VirtualAppliance 0">
-   <AppVersion>17.1.1-51537</AppVersion>
+   <AppVersion>18.1.0-53311</AppVersion>
    <ValidRc>0</ValidRc>
    <Identification dyn_lists="">
       <VmUuid>{f7f4e4df-e097-42ce-8b2d-34ee8ee8bb49}</VmUuid>
+      <VmType>0</VmType>
       <SourceVmUuid>{f7f4e4df-e097-42ce-8b2d-34ee8ee8bb49}</SourceVmUuid>
       <LinkedVmUuid></LinkedVmUuid>
       <LinkedSnapshotUuid></LinkedSnapshotUuid>
@@ -14,8 +15,8 @@
       <ServerHost></ServerHost>
       <VmFilesLocation>1</VmFilesLocation>
       <VmLocationName>Macintosh HD</VmLocationName>
-      <VmCreationDate>2014-11-02 04:48:26</VmCreationDate>
       <EnvId>1608840439</EnvId>
+      <VmCreationDate>2014-11-02 04:48:26</VmCreationDate>
       <VmUptimeStartDateTime>2020-03-28 04:39:59</VmUptimeStartDateTime>
       <VmUptimeInSeconds>1140</VmUptimeInSeconds>
    </Identification>
@@ -65,7 +66,7 @@
          <SmbiosBiosVersion></SmbiosBiosVersion>
          <SmbiosBoardId></SmbiosBoardId>
       </General>
-      <Startup AutoStart_patch="2" dyn_lists="">
+      <Startup dyn_lists="" AutoStart_patch="2">
          <AutoStart>0</AutoStart>
          <AutoStartDelay>0</AutoStartDelay>
          <VmStartLoginMode>0</VmStartLoginMode>
@@ -94,14 +95,14 @@
          </BootingOrder>
          <LockInFullScreenMode>0</LockInFullScreenMode>
          <AllowSelectBootDevice>0</AllowSelectBootDevice>
-         <Bios EfiEnabled_patch="1" dyn_lists="">
+         <Bios dyn_lists="" EfiEnabled_patch="1">
             <EfiEnabled>1</EfiEnabled>
             <EfiSecureBoot>0</EfiSecureBoot>
          </Bios>
          <ExternalDeviceSystemName></ExternalDeviceSystemName>
          <FastReboot>0</FastReboot>
       </Startup>
-      <Shutdown OnVmWindowClose_patch="3" dyn_lists="">
+      <Shutdown dyn_lists="" OnVmWindowClose_patch="3">
          <AutoStop>1</AutoStop>
          <OnVmWindowClose>1</OnVmWindowClose>
          <WindowOnShutdown>0</WindowOnShutdown>
@@ -114,7 +115,7 @@
       <SasProfile dyn_lists="">
          <Custom>1</Custom>
       </SasProfile>
-      <Runtime HypervisorType_patch="" CompactMode_patch="1" StickyMouse_patch="2" UndoDisks_patch="1" dyn_lists="" OptimizePowerConsumptionMode_patch="1">
+      <Runtime UndoDisks_patch="1" CompactMode_patch="1" StickyMouse_patch="2" HypervisorType_patch="" dyn_lists="" OptimizePowerConsumptionMode_patch="1">
          <ForegroundPriority>1</ForegroundPriority>
          <BackgroundPriority>1</BackgroundPriority>
          <IoPriority>4</IoPriority>
@@ -124,7 +125,7 @@
          <ActionOnStop>0</ActionOnStop>
          <DockIcon>0</DockIcon>
          <OsResolutionInFullScreen>0</OsResolutionInFullScreen>
-         <FullScreen CornerAction_patch="2" dyn_lists="CornerAction">
+         <FullScreen dyn_lists="CornerAction" CornerAction_patch="2">
             <UseAllDisplays>0</UseAllDisplays>
             <UseActiveCorners>0</UseActiveCorners>
             <UseNativeFullScreen>1</UseNativeFullScreen>
@@ -206,7 +207,7 @@
          <LockGuestOnSuspend>0</LockGuestOnSuspend>
          <SyncVmHostname>0</SyncVmHostname>
          <SyncSshIds>0</SyncSshIds>
-         <Coherence MultiDisplay_patch="1" ShowTaskBar_patch="1" ExcludeDock_patch="1" dyn_lists="">
+         <Coherence dyn_lists="" MultiDisplay_patch="1" ShowTaskBar_patch="1" ExcludeDock_patch="1">
             <ShowTaskBar>1</ShowTaskBar>
             <ShowTaskBarInCoherence>0</ShowTaskBarInCoherence>
             <RelocateTaskBar>0</RelocateTaskBar>
@@ -229,7 +230,7 @@
             <WindowAnimation>1</WindowAnimation>
          </Coherence>
          <SharedFolders dyn_lists="">
-            <HostSharing MapSharedFoldersOnLetters_patch="1" dyn_lists="SharedFolder 0">
+            <HostSharing dyn_lists="SharedFolder 0" MapSharedFoldersOnLetters_patch="1">
                <Enabled>0</Enabled>
                <ShareAllMacDisks>0</ShareAllMacDisks>
                <ShareUserHomeDir>1</ShareUserHomeDir>
@@ -241,7 +242,7 @@
                <SharedShortcuts>1</SharedShortcuts>
                <SharedCloud>1</SharedCloud>
             </HostSharing>
-            <GuestSharing ShareRemovableDrives_patch="1" dyn_lists="">
+            <GuestSharing dyn_lists="" ShareRemovableDrives_patch="1">
                <Enabled>1</Enabled>
                <AutoMount>1</AutoMount>
                <AutoMountNetworkDrives>0</AutoMountNetworkDrives>
@@ -321,7 +322,7 @@
          <NativeLook dyn_lists="">
             <Enabled>0</Enabled>
          </NativeLook>
-         <Modality Opacity_patch="1" dyn_lists="" StayOnTop_patch="1">
+         <Modality dyn_lists="" Opacity_patch="1" StayOnTop_patch="1">
             <Opacity>0.8</Opacity>
             <StayOnTop>1</StayOnTop>
             <CaptureMouseClicks>1</CaptureMouseClicks>
@@ -356,14 +357,14 @@
             <ScheduleDay>9</ScheduleDay>
             <ScheduleTime>00:00:00</ScheduleTime>
          </WinMaintenance>
-         <DevelopOptions ShowInMenu_patch="1" dyn_lists="">
+         <DevelopOptions dyn_lists="" ShowInMenu_patch="1">
             <ShowInMenu>1</ShowInMenu>
          </DevelopOptions>
          <DiskSpaceOptimization dyn_lists="">
             <SyncFreeSpaceFromHost>0</SyncFreeSpaceFromHost>
          </DiskSpaceOptimization>
       </Tools>
-      <Autoprotect Period_patch="1" dyn_lists="">
+      <Autoprotect dyn_lists="" Period_patch="1">
          <Enabled>0</Enabled>
          <Period>86400</Period>
          <TotalSnapshots>10</TotalSnapshots>
@@ -416,7 +417,7 @@
       <Keyboard dyn_lists="">
          <HardwareLayout>0</HardwareLayout>
       </Keyboard>
-      <VirtualPrintersInfo ShowHostPrinterUI_patch="1" UseHostPrinters_patch="1" dyn_lists="">
+      <VirtualPrintersInfo ShowHostPrinterUI_patch="1" dyn_lists="" UseHostPrinters_patch="1">
          <UseHostPrinters>0</UseHostPrinters>
          <SyncDefaultPrinter>0</SyncDefaultPrinter>
          <ShowHostPrinterUI>0</ShowHostPrinterUI>
@@ -428,6 +429,9 @@
       <SharedBluetooth Enabled_patch="" dyn_lists="">
          <Enabled>0</Enabled>
       </SharedBluetooth>
+      <SharedGamepad dyn_lists="">
+         <Enabled>1</Enabled>
+      </SharedGamepad>
       <LockDown dyn_lists="">
          <Hash></Hash>
       </LockDown>
@@ -448,7 +452,7 @@
             <Other>1</Other>
          </ExternalDevices>
       </UsbController>
-      <OnlineCompact Mode_patch="3" dyn_lists="">
+      <OnlineCompact dyn_lists="" Mode_patch="3">
          <Mode>0</Mode>
       </OnlineCompact>
       <TravelOptions dyn_lists="">
@@ -469,7 +473,7 @@
       </PackingOptions>
    </Settings>
    <Hardware dyn_lists="Fdd 1 CdRom 1 Hdd 1 Serial 0 Parallel 0 Printer 0 NetworkAdapter 1 Sound 1 USB 1 PciVideoAdapter 0 GenericDevice 0 GenericPciDevice 0 GenericScsiDevice 0 GenericNvmeDevice 0">
-      <Cpu AutoCountEnabled_patch="" EnableVTxSupport_patch="1" dyn_lists="">
+      <Cpu dyn_lists="" EnableVTxSupport_patch="1" AutoCountEnabled_patch="">
          <Number>2</Number>
          <Mode>0</Mode>
          <Type>0</Type>
@@ -492,7 +496,7 @@
       <Clock dyn_lists="">
          <TimeShift>0</TimeShift>
       </Clock>
-      <Memory RamAutoSizeEnabled_patch="" ExtendedMemoryLimits_patch="1" dyn_lists="">
+      <Memory dyn_lists="" ExtendedMemoryLimits_patch="1" RamAutoSizeEnabled_patch="">
          <RAM>1024</RAM>
          <RamAutoSizeEnabled>0</RamAutoSizeEnabled>
          <EnableHotplug>0</EnableHotplug>
@@ -503,7 +507,7 @@
          <MaxBalloonSize>70</MaxBalloonSize>
          <ExtendedMemoryLimits>0</ExtendedMemoryLimits>
       </Memory>
-      <Video NativeScalingInGuest_patch="" VideoMemorySize_patch="1" ApertureOnlyCapable_patch="1" dyn_lists="">
+      <Video ApertureOnlyCapable_patch="2" VideoMemorySize_patch="1" dyn_lists="" NativeScalingInGuest_patch="">
          <Enabled>1</Enabled>
          <Type>0</Type>
          <VirtIOBusType>0</VirtIOBusType>
@@ -570,7 +574,7 @@
          <AutoCompressEnabled>1</AutoCompressEnabled>
          <OnlineCompactMode>0</OnlineCompactMode>
       </Hdd>
-      <NetworkAdapter id="0" AdapterType_patch="1" dyn_lists="NetAddress DnsIPAddress SearchDomain">
+      <NetworkAdapter id="0" dyn_lists="NetAddress DnsIPAddress SearchDomain" AdapterType_patch="1">
          <Index>0</Index>
          <Enabled>1</Enabled>
          <Connected>1</Connected>
@@ -632,7 +636,7 @@
          </NetProfile>
          <DeviceDescription></DeviceDescription>
       </NetworkAdapter>
-      <Sound AdvancedType_patch="101" id="0" Mixer_patch="1" dyn_lists="" Output_patch="1">
+      <Sound Output_patch="1" id="0" Mixer_patch="1" dyn_lists="" AdvancedType_patch="101">
          <Enabled>1</Enabled>
          <Connected>1</Connected>
          <BusType>0</BusType>
@@ -648,7 +652,7 @@
          <Channel>0</Channel>
          <AEC>0</AEC>
          <SoundInputs dyn_lists="Sound 1">
-            <Sound AdvancedType_patch="" id="0" Mixer_patch="1" dyn_lists="" Output_patch="1">
+            <Sound Output_patch="1" id="0" Mixer_patch="1" dyn_lists="" AdvancedType_patch="">
                <Enabled>1</Enabled>
                <Connected>1</Connected>
                <BusType>0</BusType>
@@ -669,7 +673,7 @@
             </Sound>
          </SoundInputs>
          <SoundOutputs dyn_lists="Sound 1">
-            <Sound AdvancedType_patch="" id="0" Mixer_patch="1" dyn_lists="" Output_patch="1">
+            <Sound Output_patch="1" id="0" Mixer_patch="1" dyn_lists="" AdvancedType_patch="">
                <Enabled>1</Enabled>
                <Connected>1</Connected>
                <BusType>0</BusType>
@@ -722,7 +726,7 @@
          </USBPort>
       </UsbConnectHistory>
       <BTConnectHistory dyn_lists="BTDevConnect 0"/>
-      <TpmChip Type_patch="1" dyn_lists="">
+      <TpmChip dyn_lists="" Type_patch="1">
          <Type>0</Type>
          <Policy>3</Policy>
       </TpmChip>
