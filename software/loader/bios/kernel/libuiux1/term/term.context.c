@@ -38,6 +38,19 @@ void terminit()
 }
 void termcreate()
 {
+	say("disk\n");
+	say("diskread 200\n");
+	say("part\n");
+	say("partread\n");
+	say("file\n");
+	say("fileread 42.bin\n");
+	say("arp\n");
+	say("icmp\n");
+	say("udp 1111\n");
+	say("reboot\n");
+	say("poweroff\n");
+	say("print\n");
+	say("jump\n");
 	say("live>>>>");
 }
 
@@ -125,15 +138,19 @@ void term_readbycli()
 
 
 
-
+#define _kbd_ 0x64626b
+#define _char_ 0x72616863
 void term_write(u64 key, u64 type)
 {
 	//say("%llx,%llx\n",type,key);
-	if(type == 0x64626b)
+	if(type == _kbd_)
 	{
 		if(key == 0x1b)		//esc
 		{
 			offset = 0;
+		}
+		else if(key == 0xf1){
+			say("f1\n");
 		}
 		else if(key == 0x47)	//home
 		{
@@ -154,7 +171,7 @@ void term_write(u64 key, u64 type)
 
 		return;
 	}
-	if(type == 0x72616863)
+	if(type == _char_)
 	{
 		if(key == 0x8)
 		{

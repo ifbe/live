@@ -154,6 +154,7 @@ static int fat32_read(u64 clus,int offs, u8* buf,int len)
 	}
 
 	while(1){
+		if(cnt == len)goto retcnt;
 		if(cnt + byteperclus > len)break;
 
 		//read this cluster
@@ -387,7 +388,15 @@ int fat_read(u8* str, u64 off, u8* buf, int len)
 	say("clus=%x\n",clus);
 	if(0 == clus)return 0;
 
-	int ret = fat32_read(clus, off, buf, len);
-	say("ret=%x\n",ret);
-	return ret;
+	int tmp = 0;
+	int ret;
+	do{
+		ret = fat32_read(clus, off+tmp, buf+tmp, 0x10000);
+		say("ret=%x\n",ret);
+
+		tmp += ret;
+		if(ret < 0x10000)break;
+	}while(tmp < len);
+
+	return tmp;
 }

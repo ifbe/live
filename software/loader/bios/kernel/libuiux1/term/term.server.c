@@ -64,8 +64,9 @@ void command(u8* input)
 		u8* addr = (void*)0x100000;
 		for(j=0;j<0x700000;j++)addr[j] = 0;
 
-		fs_read((u64)(input+9), 0, addr, 0x100000);
+		fs_read((u64)(input+9), 0, addr, 0x200000);
 		printmemory(addr, 0x200);
+		printmemory(addr+0x100000, 0x200);
 	}
 	else if(0 == ncmp(input,"file",4)){
 		fs_list((void*)0x100000);
@@ -97,7 +98,7 @@ void command(u8* input)
 		hexstr2data(input+6, &data);
 		printmemory((void*)data,0x200);
 	}
-	else if(0 == ncmp(input,"42",2)){
+	else if(0 == ncmp(input,"jump",4)){
 		jump((void*)0x100000);
 	}
 }

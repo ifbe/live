@@ -1,4 +1,4 @@
-#----------------step0.0: asm----------------
+#----------------step0: asm----------------
 mbr:
 	make -C handon/x64/bios binary
 	cp handon/x64/bios/asm.bin 00-asm.img
@@ -9,7 +9,7 @@ efi:
 
 
 
-#----------------step0.1: cxx----------------
+#----------------step1: cxx----------------
 local:
 	make -C kernel
 	cp kernel/cxx.bin 01-cxx.img
@@ -20,7 +20,7 @@ cross:
 
 
 
-#----------------step1.0: fat.img----------------
+#----------------step2: fat.img----------------
 dd:
 	dd if=/dev/zero of=02-fat.img bs=1048576 count=62
 
@@ -56,7 +56,7 @@ winumount:
 
 
 
-#----------------step1.1: live.img----------------
+#----------------step3: live.img----------------
 liveimg:
 	dd if=00-asm.img of=live.img conv=notrunc
 	dd if=01-cxx.img of=live.img bs=8192 seek=1 conv=notrunc
@@ -77,11 +77,11 @@ copyefi:
 
 
 
-#----------------step2: testing----------------
+#----------------step4: testing----------------
 qemu:
-	../virt/qemu/qemu.sh "qemu-system-x86_64" $(shell pwd)/live.img $(shell pwd)/live.vhd
+	../../virt/qemu/bios.sh "qemu-system-x86_64" $(shell pwd)/live.img $(shell pwd)/live.vhd
 ovmf:
-	../virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.img $(shell pwd)/live.vhd
+	../../virt/qemu/ovmf.sh "qemu-system-x86_64" $(shell pwd)/live.img $(shell pwd)/live.vhd
 bochs:
 	bochs -f ../virt/bochs/bochsrc
 vmware:

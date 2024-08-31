@@ -241,6 +241,7 @@ void maketable(u64 buf,u64 from,HBA_CMD_HEADER* cmdheader,u64 count)
 }
 int ahci_readblock(u64 sata, u64 from, u64 buf, u64 count)
 {
+	say("ahci_readblock:%llx,%llx,%llx,%llx\n",sata,from,buf,count);
 	HBA_PORT* port =(HBA_PORT*)(portbase + theone*0x80);
 	HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(u64)(port->clb);
 
