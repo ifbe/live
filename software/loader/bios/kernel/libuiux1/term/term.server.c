@@ -31,35 +31,33 @@ void say(char*,...);
 
 
 
-void command(u8* input)
+void command_disk(u8* input)
 {
-	//say("%s\n",input);
-	if(0 == input[0])return;
-
-//-------------------disk-----------------
-	else if(0 == ncmp(input,"diskread",8)){
+	if(0 == ncmp(input,"diskread",8)){
 		u64 offs;
 		u8* addr = (void*)0x100000;
 		hexstr2data(input+9, &offs);
 		diskread(0, offs, addr, 0x1000);
 		printmemory(addr, 0x200);
 	}
-	else if(0 == ncmp(input,"disk",4)){
+	else{
 		disk_list((void*)0x100000);
 	}
-
-//------------------part----------------
-	else if(0 == ncmp(input,"partread",8)){
+}
+void command_part(u8* input)
+{
+	if(0 == ncmp(input,"partread",8)){
 		u8* addr = (void*)0x100000;
 		pt_read(0, 0, addr, 0x1000);
 		printmemory(addr, 0x200);
 	}
-	else if(0 == ncmp(input,"part",4)){
+	else{
 		pt_list((void*)0x100000);
 	}
-
-//------------------file----------------
-	else if(0 == ncmp(input,"fileread",8)){
+}
+void command_file(u8* input)
+{
+	if(0 == ncmp(input,"fileread",8)){
 		int j;
 		u8* addr = (void*)0x100000;
 		for(j=0;j<0x700000;j++)addr[j] = 0;
@@ -68,11 +66,42 @@ void command(u8* input)
 		printmemory(addr, 0x200);
 		printmemory(addr+0x100000, 0x200);
 	}
-	else if(0 == ncmp(input,"file",4)){
+	else{
 		fs_list((void*)0x100000);
 	}
+}
+void command(u8* input)
+{
+	//say("%s\n",input);
+	if(0 == input[0])return;
 
-//------------------net-----------------
+//-----------------disk-----------------
+	else if(0 == ncmp(input,"disk",4)){
+		command_disk(input);
+	}
+
+//----------------part----------------
+	else if(0 == ncmp(input,"part",4)){
+		command_part(input);
+	}
+
+//----------------file----------------
+	else if(0 == ncmp(input,"file",4)){
+		command_file(input);
+	}
+
+//----------------go----------------
+	else if(0 == ncmp(input,"42", 2)){
+		command_disk((u8*)"");
+		command_part((u8*)"");
+		command_file((u8*)"");
+		command_file((u8*)"fileread 42.bin");
+	}
+	else if(0 == ncmp(input,"jump",4)){
+		jump((void*)0x100000);
+	}
+
+//----------------net----------------
 	else if(0 == ncmp(input,"arp",3)){
 		arprequest(0);
 	}
@@ -86,7 +115,7 @@ void command(u8* input)
 		dhcprequest(0);
 	}
 
-//------------------bye-----------------
+//----------------bye----------------
 	else if(0 == ncmp(input,"reboot",6)){
 		reboot();
 	}
@@ -97,8 +126,5 @@ void command(u8* input)
 		u64 data;
 		hexstr2data(input+6, &data);
 		printmemory((void*)data,0x200);
-	}
-	else if(0 == ncmp(input,"jump",4)){
-		jump((void*)0x100000);
 	}
 }
